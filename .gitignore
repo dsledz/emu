@@ -11,3 +11,14 @@
 *.lai
 *.la
 *.a
+
+# cscope
+cscope.*
+.depend
+
+# Targets
+check
+driver
+
+# Vim swp files
+*.swp
