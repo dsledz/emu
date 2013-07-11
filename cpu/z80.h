@@ -55,10 +55,10 @@ public:
                 struct {
                     byte_t C:1;   /**< carry flag */
                     byte_t N:1;   /**< add/substract */
-                    byte_t PV:1;  /**< parity/overflow */
-                    byte_t Y:1;
-                    byte_t H:1;   /**< half carry */
+                    byte_t V:1;  /**< parity/overflow */
                     byte_t X:1;
+                    byte_t H:1;   /**< half carry */
+                    byte_t Y:1;
                     byte_t Z:1;   /**< zero flag */
                     byte_t S:1;   /**< sign flag */
                 } f;
@@ -117,59 +117,47 @@ public:
 #define _rI    _R._I
 #define _rR    _R._R
 
-/**
- * A single opcode.
- */
-struct Opcode {
-    typedef std::function<void (byte_t)> op_func;
-    Opcode(byte_t code, unsigned cycles,
-           const std::string &name, op_func func):
-        code(code), cycles(cycles), name(name), func(func) { }
-
-    byte_t code;
-    unsigned cycles;
-    std::string name;
-    op_func func;
-};
-
 enum class IME {
     Disabled = 0,
     Shadow = 1,
     Enabled = 2
 };
 
-class Z80Cpu: public EMU::Device {
+class Z80Cpu: public EMU::CpuDevice {
 public:
-    Z80Cpu(Machine *machine, const std::string &name, unsigned clock);
+    Z80Cpu(Machine *machine, const std::string &name, unsigned hertz,
+           AddressBus16 *bus);
     ~Z80Cpu(void);
     Z80Cpu(const Z80Cpu &cpu) = delete;
 
-    virtual void save(SaveState &state);
-    virtual void load(LoadState &state);
-    virtual void tick(unsigned cycles);
+    virtual void execute(Time interval);
     virtual void set_line(InputLine line, LineState state);
-    virtual void write(addr_t addr, byte_t arg);
-    virtual byte_t read(addr_t addr);
-
-    AddressBus *bus() {
-        return &_bus;
-    }
 
     /* Register accessors */
     void store(Reg r, byte_t arg);
     byte_t fetch(Reg r);
 
+    /**
+     * Load a rom image at a specified offset.
+     */
+    void load_rom(Rom *rom, addr_t offset);
+
 private:
-    /* Trace mechanism */
+    /* Operation specific state */
     struct Z80Op {
         Z80Op(void): name("NONE") { }
-        Z80Op(addr_t pc, byte_t op, const std::string &name):
-            pc(pc), op(op), name(name) { }
+
+        void reset(void) {
+            pc = opcode = d8 = i8 = d16 = i16 = 0;
+        }
 
         addr_t pc;
-        byte_t op;
+        byte_t opcode;
         byte_t d8;
+        byte_t i8;
         word_t d16;
+        word_t i16;
+
         std::string name;
     };
 
@@ -185,13 +173,12 @@ private:
     void interrupt(addr_t addr);
 
     /* Trace support */
-    void log_op(void);
-    void start_op(addr_t pc, byte_t op, const std::string &name);
-    void finish_op(void);
+    void op_log(void);
+    void op_set(const std::string &name) {
+        _op.name = name;
+    }
 
-    unsigned _clock_div;
     Cycles _icycles;      /**< Current number of cycles for instruction */
-    Cycles _lcycles;      /**< Number of cycles we're behind */
 
     Z80Op _op;
 
@@ -207,7 +194,11 @@ private:
     LineState _reset_line;
     LineState _wait_line;
 
-    AddressBus _bus;
+    /* Private rom space */
+    bvec _rom;
+
+    /* Address Bus */
+    AddressBus<16> *_bus;
 
     inline void _add_icycles(unsigned cycles) {
         _icycles += Cycles(cycles);
@@ -217,10 +208,16 @@ private:
         return bus_read(_rPC++);
     }
     inline byte_t bus_read(addr_t addr) {
-        return _bus.read(addr);
+        if (addr < _rom.size())
+            return _rom[addr];
+        else
+            return _bus->read(addr);
     }
     inline void bus_write(addr_t addr, byte_t arg) {
-        _bus.write(addr, arg);
+        if (addr < _rom.size())
+            _rom[addr] = arg;
+        else
+            _bus->write(addr, arg);
     }
 
     /* decode accessors */
@@ -242,12 +239,24 @@ private:
     }
     inline word_t _dIY(void) {
         _op.d8 = pc_read();
-        return _rIX + _op.d8;
+        return _rIY + _op.d8;
+    }
+    inline byte_t _iIX(void) {
+        _op.i8 = bus_read(_dIX());
+        return _op.i8;
+    }
+    inline byte_t _iIY(void) {
+        _op.i8 = bus_read(_dIY());
+        return _op.i8;
+    }
+    inline byte_t _i8(addr_t addr) {
+        _op.i8 = bus_read(addr);
+        return _op.i8;
     }
     inline word_t _i16(void) {
         _op.d16 = pc_read() | (pc_read() << 8);
-        word_t tmp = bus_read(_op.d16) | (bus_read(_op.d16 + 1) << 8);
-        return tmp;
+        _op.i16 = bus_read(_op.d16) | (bus_read(_op.d16 + 1) << 8);
+        return _op.i16;
     }
 
 private:
@@ -260,39 +269,47 @@ private:
     }
     inline void _set_zflag(word_t result) {
         _flags.Z = (result & 0xff) == 0;
-        _flags.S = (result & 0x80) != 0;
-        _flags.PV = bit_isset(result, 0) ^ bit_isset(result, 1) ^
-                    bit_isset(result, 2) ^ bit_isset(result, 3) ^
-                    bit_isset(result, 4) ^ bit_isset(result, 5) ^
-                    bit_isset(result, 6) ^ bit_isset(result, 7);
     }
+    inline void _set_zsflag(word_t result) {
+        _flags.Z = (result & 0xff) == 0;
+        _flags.V = bit_isset(result, 8);
+        _flags.S = bit_isset(result, 7);
+        _flags.Y = bit_isset(result, 5);
+        _flags.X = bit_isset(result, 3);
+    };
     inline void _set_nflag(bool neg) {
         _flags.N = neg;
+    }
+    inline void _set_parity(byte_t result) {
+        _flags.V = (0 == (bit_isset(result, 0) ^ bit_isset(result, 1) ^
+                          bit_isset(result, 2) ^ bit_isset(result, 3) ^
+                          bit_isset(result, 4) ^ bit_isset(result, 5) ^
+                          bit_isset(result, 6) ^ bit_isset(result, 7)));
     }
 
     /* Addition */
     void _add(byte_t &orig, byte_t value);
-    void _addw(word_t &worig, word_t value);
+    void _add16(word_t &worig, word_t value);
     void _adc(byte_t &orig, byte_t value);
-    void _adcw(word_t &worig, word_t value);
+    void _adc16(word_t &worig, word_t value);
     void _inc(byte_t &orig);
     void _inci(addr_t addr);
-    void _incw(word_t &worig);
+    void _inc16(word_t &worig);
 
     /* Subtraction */
     void _sub(byte_t &orig, byte_t value);
-    void _subw(word_t &worig, word_t value);
+    void _sub16(word_t &worig, word_t value);
     void _sbc(byte_t &orig, byte_t value);
-    void _sbcw(word_t &worig, word_t value) { throw CpuFault(); }
+    void _sbc16(word_t &worig, word_t value);
     void _dec(byte_t &orig);
     void _deci(addr_t addr);
-    void _decw(word_t &worig);
+    void _dec16(word_t &worig);
 
     /* Load */
     void _ld(byte_t &orig, byte_t value);
-    void _ldw(word_t &worig, word_t value);
+    void _ld16(word_t &worig, word_t value);
     void _ldmem(addr_t addr, byte_t value);
-    void _ldwi(addr_t addr, word_t value);
+    void _ld16i(addr_t addr, word_t value);
 
     /* Bitwise ops */
     void _and(byte_t &orig, byte_t value);
@@ -302,7 +319,6 @@ private:
     void _bit_reset(byte_t &orig, byte_t value, int bit);
     void _bit_set(byte_t &orig, byte_t value, int bit);
     void _swap(byte_t &orig, byte_t value);
-    void _swap(word_t &lhs, word_t &rhs);
     void _rl(byte_t &orig, byte_t value);
     void _rla(void);
     void _rlc(byte_t &orig, byte_t value);
@@ -311,11 +327,18 @@ private:
     void _rra(void);
     void _rrc(byte_t &orig, byte_t value);
     void _rrca(void);
+    void _rrd(void);
+    void _rld(void);
     void _sla(byte_t &orig, byte_t value);
     void _sra(byte_t &orig, byte_t value);
+    void _sll(byte_t &orig, byte_t value);
     void _srl(byte_t &orig, byte_t value);
 
     void _cp(byte_t lhs, byte_t rhs);
+    void _cpi(void);
+    void _cpir(void);
+    void _cpd(void);
+    void _cpdr(void);
     void _daa(void);
     void _cpl(void);
     void _ccf(void);
@@ -327,9 +350,10 @@ private:
     void _exx(void);
     void _push(byte_t high, byte_t low);
     void _pop(byte_t &high, byte_t &low);
-    void _in(byte_t &orig, byte_t port) { throw CpuFault(); }
-    void _out(byte_t port, byte_t value) { throw CpuFault(); }
-    void _neg(byte_t &orig) { throw CpuFault(); }
+    void _in(byte_t &orig, byte_t port) { /* XXX: nop */ }
+    void _out(byte_t port, byte_t value) { /* XXX: nop */ }
+    void _neg(byte_t &orig);
+    void _otir(void) { /*XXX: nop */ }
     void _im(int mode) { _imode = mode; };
     void _ldi(void);
     void _ldir(void);
@@ -351,5 +375,7 @@ private:
     void _reti(void);
     void _rst(byte_t value);
 };
+
+typedef std::unique_ptr<Z80Cpu> Z80Cpu_ptr;
 
 };

@@ -43,13 +43,16 @@ using namespace Z80;
 class Z80Test: public ::testing::Test {
     public:
         Z80Test(void):
-            machine(18432000),
-            cpu(&machine, "test", 1),
-            ram(0x2000), pc(0) {
-            cpu.bus()->add_port(0x0000, &ram);
+            machine(),
+            bus(),
+            cpu(&machine, "cpu", 1000000, &bus),
+            ram(0x2000), pc(0)
+        {
+            bus.add_port(0x0000, &ram);
         }
 
         Machine machine;
+        AddressBus16 bus;
         Z80Cpu cpu;
         Ram ram;
         addr_t pc;
@@ -63,16 +66,70 @@ TEST_F(Z80Test, Constructor)
 TEST_F(Z80Test, opcode_0x00)
 {
     LOAD(0x00);
-    cpu.tick(30);
+    cpu.execute(Time(usec(30)));
 }
 
 /* LD BC, d16 */
 TEST_F(Z80Test, opcode_0x01)
 {
     LOAD2(0x01, 0x12, 0x34);
-    cpu.tick(30);
+    cpu.execute(Time(usec(10)));
 
     EXPECT_EQ(0x34, cpu.fetch(Reg::B));
     EXPECT_EQ(0x12, cpu.fetch(Reg::C));
 }
 
+class Zexall: public Machine
+{
+public:
+    Zexall(void):
+        bus(),
+        cpu(this, "cpu", 1000000, &bus),
+        rom("zex.bin"),
+        _data(0), _req(0), _req_last(0), _ack(0)
+    {
+        cpu.load_rom(&rom, 0x000);
+
+        bus.add_port(0xFFFF, IOPort(
+            [&](addr_t addr) {
+                return _data;
+            },
+            [&](addr_t addr, byte_t value) {
+                _data = value;
+            }));
+        bus.add_port(0xFFFE, IOPort(
+            [&](addr_t addr) {
+                return _req;
+            },
+            [&](addr_t addr, byte_t value) {
+                if (_req_last != value) {
+                    _ack++;
+                    std::cout << _data;
+                    std::cout.flush();
+                }
+                _req_last = _req;
+                _req = value;
+            }));
+        bus.add_port(0xFFFD, IOPort(
+            [&](addr_t addr) {
+                return _ack;
+            },
+            [&](addr_t addr, byte_t value) {
+                _ack = value;
+            }));
+    }
+    ~Zexall(void) {
+    }
+
+    AddressBus16 bus;
+    Z80Cpu cpu;
+    Rom rom;
+    byte_t _data, _req, _req_last, _ack;
+};
+
+TEST(Zexall_test, test)
+{
+    Zexall zex;
+
+    zex.cpu.execute(Time(sec(10)));
+}

@@ -2,7 +2,7 @@
 export
 
 CC= clang++
-DEBUG_FLAGS= -g
+DEBUG_FLAGS= -g -O2
 CPPFLAGS= -Wall -Werror \
 	  -std=c++11 -stdlib=libc++ \
 	  -DGTEST_USE_OWN_TR1_TUPLE=1 -I${GTEST_INCLUDE} \
@@ -13,7 +13,7 @@ OBJS_DIR=${CURDIR}/objs
 
 SUBDIRS= emu cpu machine sdl
 
-all: ${SUBDIRS}
+all: ${SUBDIRS} check
 
 ALL_LIBS=emu.a cpu.a machine.a sdl.a wrapper.a
 
