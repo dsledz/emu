@@ -1,4 +1,4 @@
-emu
-===
+Emulator Framework in C++
+==
 
-Emulator Framework
+Simple emulator framework in the spirit of MAME.
