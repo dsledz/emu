@@ -22,33 +22,37 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#pragma once
 
 #include "emu.h"
 
 using namespace EMU;
 
-namespace Driver {
-
-class Galaga: public Machine
+/**
+ * Namco 06xx device. Acts as a multiplexer for multiple children
+ * devices.
+ */
+class Namco06: public Device
 {
 public:
-    Galaga(void);
-    ~Galaga(void);
+    Namco06(Machine *machine, Device *parent);
+    ~Namco06(void);
+
+    void add_child(int pos, IODevice *child);
+    byte_t read_child(addr_t addr);
+    void write_child(addr_t addr, byte_t vlaue);
+
+    byte_t read_control(addr_t addr);
+    void write_control(addr_t addr, byte_t value);
+
+    virtual void set_line(InputLine line, LineState state);
 
 private:
-    void common_bus(AddressBus *bus);
-
-    void render(void);
-    void init_gfx(void);
-
-    RomLoader _romset;
-    RasterScreen _screen;
-    Ram vram, ram1, ram2, ram3;
-    ColorPalette<32> _palette;
-    GfxObject<8,8> _tiles[128];
-    ColorPalette<4> _tile_palette[64];
-    GfxObject<16,16> _sprites[128];
-    ColorPalette<4> _sprite_palette[64];
+    Device *_parent;
+    IODevice *_children[4];
+    Timer_ptr _timer;
+    byte_t _control;
 };
 
-};
+typedef std::unique_ptr<Namco06> Namco06_ptr;
+

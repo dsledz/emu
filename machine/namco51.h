@@ -22,35 +22,60 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#pragma once
 
 #include "emu.h"
 
 using namespace EMU;
 
+/* XXX: This seems wrong */
+namespace EMU {
+
 /**
- * Namco 06xx device. Acts as a multiplexer for multiple children
- * devices.
+ * Namco 51xx device. Used as an IO board.
  */
-class Namco06: public Device
+class Namco51: public IODevice
 {
 public:
-    Namco06(Machine *machine, Device *parent);
-    ~Namco06(void);
+    Namco51(Machine *machine);
+    virtual ~Namco51(void);
 
-    void add_child(int pos, Device *child);
-    virtual void save(SaveState &state) {
+    virtual void write8(addr_t addr, byte_t value);
+    virtual byte_t read8(addr_t addr);
+    virtual addr_t size(void) {
+        return 0x4;
     }
-    virtual void load(LoadState &state) {
+    virtual byte_t *direct(addr_t addr) {
+        return &_in[0];
     }
-    virtual void tick(unsigned cycles) {
-    }
-    virtual void set_line(InputLine line, LineState state);
-    virtual void write(addr_t addr, byte_t value);
-    virtual byte_t read(addr_t addr);
 
 private:
-    Device *_parent;
-    Device *_children[4];
-    Timer_ptr _timer;
-    byte_t _control;
+    enum class Command {
+        Nop0 = 0,
+        Coinage = 1,
+        Credit = 2,
+        DisableRemap = 3,
+        EnableRemap = 4,
+        SwitchMode = 5,
+        Nop6 = 6,
+        Nop7 = 7
+    };
+
+    enum class Mode {
+        Unknown = 0,
+        Switch = 1,
+        Credit = 2,
+    };
+
+    Mode _mode;
+    bool _remap;
+    int _credits;
+    int _coinage_bytes;
+    int _read_count;
+    int _last;
+    byte_t _in[4];
+};
+
+typedef std::unique_ptr<Namco51> Namco51_ptr;
+
 };

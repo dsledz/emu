@@ -29,10 +29,10 @@
 
 using namespace EMU;
 
-Namco51::Namco51(Machine *machine, Device *parent):
-    Device(machine, "51xx"),
-    _mode(Namco51Mode::Unknown),
+Namco51::Namco51(Machine *machine):
+    _mode(Mode::Unknown),
     _remap(false),
+    _credits(0),
     _coinage_bytes(0),
     _read_count(0),
     _in()
@@ -47,13 +47,21 @@ Namco51::Namco51(Machine *machine, Device *parent):
     input->add_input(InputKey::Joy2Btn1, [&](LineState state) {
         bit_set(_in[0], 1, LineState::Clear == state); });
     input->add_input(InputKey::Start1, [&](LineState state) {
+        if (_credits >= 1)
+            _credits -= 1;
         bit_set(_in[0], 2, LineState::Clear == state); });
     input->add_input(InputKey::Start2, [&](LineState state) {
+        if (_credits >= 2)
+            _credits -= 2;
         bit_set(_in[0], 3, LineState::Clear == state); });
 
     input->add_input(InputKey::Coin1, [&](LineState state) {
+        if (state == LineState::Assert)
+            _credits++;
         bit_set(_in[1], 0, LineState::Clear == state); });
     input->add_input(InputKey::Coin2, [&](LineState state) {
+        if (state == LineState::Assert)
+            _credits++;
         bit_set(_in[1], 1, LineState::Clear == state); });
     input->add_input(InputKey::Service, [&](LineState state) {
         bit_set(_in[1], 2, LineState::Clear == state); });
@@ -75,59 +83,33 @@ Namco51::~Namco51(void)
 }
 
 void
-Namco51::save(SaveState &state)
-{
-}
-
-void
-Namco51::load(LoadState &state)
-{
-}
-
-void
-Namco51::tick(unsigned cycles)
-{
-}
-
-void
-Namco51::set_line(InputLine line, LineState state)
-{
-    switch (line) {
-    case InputLine::RESET:
-        DEBUG("51xx RESET");
-        break;
-    default:
-        break;
-    }
-}
-
-void
-Namco51::write(addr_t addr, byte_t value)
+Namco51::write8(addr_t addr, byte_t value)
 {
     if (_coinage_bytes) {
         DEBUG("51xx coinage write");
         _coinage_bytes--;
+        return;
     }
 
-    switch (Namco51Command(value)) {
-    case Namco51Command::Coinage:
+    switch (Command(value)) {
+    case Command::Coinage:
         DEBUG("Coinage bytes");
         _coinage_bytes = 4;
         break;
-    case Namco51Command::Credit:
+    case Command::Credit:
         DEBUG("51xx Credit Mode");
-        _mode = Namco51Mode::Credit;
+        _mode = Mode::Credit;
         _read_count = 0;
         break;
-    case Namco51Command::DisableRemap:
+    case Command::DisableRemap:
         _remap = false;
         break;
-    case Namco51Command::EnableRemap:
+    case Command::EnableRemap:
         _remap = true;
         break;
-    case Namco51Command::SwitchMode:
+    case Command::SwitchMode:
         DEBUG("51xx Switch Mode");
-        _mode = Namco51Mode::Switch;
+        _mode = Mode::Switch;
         _read_count = 0;
         break;
     default:
@@ -136,9 +118,9 @@ Namco51::write(addr_t addr, byte_t value)
 }
 
 byte_t
-Namco51::read(addr_t addr)
+Namco51::read8(addr_t addr)
 {
-    if (_mode == Namco51Mode::Switch) {
+    if (_mode == Mode::Switch) {
         switch (_read_count++ % 3) {
         case 0: /* buttons & coins */
             DEBUG("51xx Buttons");
@@ -151,15 +133,39 @@ Namco51::read(addr_t addr)
             return 0x00;
         }
 
-    } else if (_mode == Namco51Mode::Credit) {
+    } else if (_mode == Mode::Credit) {
         switch (_read_count++ % 3) {
         case 0: /* Credits */
-            /* XXX: Lie about credits for now. */
-            return 0x09;
-        case 1: /* buttons and joy */
-            return 0x00;
-        case 2: /* coins and cocktail joy*/
-            return 0x00;
+            /* Credits in BCD */
+            return (_credits % 10) | (_credits / 10) << 4;
+        case 1: {
+            if (_remap)
+                throw EmuException();
+
+            int joy = _in[2] & 0x0f;
+            int in = ~_in[0] & 0x01;
+            int toggle = in ^ _last;
+
+            /* One button press = one fire */
+            _last = (_last & 0x02) | in;
+            joy |= ((toggle & in) ^ 0x01) << 4;
+            joy |= (in ^ 0x01) << 5;
+
+            return joy;
+        }
+        case 2: {
+            if (_remap)
+                throw EmuException();
+
+            int joy = _in[3] & 0x0f;
+            int in = ~_in[0] & 0x02;
+            int toggle = in ^ _last;
+            _last = (_last & 0x01) | in;
+            joy |= ((toggle & in) ^ 0x02) << 3;
+            joy |= (in ^ 0x02) << 4;
+
+            return joy;
+        }
         }
     }
 
@@ -167,3 +173,4 @@ Namco51::read(addr_t addr)
 
     return 0;
 }
+

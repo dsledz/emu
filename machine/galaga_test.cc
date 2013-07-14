@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2013, Dan Sledz
- * All rights reserved.
+ * Copyright (c) 2013, Dan Sledz * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -23,52 +22,66 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "gtest/gtest.h"
+
 #include "emu.h"
+
+#include "galaga.h"
 
 using namespace EMU;
 
-/* XXX: This seems wrong */
-namespace EMU {
-
-enum class Namco51Command {
-    Nop0 = 0,
-    Coinage = 1,
-    Credit = 2,
-    DisableRemap = 3,
-    EnableRemap = 4,
-    SwitchMode = 5,
-    Nop6 = 6,
-    Nop7 = 7
-};
-
-enum class Namco51Mode {
-    Unknown = 0,
-    Switch = 1,
-    Credit = 2,
-};
-
-/**
- * Namco 51xx device. Used as an IO board.
- */
-class Namco51: public Device
+TEST(GalagaTest, run10)
 {
-public:
-    Namco51(Machine *machine, Device *parent);
-    ~Namco51(void);
+    Driver::Galaga machine("");
+    bool press = false;
+    /* 10 seconds of runtime */
+    unsigned steps = 6000 * 10;
+    for (unsigned i = 0; i < steps; i++) {
+        machine.run();
+    }
+    machine.add_timer(Time(msec(100)), [&]() {
+        press = !press;
+        if (press) {
+            machine.input()->depress(InputKey::Start1);
+        } else {
+            machine.input()->release(InputKey::Start1);
+        }
+        },
+        Time(msec(100)));
+    for (unsigned i = 0; i < steps*2; i++) {
+        machine.run();
+    }
+}
 
-    virtual void save(SaveState &state);
-    virtual void load(LoadState &state);
-    virtual void tick(unsigned cycles);
-    virtual void set_line(InputLine line, LineState state);
-    virtual void write(addr_t addr, byte_t value);
-    virtual byte_t read(addr_t addr);
+TEST(GalagaTest, run100)
+{
+    Driver::Galaga machine("");
+    /* 10 seconds of runtime */
+    unsigned steps = 6000 * 10;
+    for (unsigned i = 0; i < steps; i++) {
+        machine.run();
+    }
+}
 
-private:
-    Namco51Mode _mode;
-    bool _remap;
-    int _coinage_bytes;
-    int _read_count;
-    byte_t _in[4];
-};
+TEST(GalagaTest, input)
+{
+    Driver::Galaga machine("");
 
-};
+    unsigned steps = 6000 * 6;
+    for (unsigned i = 0; i < steps; i++) {
+        machine.run();
+    }
+    machine.input()->depress(InputKey::Coin1);
+    for (unsigned i = 0; i < 1000; i++) {
+        machine.run();
+    }
+    machine.input()->release(InputKey::Coin1);
+    for (unsigned i = 0; i < 1000; i++) {
+        machine.run();
+    }
+}
+
+TEST(GalagaTest, load)
+{
+    Driver::Galaga machine("");
+}
