@@ -1,7 +1,7 @@
 # SDL library
 export
 SDL_DIR= ../../SDL
-CPPFLAGS+= -I${SDL_DIR}/include -I../galaga
+CPPFLAGS+= -I${SDL_DIR}/include -I../machine -I../cpu
 LIBS+= -L${SDL_DIR}/lib -lSDLmain -lSDL -framework OpenGL -framework Cocoa
 
 SRCS= sdl_main.cc sdl_input.cc sdl_gfx.cc
@@ -10,9 +10,12 @@ LIBRARY= sdl_driver
 
 PROGRAM=driver
 
-LIBS+= -L${OBJS_DIR} -lemu -lcpu -lgalaga -lsdl_driver
+LIBS+= -L${OBJS_DIR} -lemu -lcpu -lmachine -lsdl_driver
 
-driver: ${OBJS_DIR}/libsdl_driver.a
+driver: ${OBJS_DIR}/libsdl_driver.a \
+	${OBJS_DIR}/libcpu.a \
+	${OBJS_DIR}/libemu.a \
+	${OBJS_DIR}/libmachine.a
 	${CC} ${CPPFLAGS} ${LIBS} -o $@
 
 include ../Makefile.inc

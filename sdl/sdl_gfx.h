@@ -41,10 +41,20 @@ typedef std::unique_ptr<SDL_Surface, surface_deleter> surface_ptr;
 
 class SDLGfx {
 public:
+    enum class GfxScale {
+        None = 0,
+        Scale2x = 1,
+    };
     SDLGfx(void);
     ~SDLGfx(void);
 
+    void init(RasterScreen *screen);
     void render(RasterScreen *screen);
 private:
+
+    void render_scale2x(RasterScreen *screen, SDL_Surface *surface);
+    void render_none(RasterScreen *screen, SDL_Surface *surface);
+
     surface_ptr _window;
+    GfxScale _scale;
 };

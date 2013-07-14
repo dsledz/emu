@@ -25,6 +25,7 @@
 
 #include "emu.h"
 #include "galaga.h"
+#include "gb.h"
 
 #include "sdl_util.h"
 #include "sdl_gfx.h"
@@ -35,13 +36,15 @@
 
 class SDLMain {
 public:
-    SDLMain(void) {
+    SDLMain(void): stop(false) {
     }
     ~SDLMain(void) {
     }
 
-    void load(void) {
-        machine = std::move(machine_ptr(new Driver::Galaga()));
+    void load(Options *opts) {
+        machine = loader.start(opts);
+
+        gfx.init(machine->screen());
 
         /* Connect our graphics */
         machine->set_render([&](RasterScreen *screen) {
@@ -70,6 +73,9 @@ public:
         case SDL_KEYUP:
         case SDL_KEYDOWN:
             switch (event->key.keysym.sym) {
+            case SDLK_q:
+                stop = true;
+                break;
             case SDLK_F1:
                 if (event->type == SDL_KEYDOWN)
                     EMU::log.set_level(EMU::LogLevel::Trace);
@@ -91,45 +97,18 @@ private:
     bool     stop;
 };
 
-class Options {
-public:
-    Options(void) {
-    }
-    ~Options(void) {
-    }
-
-    void parse(int argc, char **argv) {
-        static struct option opts[] = {
-            {"log",   required_argument,  0, 'l'},
-            {0, 0, 0, 0}
-        };
-        int idx = 0;
-        char c;
-        while ((c = getopt_long(argc, argv, "l:", opts, &idx)) != -1) {
-            switch (c) {
-            case 'l':
-                EMU::log.set_level(optarg);
-                break;
-            default:
-                break;
-            }
-        }
-    }
-private:
-};
-
 extern "C" int main(int argc, char **argv)
 {
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
         throw SDLException();
 
-    Options opts;
+    Options opts("galaga");
     opts.parse(argc, argv);
 
     {
         SDLMain main;
 
-        main.load();
+        main.load(&opts);
         main.loop();
     }
 
@@ -137,4 +116,5 @@ extern "C" int main(int argc, char **argv)
     return 0;
 }
 
-
+FORCE_UNDEFINED_SYMBOL(galaga);
+FORCE_UNDEFINED_SYMBOL(gb);

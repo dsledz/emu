@@ -35,10 +35,13 @@ SDLInput::SDLInput(void)
     _map[SDLK_UP]    = InputKey::Joy1Up;
     _map[SDLK_DOWN]  = InputKey::Joy1Down;
     _map[SDLK_SPACE] = InputKey::Joy1Btn1;
+    _map[SDLK_x]     = InputKey::Joy1Btn2;
     _map[SDLK_1]     = InputKey::Start1;
     _map[SDLK_2]     = InputKey::Start2;
     _map[SDLK_5]     = InputKey::Coin1;
     _map[SDLK_6]     = InputKey::Coin2;
+    _map[SDLK_7]     = InputKey::Service;
+    _map[SDLK_s]     = InputKey::Select1;
 }
 
 SDLInput::~SDLInput(void)
