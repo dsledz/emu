@@ -22,73 +22,46 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 #pragma once
 
 #include "bits.h"
-#include "exception.h"
-#include "device.h"
-#include "io.h"
+#include "debug.h"
 
-#include <fstream>
-#include <sys/stat.h>
+#include <getopt.h>
 
-namespace EMU {
-
-void read_rom(const std::string &name, bvec &rom);
-
-class RomException: public EmuException {
-    public:
-        RomException(const std::string &path): path(path) {};
-
-        std::string path;
-};
-
-class Rom: public IODevice {
+class Options {
 public:
-    Rom(void) { }
-    Rom(const std::string &path);
-    ~Rom(void);
+    Options(void): driver(""), rom("") { }
+    Options(const std::string &driver): driver(driver), rom("") { }
+    ~Options(void) { }
 
-    virtual void write8(addr_t addr, byte_t arg);
-    virtual byte_t read8(addr_t addr);
-    virtual addr_t size(void);
-    virtual byte_t *direct(addr_t addr);
-
-    void append(const bvec &data) {
-        _rom.insert(_rom.end(), data.begin(), data.end());
+    void parse(int argc, char **argv) {
+        static struct option opts[] = {
+            {"log",    required_argument, 0, 'l'},
+            {"driver", required_argument, 0, 'd'},
+            {"rom",    required_argument, 0, 'r'},
+            {0, 0, 0, 0}
+        };
+        int idx = 0;
+        char c;
+        while ((c = getopt_long(argc, argv, "l:d:r:", opts, &idx)) != -1) {
+            switch (c) {
+            case 'l':
+                EMU::log.set_level(optarg);
+                break;
+            case 'd':
+                driver = optarg;
+                break;
+            case 'r':
+                rom = optarg;
+                break;
+            default:
+                break;
+            }
+        }
     }
 
-private:
-    bvec _rom;
+    std::string driver;   /**< Driver module */
+    std::string rom;      /**< Rom */
 };
 
-struct RomRegion {
-    RomRegion(const std::string &name, std::initializer_list<std::string> roms):
-        name(name), roms(roms) { }
-
-    std::string name;
-
-    std::list<std::string> roms;
-};
-
-struct RomDefinition {
-    RomDefinition(const std::string &name): name(name) { }
-
-    std::string name;
-    std::list<RomRegion> regions;
-};
-
-class RomSet {
-public:
-    RomSet(const std::string &path);
-    RomSet(const RomDefinition &definition);
-    ~RomSet(void);
-
-    Rom *rom(const std::string &name);
-
-private:
-    std::unordered_map<std::string, Rom> _roms;
-};
-
-};

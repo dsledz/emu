@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include <string.h>
+
 #include <string>
 #include <algorithm>
 #include <future>
@@ -32,7 +34,10 @@
 #include <type_traits>
 #include <vector>
 #include <list>
+#include <memory>
 #include <cassert>
+
+#define a_unused __attribute((unused))
 
 /*  _____                     _       __
  * |_   _|   _ _ __   ___  __| | ___ / _|___
@@ -50,6 +55,7 @@ struct Bytes {
     byte_t h;
 };
 union Word {
+    Word(void) = default;
     Word(word_t w): w(w) { }
 
     Bytes b;
@@ -83,6 +89,10 @@ static inline void bit_set(byte_t &arg, unsigned n, bool val)
     arg |= (val ? (1 << n) : 0);
 }
 
+static inline void bit_setmask(byte_t &arg, byte_t mask, byte_t val)
+{
+    arg = (arg & ~mask) | val;
+}
 #if 0
 template<typename T>
 static inline bool bit_isset(word_t arg, T bit)

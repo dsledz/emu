@@ -41,8 +41,10 @@ struct DefaultWrite {
     void operator ()(addr_t addr, byte_t arg) { return; }
 };
 
-class IODevice {
+class IODevice
+{
 public:
+    virtual ~IODevice(void) { }
     virtual void write8(addr_t addr, byte_t arg) = 0;
     virtual byte_t read8(addr_t addr) = 0;
     virtual addr_t size(void) = 0;
@@ -52,13 +54,11 @@ public:
 /**
  * I/O Port. Used to communicate to devices.
  */
-struct IOPort {
+struct IOPort
+{
     IOPort(void):
         read(DefaultRead()),
         write(DefaultWrite()) { }
-    IOPort(Device *dev):
-        read([=](addr_t addr) -> byte_t { return dev->read(addr); }),
-        write([=](addr_t addr, byte_t v) { dev->write(addr, v); }) { }
     IOPort(io_read read, io_write write):
         read(read),
         write(write) { }
@@ -73,32 +73,87 @@ struct IOPort {
  * Address Bus.
  * Devices are connected via an address bus by wiring various
  * IOPorts together.
- * XXX: Address bus should be configurable
+ * XXX: Using a template seems like an abuse here.
  */
-class AddressBus {
+template<int width=16>
+class AddressBus
+{
     public:
-        AddressBus(void);
-        ~AddressBus(void);
+        AddressBus(void) { }
+        ~AddressBus(void) { }
         AddressBus(const AddressBus &bus) = delete;
 
-        void write(addr_t addr, byte_t arg);
-        byte_t read(addr_t addr);
+        void write8(addr_t addr, byte_t arg) {
+            _map.find(addr).write(addr, arg);
+        }
+        byte_t read8(addr_t addr) {
+            return _map.find(addr).read(addr);
+        }
+        addr_t size(void) {
+            size_t s = (1 << width) - 1;
+            return s;
+        }
+
+        void write(addr_t addr, byte_t arg) {
+            _map.find(addr).write(addr, arg);
+        }
+        byte_t read(addr_t addr) {
+            return _map.find(addr).read(addr);
+        }
 
         /**
          * Add a single address port. Useful for registers.
          */
-        void add_port(addr_t addr, const IOPort &port);
+        void add_port(addr_t addr, const IOPort &port) {
+            _map.add(addr, port);
+        }
 
         /**
          * Add a masked port. Useful for ranges. Mask must be
          * continous. (IE 0xf0f0 is NOT a valid mask.)
          */
-        void add_port(addr_t addr, addr_t mask, const IOPort &port);
+        void add_port(addr_t addr, addr_t mask, const IOPort &port) {
+            _map.add(addr, mask, port);
+        }
 
-        void add_port(addr_t addr, IODevice *dev);
+        void add_port(addr_t base, bvec *data) {
+            IOPort port(
+                [=](addr_t addr) -> byte_t {
+                    assert(addr >= base);
+                    addr -= base;
+                    return (*data)[addr];
+                },
+                [=](addr_t addr, byte_t v) {
+                    assert(addr >= base);
+                    addr -= base;
+                    (*data)[addr] = v;
+                });
+            addr_t mask = 0xFFFF & ~(data->size() - 1);
+            _map.add(base, mask, port);
+        }
+
+        void add_port(addr_t base, IODevice *dev) {
+            IOPort port(
+                [=](addr_t addr) -> byte_t {
+                assert(addr >= base);
+                addr -= base;
+                return dev->read8(addr);
+                },
+                [=](addr_t addr, byte_t v) {
+                assert(addr >= base);
+                addr -= base;
+                dev->write8(addr, v);
+                });
+            addr_t mask = 0xFFFF & ~(dev->size() - 1);
+            _map.add(base, mask, port);
+        }
+
 
     private:
-        RadixTree<IOPort> _map;
+        RadixTree<IOPort, width> _map;
 };
+
+typedef AddressBus<16> AddressBus16;
+typedef std::unique_ptr<AddressBus16> AddressBus16_ptr;
 
 };

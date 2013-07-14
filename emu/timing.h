@@ -30,14 +30,22 @@
 namespace EMU {
 
 struct Cycles {
-    explicit Cycles(uint64_t v): v(v) { }
+    Cycles(void) = default;
+    explicit Cycles(int64_t v): v(v) { }
 
     const struct Cycles operator +(const struct Cycles &rhs) const {
-        return Cycles(v + rhs.v);
+        Cycles res(*this);
+        res += rhs;
+        return res;
     }
 
     struct Cycles & operator +=(const struct Cycles &rhs) {
         v += rhs.v;
+        return *this;
+    }
+
+    struct Cycles & operator +=(unsigned rhs) {
+        v += rhs;
         return *this;
     }
 
@@ -57,6 +65,9 @@ struct Cycles {
         return Cycles(v * rhs);
     }
 
+    bool operator >(int64_t rhs) const {
+        return v > rhs;
+    }
     bool operator >(const struct Cycles &rhs) const {
         return v > rhs.v;
     }
@@ -66,7 +77,7 @@ struct Cycles {
     bool operator ==(const struct Cycles &rhs) const {
         return v == rhs.v;
     }
-    uint64_t v;
+    int64_t v;
 };
 
 struct nsec {
@@ -90,6 +101,7 @@ struct sec {
 };
 
 struct Time {
+    Time(void) = default;
     Time(sec s): ns(s.v * NSEC_PER_SEC) { }
     Time(msec ms): ns(ms.v * NSEC_PER_MSEC) { }
     Time(usec us): ns(us.v * NSEC_PER_USEC) { }
@@ -116,8 +128,29 @@ struct Time {
         return *this;
     }
 
+    Time & operator -=(const Time &rhs) {
+        ns -= rhs.ns;
+        return *this;
+    }
+
+    const Time operator -(const Time &rhs) const {
+        Time res(*this);
+        res -= rhs;
+        return res;
+    }
+
     const Time operator +(const Time &rhs) {
-        return Time(nsec(ns + rhs.ns));
+        Time res(*this);
+        res += rhs;
+        return res;
+    }
+
+    bool operator >(const Time &rhs) const {
+        return ns > rhs.ns;
+    }
+
+    bool operator <(const Time &rhs) const {
+        return ns < rhs.ns;
     }
 
     uint64_t ns;

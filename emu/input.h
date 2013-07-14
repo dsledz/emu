@@ -60,6 +60,8 @@ enum class InputKey {
     Coin2     = 2,
     Start1    = 3,
     Start2    = 4,
+    Select1   = 5,
+    Select2   = 6,
     Joy1Up    = 10,
     Joy1Down  = 11,
     Joy1Left  = 12,
@@ -71,7 +73,7 @@ enum class InputKey {
     Joy1Btn5  = 18,
     Joy1Btn6  = 19,
     Joy2Up    = 20,
-    Joy2Down  = 22,
+    Joy2Down  = 21,
     Joy2Left  = 22,
     Joy2Right = 23,
     Joy2Btn1  = 24,
@@ -108,6 +110,23 @@ struct InputKeyHash
     }
 };
 
+struct InputPort {
+    InputPort(void) = default;
+
+    byte_t value;
+};
+
+struct InputSignal
+{
+InputSignal(InputKey key, InputPort *port, int bit, bool active_high):
+    key(key), port(port), bit(bit), active_high(active_high) { }
+
+InputKey key;
+InputPort *port;
+int bit;
+bool active_high;
+};
+
 /**
  * Class to manage standard inputs, excluding DIP switches.
  */
@@ -121,6 +140,8 @@ public:
      * Add an input mapping between an input and a function.
      */
     void add_input(InputKey in, input_fn fn);
+
+    void add(const InputSignal &signal);
 
     /**
      * Simulate triggering an input.

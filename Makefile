@@ -11,11 +11,11 @@ LIBS= -L${OBJS_DIR}
 
 OBJS_DIR=${CURDIR}/objs
 
-SUBDIRS= emu cpu galaga sdl
+SUBDIRS= emu cpu machine sdl
 
 all: ${SUBDIRS}
 
-ALL_LIBS=emu.a cpu.a galaga.a sdl.a
+ALL_LIBS=emu.a cpu.a machine.a sdl.a wrapper.a
 
 ${OBJS_DIR}:
 	mkdir -p ${OBJS_DIR}

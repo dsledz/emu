@@ -22,6 +22,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#pragma once
 
 #include "bits.h"
 #include <iostream>
@@ -37,6 +38,7 @@ public:
     Hex(char arg): v(arg), w(2) {}
     Hex(word_t arg): v(arg), w(4) {}
     Hex(unsigned arg): v(arg), w(4) {}
+    Hex(size_t arg): v(arg), w(8) {}
     Hex(int arg): v(arg), w(2) {}
     Hex(Word arg): v(arg.w), w(2) {}
     unsigned v;
@@ -115,7 +117,7 @@ private:
 extern Debug log;
 
 #define IF_LOG(lvl) \
-    for (bool once=true; once && log.enabled(LogLevel::lvl); once=false)
+    for (bool once=true; once && EMU::log.enabled(LogLevel::lvl); once=false)
 
 #define TRACE(fmt, args...) \
     EMU::log.trace(fmt);

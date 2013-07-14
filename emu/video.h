@@ -34,28 +34,45 @@ namespace EMU {
  */
 struct RGBColor {
     RGBColor() = default;
-    RGBColor(unsigned r, unsigned g, unsigned b): _r(r), _g(g), _b(b), _a(0) {
-    };
+    RGBColor(unsigned r, unsigned g, unsigned b, unsigned a=0xff):
+        _r(r), _g(g), _b(b), _a(a) { }
+    RGBColor(uint32_t c): v(c) { }
+
+    bool operator !=(const RGBColor &rhs) const { return v != rhs.v; };
+    bool operator ==(const RGBColor &rhs) const { return v == rhs.v; };
     union {
-        struct { uint8_t _a; uint8_t _b; uint8_t _g; uint8_t _r; };
+        struct { uint8_t _r; uint8_t _g; uint8_t _b; uint8_t _a; };
         uint32_t v;
     };
 };
+
+static inline RGBColor operator *(const RGBColor &rhs, unsigned i)
+{
+    RGBColor res(rhs);
+    res._r *= i; res._g *= i; res._b *= i;
+    return res;
+}
+
+static const RGBColor trans(0x00, 0x00, 0x00, 0x00);
 
 template<int width>
 struct ColorPalette {
     inline RGBColor &operator[](unsigned i) {
         return _colors[i];
     }
+    static const unsigned size = width;
 
 private:
     RGBColor _colors[width];
 };
 
+/* XXX: GfxObject should be based on a palette */
 template<int width, int height, typename entry_t = byte_t>
 struct GfxObject {
-    int w = width;
-    int h = height;
+    GfxObject(void): dirty(true) {}
+    const int w = width;
+    const int h = height;
+    bool dirty;
     entry_t at(int x, int y) {
         return data[y * w + x];
     }
@@ -68,28 +85,122 @@ struct GfxObject {
 class RasterScreen
 {
 public:
-    RasterScreen(short width, short height);
+    enum Rotation {
+        ROT0 = 0,
+        ROT90 = 1,
+        ROT180 = 2,
+        ROT270 = 3
+    };
+    RasterScreen(short width, short height, Rotation rot=ROT0);
 
     short width;   /* Width of the screen */
     short pitch;   /* Line pitch */
     short height;  /* Height of the screen */
+    Rotation rot;
 
     void set(int x, int y, RGBColor color);
+    const RGBColor get(int x, int y) const;
+    RGBColor *at(int x, int y);
 
-    std::vector<uint32_t> data;
+    void clear(void);
+
+    std::vector<RGBColor> data;
+    RGBColor empty;
 };
 
 typedef std::function<void (RasterScreen *)> render_cb;
 
 template<class gfx, class palette> static inline void
-draw_gfx(RasterScreen *screen, palette *pal, int sx, int sy, gfx *obj)
+draw_gfx(RasterScreen *screen, palette *pal, gfx *obj, int sx, int sy,
+         bool flipx=false, bool flipy=false, RGBColor transparent=trans)
 {
-    for (int y = 0; y < obj->h; y++) {
-        for (int x = 0; x < obj->w; x++) {
-            RGBColor pen = (*pal)[obj->at(x,y)];
-            screen->set(sx + x, sy + y, pen);
+    if (flipx) {
+        if (flipy) {
+            for (int y = 0; y < obj->h; y++) {
+                for (int x = 0; x < obj->w; x++) {
+                    RGBColor pen = (*pal)[obj->at(obj->w - x - 1, obj->h - y -1)];
+                    if (pen != transparent)
+                        screen->set(sx + x, sy + y, pen);
+                }
+            }
+        } else {
+            for (int y = 0; y < obj->h; y++) {
+                for (int x = 0; x < obj->w; x++) {
+                    RGBColor pen = (*pal)[obj->at(obj->w - x - 1, y)];
+                    if (pen != transparent)
+                        screen->set(sx + x, sy + y, pen);
+                }
+            }
+        }
+    } else {
+        if (flipy) {
+            for (int y = 0; y < obj->h; y++) {
+                for (int x = 0; x < obj->w; x++) {
+                    RGBColor pen = (*pal)[obj->at(x, obj->h - y - 1)];
+                    if (pen != transparent)
+                        screen->set(sx + x, sy + y, pen);
+                }
+            }
+        } else {
+            for (int y = 0; y < obj->h; y++) {
+                for (int x = 0; x < obj->w; x++) {
+                    RGBColor pen = (*pal)[obj->at(x,y)];
+                    if (pen != transparent)
+                        screen->set(sx + x, sy + y, pen);
+                }
+            }
         }
     }
 }
+
+/* Draw the inverse */
+template<class gfx, class palette> static inline void
+draw_gfx_overlay(RasterScreen *screen, palette *pal, gfx *obj, int sx, int sy,
+                 RGBColor target, bool flipx=false, bool flipy=false,
+                 RGBColor transparent=trans)
+{
+    if (flipx) {
+        if (flipy) {
+            for (int y = 0; y < obj->h; y++) {
+                for (int x = 0; x < obj->w; x++) {
+                    RGBColor pen = (*pal)[obj->at(obj->w - x - 1, obj->h - y -1)];
+                    if (pen != transparent &&
+                        screen->get(sx + x, sy + y) == target)
+                        screen->set(sx + x, sy + y, pen);
+                }
+            }
+        } else {
+            for (int y = 0; y < obj->h; y++) {
+                for (int x = 0; x < obj->w; x++) {
+                    RGBColor pen = (*pal)[obj->at(obj->w - x - 1, y)];
+                    if (pen != transparent &&
+                        screen->get(sx + x, sy + y) == target)
+                        screen->set(sx + x, sy + y, pen);
+                }
+            }
+        }
+    } else {
+        if (flipy) {
+            for (int y = 0; y < obj->h; y++) {
+                for (int x = 0; x < obj->w; x++) {
+                    RGBColor pen = (*pal)[obj->at(x, obj->h - y - 1)];
+                    if (pen != transparent &&
+                        screen->get(sx + x, sy + y) == target)
+                        screen->set(sx + x, sy + y, pen);
+                }
+            }
+        } else {
+            for (int y = 0; y < obj->h; y++) {
+                for (int x = 0; x < obj->w; x++) {
+                    RGBColor pen = (*pal)[obj->at(x,y)];
+                    if (pen != transparent &&
+                        screen->get(sx + x, sy + y) == target)
+                        screen->set(sx + x, sy + y, pen);
+                }
+            }
+        }
+    }
+}
+
 
 };

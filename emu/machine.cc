@@ -27,16 +27,16 @@
 
 using namespace EMU;
 
-Machine::Machine(unsigned hertz):
-    _hertz(hertz),
-    _quantum(6000),
-    _ic(0),
-    _rtc(_hertz)
+Machine::Machine(void):
+    _clock(time_zero),
+    _quantum(6000)
 {
 }
 
 Machine::~Machine(void)
 {
+    /* Make sure all devices are disconnected */
+    assert(_devs.empty());
 }
 
 void
@@ -52,16 +52,16 @@ Machine::remove_device(Device *dev)
 }
 
 Timer_ptr
-Machine::add_timer(Time delay, callback_t callback, Time period)
+Machine::add_timer(Time deadline, callback_t callback, Time period)
 {
-    Cycles deadline = delay.to_cycles(_hertz) + _ic;
+    deadline += _clock;
     Timer_ptr timer(new Timer(deadline, callback, period));
     add_timer(timer);
     return timer;
 }
 
 void
-Machine::add_timer(Timer_ptr timer)
+Machine::_schedule_timer(Timer_ptr timer)
 {
     auto it = _timers.begin();
     while (it != _timers.end()) {
@@ -73,6 +73,13 @@ Machine::add_timer(Timer_ptr timer)
 }
 
 void
+Machine::add_timer(Timer_ptr timer)
+{
+    timer->deadline = _clock + timer->period;
+    _schedule_timer(timer);
+}
+
+void
 Machine::remove_timer(Timer_ptr timer)
 {
     _timers.remove(timer);
@@ -81,25 +88,25 @@ Machine::remove_timer(Timer_ptr timer)
 void
 Machine::run(void)
 {
-    Cycles end = _ic + (_hertz / _quantum);
-    Cycles interval(100);
-    while (_ic < end) {
+    Time end = _clock + quantum();
+    Time interval(usec(20));
+    while (_clock < end) {
         // Trigger any expired events
-        while (!_timers.empty() && _timers.front()->deadline < _ic) {
+        while (!_timers.empty() && _timers.front()->deadline < _clock) {
             Timer_ptr t = _timers.front();
             _timers.pop_front();
             t->callback();
             if (t->period != time_zero) {
                 /* XXX: This isn't exact */
-                t->deadline = _ic + t->period.to_cycles(_hertz);
+                t->deadline += t->period;
                 add_timer(t);
             }
         }
 
         for_each(_devs.begin(), _devs.end(), [=](Device *dev) {
-                 dev->tick(interval.v);
+                 dev->execute(interval);
                  });
-        _ic += interval;
+        _clock += interval;
     }
 }
 
@@ -123,5 +130,93 @@ void
 Machine::set_render(render_cb cb)
 {
     _render_cb = cb;
+}
+
+InputPort *
+Machine::add_input_port(const std::string &name)
+{
+    _ports.insert(make_pair(name, InputPort()));
+    return &_ports[name];
+}
+
+InputPort *
+Machine::input_port(const std::string &name)
+{
+    auto it = _ports.find(name);
+    if (it == _ports.end())
+        throw EmuException();
+    return &it->second;
+}
+
+dipswitch_ptr
+Machine::add_switch(const std::string &name, const std::string &port,
+    byte_t mask, byte_t def)
+{
+    auto ptr = dipswitch_ptr(new Dipswitch(name, port, mask, def));
+    _switches.insert(make_pair(name, ptr));
+    return ptr;
+}
+
+void
+Machine::set_switch(const std::string &name, const std::string &value)
+{
+    auto sw = _switches.find(name);
+    if (sw == _switches.end())
+        throw EmuException();
+    sw->second->select(this, value);
+}
+
+void
+Machine::reset_switches(void)
+{
+    for (auto it = _switches.begin(); it != _switches.end(); it++)
+        it->second->set_default(this);
+}
+
+MachineLoader EMU::loader __used;
+
+MachineDefinition::MachineDefinition(
+    const std::string &name,
+    machine_create_fn fn):
+    name(name),
+    fn(fn)
+{
+    loader.add_machine(this);
+}
+
+MachineDefinition::~MachineDefinition(void)
+{
+    /* XXX: Should we remove the entry? */
+}
+
+void
+MachineDefinition::add(void)
+{
+    loader.add_machine(this);
+}
+
+MachineLoader::MachineLoader(void)
+{
+}
+
+MachineLoader::~MachineLoader(void)
+{
+}
+
+void
+MachineLoader::add_machine(struct MachineDefinition *definition)
+{
+    _machines.push_back(definition);
+}
+
+machine_ptr
+MachineLoader::start(Options *opts)
+{
+    machine_ptr machine;
+    for (auto it = _machines.begin(); it != _machines.end(); it++) {
+        if ((*it)->name == opts->driver)
+            return (*it)->fn(opts);
+    }
+    throw EmuException();
 }
 

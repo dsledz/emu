@@ -45,22 +45,41 @@ InputDevice::add_input(InputKey in, input_fn fn)
 }
 
 void
+InputDevice::add(const InputSignal &signal)
+{
+    if (signal.active_high) {
+        add_input(signal.key, [=](LineState state) {
+            InputPort *port = signal.port;
+            bit_set(port->value, signal.bit, state == LineState::Assert);
+        });
+    } else {
+        add_input(signal.key, [=](LineState state) {
+            InputPort *port = signal.port;
+            bit_set(port->value, signal.bit, state == LineState::Clear);
+        });
+    }
+}
+
+void
 InputDevice::depress(InputKey in)
 {
-    input_fn fn = _find(in);
-    fn(LineState::Assert);
+    auto it = _input_map.find(in);
+    if (it != _input_map.end())
+        it->second(LineState::Assert);
 }
 
 void
 InputDevice::release(InputKey in)
 {
-    input_fn fn = _find(in);
-    fn(LineState::Clear);
+    auto it = _input_map.find(in);
+    if (it != _input_map.end())
+        it->second(LineState::Clear);
 }
 
 void
 InputDevice::pulse(InputKey in)
 {
-    input_fn fn = _find(in);
-    fn(LineState::Pulse);
+    auto it = _input_map.find(in);
+    if (it != _input_map.end())
+        it->second(LineState::Pulse);
 }

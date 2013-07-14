@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2013, Dan Sledz
- * All rights reserved.
+ * Copyright (c) 2013, Dan Sledz * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -27,6 +26,7 @@
 #include "bits.h"
 #include "state.h"
 #include "input.h"
+#include "timing.h"
 #include <list>
 
 namespace EMU {
@@ -57,37 +57,38 @@ public:
     /**
      * Save the device state.
      */
-    virtual void save(SaveState &state) = 0;
+    virtual void save(SaveState &state) { }
     /**
      * Restore the device state.
      */
-    virtual void load(LoadState &state) = 0;
+    virtual void load(LoadState &state) { }
     /**
-     * Run the device for @a cycles.
+     * Simulate the device for the next interval.
      */
-    virtual void tick(unsigned cycles) = 0;
+    virtual void execute(Time interval) { }
     /**
      * Signal one of the external lines.
      */
-    virtual void set_line(InputLine line, LineState state) = 0;
-    /**
-     * Write a single byte to the IO port.
-     */
-    virtual void write(addr_t addr, byte_t value) = 0;
-    /**
-     * Read a single byte from the IO port.
-     */
-    virtual byte_t read(addr_t addr) = 0;
+    virtual void set_line(InputLine line, LineState state) { }
 
 protected:
     Machine *_machine;
     std::string _name;
 };
 
-class CpuDevice {
-    CpuDevice(Machine *machine, const std::string &name);
-    virtual ~CpuDevice(void);
+typedef std::unique_ptr<Device> device_ptr;
 
+class CpuDevice: public Device {
+public:
+    CpuDevice(Machine *machine, const std::string &name, unsigned hertz):
+        Device(machine, name), _hertz(hertz), _avail(0) { }
+    virtual ~CpuDevice(void) { }
+
+    virtual void execute(Time period) = 0;
+
+protected:
+    unsigned _hertz;
+    Cycles _avail;
 };
 
 };

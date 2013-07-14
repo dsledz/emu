@@ -29,6 +29,10 @@
 #include "exception.h"
 #include "device.h"
 #include "video.h"
+#include "dipswitch.h"
+#include "options.h"
+
+#include <map>
 
 namespace EMU {
 
@@ -36,14 +40,14 @@ namespace EMU {
  * A sing shot machine event.
  */
 struct Timer {
-    Timer(Cycles deadline, callback_t callback):
+    Timer(Time deadline, callback_t callback):
         deadline(deadline), callback(callback), period(sec(0)) { }
-    Timer(Cycles deadline, callback_t callback, Time period):
+    Timer(Time deadline, callback_t callback, Time period):
         deadline(deadline), callback(callback), period(period) { }
     Timer(callback_t callback, Time period):
-        deadline(Cycles(0)), callback(callback), period(period) { }
+        deadline(time_zero), callback(callback), period(period) { }
 
-    Cycles deadline;
+    Time deadline;
     callback_t callback;
     Time period;
 };
@@ -58,14 +62,19 @@ public:
 
 /**
  * Encapsulates a physical machine.
+ * Each machine consists of:
+ * Devices
+ * Dipswitches
+ * Timers
+ * InputPorts
  */
 class Machine {
 public:
     /**
      * Initialize the machine with a master clock rate of @a hertz
      */
-    Machine(unsigned hertz);
-    ~Machine(void);
+    Machine(void);
+    virtual ~Machine(void);
 
     /**
      * Add a device to the machine.  This device is synchronized
@@ -78,9 +87,24 @@ public:
      * Add a timer. The timer will fire at the start of the next tick after
      * the deadline.
      */
-    Timer_ptr add_timer(Time delay, callback_t callback, Time period);
+    Timer_ptr add_timer(Time deadline, callback_t callback, Time period);
     void add_timer(Timer_ptr timer);
     void remove_timer(Timer_ptr timer);
+
+    /**
+     * Declare an IO line.  IO lines can be used to communicate between
+     * different devices in a mailbox manner.
+     */
+    InputPort *add_input_port(const std::string &name);
+    InputPort *input_port(const std::string &name);
+
+    /**
+     * Manage dipswitches
+     */
+    dipswitch_ptr add_switch(const std::string &name,
+        const std::string &port, byte_t mask, byte_t def);
+    void set_switch(const std::string &name, const std::string &value);
+    void reset_switches(void);
 
     /**
      * Run for a single time quantum.
@@ -100,21 +124,66 @@ public:
      */
     Device *dev(const std::string &name);
 
+    /**
+     * Set an input line on the device @a name.
+     */
+    void set_line(const std::string &name, InputLine line, LineState state) {
+        dev(name)->set_line(line, state);
+    }
+
     RasterScreen *screen(void);
     void set_render(render_cb cb);
+    void render(void) {
+        if (_render_cb)
+            _render_cb(_screen.get());
+    }
 
 protected:
     std::list<Device *> _devs;
     std::list<Timer_ptr> _timers;
-    Cycles _hertz;
+    Time _clock;
     unsigned _quantum;
-    Cycles _ic;
     InputDevice _input;
-    RealTimeClock _rtc;
     std::unique_ptr<RasterScreen> _screen;
     render_cb _render_cb;
+    std::map<std::string, dipswitch_ptr> _switches;
+    std::map<std::string, InputPort> _ports;
+
+private:
+    void _schedule_timer(Timer_ptr timer);
 };
 
 typedef std::unique_ptr<Machine> machine_ptr;
+
+typedef std::function<machine_ptr (Options *opts)> machine_create_fn;
+
+struct MachineDefinition {
+    MachineDefinition(const std::string &name, machine_create_fn fn);
+    ~MachineDefinition(void);
+
+    void add(void);
+
+    std::string name;
+    machine_create_fn fn;
+};
+
+class MachineLoader {
+public:
+    MachineLoader();
+    ~MachineLoader();
+
+    void add_machine(struct MachineDefinition *definition);
+
+    machine_ptr start(Options *opts);
+
+private:
+    std::list<MachineDefinition *> _machines;
+};
+
+extern MachineLoader loader;
+
+#define FORCE_UNDEFINED_SYMBOL(x) \
+    extern MachineDefinition x; \
+    void * __ ## x ## _fp = (void *)&x;
 
 };

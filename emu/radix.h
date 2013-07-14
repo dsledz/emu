@@ -31,11 +31,13 @@
 #include "bits.h"
 #include "exception.h"
 
-template<class Val>
+#define MASK(width) ((1 << width) - 1)
+
+template<class Val, int width>
 class RadixTree {
 private:
     struct Leaf {
-        Leaf(void): key(0xffff), mask(0x0000), value(Val()) { }
+        Leaf(void): key(MASK(width)), mask(0x0000), value(Val()) { }
         Leaf(addr_t key, addr_t mask, const Val &value):
             key(key), mask(mask), value(value) { }
 
@@ -62,7 +64,7 @@ private:
         }
 
         bool match(addr_t value) {
-            for (int d = 15; d > depth; d--)
+            for (int d = width - 1; d > depth; d--)
                 if (bit_isset(value, d) != bit_isset(key, d))
                     return false;
             return true;
@@ -77,11 +79,12 @@ private:
 
 public:
     RadixTree(void): _head(NULL) {
-        _head = new Inner(15, 0);
+        _head = new Inner(width - 1, 0);
     }
     ~RadixTree(void) {
         if (_head != NULL)
             delete _head;
+        _head = NULL;
     }
 
     Val &find(addr_t key) {
@@ -119,7 +122,7 @@ public:
     }
 
     void add(addr_t key, const Val &val) {
-        add(key, 0xffff, val);
+        add(key, MASK(width), val);
     }
 
 private:

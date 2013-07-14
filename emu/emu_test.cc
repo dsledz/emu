@@ -44,17 +44,11 @@ public:
     }
     virtual void set_line(InputLine line, LineState state) {
     }
-    virtual void write(addr_t addr, byte_t value) {
-        _v = value;
-    }
-    virtual byte_t read(addr_t addr) {
-        return _v;
-    }
 };
 
 TEST(AddressBusTest, single)
 {
-    AddressBus bus;
+    AddressBus<16> bus;
     byte_t v = 0;
     bus.add_port(0x100, IOPort(&v));
 
@@ -70,7 +64,7 @@ TEST(AddressBusTest, single)
 
 TEST(AddressBusTest, default_read_write)
 {
-    AddressBus bus;
+    AddressBus<16> bus;
     bus.add_port(0x100, IOPort());
 
     EXPECT_EQ(0, bus.read(0x100));
@@ -80,7 +74,7 @@ TEST(AddressBusTest, default_read_write)
 
 TEST(AddressBusTest, range)
 {
-    AddressBus bus;
+    AddressBus<16> bus;
     byte_t v = 0;
     bus.add_port(0x0100, 0xff00, IOPort(&v));
 
@@ -94,20 +88,9 @@ TEST(AddressBusTest, range)
     EXPECT_EQ(50, bus.read(0x0100));
 }
 
-TEST(AddressBusTest, device)
-{
-    AddressBus bus;
-    Machine machine(18432000);
-    TestDevice dev(&machine);
-    dev.write(0x0100, 50);
-    bus.add_port(0x0100, IOPort(&dev));
-
-    EXPECT_EQ(50, bus.read(0x0100));
-}
-
 TEST(Radix, simple)
 {
-    RadixTree<IOPort> tree;
+    RadixTree<IOPort, 16> tree;
     tree.add(0x100, IOPort());
     struct IOPort &f = tree.find(0x100);
     EXPECT_EQ(0, f.read(0x100));
@@ -121,7 +104,7 @@ TEST(Radix, simple)
 
 TEST(Radix, multiple)
 {
-    RadixTree<IOPort> tree;
+    RadixTree<IOPort, 16> tree;
 
     addr_t a1 = 0x4000;
     addr_t a2 = 0x0800;
@@ -143,7 +126,7 @@ TEST(Radix, multiple)
 
 TEST(Radix, range)
 {
-    RadixTree<IOPort> tree;
+    RadixTree<IOPort, 16> tree;
 
     byte_t v = 0;
     tree.add(0x4000, 0xff00, IOPort(&v));
@@ -173,7 +156,7 @@ TEST(Radix, range2)
     byte_t v ## addr = addr >> 12; \
     tree.add(addr, 0xF000, IOPort(&v##addr));
 
-    RadixTree<IOPort> tree;
+    RadixTree<IOPort, 16> tree;
     ADD_PORT(0x1000);
     ADD_PORT(0x0000);
     ADD_PORT(0x8000);
@@ -200,13 +183,13 @@ TEST(Radix, range2)
 
 TEST(MachineTest, time1)
 {
-    Machine machine(18432000);
+    Machine machine;
     TestDevice dev(&machine);
     machine.add_device(&dev);
     bool called = false;
     Time period = machine.quantum();
     Timer_ptr short_timer = machine.add_timer(
-        Time(usec(50)),
+        period - Time(msec(2)),
         [&](){ called = !called; },
         period
         );
@@ -242,4 +225,24 @@ TEST(MachineTest, time3)
     Cycles hertz(18432000);
     Cycles c = Time(usec(200)).to_cycles(hertz);
     EXPECT_EQ(Cycles(3686), c);
+}
+
+class TestMachine: public Machine {
+public:
+    TestMachine(void):
+        Machine(),
+        dev(this)
+    {
+    }
+    ~TestMachine(void) {
+    }
+
+private:
+    TestDevice dev;
+};
+
+TEST(MachineTest, constructor)
+{
+    TestMachine machine;
+
 }

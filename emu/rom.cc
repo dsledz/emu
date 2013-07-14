@@ -29,8 +29,8 @@
 
 using namespace EMU;
 
-static void
-read_rom(const std::string &name, bvec &rom)
+void
+EMU::read_rom(const std::string &name, bvec &rom)
 {
     struct stat sb;
     if (stat(name.c_str(), &sb) == -1)
@@ -55,6 +55,7 @@ Rom::~Rom(void)
 void
 Rom::write8(addr_t addr, byte_t arg)
 {
+    _rom[addr] = arg;
 }
 
 byte_t
@@ -75,7 +76,7 @@ Rom::direct(addr_t addr)
     return &_rom[addr];
 }
 
-RomLoader::RomLoader(const std::string &path)
+RomSet::RomSet(const std::string &path)
 {
     DIR *dir;
     struct dirent *ent;
@@ -91,12 +92,28 @@ RomLoader::RomLoader(const std::string &path)
     }
 }
 
-RomLoader::~RomLoader(void)
+RomSet::RomSet(const RomDefinition &def)
+{
+    for (auto it = def.regions.begin(); it != def.regions.end(); it++) {
+        Rom rom;
+        for (auto it2 = it->roms.begin(); it2 != it->roms.end(); it2++) {
+            std::string path = def.name + "/" + (*it2);
+            bvec data;
+
+            read_rom(path, data);
+
+            rom.append(data);
+        }
+        _roms.insert(make_pair(it->name, rom));
+    }
+}
+
+RomSet::~RomSet(void)
 {
 }
 
 Rom *
-RomLoader::rom(const std::string &name)
+RomSet::rom(const std::string &name)
 {
     auto it = _roms.find(name);
     if (it == _roms.end())

@@ -23,72 +23,45 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
-
 #include "bits.h"
-#include "exception.h"
-#include "device.h"
-#include "io.h"
+#include "dipswitch.h"
+#include "machine.h"
 
-#include <fstream>
-#include <sys/stat.h>
+using namespace EMU;
 
-namespace EMU {
+Dipswitch::Dipswitch(const std::string &name, const std::string &port,
+                     byte_t mask, byte_t def):
+    _name(name),
+    _port(port),
+    _mask(mask),
+    _def(def)
+{
+}
 
-void read_rom(const std::string &name, bvec &rom);
+Dipswitch::~Dipswitch(void)
+{
+}
 
-class RomException: public EmuException {
-    public:
-        RomException(const std::string &path): path(path) {};
+void
+Dipswitch::add_option(const std::string &name, byte_t value)
+{
+    _options.insert(make_pair(name, value));
+}
 
-        std::string path;
-};
+void
+Dipswitch::select(Machine *machine, const std::string &name)
+{
+    auto it = _options.find(name);
+    if (it == _options.end())
+        throw EmuException();
+    InputPort *port = machine->input_port(_port);
+    bit_setmask(port->value, _mask, it->second);
+}
 
-class Rom: public IODevice {
-public:
-    Rom(void) { }
-    Rom(const std::string &path);
-    ~Rom(void);
+void
+Dipswitch::set_default(Machine *machine)
+{
+    InputPort *port = machine->input_port(_port);
+    bit_setmask(port->value, _mask, _def);
+}
 
-    virtual void write8(addr_t addr, byte_t arg);
-    virtual byte_t read8(addr_t addr);
-    virtual addr_t size(void);
-    virtual byte_t *direct(addr_t addr);
-
-    void append(const bvec &data) {
-        _rom.insert(_rom.end(), data.begin(), data.end());
-    }
-
-private:
-    bvec _rom;
-};
-
-struct RomRegion {
-    RomRegion(const std::string &name, std::initializer_list<std::string> roms):
-        name(name), roms(roms) { }
-
-    std::string name;
-
-    std::list<std::string> roms;
-};
-
-struct RomDefinition {
-    RomDefinition(const std::string &name): name(name) { }
-
-    std::string name;
-    std::list<RomRegion> regions;
-};
-
-class RomSet {
-public:
-    RomSet(const std::string &path);
-    RomSet(const RomDefinition &definition);
-    ~RomSet(void);
-
-    Rom *rom(const std::string &name);
-
-private:
-    std::unordered_map<std::string, Rom> _roms;
-};
-
-};

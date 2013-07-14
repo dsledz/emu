@@ -22,73 +22,37 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 #pragma once
 
 #include "bits.h"
-#include "exception.h"
-#include "device.h"
 #include "io.h"
-
-#include <fstream>
-#include <sys/stat.h>
+#include <map>
 
 namespace EMU {
 
-void read_rom(const std::string &name, bvec &rom);
-
-class RomException: public EmuException {
+/**
+ * Describe a single setting.
+ */
+class Dipswitch {
     public:
-        RomException(const std::string &path): path(path) {};
+        Dipswitch(const std::string &name, const std::string &port,
+                  byte_t mask, byte_t def);
+        ~Dipswitch(void);
 
-        std::string path;
+        void add_option(const std::string &name, byte_t value);
+
+        void select(Machine *machine, const std::string &name);
+
+        void set_default(Machine *machine);
+
+    private:
+        std::string _name;
+        std::string _port;
+        byte_t      _mask;
+        byte_t      _def;
+        std::map<std::string, byte_t> _options;
 };
 
-class Rom: public IODevice {
-public:
-    Rom(void) { }
-    Rom(const std::string &path);
-    ~Rom(void);
-
-    virtual void write8(addr_t addr, byte_t arg);
-    virtual byte_t read8(addr_t addr);
-    virtual addr_t size(void);
-    virtual byte_t *direct(addr_t addr);
-
-    void append(const bvec &data) {
-        _rom.insert(_rom.end(), data.begin(), data.end());
-    }
-
-private:
-    bvec _rom;
-};
-
-struct RomRegion {
-    RomRegion(const std::string &name, std::initializer_list<std::string> roms):
-        name(name), roms(roms) { }
-
-    std::string name;
-
-    std::list<std::string> roms;
-};
-
-struct RomDefinition {
-    RomDefinition(const std::string &name): name(name) { }
-
-    std::string name;
-    std::list<RomRegion> regions;
-};
-
-class RomSet {
-public:
-    RomSet(const std::string &path);
-    RomSet(const RomDefinition &definition);
-    ~RomSet(void);
-
-    Rom *rom(const std::string &name);
-
-private:
-    std::unordered_map<std::string, Rom> _roms;
-};
+typedef std::shared_ptr<Dipswitch> dipswitch_ptr;
 
 };

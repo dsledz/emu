@@ -37,3 +37,4 @@
 #include "rom.h"
 #include "video.h"
 #include "machine.h"
+#include "options.h"

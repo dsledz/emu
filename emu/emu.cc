@@ -27,56 +27,6 @@
 
 using namespace EMU;
 
-AddressBus::AddressBus(void)
-{
-}
-
-AddressBus::~AddressBus(void)
-{
-}
-
-void
-AddressBus::write(addr_t addr, byte_t arg)
-{
-    _map.find(addr).write(addr, arg);
-}
-
-byte_t
-AddressBus::read(addr_t addr)
-{
-    return _map.find(addr).read(addr);
-}
-
-void
-AddressBus::add_port(addr_t addr, const IOPort &port)
-{
-    _map.add(addr, port);
-}
-
-void
-AddressBus::add_port(addr_t addr, addr_t mask, const IOPort &port)
-{
-    _map.add(addr, mask, port);
-}
-
-void
-AddressBus::add_port(addr_t base, IODevice *dev)
-{
-    IOPort port(
-        [=](addr_t addr) -> byte_t {
-            assert(addr >= base);
-            addr -= base;
-            return dev->read8(addr);
-        },
-        [=](addr_t addr, byte_t v) {
-              assert(addr >= base);
-              addr -= base;
-              dev->write8(addr, v);
-        });
-    addr_t mask = 0xFFFF & ~(dev->size() - 1);
-    _map.add(base, mask, port);
-}
-
 Device::Device(Machine *machine, const std::string &name):
     _machine(machine), _name(name)
 {

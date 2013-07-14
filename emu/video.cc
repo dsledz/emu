@@ -27,8 +27,8 @@
 
 using namespace EMU;
 
-RasterScreen::RasterScreen(short width, short height):
-    width(width), height(height)
+RasterScreen::RasterScreen(short width, short height, Rotation rot):
+    width(width), height(height), rot(rot)
 {
     data.resize(width*height);
     pitch = width * 4;
@@ -49,9 +49,53 @@ RasterScreen::set(int x, int y, RGBColor color)
     // **********
     // A(2, 3) B(7, 2)
     // XXX: This is wrong.
-    int sy = x;
-    int sx = width - y - 1;
+    int sy, sx;
+    switch (rot) {
+    case ROT0: sx = x; sy = y; break;
+    case ROT90: sx = width - y - 1; sy = x; break;
+    case ROT180: sx = x; sy = height - y -1; break;
+    case ROT270: sx = width - y - 1; sy = height - x -1; break;
+    }
+
     if ((sy >= 0 && sy < height) && (sx >= 0 && sx < width))
         data[sy * width + sx] = color.v;
 }
 
+const RGBColor
+RasterScreen::get(int x, int y) const
+{
+    int sy, sx;
+    switch (rot) {
+    case ROT0: sx = x; sy = y; break;
+    case ROT90: sx = width - y - 1; sy = x; break;
+    case ROT180: sx = x; sy = height - y -1; break;
+    case ROT270: sx = width - y - 1; sy = height - x -1; break;
+    }
+
+    if ((sy >= 0 && sy < height) && (sx >= 0 && sx < width))
+        return data[sy * width +sx];
+    else
+        return RGBColor(0, 0, 0);
+}
+
+RGBColor*
+RasterScreen::at(int x, int y)
+{
+    int sy, sx;
+    switch (rot) {
+    case ROT0: sx = x; sy = y; break;
+    case ROT90: sx = width - y - 1; sy = x; break;
+    case ROT180: sx = x; sy = height - y -1; break;
+    case ROT270: sx = width - y - 1; sy = height - x -1; break;
+    }
+
+    if ((sy >= 0 && sy < height) && (sx >= 0 && sx < width))
+        return &data[sy * width + sx];
+    else
+        return &empty;
+}
+void
+RasterScreen::clear(void)
+{
+    std::fill(data.begin(), data.end(), 0x00);
+}
