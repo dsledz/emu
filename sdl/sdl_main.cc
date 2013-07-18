@@ -118,3 +118,4 @@ extern "C" int main(int argc, char **argv)
 
 FORCE_UNDEFINED_SYMBOL(galaga);
 FORCE_UNDEFINED_SYMBOL(gb);
+FORCE_UNDEFINED_SYMBOL(nes);
