@@ -37,57 +37,57 @@ Registers::Registers(void): _AF({}), _BC({}), _DE({}), _HL({}), _SP({}), _PC({})
 {
 }
 
-#define EQ(a, b) \
-    if (a.w != b.w) return false;
-
 bool Registers::operator == (const Registers &rhs) const
 {
+#define EQ(a, b) \
+    if (a.d != b.d) return false;
     EQ(_AF, rhs._AF);
     EQ(_BC, rhs._BC);
     EQ(_DE, rhs._DE);
     EQ(_HL, rhs._HL);
     EQ(_SP, rhs._SP);
     EQ(_PC, rhs._PC);
+#undef EQ
     return true;
 }
 
-void Registers::set(Register r, word_t arg)
+void Registers::set(Register r, uint16_t arg)
 {
     switch (r) {
     case Register::A: _AF.b.h = arg; break;
-    case Register::F: _AF.b.l.v = arg; break;
+    case Register::F: _AF.b.l = arg; break;
     case Register::B: _BC.b.h = arg; break;
     case Register::C: _BC.b.l = arg; break;
     case Register::D: _DE.b.h = arg; break;
     case Register::E: _DE.b.l = arg; break;
     case Register::H: _HL.b.h = arg; break;
     case Register::L: _HL.b.l = arg; break;
-    case Register::SP: _SP.w = arg; break;
-    case Register::PC: _PC.w = arg; break;
-    case Register::AF: _AF.w = arg; break;
-    case Register::BC: _BC.w = arg; break;
-    case Register::DE: _DE.w = arg; break;
-    case Register::HL: _HL.w = arg; break;
+    case Register::SP: _SP.d = arg; break;
+    case Register::PC: _PC.d = arg; break;
+    case Register::AF: _AF.d = arg; break;
+    case Register::BC: _BC.d = arg; break;
+    case Register::DE: _DE.d = arg; break;
+    case Register::HL: _HL.d = arg; break;
     }
 }
 
-word_t Registers::get(Register r)
+uint16_t Registers::get(Register r)
 {
     switch (r) {
     case Register::A: return _AF.b.h; break;
-    case Register::F: return _AF.b.l.v; break;
+    case Register::F: return _AF.b.l; break;
     case Register::B: return _BC.b.h; break;
     case Register::C: return _BC.b.l; break;
     case Register::D: return _DE.b.h; break;
     case Register::E: return _DE.b.l; break;
     case Register::H: return _HL.b.h; break;
     case Register::L: return _HL.b.l; break;
-    case Register::SP: return _SP.w; break;
-    case Register::PC: return _PC.w; break;
-    case Register::AF: return _AF.w; break;
-    case Register::BC: return _BC.w; break;
-    case Register::DE: return _DE.w; break;
-    case Register::HL: return _HL.w; break;
+    case Register::SP: return _SP.d; break;
+    case Register::PC: return _PC.d; break;
+    case Register::AF: return _AF.d; break;
+    case Register::BC: return _BC.d; break;
+    case Register::DE: return _DE.d; break;
+    case Register::HL: return _HL.d; break;
     }
     throw CpuFault();
 }
@@ -201,7 +201,7 @@ void LR35902Cpu::store(Register reg, byte_t value)
 
 void LR35902Cpu::_add(byte_t &dest, byte_t arg)
 {
-    word_t result = dest + arg;
+    uint16_t result = dest + arg;
 
     _set_hflag(dest, arg, result);
     _set_cflag(dest, arg, result);
@@ -213,7 +213,7 @@ void LR35902Cpu::_add(byte_t &dest, byte_t arg)
 
 void LR35902Cpu::_inc(byte_t &dest)
 {
-    word_t result = dest + 1;
+    uint16_t result = dest + 1;
 
     _set_hflag(dest, 1, result);
     _set_zflag(result);
@@ -233,7 +233,7 @@ void LR35902Cpu::_inci(addr_t addr)
 
 void LR35902Cpu::_adc(byte_t &dest, byte_t arg)
 {
-    word_t result = dest + arg + _flags.C;
+    uint16_t result = dest + arg + _flags.C;
 
     _set_hflag(dest, arg, result);
     _set_cflag(dest, arg, result);
@@ -245,7 +245,7 @@ void LR35902Cpu::_adc(byte_t &dest, byte_t arg)
 
 void LR35902Cpu::_sub(byte_t &dest, byte_t arg)
 {
-    word_t result = dest - arg;
+    uint16_t result = dest - arg;
 
     _set_hflag(dest, arg, result);
     _set_cflag(dest, arg, result);
@@ -531,7 +531,7 @@ void LR35902Cpu::_jr(bool jump, byte_t arg)
     }
 }
 
-void LR35902Cpu::_jp(bool jump, word_t arg)
+void LR35902Cpu::_jp(bool jump, uint16_t arg)
 {
     if (jump) {
         _rPC = arg;
@@ -539,7 +539,7 @@ void LR35902Cpu::_jp(bool jump, word_t arg)
     }
 }
 
-void LR35902Cpu::_call(bool jump, word_t addr)
+void LR35902Cpu::_call(bool jump, uint16_t addr)
 {
     if (jump) {
         _push(_rPCh, _rPCl);
@@ -581,9 +581,9 @@ void LR35902Cpu::_stop()
     _state = State::Stopped;
 }
 
-void LR35902Cpu::_addw(word_t &wdest, word_t arg)
+void LR35902Cpu::_addw(uint16_t &wdest, uint16_t arg)
 {
-    word_t result = wdest + arg;
+    uint16_t result = wdest + arg;
 
     _flags.C = (result < arg) ? true : false;
     _flags.H = ((result & 0xfff) < (arg & 0xfff)) ? true : false;
@@ -594,8 +594,8 @@ void LR35902Cpu::_addw(word_t &wdest, word_t arg)
 
 void LR35902Cpu::_addsp(byte_t arg)
 {
-    word_t &wdest = _rSP;
-    word_t result = wdest + arg;
+    uint16_t &wdest = _rSP;
+    uint16_t result = wdest + arg;
 
     _set_cflag(_rSP, arg, result);
     _set_hflag(_rSP, arg, result);
@@ -607,8 +607,8 @@ void LR35902Cpu::_addsp(byte_t arg)
 
 void LR35902Cpu::_ldhlsp(byte_t arg)
 {
-    word_t &wdest = _rHL;
-    word_t result = _rSP + arg;
+    uint16_t &wdest = _rHL;
+    uint16_t result = _rSP + arg;
 
     _set_cflag(_rSP, arg, result);
     _set_hflag(_rSP, arg, result);
@@ -618,28 +618,28 @@ void LR35902Cpu::_ldhlsp(byte_t arg)
     wdest = result;
 }
 
-void LR35902Cpu::_incw(word_t &wdest)
+void LR35902Cpu::_incw(uint16_t &wdest)
 {
-    word_t result = wdest + 1;
+    uint16_t result = wdest + 1;
 
     wdest = result;
 }
 
-void LR35902Cpu::_subw(word_t &wdest, word_t arg)
+void LR35902Cpu::_subw(uint16_t &wdest, uint16_t arg)
 {
-    word_t result = wdest - arg;
+    uint16_t result = wdest - arg;
 
     wdest = result;
 }
 
-void LR35902Cpu::_decw(word_t &wdest)
+void LR35902Cpu::_decw(uint16_t &wdest)
 {
-    word_t result = wdest - 1;
+    uint16_t result = wdest - 1;
 
     wdest = result;
 }
 
-void LR35902Cpu::_ldw(word_t &wdest, word_t arg)
+void LR35902Cpu::_ldw(uint16_t &wdest, uint16_t arg)
 {
     wdest = arg;
 }
@@ -649,7 +649,7 @@ void LR35902Cpu::_ldi(addr_t addr, byte_t arg)
     _write(addr, arg);
 }
 
-void LR35902Cpu::_ldwi(addr_t addr, word_t arg)
+void LR35902Cpu::_ldwi(addr_t addr, uint16_t arg)
 {
     _write(addr, arg & 0xff);
     _write(addr+1, arg >> 8);
@@ -683,8 +683,8 @@ void LR35902Cpu::_scf(void)
 void LR35902Cpu::_daa(void)
 {
     byte_t &dest = _rA;
-    word_t arg = 0;
-    word_t result = dest;
+    uint16_t arg = 0;
+    uint16_t result = dest;
 
     if (!_flags.N) {
         if (_flags.H || (dest & 0x0f) > 9) arg += 0x06;

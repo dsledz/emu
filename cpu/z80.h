@@ -62,58 +62,58 @@ public:
                     byte_t Z:1;   /**< zero flag */
                     byte_t S:1;   /**< sign flag */
                 } f;
-                byte_t v;
-            } l;
+                byte_t l;
+            };
             byte_t h;
         } b;
-        word_t w;
+        uint16_t d;
     } _AF;
-    Word _BC;
-    Word _DE;
-    Word _HL;
-    Word _IX;
-    Word _IY;
-    Word _SP;
-    Word _PC;
+    reg16_t _BC;
+    reg16_t _DE;
+    reg16_t _HL;
+    reg16_t _IX;
+    reg16_t _IY;
+    reg16_t _SP;
+    reg16_t _PC;
 
     byte_t _I;
     byte_t _R;
 
-    Word _sAF;
-    Word _sBC;
-    Word _sDE;
-    Word _sHL;
+    reg16_t _sAF;
+    reg16_t _sBC;
+    reg16_t _sDE;
+    reg16_t _sHL;
 };
 
-#define _rAF    _R._AF.w
+#define _rAF    _R._AF.d
 #define _rA     _R._AF.b.h
-#define _rF     _R._AF.b.l.v
-#define _flags  _R._AF.b.l.f
-#define _rBC   _R._BC.w
+#define _rF     _R._AF.b.l
+#define _flags  _R._AF.b.f
+#define _rBC   _R._BC.d
 #define _rB    _R._BC.b.h
 #define _rC    _R._BC.b.l
-#define _rDE   _R._DE.w
+#define _rDE   _R._DE.d
 #define _rD    _R._DE.b.h
 #define _rE    _R._DE.b.l
-#define _rHL   _R._HL.w
+#define _rHL   _R._HL.d
 #define _rH    _R._HL.b.h
 #define _rL    _R._HL.b.l
-#define _rSP   _R._SP.w
+#define _rSP   _R._SP.d
 #define _rSPh  _R._SP.b.h
 #define _rSPl  _R._SP.b.l
-#define _rPC   _R._PC.w
+#define _rPC   _R._PC.d
 #define _rPCh  _R._PC.b.h
 #define _rPCl  _R._PC.b.l
-#define _rIX   _R._IX.w
+#define _rIX   _R._IX.d
 #define _rIXh  _R._IX.b.h
 #define _rIXl  _R._IX.b.l
-#define _rIY   _R._IY.w
+#define _rIY   _R._IY.d
 #define _rIYh  _R._IY.b.h
 #define _rIYl  _R._IY.b.l
-#define _rsAF  _R._sAF.w
-#define _rsBC  _R._sBC.w
-#define _rsDE  _R._sDE.w
-#define _rsHL  _R._sHL.w
+#define _rsAF  _R._sAF.d
+#define _rsBC  _R._sBC.d
+#define _rsDE  _R._sDE.d
+#define _rsHL  _R._sHL.d
 #define _rI    _R._I
 #define _rR    _R._R
 
@@ -155,8 +155,8 @@ private:
         byte_t opcode;
         byte_t d8;
         byte_t i8;
-        word_t d16;
-        word_t i16;
+        uint16_t d16;
+        uint16_t i16;
 
         std::string name;
     };
@@ -221,7 +221,7 @@ private:
     }
 
     /* decode accessors */
-    inline word_t _d16(void) {
+    inline uint16_t _d16(void) {
         _op.d16 = pc_read() | (pc_read() << 8);
         return _op.d16;
     }
@@ -233,11 +233,11 @@ private:
         _op.d8 = pc_read();
         return _op.d8;
     }
-    inline word_t _dIX(void) {
+    inline uint16_t _dIX(void) {
         _op.d8 = pc_read();
         return _rIX + _op.d8;
     }
-    inline word_t _dIY(void) {
+    inline uint16_t _dIY(void) {
         _op.d8 = pc_read();
         return _rIY + _op.d8;
     }
@@ -253,7 +253,7 @@ private:
         _op.i8 = bus_read(addr);
         return _op.i8;
     }
-    inline word_t _i16(void) {
+    inline uint16_t _i16(void) {
         _op.d16 = pc_read() | (pc_read() << 8);
         _op.i16 = bus_read(_op.d16) | (bus_read(_op.d16 + 1) << 8);
         return _op.i16;
@@ -261,16 +261,16 @@ private:
 
 private:
 
-    inline void _set_hflag(word_t orig, word_t arg, word_t result) {
+    inline void _set_hflag(uint16_t orig, uint16_t arg, uint16_t result) {
         _flags.H = bit_isset(orig ^ arg ^ result, 4);
     }
-    inline void _set_cflag(word_t orig, word_t arg, word_t result) {
+    inline void _set_cflag(uint16_t orig, uint16_t arg, uint16_t result) {
         _flags.C = bit_isset(orig ^ arg ^ result, 8);
     }
-    inline void _set_zflag(word_t result) {
+    inline void _set_zflag(uint16_t result) {
         _flags.Z = (result & 0xff) == 0;
     }
-    inline void _set_zsflag(word_t result) {
+    inline void _set_zsflag(uint16_t result) {
         _flags.Z = (result & 0xff) == 0;
         _flags.V = bit_isset(result, 8);
         _flags.S = bit_isset(result, 7);
@@ -289,27 +289,27 @@ private:
 
     /* Addition */
     void _add(byte_t &orig, byte_t value);
-    void _add16(word_t &worig, word_t value);
+    void _add16(uint16_t &worig, uint16_t value);
     void _adc(byte_t &orig, byte_t value);
-    void _adc16(word_t &worig, word_t value);
+    void _adc16(uint16_t &worig, uint16_t value);
     void _inc(byte_t &orig);
     void _inci(addr_t addr);
-    void _inc16(word_t &worig);
+    void _inc16(uint16_t &worig);
 
     /* Subtraction */
     void _sub(byte_t &orig, byte_t value);
-    void _sub16(word_t &worig, word_t value);
+    void _sub16(uint16_t &worig, uint16_t value);
     void _sbc(byte_t &orig, byte_t value);
-    void _sbc16(word_t &worig, word_t value);
+    void _sbc16(uint16_t &worig, uint16_t value);
     void _dec(byte_t &orig);
     void _deci(addr_t addr);
-    void _dec16(word_t &worig);
+    void _dec16(uint16_t &worig);
 
     /* Load */
     void _ld(byte_t &orig, byte_t value);
-    void _ld16(word_t &worig, word_t value);
+    void _ld16(uint16_t &worig, uint16_t value);
     void _ldmem(addr_t addr, byte_t value);
-    void _ld16i(addr_t addr, word_t value);
+    void _ld16i(addr_t addr, uint16_t value);
 
     /* Bitwise ops */
     void _and(byte_t &orig, byte_t value);
@@ -345,7 +345,7 @@ private:
     void _scf(void);
 
     /* Special */
-    void _ex(word_t &lhs, word_t &rhs);
+    void _ex(uint16_t &lhs, uint16_t &rhs);
     void _exi(addr_t addr, byte_t &rh, byte_t &rl);
     void _exx(void);
     void _push(byte_t high, byte_t low);
@@ -365,10 +365,10 @@ private:
     /* Special Control */
 
     /* Control */
-    void _call(bool jump, word_t value);
+    void _call(bool jump, uint16_t value);
     void _djnz(byte_t value);
     void _halt(void);
-    void _jp(bool jump, word_t value);
+    void _jp(bool jump, uint16_t value);
     void _jr(bool jump, byte_t value);
     void _ret(bool jump);
     void _retn(void);

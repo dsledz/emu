@@ -166,11 +166,11 @@ M6502Cpu::dispatch(void)
         op_interrupt(0xFFFE);
         return _icycles;
     }
-    _op_pc = _rPC.w;
+    _op_pc = _rPC.d;
     byte_t op = pc_read(); /* pc_read */
 
     switch (op) {
-        OPCODE(0x00, "BRK", _rF.B = 1; _rPC.w++; op_interrupt(0xFFFE));
+        OPCODE(0x00, "BRK", _rF.B = 1; _rPC.d++; op_interrupt(0xFFFE));
         OPCODE(0x01, "ORA X,ind", XInd(); op_ora());
         OPCODE(0x05, "ORA zpg", Zpg(); op_ora());
         OPCODE(0x06, "ASL zpg", Zpg(); op_asl(););
@@ -187,7 +187,7 @@ M6502Cpu::dispatch(void)
         OPCODE(0x19, "ORA abs,Y", Abs(_rY); op_ora());
         OPCODE(0x1D, "ORA abs,X", Abs(_rX); op_ora());
         OPCODE(0x1E, "ASL abs,X", Abs(_rX); op_asl());
-        OPCODE(0x20, "JSR", Abs(); _rPC.w--; push(_rPC.b.h); push(_rPC.b.l); op_jmp());
+        OPCODE(0x20, "JSR", Abs(); _rPC.d--; push(_rPC.b.h); push(_rPC.b.l); op_jmp());
         OPCODE(0x21, "AND X,ind", XInd(); op_and());
         OPCODE(0x24, "BIT zpg", Zpg(); op_bit());
         OPCODE(0x25, "AND zpg", Zpg(); op_and());
@@ -224,7 +224,7 @@ M6502Cpu::dispatch(void)
         OPCODE(0x59, "EOR abs,Y", Abs(_rY); op_eor());
         OPCODE(0x5D, "EOR abs,X", Abs(_rX); op_eor());
         OPCODE(0x5E, "LSR abs,X", Abs(_rX); op_lsr());
-        OPCODE(0x60, "RTS", _rPC.b.l=pop(); _rPC.b.h=pop(); _rPC.w++);
+        OPCODE(0x60, "RTS", _rPC.b.l=pop(); _rPC.b.h=pop(); _rPC.d++);
         OPCODE(0x61, "ADC X,ind", XInd(); op_adc());
         OPCODE(0x65, "ADC zpg", Zpg(); op_adc());
         OPCODE(0x66, "ROR zpg", Zpg(); op_ror());

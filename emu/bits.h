@@ -47,19 +47,32 @@
  *       |___/|_|
  */
 typedef unsigned char byte_t;
-typedef unsigned short word_t;
 typedef unsigned short addr_t; /* XXX: Allow different address types. */
 typedef std::vector<byte_t> bvec;
-struct Bytes {
-    byte_t l;
-    byte_t h;
-};
-union Word {
-    Word(void) = default;
-    Word(word_t w): w(w) { }
+typedef unsigned char reg8_t;
 
-    Bytes b;
-    word_t w;
+union reg16_t {
+    reg16_t(void) = default;
+    reg16_t(uint16_t d): d(d) { }
+    reg16_t(reg8_t h, reg8_t l): b(h, l) { }
+
+    struct Bits {
+        Bits(void) = default;
+        Bits(reg8_t h, reg8_t l): l(l), h(h) { }
+        reg8_t l;
+        reg8_t h;
+    } b;
+    uint16_t d;
+};
+union reg32_t {
+    reg32_t(void) = default;
+    reg32_t(uint32_t d): d(d) { }
+
+    struct Bits {
+        reg16_t l;
+        reg16_t h;
+    } b;
+    uint16_t d;
 };
 
 /*  ____  _ _      ___
@@ -95,18 +108,18 @@ static inline void bit_setmask(byte_t &arg, byte_t mask, byte_t val)
 }
 #if 0
 template<typename T>
-static inline bool bit_isset(word_t arg, T bit)
+static inline bool bit_isset(uint16_t arg, T bit)
 {
     auto n = static_cast<typename std::underlying_type<T>::type>(bit);
     return (arg & (1 << n));
 }
 
-static inline bool bit_isset(word_t arg, unsigned n)
+static inline bool bit_isset(uint16_t arg, unsigned n)
 {
     return (arg & (1 << n));
 }
 
-static inline bool bit_isset(word_t arg, int n)
+static inline bool bit_isset(uint16_t arg, int n)
 {
     return (arg & (1 << n));
 }

@@ -206,7 +206,7 @@ Z80Cpu::load_rom(Rom *rom, addr_t offset)
 void
 Z80Cpu::_add(byte_t &dest, byte_t arg)
 {
-    word_t result = dest + arg;
+    uint16_t result = dest + arg;
 
     _flags.S = bit_isset(result, 7);
     _flags.Z = (result & 0xff) == 0;
@@ -223,7 +223,7 @@ Z80Cpu::_add(byte_t &dest, byte_t arg)
 void
 Z80Cpu::_inc(byte_t &dest)
 {
-    word_t result = dest + 1;
+    uint16_t result = dest + 1;
 
     _flags.S = bit_isset(result, 7);
     _flags.Z = (result & 0xff) == 0;
@@ -249,7 +249,7 @@ Z80Cpu::_inci(addr_t addr)
 void
 Z80Cpu::_adc(byte_t &dest, byte_t arg)
 {
-    word_t result = dest + arg + _flags.C;
+    uint16_t result = dest + arg + _flags.C;
 
     _flags.S = bit_isset(result, 7);
     _flags.Z = (result & 0xff) == 0;
@@ -266,7 +266,7 @@ Z80Cpu::_adc(byte_t &dest, byte_t arg)
 void
 Z80Cpu::_sub(byte_t &dest, byte_t arg)
 {
-    word_t result = dest - arg;
+    uint16_t result = dest - arg;
 
     _flags.S = bit_isset(result, 7);
     _flags.Z = (result & 0xff) == 0;
@@ -283,7 +283,7 @@ Z80Cpu::_sub(byte_t &dest, byte_t arg)
 void
 Z80Cpu::_dec(byte_t &dest)
 {
-    word_t result = dest - 1;
+    uint16_t result = dest - 1;
 
     _flags.S = bit_isset(result, 7);
     _flags.Z = (result & 0xff) == 0;
@@ -309,7 +309,7 @@ Z80Cpu::_deci(addr_t addr)
 void
 Z80Cpu::_sbc(byte_t &dest, byte_t arg)
 {
-    word_t result = dest - arg - _flags.C;
+    uint16_t result = dest - arg - _flags.C;
 
     _flags.S = bit_isset(result, 7);
     _flags.Z = (result & 0xff) == 0;
@@ -336,7 +336,7 @@ Z80Cpu::_neg(byte_t &dest)
 void
 Z80Cpu::_cp(byte_t dest, byte_t arg)
 {
-    word_t result = dest - arg;
+    uint16_t result = dest - arg;
     _flags.S = bit_isset(result, 7);
     _flags.Z = (result & 0xff) == 0;
     _flags.Y = bit_isset(arg, 5);
@@ -352,7 +352,7 @@ Z80Cpu::_cpi(void)
 {
     byte_t dest = _rA;
     byte_t arg = bus_read(_rHL);
-    word_t result = dest - arg;
+    uint16_t result = dest - arg;
     _rHL++;
     _rBC--;
 
@@ -380,7 +380,7 @@ Z80Cpu::_cpd(void)
 {
     byte_t dest = _rA;
     byte_t arg = bus_read(_rHL);
-    word_t result = dest - arg;
+    uint16_t result = dest - arg;
     _rHL--;
     _rBC--;
 
@@ -725,7 +725,7 @@ Z80Cpu::_jr(bool jump, byte_t arg)
 }
 
 void
-Z80Cpu::_jp(bool jump, word_t arg)
+Z80Cpu::_jp(bool jump, uint16_t arg)
 {
     if (jump) {
         _rPC = arg;
@@ -734,7 +734,7 @@ Z80Cpu::_jp(bool jump, word_t arg)
 }
 
 void
-Z80Cpu::_call(bool jump, word_t addr)
+Z80Cpu::_call(bool jump, uint16_t addr)
 {
     if (jump) {
         _push(_rPCh, _rPCl);
@@ -797,7 +797,7 @@ Z80Cpu::_ei(void)
  *       |_|                               |_|
  */
 void
-Z80Cpu::_ex(word_t &lhs, word_t &rhs)
+Z80Cpu::_ex(uint16_t &lhs, uint16_t &rhs)
 {
     lhs ^= rhs;
     rhs ^= lhs;
@@ -894,7 +894,7 @@ Z80Cpu::_halt()
 }
 
 void
-Z80Cpu::_add16(word_t &wdest, word_t arg)
+Z80Cpu::_add16(uint16_t &wdest, uint16_t arg)
 {
     uint32_t result = wdest + arg;
 
@@ -908,7 +908,7 @@ Z80Cpu::_add16(word_t &wdest, word_t arg)
 }
 
 void
-Z80Cpu::_adc16(word_t &wdest, word_t arg)
+Z80Cpu::_adc16(uint16_t &wdest, uint16_t arg)
 {
     uint32_t result = wdest + arg + _flags.C;
 
@@ -925,7 +925,7 @@ Z80Cpu::_adc16(word_t &wdest, word_t arg)
 }
 
 void
-Z80Cpu::_sbc16(word_t &wdest, word_t arg)
+Z80Cpu::_sbc16(uint16_t &wdest, uint16_t arg)
 {
     uint32_t result = wdest - arg - _flags.C;
 
@@ -942,31 +942,31 @@ Z80Cpu::_sbc16(word_t &wdest, word_t arg)
 }
 
 void
-Z80Cpu::_inc16(word_t &wdest)
+Z80Cpu::_inc16(uint16_t &wdest)
 {
-    word_t result = wdest + 1;
+    uint16_t result = wdest + 1;
 
     wdest = result;
 }
 
 void
-Z80Cpu::_sub16(word_t &wdest, word_t arg)
+Z80Cpu::_sub16(uint16_t &wdest, uint16_t arg)
 {
-    word_t result = wdest - arg;
+    uint16_t result = wdest - arg;
 
     wdest = result;
 }
 
 void
-Z80Cpu::_dec16(word_t &wdest)
+Z80Cpu::_dec16(uint16_t &wdest)
 {
-    word_t result = wdest - 1;
+    uint16_t result = wdest - 1;
 
     wdest = result;
 }
 
 void
-Z80Cpu::_ld16(word_t &wdest, word_t arg)
+Z80Cpu::_ld16(uint16_t &wdest, uint16_t arg)
 {
     wdest = arg;
 }
@@ -978,7 +978,7 @@ Z80Cpu::_ldmem(addr_t addr, byte_t arg)
 }
 
 void
-Z80Cpu::_ld16i(addr_t addr, word_t arg)
+Z80Cpu::_ld16i(addr_t addr, uint16_t arg)
 {
     bus_write(addr, arg & 0xff);
     bus_write(addr+1, arg >> 8);
@@ -1023,8 +1023,8 @@ void
 Z80Cpu::_daa(void)
 {
     byte_t &dest = _rA;
-    word_t arg = 0;
-    word_t result = dest;
+    uint16_t arg = 0;
+    uint16_t result = dest;
 
     if (!_flags.N) {
         if (_flags.H || (dest & 0x0f) > 9) arg += 0x06;
@@ -1162,7 +1162,7 @@ Z80Cpu::dispatch(void)
 
     byte_t &vrH = _rH;
     byte_t &vrL = _rL;
-    word_t &vrHL = _rHL;
+    uint16_t &vrHL = _rHL;
     addr_t vAddr = _rHL;
 
 #if 0

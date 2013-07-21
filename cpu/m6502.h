@@ -44,7 +44,7 @@ public:
 
 private:
     /* Internal state */
-    Word   _rPC;
+    reg16_t  _rPC;
     byte_t _rA;
     byte_t _rX;
     byte_t _rY;
@@ -69,7 +69,7 @@ private:
     struct operand {
         bool mem;
         union {
-            Word   ad;
+            reg16_t  ad;
             byte_t value;
         };
     } _arg;
@@ -105,12 +105,12 @@ private:
     }
 
     byte_t pc_read(void) {
-        return bus_read(_rPC.w++);
+        return bus_read(_rPC.d++);
     };
 
     byte_t fetch(void) {
         if (_arg.mem) {
-            return bus_read(_arg.ad.w);
+            return bus_read(_arg.ad.d);
         } else {
             return _arg.value;
         }
@@ -118,7 +118,7 @@ private:
 
     void store(byte_t value) {
         if (_arg.mem) {
-            bus_write(_arg.ad.w, value);
+            bus_write(_arg.ad.d, value);
         } else {
             /* XXX: Assume accumulator */
             _rA = value;
@@ -131,28 +131,28 @@ private:
         _arg.ad.b.l = pc_read();
         _arg.ad.b.h = pc_read();
         /* Handle page overflow */
-        _arg.ad.w += value;
+        _arg.ad.d += value;
         if (_arg.ad.b.l < value)
             _add_icycles(1);
     }
     inline void Ind() {
         _arg.mem = true;
-        Word addr;
+        reg16_t addr;
         addr.b.l = pc_read();
         addr.b.h = pc_read();
-        _arg.ad.b.l = bus_read(addr.w);
+        _arg.ad.b.l = bus_read(addr.d);
         addr.b.l++;
-        _arg.ad.b.h = bus_read(addr.w);
+        _arg.ad.b.h = bus_read(addr.d);
     }
     inline void IndY(void) {
         _arg.mem = true;
-        Word addr;
+        reg16_t addr;
         addr.b.l = pc_read();
         addr.b.h = 0;
-        _arg.ad.b.l = bus_read(addr.w);
+        _arg.ad.b.l = bus_read(addr.d);
         addr.b.l++;
-        _arg.ad.b.h = bus_read(addr.w);
-        _arg.ad.w += _rY;
+        _arg.ad.b.h = bus_read(addr.d);
+        _arg.ad.d += _rY;
         if (_arg.ad.b.l < _rY)
             _add_icycles(1);
     }
@@ -184,7 +184,7 @@ private:
     inline void Rel(void) {
         char tmp = pc_read();
         _arg.ad = _rPC;
-        _arg.ad.w += tmp;
+        _arg.ad.d += tmp;
     }
 
     inline void set_sz(byte_t result) {
@@ -263,7 +263,7 @@ private:
             /* XXX: Decimal */
             throw CpuFault();
         }
-        word_t result = _rA + arg + _rF.C;
+        uint32_t result = _rA + arg + _rF.C;
         set_sz(result);
         _rF.C = bit_isset(result, 8);
         _rF.V = bit_isset((_rA^arg^0x80) & (arg^result), 7);
@@ -275,7 +275,7 @@ private:
             /* XXX: Decimal */
             throw CpuFault();
         }
-        word_t result = _rA - arg - !_rF.C;
+        uint32_t result = _rA - arg - !_rF.C;
         set_sz(result);
         _rF.C = result < 0x100;
         _rF.V = bit_isset((result^_rA) & (_rA^arg), 7);

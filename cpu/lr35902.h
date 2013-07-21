@@ -53,8 +53,8 @@ enum class Register {
 struct Registers {
     Registers(void);
 
-    void set(Register reg, word_t value);
-    word_t get(Register reg);
+    void set(Register reg, uint16_t value);
+    uint16_t get(Register reg);
 
     bool operator ==(const Registers &rhs) const;
     union {
@@ -67,40 +67,40 @@ struct Registers {
                     byte_t N:1;
                     byte_t Z:1;
                 } f;
-                byte_t v;
-            } l;
+                byte_t l;
+            };
             byte_t h;
         } b;
-        word_t w;
+        uint16_t d;
     } _AF;
-    Word _BC;
-    Word _DE;
-    Word _HL;
-    Word _SP;
-    Word _PC;
+    reg16_t _BC;
+    reg16_t _DE;
+    reg16_t _HL;
+    reg16_t _SP;
+    reg16_t _PC;
 };
 
 /*
  * XXX: This are defined before the class so we can access
  * them in the inline functions.
  */
-#define _rAF    _R._AF.w
+#define _rAF    _R._AF.d
 #define _rA     _R._AF.b.h
-#define _rF     _R._AF.b.l.v
-#define _flags  _R._AF.b.l.f
-#define _rBC   _R._BC.w
+#define _rF     _R._AF.b.l
+#define _flags  _R._AF.b.f
+#define _rBC   _R._BC.d
 #define _rB    _R._BC.b.h
 #define _rC    _R._BC.b.l
-#define _rDE   _R._DE.w
+#define _rDE   _R._DE.d
 #define _rD    _R._DE.b.h
 #define _rE    _R._DE.b.l
-#define _rHL   _R._HL.w
+#define _rHL   _R._HL.d
 #define _rH    _R._HL.b.h
 #define _rL    _R._HL.b.l
-#define _rSP   _R._SP.w
+#define _rSP   _R._SP.d
 #define _rSPh  _R._SP.b.h
 #define _rSPl  _R._SP.b.l
-#define _rPC   _R._PC.w
+#define _rPC   _R._PC.d
 #define _rPCh  _R._PC.b.h
 #define _rPCl  _R._PC.b.l
 
@@ -135,24 +135,24 @@ protected:
     /* Addition */
     void _add(byte_t &orig, byte_t value);
     void _adc(byte_t &orig, byte_t value);
-    void _addw(word_t &worig, word_t value);
+    void _addw(uint16_t &worig, uint16_t value);
     void _inc(byte_t &orig);
     void _inci(addr_t addr);
-    void _incw(word_t &worig);
+    void _incw(uint16_t &worig);
 
     /* Subtraction */
     void _sub(byte_t &orig, byte_t value);
-    void _subw(word_t &worig, word_t value);
+    void _subw(uint16_t &worig, uint16_t value);
     void _sbc(byte_t &orig, byte_t value);
     void _dec(byte_t &orig);
     void _deci(addr_t addr);
-    void _decw(word_t &worig);
+    void _decw(uint16_t &worig);
 
     /* Load */
     void _ld(byte_t &orig, byte_t value);
-    void _ldw(word_t &worig, word_t value);
+    void _ldw(uint16_t &worig, uint16_t value);
     void _ldi(addr_t addr, byte_t value);
-    void _ldwi(addr_t addr, word_t value);
+    void _ldwi(addr_t addr, uint16_t value);
 
     /* Bitwise ops */
     void _and(byte_t &orig, byte_t value);
@@ -186,13 +186,13 @@ protected:
     void _halt(void);
     void _rst(byte_t value);
     void _jr(bool jump, byte_t value);
-    void _jp(bool jump, word_t value);
-    void _call(bool jump, word_t value);
+    void _jp(bool jump, uint16_t value);
+    void _call(bool jump, uint16_t value);
     void _ret(bool jump);
     void _push(byte_t high, byte_t low);
     void _pop(byte_t &high, byte_t &low);
-    void _push(word_t arg);
-    void _pop(word_t &arg);
+    void _push(uint16_t arg);
+    void _pop(uint16_t &arg);
 
     /* Store/Load */
     inline void _write(addr_t addr, byte_t value) {
@@ -202,13 +202,13 @@ protected:
         return _bus->read(addr);
     }
 
-    inline void _set_hflag(word_t orig, word_t arg, word_t result) {
+    inline void _set_hflag(uint16_t orig, uint16_t arg, uint16_t result) {
         _flags.H = bit_isset(orig ^ arg ^ result, 4);
     }
-    inline void _set_cflag(word_t orig, word_t arg, word_t result) {
+    inline void _set_cflag(uint16_t orig, uint16_t arg, uint16_t result) {
         _flags.C = bit_isset(orig ^ arg ^ result, 8);
     }
-    inline void _set_zflag(word_t result) {
+    inline void _set_zflag(uint16_t result) {
         _flags.Z = (result & 0xff) == 0;
     }
     inline void _set_nflag(bool neg) {
@@ -216,8 +216,8 @@ protected:
     }
 
     /* decode accessors */
-    inline word_t _d16(void) {
-        word_t tmp = _read(_rPC) | (_read(_rPC+1) << 8);
+    inline uint16_t _d16(void) {
+        uint16_t tmp = _read(_rPC) | (_read(_rPC+1) << 8);
         _rPC+=2;
         return tmp;
     }
@@ -231,8 +231,8 @@ protected:
         _rPC++;
         return tmp;
     }
-    inline word_t _a8(void) {
-        word_t tmp = _read(_rPC) + 0xff00;
+    inline uint16_t _a8(void) {
+        uint16_t tmp = _read(_rPC) + 0xff00;
         _rPC++;
         return tmp;
     }
