@@ -43,68 +43,67 @@ GBGraphics::GBGraphics(Gameboy *gameboy, unsigned hertz):
     _global_pal[2] = RGBColor(0x66, 0x66, 0x66);
     _global_pal[3] = RGBColor(0x00, 0x00, 0x00);
 
-    _bus->add_port(0x8000, 0xE000, IOPort(
-        [&] (addr_t addr) -> byte_t {
-            addr -= 0x8000;
-            return _vram.read8(addr);
+    _bus->add(0x8000, 0xE000,
+        [&] (offset_t offset) -> byte_t {
+            return _vram.read8(offset);
         },
-        [&] (addr_t addr, byte_t value) {
-            addr -= 0x8000;
-            if (addr < 0x1800) {
-                auto *o = &_objs[addr / 16];
+        [&] (offset_t offset, byte_t value) {
+            if (offset < 0x1800) {
+                auto *o = &_objs[offset / 16];
                 o->dirty = true;
             }
-            _vram.write8(addr, value);
-        }));
-    _bus->add_port(0xFE00, &_oam);
+            _vram.write8(offset, value);
+        });
+    _bus->add(0xFE00, 0xFF00, &_oam);
 
-    _bus->add_port(VideoReg::LCDC, IOPort(&_lcdc));
-    _bus->add_port(VideoReg::STAT, IOPort(&_stat));
-    _bus->add_port(VideoReg::SCY, IOPort(&_scy));
-    _bus->add_port(VideoReg::SCX, IOPort(&_scx));
-    _bus->add_port(VideoReg::LY, IOPort(&_ly));
-    _bus->add_port(GBReg::DMA, IOPort(DefaultRead(),
-        [&] (addr_t addr, byte_t arg) {
+    _bus->add(VideoReg::LCDC, &_lcdc);
+    _bus->add(VideoReg::STAT, &_stat);
+    _bus->add(VideoReg::SCY, &_scy);
+    _bus->add(VideoReg::SCX, &_scx);
+    _bus->add(VideoReg::LY, &_ly);
+    _bus->add(GBReg::DMA, 0xFFFF,
+        AddressBus16::DefaultRead(),
+        [&] (offset_t offset, byte_t arg) {
             addr_t src_addr = (addr_t)arg << 8;
             for (unsigned i = 0; i < 160; i++)
                 _oam.write8(i, _bus->read(src_addr + i));
-        }));
-    _bus->add_port(VideoReg::LYC, IOPort(&_lyc));
-    _bus->add_port(VideoReg::BGP, IOPort(
-        [&] (addr_t addr) -> byte_t {
+        });
+    _bus->add(VideoReg::LYC, &_lyc);
+    _bus->add(VideoReg::BGP, 0xFFFF,
+        [&] (offset_t offset) -> byte_t {
             return _bgp;
         },
-        [&] (addr_t addr, byte_t value) {
+        [&] (offset_t offset, byte_t value) {
             _bg_pal[0] = _global_pal[(value & 0x03)];
             _bg_pal[1] = _global_pal[(value & 0x0C) >> 2];
             _bg_pal[2] = _global_pal[(value & 0x30) >> 4];
             _bg_pal[3] = _global_pal[(value & 0xC0) >> 6];
             _bgp = value;
-        }));
-    _bus->add_port(VideoReg::OBP0, IOPort(
-        [&] (addr_t addr) -> byte_t {
+        });
+    _bus->add(VideoReg::OBP0, 0xFFFF,
+        [&] (offset_t offset) -> byte_t {
             return _obp0;
         },
-        [&] (addr_t addr, byte_t value) {
+        [&] (offset_t offset, byte_t value) {
             _obj0_pal[0] = trans;
             _obj0_pal[1] = _global_pal[(value & 0x0C) >> 2];
             _obj0_pal[2] = _global_pal[(value & 0x30) >> 4];
             _obj0_pal[3] = _global_pal[(value & 0xC0) >> 6];
             _obp0 = value;
-        }));
-    _bus->add_port(VideoReg::OBP1, IOPort(
-        [&] (addr_t addr) -> byte_t {
+        });
+    _bus->add(VideoReg::OBP1, 0xFFFF,
+        [&] (offset_t offset) -> byte_t {
             return _obp1;
         },
-        [&] (addr_t addr, byte_t value) {
+        [&] (offset_t offset, byte_t value) {
             _obj1_pal[0] = trans;
             _obj1_pal[1] = _global_pal[(value & 0x0C) >> 2];
             _obj1_pal[2] = _global_pal[(value & 0x30) >> 4];
             _obj1_pal[3] = _global_pal[(value & 0xC0) >> 6];
             _obp1 = value;
-        }));
-    _bus->add_port(VideoReg::WY, IOPort(&_wy));
-    _bus->add_port(VideoReg::WX, IOPort(&_wx));
+        });
+    _bus->add(VideoReg::WY, &_wy);
+    _bus->add(VideoReg::WX, &_wx);
 
     _tilemap0 = [&](int idx) -> GfxObject<8,8> *{
         char c = _vram.read8(VMem::TileMap0 + idx);

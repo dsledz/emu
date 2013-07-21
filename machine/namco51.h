@@ -40,12 +40,12 @@ public:
     Namco51(Machine *machine);
     virtual ~Namco51(void);
 
-    virtual void write8(addr_t addr, byte_t value);
-    virtual byte_t read8(addr_t addr);
-    virtual addr_t size(void) {
+    virtual void write8(offset_t offset, byte_t value);
+    virtual byte_t read8(offset_t offset);
+    virtual size_t size(void) {
         return 0x4;
     }
-    virtual byte_t *direct(addr_t addr) {
+    virtual byte_t *direct(offset_t offset) {
         return &_in[0];
     }
 

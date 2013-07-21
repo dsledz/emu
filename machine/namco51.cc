@@ -83,7 +83,7 @@ Namco51::~Namco51(void)
 }
 
 void
-Namco51::write8(addr_t addr, byte_t value)
+Namco51::write8(offset_t offset, byte_t value)
 {
     if (_coinage_bytes) {
         DEBUG("51xx coinage write");
@@ -118,7 +118,7 @@ Namco51::write8(addr_t addr, byte_t value)
 }
 
 byte_t
-Namco51::read8(addr_t addr)
+Namco51::read8(offset_t offset)
 {
     if (_mode == Mode::Switch) {
         switch (_read_count++ % 3) {

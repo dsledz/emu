@@ -37,25 +37,25 @@ Ram::~Ram(void)
 }
 
 void
-Ram::write8(addr_t addr, byte_t arg)
+Ram::write8(offset_t offset, byte_t arg)
 {
-    _ram[addr] = arg;
+    _ram[offset] = arg;
 }
 
 byte_t
-Ram::read8(addr_t addr)
+Ram::read8(offset_t offset)
 {
-    return _ram[addr];
+    return _ram[offset];
 }
 
-addr_t
+size_t
 Ram::size(void)
 {
     return _ram.size();
 }
 
 byte_t *
-Ram::direct(addr_t addr)
+Ram::direct(offset_t offset)
 {
-    return &_ram[addr];
+    return &_ram[offset];
 }

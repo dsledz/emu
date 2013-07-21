@@ -48,6 +48,7 @@
  */
 typedef unsigned char byte_t;
 typedef unsigned short addr_t; /* XXX: Allow different address types. */
+typedef unsigned offset_t;
 typedef std::vector<byte_t> bvec;
 typedef unsigned char reg8_t;
 

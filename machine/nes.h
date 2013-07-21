@@ -71,19 +71,19 @@ public:
     NESMapper(Machine *machine, const iNesHeader *header, bvec &rom);
     virtual ~NESMapper(void);
 
-    virtual byte_t prg_read(addr_t addr) = 0;
+    virtual byte_t prg_read(offset_t offset) = 0;
 
-    virtual void prg_write(addr_t addr, byte_t value) { }
+    virtual void prg_write(offset_t offset, byte_t value) { }
 
-    virtual byte_t chr_read(addr_t addr) = 0;
+    virtual byte_t chr_read(offset_t offset) = 0;
 
-    virtual void chr_write(addr_t addr, byte_t value) { }
+    virtual void chr_write(offset_t offset, byte_t value) { }
 
-    virtual byte_t sram_read(addr_t addr) {
+    virtual byte_t sram_read(offset_t offset) {
         throw CpuFault();
     }
 
-    virtual void sram_write(addr_t addr, byte_t value) { }
+    virtual void sram_write(offset_t offset, byte_t value) { }
 
     /* Convert a prg bank into an offset */
     size_t prg_bank(int bank);
@@ -119,14 +119,14 @@ private:
     void cache_bg_tile(int x, int y);
     int get_obj_pixel(int obj, int x, int y);
 
-    byte_t ppu_read(addr_t addr);
-    void ppu_write(addr_t addr, byte_t value);
+    byte_t ppu_read(offset_t offset);
+    void ppu_write(offset_t offset, byte_t value);
 
-    byte_t ppu_nt_read(addr_t addr);
-    void ppu_nt_write(addr_t addr, byte_t value);
+    byte_t ppu_nt_read(offset_t offset);
+    void ppu_nt_write(offset_t offset, byte_t value);
 
-    byte_t ppu_pal_read(addr_t addr);
-    void ppu_pal_write(addr_t addr, byte_t value);
+    byte_t ppu_pal_read(offset_t offset);
+    void ppu_pal_write(offset_t offset, byte_t value);
 
     RGBColor _color_table[64];
     RGBColor _palette[32];
@@ -195,9 +195,9 @@ private:
 
     InputPort *_mirror;
 
-    AddressBus<16> *_cpu_bus;
-    AddressBus<16> *_ppu_bus;
-    AddressBus<8> *_sprite_bus;
+    AddressBus16 *_cpu_bus;
+    AddressBus16 *_ppu_bus;
+    AddressBus8 *_sprite_bus;
 };
 
 typedef std::unique_ptr<NESMapper> mapper_ptr;
@@ -209,15 +209,15 @@ public:
     NES(const std::string &rom);
     virtual ~NES(void);
 
-    AddressBus<16> *cpu_bus(void) {
+    AddressBus16 *cpu_bus(void) {
         return &_cpu_bus;
     }
 
-    AddressBus<16> *ppu_bus(void) {
+    AddressBus16 *ppu_bus(void) {
         return &_ppu_bus;
     }
 
-    AddressBus<8> *sprite_bus(void) {
+    AddressBus8 *sprite_bus(void) {
         return &_sprite_bus;
     }
 
@@ -231,9 +231,9 @@ private:
     mapper_ptr _mapper;
     Ram _ram;
 
-    AddressBus<16> _cpu_bus;
-    AddressBus<16> _ppu_bus;
-    AddressBus<8> _sprite_bus;
+    AddressBus16 _cpu_bus;
+    AddressBus16 _ppu_bus;
+    AddressBus8 _sprite_bus;
 
     int _joy1_shift;
     int _joy2_shift;

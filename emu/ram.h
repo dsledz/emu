@@ -35,10 +35,10 @@ public:
     Ram(size_t size);
     ~Ram(void);
 
-    virtual void write8(addr_t addr, byte_t arg);
-    virtual byte_t read8(addr_t addr);
-    virtual addr_t size(void);
-    virtual byte_t *direct(addr_t addr);
+    virtual void write8(offset_t offset, byte_t arg);
+    virtual byte_t read8(offset_t offset);
+    virtual size_t size(void);
+    virtual byte_t *direct(offset_t offset);
 
 private:
     bvec _ram;

@@ -48,7 +48,7 @@ class Z80Test: public ::testing::Test {
             cpu(&machine, "cpu", 1000000, &bus),
             ram(0x2000), pc(0)
         {
-            bus.add_port(0x0000, &ram);
+            bus.add(0x0000, 0xE000, &ram);
         }
 
         Machine machine;
@@ -90,14 +90,14 @@ public:
     {
         cpu.load_rom(&rom, 0x000);
 
-        bus.add_port(0xFFFF, IOPort(
+        bus.add(AddressBus16::IOPort(0xFFFF, 0xFFFF,
             [&](addr_t addr) {
                 return _data;
             },
             [&](addr_t addr, byte_t value) {
                 _data = value;
             }));
-        bus.add_port(0xFFFE, IOPort(
+        bus.add(AddressBus16::IOPort(0xFFFE, 0xFFFF,
             [&](addr_t addr) {
                 return _req;
             },
@@ -110,7 +110,7 @@ public:
                 _req_last = _req;
                 _req = value;
             }));
-        bus.add_port(0xFFFD, IOPort(
+        bus.add(AddressBus16::IOPort(0xFFFD, 0xFFFF,
             [&](addr_t addr) {
                 return _ack;
             },

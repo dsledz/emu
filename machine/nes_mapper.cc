@@ -85,16 +85,16 @@ public:
     {
     }
 
-    byte_t prg_read(addr_t addr)
+    byte_t prg_read(offset_t offset)
     {
         if (_header.rom_banks == 1)
-            addr &= 0x3fff;
-        return _rom[_prg_offset + addr];
+            offset &= 0x3fff;
+        return _rom[_prg_offset + offset];
     }
 
-    byte_t chr_read(addr_t addr)
+    byte_t chr_read(offset_t offset)
     {
-        return _rom[_chr_offset + addr];
+        return _rom[_chr_offset + offset];
     }
 
 private:
@@ -117,29 +117,29 @@ public:
     {
     }
 
-    byte_t prg_read(addr_t addr)
+    byte_t prg_read(offset_t offset)
     {
-        if (addr & 0x4000) {
-            addr -= 0x4000;
-            return _rom[_prg_offset1 + addr];
+        if (offset & 0x4000) {
+            offset &= 0x3FFF;
+            return _rom[_prg_offset1 + offset];
         } else
-            return _rom[_prg_offset0 + addr];
+            return _rom[_prg_offset0 + offset];
     }
 
-    void prg_write(addr_t addr, byte_t value)
+    void prg_write(offset_t offset, byte_t value)
     {
         int prg  = (value & 0x0f);
         _prg_offset0 = prg_bank(prg);
     }
 
-    void chr_write(addr_t addr, byte_t value)
+    void chr_write(offset_t offset, byte_t value)
     {
-        _chr[addr] = value;
+        _chr[offset] = value;
     }
 
-    byte_t chr_read(addr_t addr)
+    byte_t chr_read(offset_t offset)
     {
-        return _chr[addr];
+        return _chr[offset];
     }
 
 private:
@@ -162,12 +162,12 @@ public:
     {
     }
 
-    byte_t prg_read(addr_t addr)
+    byte_t prg_read(offset_t offset)
     {
-        return _rom[_prg_offset + addr];
+        return _rom[_prg_offset + offset];
     }
 
-    void prg_write(addr_t addr, byte_t value)
+    void prg_write(offset_t offset, byte_t value)
     {
         int chr = (value & 0x03);
         int prg  = (value & 0x30) >> 3;
@@ -175,9 +175,9 @@ public:
         _chr_offset = chr_bank(chr);
     }
 
-    byte_t chr_read(addr_t addr)
+    byte_t chr_read(offset_t offset)
     {
-        return _rom[_chr_offset + addr];
+        return _rom[_chr_offset + offset];
     }
 
 private:
@@ -207,17 +207,17 @@ public:
     {
     }
 
-    byte_t prg_read(addr_t addr)
+    byte_t prg_read(offset_t offset)
     {
-        if ((addr & 0x4000) == 0)
-            return _rom[_prg_offset0 + addr];
+        if ((offset & 0x4000) == 0)
+            return _rom[_prg_offset0 + offset];
         else {
-            addr &= 0x3fff;
-            return _rom[_prg_offset1 + addr];
+            offset &= 0x3fff;
+            return _rom[_prg_offset1 + offset];
         }
     }
 
-    void prg_write(addr_t addr, byte_t value)
+    void prg_write(offset_t offset, byte_t value)
     {
         if (value & 0x80) {
             _shift_count = 0;
@@ -226,21 +226,21 @@ public:
             _shift = bit_isset(value, 0) << _shift_count | _shift;
             _shift_count++;
         } else {
-            switch (addr >> 13) {
-            case 4: {
+            switch (offset >> 13) {
+            case 0: {
                 _machine->input_port("MIRRORING")->value =
                     NameTableMirroring(_shift & 0x03);
                 /* XXX: Remaing bits */
                 break;
             }
-            case 5: {
+            case 1: {
                 int bank = (_shift & 0x1f);
                 _chr_offset = chr_bank(bank);
                 break;
             }
-            case 6:
+            case 2:
                 break;
-            case 7: {
+            case 3: {
                 int bank = (_shift & 0x0f);
                 _prg_offset0 = prg_bank(bank);
                 break;
@@ -252,26 +252,24 @@ public:
 
     }
 
-    void chr_write(addr_t addr, byte_t value)
+    void chr_write(offset_t offset, byte_t value)
     {
-        _ram[addr] = value;
+        _ram[offset] = value;
     }
 
-    byte_t chr_read(addr_t addr)
+    byte_t chr_read(offset_t offset)
     {
-        return _ram[addr];
+        return _ram[offset];
     }
 
-    byte_t sram_read(addr_t addr)
+    byte_t sram_read(offset_t offset)
     {
-        addr -= 0x6000;
-        return _battery_ram[addr];
+        return _battery_ram[offset];
     }
 
-    void sram_write(addr_t addr, byte_t value)
+    void sram_write(offset_t offset, byte_t value)
     {
-        addr -= 0x6000;
-        _battery_ram[addr] = value;
+        _battery_ram[offset] = value;
     }
 
 private:

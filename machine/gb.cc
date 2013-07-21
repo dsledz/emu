@@ -75,17 +75,18 @@ public:
             bit_set(_keys, GBKey::Select, LineState::Clear == state); });
         input->add_input(InputKey::Start1, [&](LineState state) {
             bit_set(_keys, GBKey::Start, LineState::Clear == state); });
-        gameboy->bus()->add_port(GBReg::KEYS, IOPort(
-            [&](addr_t addr) -> byte_t {
+
+        gameboy->bus()->add(GBReg::KEYS, 0xFFFF,
+            [&](offset_t offset) -> byte_t {
                 return _value;
             },
-            [&](addr_t addr, byte_t arg) {
+            [&](offset_t offset, byte_t arg) {
                 if (bit_isset(arg, ButtonsSelect))
                     arg = (arg & 0xF0) | ((_keys & 0xF0) >> 4);
                 if (bit_isset(arg, ArrowSelect))
                     arg = (arg & 0xF0) | (_keys & 0x0F);
                 _value = arg;
-            }));
+            });
     }
     virtual ~GBJoypad(void) {
     }
@@ -99,8 +100,8 @@ class GBSerialIO: public Device {
 public:
     GBSerialIO(Gameboy *gameboy):
         Device(gameboy, "serial") {
-        gameboy->bus()->add_port(GBReg::SB, IOPort());
-        gameboy->bus()->add_port(GBReg::SC, IOPort());
+        gameboy->bus()->add(GBReg::SB, 0xFFFF);
+        gameboy->bus()->add(GBReg::SC, 0xFFFF);
     }
     virtual ~GBSerialIO(void) {
     }
@@ -113,10 +114,10 @@ public:
         Device(gameboy, "timer"),
         _hertz(hertz)
     {
-        gameboy->bus()->add_port(GBReg::TIMA, IOPort(&_tima));
-        gameboy->bus()->add_port(GBReg::TMA, IOPort(&_tma));
-        gameboy->bus()->add_port(GBReg::TAC, IOPort(&_tac));
-        gameboy->bus()->add_port(GBReg::DIV, IOPort(&_div));
+        gameboy->bus()->add(GBReg::TIMA, &_tima);
+        gameboy->bus()->add(GBReg::TMA, &_tma);
+        gameboy->bus()->add(GBReg::TAC, &_tac);
+        gameboy->bus()->add(GBReg::DIV, &_div);
     }
     virtual ~GBTimer(void) {
     }
@@ -204,18 +205,18 @@ Gameboy::Gameboy(const std::string &rom_name):
 
     _ram = std::unique_ptr<Ram>(new Ram(0x2000));
     /* XXX: Ram isn't mirrored */
-    _bus->add_port(0xC000, _ram.get());
+    _bus->add(0xC000, 0xE000, _ram.get());
 
     _hiram = std::unique_ptr<Ram>(new Ram(0x80));
-    _bus->add_port(0xFF80, _hiram.get());
+    _bus->add(0xFF80, 0xFF80, _hiram.get());
 
     /* XXX: Some games need this. */
-    _bus->add_port(0xFF7F, IOPort());
+    _bus->add(0xFF7F, 0xFFFF);
 
     // XXX: Sound
-    _bus->add_port(0xFF10, 0xFFF0, IOPort());
-    _bus->add_port(0xFF20, 0xFFF0, IOPort());
-    _bus->add_port(0xFF30, 0xFFF0, IOPort());
+    _bus->add(0xFF10, 0xFFF0);
+    _bus->add(0xFF20, 0xFFF0);
+    _bus->add(0xFF30, 0xFFF0);
 }
 
 Gameboy::~Gameboy(void)

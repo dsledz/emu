@@ -139,65 +139,67 @@ void
 Galaga::init_bus(void)
 {
     /* Dipswitches */
-    _bus->add_port(0x6800, 0xFFF8, IOPort(
-        [&](addr_t addr) -> byte_t {
-            addr -= 0x6800;
+    _bus->add(0x6800, 0xFFF8,
+        [&](offset_t offset) -> byte_t {
             byte_t dswa = input_port("DSWA")->value;
             byte_t dswb = input_port("DSWB")->value;
-            return (bit_isset(dswa, addr) << 1) | bit_isset(dswb, addr);
-        }, DefaultWrite()));
+            return (bit_isset(dswa, offset) << 1) | bit_isset(dswb, offset);
+        },
+        AddressBus16::DefaultWrite());
     /* XXX: Sound */
-    _bus->add_port(0x6808, 0xFFF8, IOPort());
-    _bus->add_port(0x6810, 0xFFF0, IOPort());
-    _bus->add_port(0x6820, IOPort(DefaultRead(),
-        [&] (addr_t addr, byte_t value) {
-            _main_irq = bit_isset(value, 0);
-            if (!_main_irq)
-                set_line("maincpu", InputLine::INT0, LineState::Clear);
-        }));
-    _bus->add_port(0x6821, IOPort(DefaultRead(),
-        [&] (addr_t addr, byte_t value) {
-            _sub_irq = bit_isset(value, 0);
-            if (!_sub_irq)
-                set_line("subcpu", InputLine::INT0, LineState::Clear);
-        }));
-    _bus->add_port(0x6822, IOPort(DefaultRead(),
-        [&] (addr_t addr, byte_t value) {
-            _snd_nmi = !bit_isset(value, 0);
-        }));
-    _bus->add_port(0x6823, IOPort(DefaultRead(),
-        [&] (addr_t addr, byte_t value) {
-            set_line("subcpu", InputLine::RESET, LineState::Pulse);
-            set_line("sndcpu", InputLine::RESET, LineState::Pulse);
-        }));
+    _bus->add(0x6808, 0xFFF8);
+    _bus->add(0x6810, 0xFFF0);
+    _bus->add(0x6820, 0xFFF8,
+        AddressBus16::DefaultRead(),
+        [&] (offset_t offset, byte_t value) {
+            switch (offset) {
+            case 0:
+                _main_irq = bit_isset(value, 0);
+                if (!_main_irq)
+                    set_line("maincpu", InputLine::INT0, LineState::Clear);
+                break;
+            case 1:
+                _sub_irq = bit_isset(value, 0);
+                if (!_sub_irq)
+                    set_line("subcpu", InputLine::INT0, LineState::Clear);
+                break;
+            case 2:
+                _snd_nmi = !bit_isset(value, 0);
+                break;
+            case 3:
+                set_line("subcpu", InputLine::RESET, LineState::Pulse);
+                set_line("sndcpu", InputLine::RESET, LineState::Pulse);
+                break;
+            }
+        });
     /* XXX: Watchdog */
-    _bus->add_port(0x6830, IOPort());
+    _bus->add(0x6830, 0xFFFF);
 
     /* Namco06 (and children) */
-    _bus->add_port(0x7000, 0xFF00, IOPort(
-        [&](addr_t addr) -> byte_t {
-            return _namco06->read_child(addr);
+    _bus->add(0x7000, 0xFF00,
+        [&](offset_t offset) -> byte_t {
+            return _namco06->read_child(offset);
         },
-        [&](addr_t addr, byte_t value) {
-            _namco06->write_child(addr, value);
-        }));
-    _bus->add_port(0x7100, 0xFFFF, IOPort(
-        [&](addr_t addr) -> byte_t {
-            return _namco06->read_control(addr);
+        [&](offset_t offset, byte_t value) {
+            _namco06->write_child(offset, value);
+        });
+    _bus->add(0x7100, 0xFFFF,
+        [&](offset_t offset) -> byte_t {
+            return _namco06->read_control(offset);
         },
-        [&](addr_t addr, byte_t value) {
-            _namco06->write_control(addr, value);
-        }));
+        [&](offset_t offset, byte_t value) {
+            _namco06->write_control(offset, value);
+        });
 
 
     /* Various ram */
-    _bus->add_port(0x8000, &vram);
-    _bus->add_port(0x8800, &ram1);
-    _bus->add_port(0x9000, &ram2);
-    _bus->add_port(0x9800, &ram3);
+    _bus->add(0x8000, 0xF800, &vram);
+    _bus->add(0x8800, 0xF800, &ram1);
+    _bus->add(0x9000, 0xF800, &ram2);
+    _bus->add(0x9800, 0xF800, &ram3);
 
     /* XXX: Star control */
-    _bus->add_port(0xa000, 0xFFF8, IOPort());
+    _bus->add(0xA000, 0xFFF8);
 }
 
 void

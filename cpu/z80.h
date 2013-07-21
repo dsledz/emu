@@ -198,7 +198,7 @@ private:
     bvec _rom;
 
     /* Address Bus */
-    AddressBus<16> *_bus;
+    AddressBus16 *_bus;
 
     inline void _add_icycles(unsigned cycles) {
         _icycles += Cycles(cycles);

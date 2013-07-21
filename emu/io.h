@@ -32,128 +32,131 @@
 
 namespace EMU {
 
-typedef std::function<byte_t (addr_t)> io_read;
-typedef std::function<void (addr_t, byte_t)> io_write;
-struct DefaultRead {
-    byte_t operator ()(addr_t addr) { return 0; }
-};
-struct DefaultWrite {
-    void operator ()(addr_t addr, byte_t arg) { return; }
-};
-
 class IODevice
 {
 public:
     virtual ~IODevice(void) { }
-    virtual void write8(addr_t addr, byte_t arg) = 0;
-    virtual byte_t read8(addr_t addr) = 0;
-    virtual addr_t size(void) = 0;
-    virtual byte_t *direct(addr_t addr) = 0;
+    virtual void write8(offset_t offset, byte_t arg) = 0;
+    virtual byte_t read8(offset_t offset) = 0;
+    virtual size_t size(void) = 0;
+    virtual byte_t *direct(offset_t offset) = 0;
 };
 
 /**
- * I/O Port. Used to communicate to devices.
+ * Data bus.
+ *
+ * Supports a configurable address and data size.
+ * It's recommended to use on of the pre-defined typedefs
+ *
  */
-struct IOPort
+template<typename addr_type, int addr_width, typename data_type>
+class DataBus
 {
-    IOPort(void):
-        read(DefaultRead()),
-        write(DefaultWrite()) { }
-    IOPort(io_read read, io_write write):
-        read(read),
-        write(write) { }
-    IOPort(byte_t *val):
-        read([=](addr_t addr) throw() -> byte_t { return *val; }),
-        write([=](addr_t addr, byte_t v) { *val = v; }) { }
-    io_read read;
-    io_write write;
+public:
+    typedef std::function<data_type (offset_t)> read_fn;
+    typedef std::function<void (offset_t, data_type)> write_fn;
+    struct DefaultRead {
+        data_type operator ()(offset_t offset) { return 0; }
+    };
+    struct DefaultWrite {
+        void operator ()(offset_t offset, data_type data) { return; }
+    };
+    struct DataRead {
+        DataRead(data_type *d): data(d) { }
+        data_type operator ()(offset_t offset) { return *data; }
+        data_type *data;
+    };
+    struct DataWrite {
+        DataWrite(data_type *d): data(d) { }
+        void operator ()(offset_t offset, data_type d) { *data = d; }
+        data_type *data;
+    };
+
+    struct IOPort
+    {
+        IOPort(addr_type base, addr_type mask):
+            base(base), mask(mask),
+            read(DefaultRead()), write(DefaultWrite()) { }
+        IOPort(addr_type base, addr_type mask, data_type *data):
+            base(base), mask(mask),
+            read(DataRead(data)), write(DataWrite(data)) { }
+        IOPort(addr_type base, addr_type mask, read_fn read, write_fn write):
+            base(base), mask(mask), read(read), write(write) { }
+
+        addr_type base;
+        addr_type mask;
+        read_fn read;
+        write_fn write;
+    };
+
+    DataBus(void): _map()
+    {
+    }
+    ~DataBus(void)
+    {
+    }
+
+    void write(addr_type addr, data_type data)
+    {
+        auto it = _map.find(addr);
+        addr -= it.base;
+        it.write(addr, data);
+    }
+    data_type read(addr_type addr)
+    {
+        auto it = _map.find(addr);
+        addr -= it.base;
+        return it.read(addr);
+    }
+
+    void add(const IOPort &dev)
+    {
+        _map.add(dev.base, dev.mask, dev);
+    }
+
+    void add(addr_type base, addr_type mask)
+    {
+        IOPort port(base, mask);
+        add(port);
+    }
+
+    void add(addr_type base, addr_type mask, read_fn read, write_fn write)
+    {
+        IOPort port(base, mask, read, write);
+        add(port);
+    }
+
+    /* XXX: IODevice is hardcoded with an 16 bit addr, 8 bit bus. */
+    void add(addr_type base, addr_type mask, IODevice *dev)
+    {
+        throw CpuFault();
+    }
+
+    void add(addr_type base, data_type *data)
+    {
+        IOPort port(base, 0xFFFF, data);
+        add(port);
+    }
+
+private:
+    RadixTree<IOPort, addr_type, addr_width> _map;
 };
 
-/**
- * Address Bus.
- * Devices are connected via an address bus by wiring various
- * IOPorts together.
- * XXX: Using a template seems like an abuse here.
- */
-template<int width=16>
-class AddressBus
-{
-    public:
-        AddressBus(void) { }
-        ~AddressBus(void) { }
-        AddressBus(const AddressBus &bus) = delete;
-
-        void write8(addr_t addr, byte_t arg) {
-            _map.find(addr).write(addr, arg);
-        }
-        byte_t read8(addr_t addr) {
-            return _map.find(addr).read(addr);
-        }
-        addr_t size(void) {
-            size_t s = (1 << width) - 1;
-            return s;
-        }
-
-        void write(addr_t addr, byte_t arg) {
-            _map.find(addr).write(addr, arg);
-        }
-        byte_t read(addr_t addr) {
-            return _map.find(addr).read(addr);
-        }
-
-        /**
-         * Add a single address port. Useful for registers.
-         */
-        void add_port(addr_t addr, const IOPort &port) {
-            _map.add(addr, port);
-        }
-
-        /**
-         * Add a masked port. Useful for ranges. Mask must be
-         * continous. (IE 0xf0f0 is NOT a valid mask.)
-         */
-        void add_port(addr_t addr, addr_t mask, const IOPort &port) {
-            _map.add(addr, mask, port);
-        }
-
-        void add_port(addr_t base, bvec *data) {
-            IOPort port(
-                [=](addr_t addr) -> byte_t {
-                    assert(addr >= base);
-                    addr -= base;
-                    return (*data)[addr];
-                },
-                [=](addr_t addr, byte_t v) {
-                    assert(addr >= base);
-                    addr -= base;
-                    (*data)[addr] = v;
-                });
-            addr_t mask = 0xFFFF & ~(data->size() - 1);
-            _map.add(base, mask, port);
-        }
-
-        void add_port(addr_t base, IODevice *dev) {
-            IOPort port(
-                [=](addr_t addr) -> byte_t {
-                assert(addr >= base);
-                addr -= base;
-                return dev->read8(addr);
-                },
-                [=](addr_t addr, byte_t v) {
-                assert(addr >= base);
-                addr -= base;
-                dev->write8(addr, v);
-                });
-            addr_t mask = 0xFFFF & ~(dev->size() - 1);
-            _map.add(base, mask, port);
-        }
-
-
-    private:
-        RadixTree<IOPort, width> _map;
-};
-
-typedef AddressBus<16> AddressBus16;
+typedef DataBus<addr_t, 16, byte_t> AddressBus16;
+typedef DataBus<addr_t, 8, byte_t>  AddressBus8;
 typedef std::unique_ptr<AddressBus16> AddressBus16_ptr;
+
+template<> inline void
+DataBus<addr_t, 16, byte_t>::add(addr_t base, addr_t mask, IODevice *dev)
+{
+    IOPort port(base, mask,
+        [=](offset_t offset) -> byte_t {
+            return dev->read8(offset);
+        },
+        [=](offset_t offset, byte_t data) {
+            dev->write8(offset, data);
+        });
+    add(port);
+}
 
 };

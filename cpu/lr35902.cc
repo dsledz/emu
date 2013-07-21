@@ -103,7 +103,7 @@ LR35902Cpu::LR35902Cpu(Machine *machine, const std::string &name,
     _reset_line(LineState::Clear),
     _icycles(0)
 {
-    _bus->add_port(0xFF0F, IOPort(&_IF));
+    _bus->add(0xFF0F, &_IF);
 
     _reset();
 }

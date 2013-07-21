@@ -46,7 +46,7 @@ class LR35902Test: public ::testing::Test {
             bus(),
             cpu(&machine, "test", 1000000, &bus),
             ram(0x2000), pc(0x100) {
-            bus.add_port(0x0000, &ram);
+            bus.add(0x0000, 0xE000, &ram);
         }
 
         Machine machine;

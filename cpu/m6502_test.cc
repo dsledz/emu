@@ -39,7 +39,7 @@ public:
         cpu(this, "cpu", 1000000, &bus),
         ram(0x2000)
     {
-        bus.add_port(0x0000, &ram);
+        bus.add(0x0000, 0xE000, &ram);
 
         /* Our PC starts at 0x0000, but don't want to put code in the zpg */
         ram.write8(0x0000, 0x4C);

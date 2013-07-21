@@ -36,50 +36,46 @@ GBMBC::GBMBC(Gameboy *gameboy):
     Device(gameboy, "mbc"),
     _rom_bank(1), _ram_bank(0)
 {
-    gameboy->bus()->add_port(0x0000, 0xE000, IOPort(
-        [&] (addr_t addr) -> byte_t {
-            return _rom[addr];
+    gameboy->bus()->add(0x0000, 0xE000,
+        [&] (offset_t offset) -> byte_t {
+            return _rom[offset];
         },
-        [&] (addr_t addr, byte_t value) {
+        [&] (offset_t offset, byte_t value) {
             return;
-        }));
-    gameboy->bus()->add_port(0x2000, 0xE000, IOPort(
-        [&] (addr_t addr) -> byte_t {
-            return _rom[addr];
+        });
+    gameboy->bus()->add(0x2000, 0xE000,
+        [&] (offset_t offset) -> byte_t {
+            return _rom[offset + 0x2000];
         },
-        [&] (addr_t addr, byte_t value) {
+        [&] (offset_t offset, byte_t value) {
             if (_type == MBC3RRB)
                 _rom_bank = value & 0x7f;
             else
                 _rom_bank = value & 0x1f;
             if (_rom_bank == 0 || (_rom_bank * 0x4000) > _rom_size)
                 _rom_bank = 1;
-        }));
-    gameboy->bus()->add_port(0x4000, 0xE000, IOPort(
-        [&] (addr_t addr) -> byte_t {
-            addr -= 0x4000;
-            return _rom[_rom_bank * 0x4000 + addr];
+        });
+    gameboy->bus()->add(0x4000, 0xE000,
+        [&] (offset_t offset) -> byte_t {
+            return _rom[_rom_bank * 0x4000 + offset];
         },
-        [&] (addr_t addr, byte_t value) {
+        [&] (offset_t offset, byte_t value) {
             _ram_bank = value & 0x03;
-        }));
-    gameboy->bus()->add_port(0x6000, 0xE000, IOPort(
-        [&] (addr_t addr) -> byte_t {
-            addr -= 0x4000;
-            return _rom[_rom_bank * 0x4000 + addr];
+        });
+    gameboy->bus()->add(0x6000, 0xE000,
+        [&] (offset_t offset) -> byte_t {
+            return _rom[_rom_bank * 0x4000 + offset + 0x2000];
         },
-        [&] (addr_t addr, byte_t value) {
+        [&] (offset_t offset, byte_t value) {
             return;
-        }));
-    gameboy->bus()->add_port(0xA000, 0xE000, IOPort(
-        [&] (addr_t addr) -> byte_t {
-            addr -= 0xA000;
-            return _ram[_ram_bank * 0x2000 + addr];
+        });
+    gameboy->bus()->add(0xA000, 0xE000,
+        [&] (offset_t offset) -> byte_t {
+            return _ram[_ram_bank * 0x2000 + offset];
         },
-        [&] (addr_t addr, byte_t value) {
-            addr -= 0xA000;
-            _ram[_ram_bank * 0x2000 + addr] = value;
-        }));
+        [&] (offset_t offset, byte_t value) {
+            _ram[_ram_bank * 0x2000 + offset] = value;
+        });
 }
 
 GBMBC::~GBMBC(void)

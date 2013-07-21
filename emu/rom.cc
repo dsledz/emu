@@ -53,27 +53,27 @@ Rom::~Rom(void)
 }
 
 void
-Rom::write8(addr_t addr, byte_t arg)
+Rom::write8(offset_t offset, byte_t arg)
 {
-    _rom[addr] = arg;
+    _rom[offset] = arg;
 }
 
 byte_t
-Rom::read8(addr_t addr)
+Rom::read8(offset_t offset)
 {
-    return _rom[addr];
+    return _rom[offset];
 }
 
-addr_t
+size_t
 Rom::size(void)
 {
     return _rom.size();
 }
 
 byte_t *
-Rom::direct(addr_t addr)
+Rom::direct(offset_t offset)
 {
-    return &_rom[addr];
+    return &_rom[offset];
 }
 
 RomSet::RomSet(const std::string &path)
