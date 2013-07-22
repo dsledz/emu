@@ -71,6 +71,19 @@ NESMapper::chr_bank(int bank)
         (CHR_BANK_SIZE * bank);
 }
 
+size_t
+NESMapper::prg_bank8k(int bank)
+{
+    return sizeof(_header) + (ROM_BANK_SIZE / 2) * bank;
+}
+
+size_t
+NESMapper::chr_bank1k(int bank)
+{
+    return sizeof(_header) + (ROM_BANK_SIZE * _header.rom_banks) +
+        (1024 * bank);
+}
+
 class NESMapperNone: public NESMapper
 {
 public:
@@ -285,10 +298,162 @@ private:
     bvec _battery_ram;
 };
 
+class NESMapperMMC3: public NESMapper
+{
+public:
+    NESMapperMMC3(Machine *machine, const iNesHeader *header, bvec &rom):
+        NESMapper(machine, header, rom),
+        _irq_counter(0),
+        _irq_reload(0),
+        _irq_enable(false)
+    {
+        _ram.resize(0x4000);
+        _battery_ram.resize(0x2000);
+
+        for (int i = 0; i < 8; i++)
+            _chr_offset[i] = chr_bank1k(i);
+
+        _prg_offset[0] = _prg_offset[2] =
+            prg_bank8k((_header.rom_banks - 1) * 2);
+        _prg_offset[1] = _prg_offset[3] =
+            prg_bank8k((_header.rom_banks - 1) * 2 + 1);
+    }
+
+    ~NESMapperMMC3(void)
+    {
+    }
+
+    void set_line(InputLine line, LineState state)
+    {
+        switch (line) {
+        case InputLine::INT0:
+            if (state == LineState::Pulse) {
+                if (_irq_counter == 0) {
+                    _irq_counter = _irq_reload;
+                } else if (--_irq_counter == 0 && _irq_enable) {
+                    _machine->set_line("cpu", InputLine::INT0,
+                        LineState::Assert);
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    }
+
+    byte_t prg_read(offset_t offset)
+    {
+        int bank = (offset & 0x6000) >> 13;
+        offset &= 0x1fff;
+        return _rom[_prg_offset[bank] + offset];
+    }
+
+    void prg_write(offset_t offset, byte_t value)
+    {
+        switch (offset) {
+        case 0x0000:
+            _command = value;
+            break;
+        case 0x0001: {
+            int bank = 0;
+            switch (_command & 0x07) {
+            case 0:
+                if (bit_isset(_command, 7))
+                    bank += 4;
+                _chr_offset[bank + 0] = chr_bank1k(value);
+                _chr_offset[bank + 1] = chr_bank1k(value+1);
+                break;
+            case 1:
+                if (bit_isset(_command, 7))
+                    bank += 4;
+                _chr_offset[bank + 2] = chr_bank1k(value);
+                _chr_offset[bank + 3] = chr_bank1k(value+1);
+                break;
+            case 2:
+            case 3:
+            case 4:
+            case 5:
+                bank = (_command & 0x07) + 2;
+                if (bit_isset(_command, 7))
+                    bank -= 4;
+                _chr_offset[bank] = chr_bank1k(value);
+                break;
+            case 6:
+                if (bit_isset(_command, 6))
+                    _prg_offset[2] = prg_bank8k(value);
+                else
+                    _prg_offset[0] = prg_bank8k(value);
+                break;
+            case 7:
+                _prg_offset[1] = prg_bank8k(value);
+                break;
+            }
+            break;
+        }
+        case 0x2000:
+            _machine->input_port("MIRRORING")->value = bit_isset(value, 0) ?
+                TwoScreenVMirroring : TwoScreenHMirroring;
+            break;
+        case 0x2001:
+            /* XXX: SRAM */
+            break;
+        case 0x4000:
+            _irq_reload = value;
+            break;
+        case 0x4001:
+            _irq_counter = 0;
+            break;
+        case 0x6000:
+            _irq_enable = false;
+            _machine->set_line("cpu", InputLine::INT0, LineState::Clear);
+            break;
+        case 0x6001:
+            _irq_enable = true;
+            break;
+        }
+    }
+
+    void chr_write(offset_t offset, byte_t value)
+    {
+        _ram[offset] = value;
+    }
+
+    byte_t chr_read(offset_t offset)
+    {
+        int bank = (offset & 0x1C00) >> 10;
+        offset &= 0x3ff;
+        return _rom[_chr_offset[bank] + offset];
+    }
+
+    byte_t sram_read(offset_t offset)
+    {
+        return _battery_ram[offset];
+    }
+
+    void sram_write(offset_t offset, byte_t value)
+    {
+        _battery_ram[offset] = value;
+    }
+
+private:
+
+    size_t _prg_offset[4];
+    size_t _chr_offset[8];
+
+    byte_t _command;
+
+    byte_t _irq_counter;
+    byte_t _irq_reload;
+    bool _irq_enable;
+
+    bvec _ram;
+    bvec _battery_ram;
+};
 enum class Mapper {
     None = 0,
     MMC1 = 1,
     UNROM = 2,
+    MMC3 = 4,
     RAMBO1 = 64,
     GNROM = 66,
 };
@@ -320,6 +485,9 @@ NESDriver::load_cartridge(NES *nes, const std::string &name)
         break;
     case Mapper::UNROM:
         mapper = mapper_ptr(new NESMapperUNROM(nes, &header, rom));
+        break;
+    case Mapper::MMC3:
+        mapper = mapper_ptr(new NESMapperMMC3(nes, &header, rom));
         break;
     case Mapper::GNROM:
     case Mapper::RAMBO1:

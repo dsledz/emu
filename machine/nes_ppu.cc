@@ -165,6 +165,8 @@ NESPPU::draw_sprite(RGBColor *pixel, int x, int y)
         const int flags = _sram[idx + 2];
         iy = y - iy;
         ix = x - ix;
+        if (sprite_size > 7)
+            obj &= ~0x01;
         /* Vertical mirror */
         if (bit_isset(flags, 7))
             iy = sprite_size - iy;
@@ -179,7 +181,7 @@ NESPPU::draw_sprite(RGBColor *pixel, int x, int y)
 
         const int pen = get_obj_pixel(obj, ix, iy);
         if (pen != 0) {
-            if (idx == _sram_addr /* XXX: && *pixel != _palette[0] */)
+            if (idx == _sram_addr && *pixel != _palette[0])
                 _status.sprite0_hit = 1;
             if (!bit_isset(flags, 5) || *pixel == _palette[0])
                 *pixel = _palette[0x10 + ((flags & 0x03) << 2) | pen];
@@ -206,6 +208,7 @@ NESPPU::step(void)
             _status.sprite0_hit = 0;
             _bgy = _vscroll;
             _vtable = _reg1.vtable;
+            _machine->set_line("mapper", InputLine::INT0, LineState::Pulse);
         } else if (_vpos > 21) {
             /* Reset the horizontal table */
             _bgx = _hscroll;
@@ -215,6 +218,7 @@ NESPPU::step(void)
                 _bgy -= 240;
                 _vtable = !_vtable;
             }
+            _machine->set_line("mapper", InputLine::INT0, LineState::Pulse);
         }
     } else if (_hpos == 65) {
         /* Calculate the available sprites */

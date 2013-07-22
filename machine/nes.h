@@ -87,9 +87,11 @@ public:
 
     /* Convert a prg bank into an offset */
     size_t prg_bank(int bank);
+    size_t prg_bank8k(int bank);
 
     /* Convert a chr bank into an offset */
     size_t chr_bank(int bank);
+    size_t chr_bank1k(int bank);
 
 protected:
 
