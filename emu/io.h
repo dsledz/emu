@@ -42,6 +42,63 @@ public:
     virtual byte_t *direct(offset_t offset) = 0;
 };
 
+template<class Val, typename addr_type>
+class MemoryMap
+{
+private:
+    struct Entry {
+        Entry(addr_type start, addr_type end, const Val &value):
+            start(start), end(end), value(value) { }
+
+        bool match(addr_type addr) {
+            return (start <= addr && addr <= end);
+        }
+
+        addr_type start;
+        addr_type end;
+        Val value;
+    };
+
+    typedef std::vector<Entry> entry_list;
+
+public:
+    MemoryMap(void)
+    {
+        _entries.resize(16);
+    }
+    ~MemoryMap(void)
+    {
+    }
+
+    void add(addr_type key, addr_type keymask, const Val &val)
+    {
+        Entry entry(key, key | ~keymask, val);
+
+        const int start = (entry.start & 0xF000) >> 12;
+        const int end = (entry.end & 0xF000) >> 12;
+        for (int i = start; i <= end; i++)
+            _entries[i].push_back(entry);
+    }
+
+    Val &find(addr_type key)
+    {
+        const int bucket = (key & 0xF000) >> 12;
+        entry_list &list = _entries[bucket];
+        for (auto it = list.begin(); it != list.end(); it++)
+            if (it->match(key))
+                return it->value;
+        throw EMU::BusError(key);
+    }
+
+    void add(addr_type key, const Val &val) {
+        add(key, 0xffff, val);
+    }
+
+private:
+
+    std::vector<entry_list> _entries;
+};
+
 /**
  * Data bus.
  *
@@ -139,7 +196,10 @@ public:
     }
 
 private:
-    RadixTree<IOPort, addr_type, addr_width> _map;
+    MemoryMap<IOPort, addr_type> _map;
+
+    /* XXX: The radix tree is slow */
+    // RadixTree<IOPort, addr_type, addr_width> _map;
 };
 
 typedef DataBus<addr_t, 16, byte_t> AddressBus16;
