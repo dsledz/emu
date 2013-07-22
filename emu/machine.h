@@ -110,6 +110,8 @@ public:
      * Run for a single time quantum.
      */
     void run(void);
+    virtual void execute(Time interval) {
+    }
 
     Time quantum(void) {
         return Time(Time(sec(1)) / _quantum);

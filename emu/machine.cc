@@ -103,6 +103,7 @@ Machine::run(void)
             }
         }
 
+        execute(interval);
         for_each(_devs.begin(), _devs.end(), [=](Device *dev) {
                  dev->execute(interval);
                  });

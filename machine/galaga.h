@@ -40,6 +40,8 @@ public:
     Galaga(const std::string &rom);
     virtual ~Galaga(void);
 
+    virtual void execute(Time interval);
+
 private:
     void init_bus(void);
     void init_switches(void);
@@ -60,6 +62,11 @@ private:
     Namco06_ptr _namco06;
 
     AddressBus16_ptr _bus;
+
+    /* Graphics simulation */
+    int _scanline;
+    Cycles _avail;
+    unsigned _hertz;
 
     /* Interrupt lines */
     bool _main_irq;

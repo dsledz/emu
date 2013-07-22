@@ -50,6 +50,14 @@ public:
         machine->set_render([&](RasterScreen *screen) {
             gfx.render(screen);
         });
+
+        machine->add_timer(Time(msec(1)),
+            [&]() {
+                SDL_Event event;
+                while (SDL_PollEvent(&event))
+                    on_event(&event);
+            },
+            Time(msec(1)));
     }
 
     void loop(void) {
@@ -58,9 +66,6 @@ public:
             on_event(&event);
 
         while (!stop) {
-            while (SDL_PollEvent(&event))
-                on_event(&event);
-
             machine->run();
         }
     }

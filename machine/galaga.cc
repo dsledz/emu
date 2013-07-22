@@ -69,6 +69,9 @@ Galaga::Galaga(const std::string &rom):
     ram1(0x0400),
     ram2(0x0400),
     ram3(0x0400),
+    _scanline(0),
+    _avail(Cycles(0)),
+    _hertz(18432000),
     _main_irq(false),
     _sub_irq(false),
     _snd_nmi(false)
@@ -90,13 +93,13 @@ Galaga::Galaga(const std::string &rom):
 
     RomSet romset(roms);
 
-    _main_cpu = Z80Cpu_ptr(new Z80Cpu(this, "maincpu", 18432000/6, _bus.get()));
+    _main_cpu = Z80Cpu_ptr(new Z80Cpu(this, "maincpu", _hertz/6, _bus.get()));
     _main_cpu->load_rom(romset.rom("maincpu"), 0x0000);
 
-    _sub_cpu = Z80Cpu_ptr(new Z80Cpu(this, "subcpu", 18432000/6, _bus.get()));
+    _sub_cpu = Z80Cpu_ptr(new Z80Cpu(this, "subcpu", _hertz/6, _bus.get()));
     _sub_cpu->load_rom(romset.rom("subcpu"), 0x0000);
 
-    _snd_cpu = Z80Cpu_ptr(new Z80Cpu(this, "sndcpu", 18432000/6, _bus.get()));
+    _snd_cpu = Z80Cpu_ptr(new Z80Cpu(this, "sndcpu", _hertz/6, _bus.get()));
     _snd_cpu->load_rom(romset.rom("sndcpu"), 0x0000);
 
     _namco06 = Namco06_ptr(new Namco06(this, _main_cpu.get()));
@@ -107,28 +110,6 @@ Galaga::Galaga(const std::string &rom):
     init_bus();
 
     init_gfx(&romset);
-
-    /* Initialize our timers */
-    _snd_timer = Timer_ptr(new Timer([&]() {
-        if (_snd_nmi)
-            set_line("sndcpu", InputLine::NMI, LineState::Pulse);
-    }, Time(usec(16501/2))));
-    add_timer(_snd_timer);
-
-    _vblank_timer = Timer_ptr(new Timer([&]() {
-        if (_main_irq)
-            set_line("maincpu", InputLine::INT0, LineState::Assert);
-        if (_sub_irq)
-            set_line("subcpu", InputLine::INT0, LineState::Assert);
-    }, Time(usec(16501))));
-    add_timer(_vblank_timer);
-
-    add_timer(Time(usec(16501)), [&]() {
-        draw_screen();
-        if (_render_cb)
-            _render_cb(_screen.get());
-        },
-        Time(usec(16501)));
 }
 
 Galaga::~Galaga(void)
@@ -200,6 +181,42 @@ Galaga::init_bus(void)
 
     /* XXX: Star control */
     _bus->add(0xA000, 0xFFF8);
+}
+
+void
+Galaga::execute(Time interval)
+{
+    _avail += interval.to_cycles(Cycles(_hertz/3));
+
+    /* Each scanline is 384 cycles */
+    static const Cycles _cycles_per_scanline(384);
+
+    while (_avail > _cycles_per_scanline) {
+        _scanline = (_scanline + 1) % 264;
+        _avail -= _cycles_per_scanline;
+        switch (_scanline) {
+        case 16:
+            draw_screen();
+            if (_render_cb)
+                _render_cb(_screen.get());
+            break;
+        case 64:
+            if (_snd_nmi)
+                set_line("sndcpu", InputLine::NMI, LineState::Pulse);
+            break;
+        case 196:
+            if (_snd_nmi)
+                set_line("sndcpu", InputLine::NMI, LineState::Pulse);
+            break;
+        case 240:
+            /* Vblank start */
+            if (_main_irq)
+                set_line("maincpu", InputLine::INT0, LineState::Assert);
+            if (_sub_irq)
+                set_line("subcpu", InputLine::INT0, LineState::Assert);
+            break;
+        }
+    }
 }
 
 void
