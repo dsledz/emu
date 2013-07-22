@@ -74,6 +74,9 @@ M6502Cpu::set_line(InputLine line, LineState state)
         /* XXX: We should treat this as a line */
         _reset();
         break;
+    case InputLine::INT0:
+        _irq_line = state;
+        break;
     case InputLine::NMI:
         _nmi_line = state;
         break;
