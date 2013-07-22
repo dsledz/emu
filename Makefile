@@ -2,7 +2,7 @@
 export
 
 CC= clang++
-DEBUG_FLAGS= -g -O2
+DEBUG_FLAGS= -g
 CPPFLAGS= -Wall -Werror \
 	  -std=c++11 -stdlib=libc++ \
 	  -DGTEST_USE_OWN_TR1_TUPLE=1 -I${GTEST_INCLUDE} \

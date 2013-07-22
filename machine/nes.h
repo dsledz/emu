@@ -83,7 +83,9 @@ public:
         throw CpuFault();
     }
 
-    virtual void sram_write(offset_t offset, byte_t value) { }
+    virtual void sram_write(offset_t offset, byte_t value) {
+        throw CpuFault();
+    }
 
     /* Convert a prg bank into an offset */
     size_t prg_bank(int bank);
@@ -107,18 +109,16 @@ public:
     virtual ~NESPPU(void);
 
     virtual void execute(Time interval);
-    byte_t read_ntable(int x, int y);
-    byte_t read_atable(int x, int y);
 
-    void draw_bg(RGBColor *pixel, int bgx, int bgy);
-    void draw_sprite(RGBColor *pixel, int x, int y);
+    int draw_bg(void);
+    int draw_sprite(int color, int x, int y);
 
     void step(void);
 private:
 
     void init_palette(void);
 
-    void cache_bg_tile(int x, int y);
+    void cache_bg_tile(void);
     int get_obj_pixel(int obj, int x, int y);
 
     byte_t ppu_read(offset_t offset);
@@ -171,25 +171,41 @@ private:
     } _status;
     byte_t _sram_addr;
     byte_t _vram_read;
-    addr_t _vram_addr;
+    union {
+        struct {
+            addr_t coarse_x: 5;
+            addr_t coarse_y: 5;
+            addr_t nt_hselect: 1;
+            addr_t nt_vselect: 1;
+            addr_t fine_y: 3;
+            addr_t _unused: 1;
+        };
+        addr_t d;
+    } _v;
+    union {
+        struct {
+            addr_t coarse_x: 5;
+            addr_t coarse_y: 5;
+            addr_t nt_hselect: 1;
+            addr_t nt_vselect: 1;
+            addr_t fine_y: 3;
+            addr_t _unused: 1;
+        };
+        addr_t d;
+    } _t;
+    byte_t _x;
     byte_t _latch;
     bool _flip_flop;
+    bool _vram_locked;
 
     std::vector<int> _sprites;
 
     int _hpos; /* Current pixel gun x position 0 - 340 */
     int _vpos; /* Current pixel gun y position 0 - 261 */
 
-    int _bgx; /* Current bg x pixel 0 - 512 */
-    int _bgy; /* Current bg y pixel 0 - 480 */
     byte_t _bgp0; /* Plane 0 of background */
     byte_t _bgp1; /* Plane 1 of background */
     byte_t _bgpal; /* background palette */
-
-    int _hscroll;
-    int _htable;
-    int _vscroll;
-    int _vtable;
 
     bvec _sram; /* Sprite memory */
     bvec _blk0; /* Name Table 0 */

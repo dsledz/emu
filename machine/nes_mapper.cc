@@ -92,6 +92,8 @@ public:
         _prg_offset(prg_bank(0)),
         _chr_offset(chr_bank(0))
     {
+        if (_header.vrom_banks == 0)
+            _ram.resize(0x2000);
     }
 
     ~NESMapperNone(void)
@@ -105,14 +107,24 @@ public:
         return _rom[_prg_offset + offset];
     }
 
+    void chr_write(offset_t offset, byte_t data)
+    {
+        if (_ram.size())
+            _ram[offset] = data;
+    }
+
     byte_t chr_read(offset_t offset)
     {
-        return _rom[_chr_offset + offset];
+        if (_ram.size())
+            return _ram[offset];
+        else
+            return _rom[_chr_offset + offset];
     }
 
 private:
     size_t _prg_offset;
     size_t _chr_offset;
+    bvec _ram;
 };
 
 class NESMapperUNROM: public NESMapper
@@ -392,13 +404,13 @@ public:
         }
         case 0x2000:
             _machine->input_port("MIRRORING")->value = bit_isset(value, 0) ?
-                TwoScreenVMirroring : TwoScreenHMirroring;
+                TwoScreenHMirroring : TwoScreenVMirroring;
             break;
         case 0x2001:
             /* XXX: SRAM */
             break;
         case 0x4000:
-            _irq_reload = value;
+            _irq_reload = value - 1;
             break;
         case 0x4001:
             _irq_counter = 0;

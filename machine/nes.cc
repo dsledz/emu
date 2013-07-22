@@ -102,9 +102,6 @@ NES::NES(const std::string &rom):
         [&](addr_t addr) -> byte_t {
             byte_t result = 0;
             switch (addr) {
-            case 0x0015:
-                std::cout << "Read: " << Hex(addr) << std::endl;
-                break;
             case 0x0016: {
                 byte_t keys = input_port("JOYPAD1")->value;
                 if (_joy1_shift < 8)
@@ -124,12 +121,14 @@ NES::NES(const std::string &rom):
         },
         [&](addr_t addr, byte_t value) {
             switch (addr) {
-            case 0x0014:
+            case 0x0014: {
                 /* XXX: We need to charge the CPU somehow */
                 addr = value << 8;
+                byte_t sram = _cpu_bus.read(0x2003);
                 for (int i = 0; i < 256; i++)
-                    _sprite_bus.write(i, _cpu_bus.read(addr++));
+                    _sprite_bus.write((i + sram % 256), _cpu_bus.read(addr++));
                 break;
+            }
             case 0x0016:
                 _joy1_shift = 0;
                 _joy2_shift = 0;
