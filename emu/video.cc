@@ -97,5 +97,5 @@ RasterScreen::at(int x, int y)
 void
 RasterScreen::clear(void)
 {
-    std::fill(data.begin(), data.end(), 0x00);
+    std::fill(data.begin(), data.end(), RGBColor(0x00,0x00,0x00));
 }

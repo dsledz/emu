@@ -30,6 +30,7 @@
 #include "sdl_util.h"
 
 #include <sdl/sdl.h>
+#include <sdl/sdl_opengl.h>
 
 using namespace EMU;
 
@@ -44,17 +45,25 @@ public:
     enum class GfxScale {
         None = 0,
         Scale2x = 1,
+        Nearest2x = 2,
+        Scaneline2x = 3,
     };
     SDLGfx(void);
     ~SDLGfx(void);
 
     void init(RasterScreen *screen);
     void render(RasterScreen *screen);
+
 private:
 
+    void render_scanline2x(RasterScreen *screen, SDL_Surface *surface);
+    void render_2x(RasterScreen *screen, SDL_Surface *surface);
     void render_scale2x(RasterScreen *screen, SDL_Surface *surface);
     void render_none(RasterScreen *screen, SDL_Surface *surface);
 
+    short _width;
+    short _height;
     surface_ptr _window;
+    GLuint _frame;
     GfxScale _scale;
 };
