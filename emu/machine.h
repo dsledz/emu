@@ -187,7 +187,7 @@ public:
 
     void add_machine(struct MachineDefinition *definition);
 
-    machine_ptr start(Options *opts);
+    machine_ptr load(Options *opts);
 
 private:
     std::list<MachineDefinition *> _machines;

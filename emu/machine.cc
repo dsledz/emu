@@ -249,7 +249,7 @@ MachineLoader::add_machine(struct MachineDefinition *definition)
 }
 
 machine_ptr
-MachineLoader::start(Options *opts)
+MachineLoader::load(Options *opts)
 {
     machine_ptr machine;
     for (auto it = _machines.begin(); it != _machines.end(); it++) {

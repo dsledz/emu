@@ -24,37 +24,26 @@
  */
 #pragma once
 
-#include "bits.h"
-#include "debug.h"
-#include "exception.h"
+#include "emu.h"
 
 namespace EMU {
 
-struct OptionException: public EmuException {
-    OptionException(const std::string &option, const std::string &value=""):
-        EmuException("Invalid Option: ")
-    {
-        msg += option;
-        if (value != "")
-            msg += " (value: " + value + ")";
-    }
-    std::string option;
-    std::string value;
-};
-
-class Options {
+class Emulator
+{
 public:
-    Options(void):
-        driver(""),
-        rom(""),
-        log_level("error")
-    {
-    }
-    ~Options(void) { }
+    Emulator(const Options &options);
 
-    std::string driver;     /**< Driver module */
-    std::string rom;        /**< Rom */
-    std::string log_level;  /**< Log level */
+    void start(void);
+
+    void stop(void);
+
+    Machine *machine(void);
+
+private:
+
+    const Options &_options;
+    machine_ptr _machine;
+    bool _stop;
 };
 
 };

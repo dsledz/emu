@@ -24,8 +24,8 @@
  */
 
 #include "emu.h"
-#include "galaga.h"
-#include "gb.h"
+
+#include "emulator.h"
 
 #include "sdl_util.h"
 #include "sdl_gfx.h"
@@ -34,59 +34,83 @@
 
 #include "getopt.h"
 
-class SDLMain {
+class CLIOptions: public Options
+{
 public:
-    SDLMain(void): stop(false) {
+    CLIOptions(int argc, char **argv):
+        Options()
+    {
+        static struct option opts[] = {
+            {"log",    required_argument, 0, 'l'},
+            {"driver", required_argument, 0, 'd'},
+            {"rom",    required_argument, 0, 'r'},
+            {0, 0, 0, 0}
+        };
+        int idx = 0;
+        char c;
+        while ((c = getopt_long(argc, argv, "l:d:r:", opts, &idx)) != -1) {
+            switch (c) {
+            case 'l':
+                log_level = optarg;
+                break;
+            case 'd':
+                driver = optarg;
+                break;
+            case 'r':
+                rom = optarg;
+                break;
+            default:
+                break;
+            }
+        }
     }
-    ~SDLMain(void) {
-    }
+};
 
-    void load(Options *opts) {
-        machine = loader.start(opts);
+class CLIEmulator: public Emulator
+{
+public:
+    CLIEmulator(const Options &options):
+        Emulator(options)
+    {
+        gfx.init(machine()->screen());
 
-        gfx.init(machine->screen());
+        SDL_WM_SetCaption("Emulator", "Emulator");
 
         /* Connect our graphics */
-        machine->set_render([&](RasterScreen *screen) {
+        machine()->set_render([&](RasterScreen *screen) {
             gfx.render(screen);
         });
 
-        machine->add_timer(Time(msec(1)),
+        machine()->add_timer(Time(msec(1)),
             [&]() {
                 SDL_Event event;
                 while (SDL_PollEvent(&event))
                     on_event(&event);
             },
             Time(msec(1)));
-    }
 
-    void loop(void) {
         SDL_Event event;
         while (SDL_PollEvent(&event))
             on_event(&event);
-
-        while (!stop) {
-            machine->run();
-        }
     }
 
     void on_event(SDL_Event *event) {
         switch (event->type) {
         case SDL_QUIT:
-            stop = true;
+            stop();
             break;
         case SDL_KEYUP:
         case SDL_KEYDOWN:
             switch (event->key.keysym.sym) {
             case SDLK_q:
-                stop = true;
+                stop();
                 break;
             case SDLK_F1:
                 if (event->type == SDL_KEYDOWN)
                     EMU::log.set_level(EMU::LogLevel::Trace);
                 break;
             default:
-                input.handle_input(event, machine->input());
+                input.handle_input(event, machine()->input());
             }
             break;
         default:
@@ -96,10 +120,8 @@ public:
 
 private:
 
-    machine_ptr machine;
     SDLGfx   gfx;
     SDLInput input;
-    bool     stop;
 };
 
 extern "C" int main(int argc, char **argv)
@@ -108,13 +130,11 @@ extern "C" int main(int argc, char **argv)
         if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
             throw SDLException();
 
-        Options opts("galaga");
-        opts.parse(argc, argv);
+        CLIOptions opts(argc, argv);
 
-        SDLMain main;
+        CLIEmulator emu(opts);
 
-        main.load(&opts);
-        main.loop();
+        emu.start();
     } catch (EmuException &e) {
         std::cout << "Exception: " << e.message() << std::endl;
     }
@@ -123,6 +143,3 @@ extern "C" int main(int argc, char **argv)
     return 0;
 }
 
-FORCE_UNDEFINED_SYMBOL(galaga);
-FORCE_UNDEFINED_SYMBOL(gb);
-FORCE_UNDEFINED_SYMBOL(nes);

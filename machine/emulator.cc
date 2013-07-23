@@ -22,39 +22,40 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#pragma once
 
-#include "bits.h"
-#include "debug.h"
-#include "exception.h"
+#include "emulator.h"
 
-namespace EMU {
+using namespace EMU;
 
-struct OptionException: public EmuException {
-    OptionException(const std::string &option, const std::string &value=""):
-        EmuException("Invalid Option: ")
-    {
-        msg += option;
-        if (value != "")
-            msg += " (value: " + value + ")";
-    }
-    std::string option;
-    std::string value;
-};
+Emulator::Emulator(const Options &options):
+    _options(options),
+    _machine(),
+    _stop(false)
+{
+    EMU::log.set_level(_options.log_level);
+    /* XXX: Fix constness */
+    _machine = loader.load(const_cast<Options *>(&_options));
+}
 
-class Options {
-public:
-    Options(void):
-        driver(""),
-        rom(""),
-        log_level("error")
-    {
-    }
-    ~Options(void) { }
+void
+Emulator::start(void)
+{
+    while (!_stop)
+        _machine->run();
+}
 
-    std::string driver;     /**< Driver module */
-    std::string rom;        /**< Rom */
-    std::string log_level;  /**< Log level */
-};
+void
+Emulator::stop(void)
+{
+    _stop = true;
+}
 
-};
+Machine *
+Emulator::machine(void)
+{
+    return _machine.get();
+}
+
+FORCE_UNDEFINED_SYMBOL(galaga);
+FORCE_UNDEFINED_SYMBOL(gb);
+FORCE_UNDEFINED_SYMBOL(nes);
