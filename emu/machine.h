@@ -127,11 +127,6 @@ public:
     }
 
     /**
-     * Return the device named @a name.
-     */
-    Device *dev(const std::string &name);
-
-    /**
      * Set an line on the device @a name.
      */
     void set_line(const std::string &name, Line line, LineState state);
@@ -159,6 +154,9 @@ protected:
     std::map<std::string, InputPort> _ports;
 
 private:
+
+    Device *dev(const std::string &name);
+
     void _schedule_timer(Timer_ptr timer);
 };
 
