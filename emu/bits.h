@@ -129,6 +129,10 @@ static inline bool bit_isset(uint16_t arg, int n)
     (((arg) & (1 << (bit))) != 0)
 #endif
 
+#define bit_toggle(arg1, arg2, bit) \
+    ((bit_isset((arg1), (bit)) ^ bit_isset((arg2), (bit))) \
+      && bit_isset((arg1), (bit)))
+
 typedef std::function<void ()> callback_t;
 
 /* XXX: Find a better place for this */

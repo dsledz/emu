@@ -46,10 +46,14 @@ public:
         return 0x4;
     }
     virtual byte_t *direct(offset_t offset) {
-        return &_in[0];
+        throw DeviceFault("namco51");
     }
 
 private:
+    byte_t read_port(const std::string &port) {
+        return _machine->read_ioport(port);
+    }
+
     enum class Command {
         Nop0 = 0,
         Coinage = 1,
@@ -72,8 +76,10 @@ private:
     int _credits;
     int _coinage_bytes;
     int _read_count;
-    int _last;
-    byte_t _in[4];
+    int _last_coin;
+    int _last_joy;
+
+    Machine *_machine;
 };
 
 typedef std::unique_ptr<Namco51> Namco51_ptr;

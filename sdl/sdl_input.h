@@ -46,7 +46,7 @@ public:
     /**
      * Process an sdl event.
      */
-    void handle_input(SDL_Event *e, InputDevice *dev);
+    void handle_input(SDL_Event *e, InputMap *dev);
 
 private:
     std::unordered_map<SDLKey, InputKey, SDLKeyHash> _map;

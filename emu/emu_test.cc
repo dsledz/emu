@@ -129,3 +129,38 @@ TEST(MachineTest, constructor)
     TestMachine machine;
 
 }
+
+enum NESKey {
+    A = 0,
+    B = 1,
+    Select = 2,
+    Start = 3,
+    Up = 4,
+    Down = 5,
+    Left = 6,
+    Right = 7,
+    Size = 8,
+};
+
+TEST(MachineTest, input_map)
+{
+    Machine machine;
+    machine.add_ioport("PORT1");
+    machine.add_ioport("PORT2");
+
+    InputMap *input = machine.input();
+    IOPort *port = machine.ioport("PORT1");
+    input->add(InputSignal(InputKey::Joy1Btn1, port, NESKey::A, true));
+    input->add(InputSignal(InputKey::Joy1Btn2, port, NESKey::B, true));
+    input->add(InputSignal(InputKey::Select1, port, NESKey::Select, true));
+    input->add(InputSignal(InputKey::Start1, port, NESKey::Start, true));
+    input->add(InputSignal(InputKey::Joy1Up, port, NESKey::Up, true));
+    input->add(InputSignal(InputKey::Joy1Down, port, NESKey::Down, true));
+    input->add(InputSignal(InputKey::Joy1Left, port, NESKey::Left, true));
+    input->add(InputSignal(InputKey::Joy1Right, port, NESKey::Right, true));
+
+    EXPECT_THROW(
+        input->add(InputSignal(InputKey::Joy1Btn1, port, NESKey::A, true)),
+        DuplicateInput);
+}
+

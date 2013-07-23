@@ -27,16 +27,16 @@
 
 using namespace EMU;
 
-InputDevice::InputDevice(void)
+InputMap::InputMap(void)
 {
 }
 
-InputDevice::~InputDevice(void)
+InputMap::~InputMap(void)
 {
 }
 
 void
-InputDevice::add_input(InputKey in, input_fn fn)
+InputMap::add_input(InputKey in, input_fn fn)
 {
     std::pair<InputKey, input_fn> value (in, fn);
     if (_input_map.find(in) != _input_map.end())
@@ -45,7 +45,7 @@ InputDevice::add_input(InputKey in, input_fn fn)
 }
 
 void
-InputDevice::add(const InputSignal &signal)
+InputMap::add(const InputSignal &signal)
 {
     if (signal.active_high) {
         add_input(signal.key, [=](LineState state) {
@@ -61,7 +61,7 @@ InputDevice::add(const InputSignal &signal)
 }
 
 void
-InputDevice::depress(InputKey in)
+InputMap::depress(InputKey in)
 {
     auto it = _input_map.find(in);
     if (it != _input_map.end())
@@ -69,7 +69,7 @@ InputDevice::depress(InputKey in)
 }
 
 void
-InputDevice::release(InputKey in)
+InputMap::release(InputKey in)
 {
     auto it = _input_map.find(in);
     if (it != _input_map.end())
@@ -77,7 +77,7 @@ InputDevice::release(InputKey in)
 }
 
 void
-InputDevice::pulse(InputKey in)
+InputMap::pulse(InputKey in)
 {
     auto it = _input_map.find(in);
     if (it != _input_map.end())

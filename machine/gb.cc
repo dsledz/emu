@@ -57,34 +57,33 @@ class GBJoypad: public Device {
 public:
     GBJoypad(Gameboy *gameboy):
         Device(gameboy, "joypad"),
-        _keys(0xff), _value(0x00) {
-        InputDevice *input = gameboy->input();
-        input->add_input(InputKey::Joy1Left, [&](LineState state) {
-            bit_set(_keys, GBKey::Left, LineState::Clear == state); });
-        input->add_input(InputKey::Joy1Right, [&](LineState state) {
-            bit_set(_keys, GBKey::Right, LineState::Clear == state); });
-        input->add_input(InputKey::Joy1Up, [&](LineState state) {
-            bit_set(_keys, GBKey::Up, LineState::Clear == state); });
-        input->add_input(InputKey::Joy1Down, [&](LineState state) {
-            bit_set(_keys, GBKey::Down, LineState::Clear == state); });
-        input->add_input(InputKey::Joy1Btn1, [&](LineState state) {
-            bit_set(_keys, GBKey::A, LineState::Clear == state); });
-        input->add_input(InputKey::Joy1Btn2, [&](LineState state) {
-            bit_set(_keys, GBKey::B, LineState::Clear == state); });
-        input->add_input(InputKey::Select1, [&](LineState state) {
-            bit_set(_keys, GBKey::Select, LineState::Clear == state); });
-        input->add_input(InputKey::Start1, [&](LineState state) {
-            bit_set(_keys, GBKey::Start, LineState::Clear == state); });
+        _value(0x00)
+    {
+        gameboy->add_ioport("IN0");
+
+        _port = gameboy->ioport("IN0");
+        gameboy->write_ioport(_port, 0xFF);
+        InputMap *input = gameboy->input();
+        input->add(InputSignal(InputKey::Joy1Left,_port, GBKey::Left, false));
+        input->add(InputSignal(InputKey::Joy1Right, _port, GBKey::Right,
+            false));
+        input->add(InputSignal(InputKey::Joy1Up, _port, GBKey::Up, false));
+        input->add(InputSignal(InputKey::Joy1Down,  _port, GBKey::Down, false));
+        input->add(InputSignal(InputKey::Joy1Btn1,  _port, GBKey::A, false));
+        input->add(InputSignal(InputKey::Joy1Btn2,  _port, GBKey::B, false));
+        input->add(InputSignal(InputKey::Select1, _port, GBKey::Select, false));
+        input->add(InputSignal(InputKey::Start1, _port, GBKey::Start, false));
 
         gameboy->bus()->add(GBReg::KEYS, 0xFFFF,
             [&](offset_t offset) -> byte_t {
                 return _value;
             },
             [&](offset_t offset, byte_t arg) {
+                byte_t keys = _machine->read_ioport("IN0");
                 if (bit_isset(arg, ButtonsSelect))
-                    arg = (arg & 0xF0) | ((_keys & 0xF0) >> 4);
+                    arg = (arg & 0xF0) | ((keys & 0xF0) >> 4);
                 if (bit_isset(arg, ArrowSelect))
-                    arg = (arg & 0xF0) | (_keys & 0x0F);
+                    arg = (arg & 0xF0) | (keys & 0x0F);
                 _value = arg;
             });
     }
@@ -92,7 +91,7 @@ public:
     }
 
 private:
-    byte_t _keys;
+    IOPort *_port;
     byte_t _value;
 };
 

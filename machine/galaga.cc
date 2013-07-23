@@ -84,6 +84,8 @@ Galaga::Galaga(const std::string &rom):
     init_switches();
     reset_switches();
 
+    init_controls();
+
     RomDefinition roms("galaga");
     if (rom == "galagao") {
         roms = galagao_rom();
@@ -277,6 +279,41 @@ Galaga::init_switches(void)
     sw->add_option("3", 0x80);
     sw->add_option("4", 0x40);
     sw->add_option("5", 0xC0);
+}
+
+void
+Galaga::init_controls(void)
+{
+    InputMap *input = &_input;
+    IOPort *port;
+
+    add_ioport("IN0");
+    add_ioport("IN1");
+    add_ioport("IN2");
+    add_ioport("IN3");
+
+    port = ioport("IN0");
+    write_ioport(port, 0x0f);
+    input->add(InputSignal(InputKey::Joy1Btn1, port, 0, false));
+    input->add(InputSignal(InputKey::Joy2Btn1, port, 1, false));
+    input->add(InputSignal(InputKey::Start1, port, 2, false));
+    input->add(InputSignal(InputKey::Start2, port, 3, false));
+
+    port = ioport("IN1");
+    write_ioport(port, 0x0f);
+    input->add(InputSignal(InputKey::Coin1, port, 0, false));
+    input->add(InputSignal(InputKey::Coin2, port, 1, false));
+    input->add(InputSignal(InputKey::Service, port, 2, false));
+
+    port = ioport("IN2");
+    write_ioport(port, 0x0f);
+    input->add(InputSignal(InputKey::Joy1Right, port, 1, false));
+    input->add(InputSignal(InputKey::Joy1Left, port, 3, false));
+
+    port = ioport("IN3");
+    write_ioport(port, 0x0f);
+    input->add(InputSignal(InputKey::Joy2Right, port, 1, false));
+    input->add(InputSignal(InputKey::Joy2Left, port, 3, false));
 }
 
 void

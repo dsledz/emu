@@ -45,6 +45,7 @@ public:
 private:
     void init_bus(void);
     void init_switches(void);
+    void init_controls(void);
 
     void init_gfx(RomSet *romset);
     void init_sprite(GfxObject<16, 16> *obj, byte_t *b);

@@ -128,7 +128,7 @@ public:
         return Time(Time(sec(1)) / _quantum);
     }
 
-    InputDevice *input(void) {
+    InputMap *input(void) {
         return &_input;
     }
 
@@ -153,7 +153,7 @@ protected:
     std::list<Timer_ptr> _timers;
     Time _clock;
     unsigned _quantum;
-    InputDevice _input;
+    InputMap _input;
     std::unique_ptr<RasterScreen> _screen;
     render_cb _render_cb;
     std::map<std::string, dipswitch_ptr> _switches;

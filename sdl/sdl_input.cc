@@ -50,7 +50,7 @@ SDLInput::~SDLInput(void)
 }
 
 void
-SDLInput::handle_input(SDL_Event *event, InputDevice *dev)
+SDLInput::handle_input(SDL_Event *event, InputMap *dev)
 {
     switch (event->type) {
     case SDL_KEYUP: {

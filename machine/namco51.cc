@@ -35,46 +35,10 @@ Namco51::Namco51(Machine *machine):
     _credits(0),
     _coinage_bytes(0),
     _read_count(0),
-    _in()
+    _last_coin(0),
+    _last_joy(0),
+    _machine(machine)
 {
-    _in[0] = 0x0F;
-    _in[1] = 0x0F;
-    _in[2] = 0x0F;
-    _in[3] = 0x0F;
-    InputDevice *input = machine->input();
-    input->add_input(InputKey::Joy1Btn1, [&](LineState state) {
-        bit_set(_in[0], 0, LineState::Clear == state); });
-    input->add_input(InputKey::Joy2Btn1, [&](LineState state) {
-        bit_set(_in[0], 1, LineState::Clear == state); });
-    input->add_input(InputKey::Start1, [&](LineState state) {
-        if (_credits >= 1)
-            _credits -= 1;
-        bit_set(_in[0], 2, LineState::Clear == state); });
-    input->add_input(InputKey::Start2, [&](LineState state) {
-        if (_credits >= 2)
-            _credits -= 2;
-        bit_set(_in[0], 3, LineState::Clear == state); });
-
-    input->add_input(InputKey::Coin1, [&](LineState state) {
-        if (state == LineState::Assert)
-            _credits++;
-        bit_set(_in[1], 0, LineState::Clear == state); });
-    input->add_input(InputKey::Coin2, [&](LineState state) {
-        if (state == LineState::Assert)
-            _credits++;
-        bit_set(_in[1], 1, LineState::Clear == state); });
-    input->add_input(InputKey::Service, [&](LineState state) {
-        bit_set(_in[1], 2, LineState::Clear == state); });
-
-    input->add_input(InputKey::Joy1Right, [&](LineState state) {
-        bit_set(_in[2], 1, LineState::Clear == state); });
-    input->add_input(InputKey::Joy1Left, [&](LineState state) {
-        bit_set(_in[2], 3, LineState::Clear == state); });
-
-    input->add_input(InputKey::Joy2Right, [&](LineState state) {
-        bit_set(_in[3], 1, LineState::Clear == state); });
-    input->add_input(InputKey::Joy2Left, [&](LineState state) {
-        bit_set(_in[3], 3, LineState::Clear == state); });
 }
 
 Namco51::~Namco51(void)
@@ -124,10 +88,10 @@ Namco51::read8(offset_t offset)
         switch (_read_count++ % 3) {
         case 0: /* buttons & coins */
             DEBUG("51xx Buttons");
-            return (_in[0] | (_in[1] << 4));
+            return (read_port("IN0") | (read_port("IN1") << 4));
         case 1: /* joysticks */
             DEBUG("51xx Joystick");
-            return (_in[2] | (_in[3] << 4));
+            return (read_port("IN2") | (read_port("IN3") << 4));
         case 2: /* unusued */
             DEBUG("51xx Unused");
             return 0x00;
@@ -135,19 +99,40 @@ Namco51::read8(offset_t offset)
 
     } else if (_mode == Mode::Credit) {
         switch (_read_count++ % 3) {
-        case 0: /* Credits */
+        case 0: {
+            /* Credits */
+            /* Read in the new keys */
+            /* d = XXCC21XX C = coin, 1 = start1, 2 = start2 */
+            int in = (~read_port("IN0") & 0xC) | (~read_port("IN1") << 4);
+            /* See if we got credits. */
+            if (bit_toggle(in, _last_coin, 5))
+                _credits++;
+            if (bit_toggle(in, _last_coin, 4))
+                _credits++;
+
+            /* XXX: This could miss credits if the keys are pressed at
+             * the same time.
+             */
+            if (bit_toggle(in, _last_coin, 3) && _credits > 2)
+                _credits -= 2;
+
+            if (bit_toggle(in, _last_coin, 2) && _credits > 1)
+                _credits -= 1;
+
+            _last_coin = in;
             /* Credits in BCD */
             return (_credits % 10) | (_credits / 10) << 4;
+        }
         case 1: {
             if (_remap)
                 throw CpuFeatureFault("namco51", "remap");
 
-            int joy = _in[2] & 0x0f;
-            int in = ~_in[0] & 0x01;
-            int toggle = in ^ _last;
+            int joy = read_port("IN2") & 0x0f;
+            int in = ~read_port("IN0") & 0x01;
+            int toggle = in ^ _last_joy;
 
             /* One button press = one fire */
-            _last = (_last & 0x02) | in;
+            _last_joy = (_last_joy & 0x02) | in;
             joy |= ((toggle & in) ^ 0x01) << 4;
             joy |= (in ^ 0x01) << 5;
 
@@ -157,10 +142,10 @@ Namco51::read8(offset_t offset)
             if (_remap)
                 throw CpuFeatureFault("namco51", "remap");
 
-            int joy = _in[3] & 0x0f;
-            int in = ~_in[0] & 0x02;
-            int toggle = in ^ _last;
-            _last = (_last & 0x01) | in;
+            int joy = read_port("IN3") & 0x0f;
+            int in = ~read_port("IN0") & 0x02;
+            int toggle = in ^ _last_joy;
+            _last_joy = (_last_joy & 0x01) | in;
             joy |= ((toggle & in) ^ 0x02) << 3;
             joy |= (in ^ 0x02) << 4;
 
