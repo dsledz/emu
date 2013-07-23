@@ -259,7 +259,7 @@ protected:
     }
     void op_adc(void) {
         /* XXX: Decimal */
-        throw CpuFault();
+        throw CpuFeatureFault(_name, "decimal");
         byte_t arg = fetch();
         uint32_t result = _rA + arg + _rF.C;
         set_sz(result);
@@ -269,7 +269,7 @@ protected:
     }
     void op_sbc(void) {
         /* XXX: Decimal */
-        throw CpuFault();
+        throw CpuFeatureFault(_name, "decimal");
         byte_t arg = fetch();
         uint32_t result = _rA - arg - !_rF.C;
         set_sz(result);

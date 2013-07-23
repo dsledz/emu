@@ -118,7 +118,7 @@ Machine::dev(const std::string &name)
         if ((*it)->name() == name)
             return *it;
     }
-    throw DeviceException(name);
+    throw KeyError(name);
 }
 
 RasterScreen *
@@ -145,7 +145,7 @@ Machine::input_port(const std::string &name)
 {
     auto it = _ports.find(name);
     if (it == _ports.end())
-        throw EmuException();
+        throw KeyError(name);
     return &it->second;
 }
 
@@ -163,7 +163,7 @@ Machine::set_switch(const std::string &name, const std::string &value)
 {
     auto sw = _switches.find(name);
     if (sw == _switches.end())
-        throw EmuException();
+        throw KeyError(name);
     sw->second->select(this, value);
 }
 
@@ -218,6 +218,6 @@ MachineLoader::start(Options *opts)
         if ((*it)->name == opts->driver)
             return (*it)->fn(opts);
     }
-    throw EmuException();
+    throw KeyError(opts->driver);
 }
 

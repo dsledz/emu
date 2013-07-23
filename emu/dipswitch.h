@@ -30,6 +30,17 @@
 
 namespace EMU {
 
+struct DipswitchValueException: public EmuException {
+    DipswitchValueException(const std::string &value= ""):
+        EmuException("Unknown dipswitch value"),
+        value(value)
+    {
+        if (value != "")
+            msg += ": " + value;
+    }
+    std::string value;
+};
+
 /**
  * Describe a single setting.
  */

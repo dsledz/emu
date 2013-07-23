@@ -186,7 +186,7 @@ public:
     /* XXX: IODevice is hardcoded with an 16 bit addr, 8 bit bus. */
     void add(addr_type base, addr_type mask, IODevice *dev)
     {
-        throw CpuFault();
+        throw DeviceFault("DataBus");
     }
 
     void add(addr_type base, data_type *data)

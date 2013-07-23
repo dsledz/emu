@@ -140,7 +140,7 @@ Namco51::read8(offset_t offset)
             return (_credits % 10) | (_credits / 10) << 4;
         case 1: {
             if (_remap)
-                throw EmuException();
+                throw CpuFeatureFault("namco51", "remap");
 
             int joy = _in[2] & 0x0f;
             int in = ~_in[0] & 0x01;
@@ -155,7 +155,7 @@ Namco51::read8(offset_t offset)
         }
         case 2: {
             if (_remap)
-                throw EmuException();
+                throw CpuFeatureFault("namco51", "remap");
 
             int joy = _in[3] & 0x0f;
             int in = ~_in[0] & 0x02;

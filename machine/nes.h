@@ -80,11 +80,11 @@ public:
     virtual void chr_write(offset_t offset, byte_t value) { }
 
     virtual byte_t sram_read(offset_t offset) {
-        throw CpuFault();
+        throw DeviceFault(_name, "sram read");
     }
 
     virtual void sram_write(offset_t offset, byte_t value) {
-        throw CpuFault();
+        throw DeviceFault(_name, "sram write");
     }
 
     /* Convert a prg bank into an offset */

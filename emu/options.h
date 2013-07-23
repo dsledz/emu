@@ -26,8 +26,23 @@
 
 #include "bits.h"
 #include "debug.h"
+#include "exception.h"
 
 #include <getopt.h>
+
+namespace EMU {
+
+struct OptionException: public EmuException {
+    OptionException(const std::string &option, const std::string &value=""):
+        EmuException("Invalid Option: ")
+    {
+        msg += option;
+        if (value != "")
+            msg += " (value: " + value + ")";
+    }
+    std::string option;
+    std::string value;
+};
 
 class Options {
 public:
@@ -65,3 +80,4 @@ public:
     std::string rom;      /**< Rom */
 };
 
+};

@@ -27,6 +27,7 @@
 
 #include "bits.h"
 #include <stdexcept>
+#include <sstream>
 
 namespace EMU {
 
@@ -41,25 +42,89 @@ namespace EMU {
 /**
  * General Emulator exception
  */
-class EmuException: public std::exception {
-public:
-    EmuException() {};
+struct EmuException: public std::exception {
+    const std::string &message() { return msg; }
+
+protected:
+    EmuException(const std::string &msg): msg(msg) { }
+
+    std::string msg;
+};
+
+struct DeviceFault: public EmuException {
+    DeviceFault(const std::string &device, const std::string &details=""):
+        EmuException(""),
+        device(device)
+    {
+        std::stringstream ss;
+        ss << "(" << device << "): Fault";
+        if (details != "")
+            ss << " " << details;
+        msg += ss.str();
+    }
+
+    std::string device;
 };
 
 /**
  * CPU Fault
  */
-class CpuFault: public EmuException {
-public:
-    CpuFault() {};
+struct CpuFault: public DeviceFault {
+    CpuFault(const std::string &cpu, const std::string &msg):
+        DeviceFault(cpu, msg) { }
+};
+
+/**
+ * CPU Opcode error
+ */
+struct CpuOpcodeFault: public CpuFault {
+    CpuOpcodeFault(const std::string &cpu, unsigned opcode, unsigned addr):
+        CpuFault(cpu, "invalid opcode"),
+        op(opcode),
+        pc(addr)
+    {
+        std::stringstream ss;
+        ss << " " << Hex(opcode);
+        if (addr != 0)
+            ss << " at address " << Hex(addr);
+        msg += ss.str();
+    }
+    unsigned op;
+    unsigned pc;
+};
+
+struct CpuRegisterFault: public CpuFault {
+    CpuRegisterFault(const std::string &cpu, unsigned index):
+        CpuFault(cpu, "invalid regsiter")
+    {
+        std::stringstream ss;
+        ss << " " << Hex(index);
+        msg += ss.str();
+    }
+};
+
+struct CpuFeatureFault: public CpuFault {
+    CpuFeatureFault(const std::string &cpu, const std::string &feature=""):
+        CpuFault(cpu, "unsupported feature")
+    {
+        std::stringstream ss;
+        if (feature != "") {
+            ss << " " << feature;
+            msg += ss.str();
+        }
+    }
 };
 
 /**
  * Bus Error
  */
-class BusError: public EmuException {
-public:
-    BusError(addr_t addr): address(addr) {};
+struct BusError: public EmuException {
+    BusError(addr_t addr): EmuException("Bus fault"), address(addr)
+    {
+        std::stringstream ss;
+        ss << ": " << Hex(addr);
+        msg = ss.str();
+    }
     addr_t address;
 };
 

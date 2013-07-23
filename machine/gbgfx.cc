@@ -178,7 +178,7 @@ GBGraphics::draw_scanline(int y)
     bool large a_unused = bit_isset(_lcdc, LCDCBits::OBJSize);
     /* XXX: Large sprites are 8x16 and need a different handler */
     if (large)
-        throw CpuFault();
+        throw CpuFeatureFault(_name, "large sprites");
     for (unsigned i = 160; i >= 4 && sprites < 10; i -= 4) {
         byte_t *b = _oam.direct(i-4);
         int iy = b[Oam::OamY] - 8;

@@ -37,11 +37,14 @@ namespace EMU {
 
 void read_rom(const std::string &name, bvec &rom);
 
-class RomException: public EmuException {
-    public:
-        RomException(const std::string &path): path(path) {};
-
-        std::string path;
+struct RomException: public EmuException {
+    RomException(const std::string &path):
+        EmuException("Missing rom: "),
+        path(path)
+    {
+        msg += path;
+    }
+    std::string path;
 };
 
 class Rom: public IODevice {

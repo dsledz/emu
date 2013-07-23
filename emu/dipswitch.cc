@@ -49,11 +49,11 @@ Dipswitch::add_option(const std::string &name, byte_t value)
 }
 
 void
-Dipswitch::select(Machine *machine, const std::string &name)
+Dipswitch::select(Machine *machine, const std::string &value)
 {
-    auto it = _options.find(name);
+    auto it = _options.find(value);
     if (it == _options.end())
-        throw EmuException();
+        throw DipswitchValueException(value);
     InputPort *port = machine->input_port(_port);
     bit_setmask(port->value, _mask, it->second);
 }

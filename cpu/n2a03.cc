@@ -262,7 +262,7 @@ n2A03Cpu::dispatch(void)
         OPCODE(0xFE, "INC abs,X", Abs(_rX); op_inc());
     default:
         std::cout << "Unknown opcode: " << Hex(op) << std::endl;
-        throw CpuFault();
+        throw CpuOpcodeFault(_name, op, _op_pc);
     }
 
     IF_LOG(Trace)

@@ -104,17 +104,19 @@ private:
 
 extern "C" int main(int argc, char **argv)
 {
-    if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
-        throw SDLException();
+    try {
+        if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
+            throw SDLException();
 
-    Options opts("galaga");
-    opts.parse(argc, argv);
+        Options opts("galaga");
+        opts.parse(argc, argv);
 
-    {
         SDLMain main;
 
         main.load(&opts);
         main.loop();
+    } catch (EmuException &e) {
+        std::cout << "Exception: " << e.message() << std::endl;
     }
 
     SDL_Quit();

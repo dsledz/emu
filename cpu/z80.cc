@@ -101,14 +101,14 @@ Z80Cpu::step(void)
     } else if (_int0_line == LineState::Assert && _iff1 && !_iwait) {
         switch (_imode) {
         case 0:
-            throw CpuFault();
+            throw CpuFault(_name, "Unsupported Interrupt mode 0");
             break;
         case 1:
             interrupt(0x0038);
             return _icycles;
             break;
         case 2:
-            throw CpuFault();
+            throw CpuFault(_name, "Unsupported Interrupt mode 2");
             break;
         }
     }
@@ -173,9 +173,8 @@ Z80Cpu::fetch(Reg reg)
         case Reg::H: return _rH;
         case Reg::L: return _rL;
         case Reg::HL: return bus_read(_rHL);
-        default: throw CpuFault();
+        default: throw CpuFault(_name, "Unknown register read");
     }
-    throw CpuFault();
 }
 
 void
@@ -190,7 +189,7 @@ Z80Cpu::store(Reg reg, byte_t value)
         case Reg::H: _rH = value; break;
         case Reg::L: _rL = value; break;
         case Reg::HL: bus_write(_rHL, value); break;
-        default: throw CpuFault();
+        default: throw CpuFault(_name, "Unknown register write");
     }
 }
 
@@ -1446,12 +1445,7 @@ Z80Cpu::dispatch(void)
         OPCODE(0xFF, 11, 1, "RST 38H", _rst(0x38));
     default:
         _state = DeviceState::Fault;
-        {
-            std::stringstream ss;
-            ss << "Unknown opcode:" << Hex(_op.opcode);
-            ERROR(ss.str());
-        }
-        throw CpuFault();
+        throw CpuOpcodeFault("z80", _op.opcode, _op.pc);
     }
 
     IF_LOG(Trace)
@@ -1659,6 +1653,8 @@ Z80Cpu::dispatch_dd_cb(void)
 void
 Z80Cpu::dispatch_ed(void)
 {
+    const addr_t pc = _rPC;
+
     byte_t op = pc_read();
     switch (op) {
         OPCODE(0x00,  5, 2, "NOP", );
@@ -1726,12 +1722,7 @@ Z80Cpu::dispatch_ed(void)
         OPCODE(0xB9, 16, 2, "CPDR", _cpdr());
     default:
         _state = DeviceState::Fault;
-        {
-            std::stringstream ss;
-            ss << "Unknown opcode:" << Hex(op);
-            ERROR(ss.str());
-        }
-        throw CpuFault();
+        throw CpuOpcodeFault("z80", op, pc);
     }
 }
 

@@ -506,7 +506,7 @@ NESDriver::load_cartridge(NES *nes, const std::string &name)
         mapper = mapper_ptr(new NESMapperGNROM(nes, &header, rom));
         break;
     default:
-        throw EmuException();
+        throw CpuFeatureFault("mapper", "unknown mapper");
     }
 
     return mapper;

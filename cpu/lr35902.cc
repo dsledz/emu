@@ -89,7 +89,7 @@ uint16_t Registers::get(Register r)
     case Register::DE: return _DE.d; break;
     case Register::HL: return _HL.d; break;
     }
-    throw CpuFault();
+    throw CpuRegisterFault("lr35902", 0);
 }
 
 LR35902Cpu::LR35902Cpu(Machine *machine, const std::string &name,
@@ -179,9 +179,8 @@ byte_t LR35902Cpu::fetch(Register reg)
         case Register::H: return _rH;
         case Register::L: return _rL;
         case Register::HL: return _read(_rHL);
-        default: throw CpuFault();
+        default: throw CpuRegisterFault(_name, 0);
     }
-    throw CpuFault();
 }
 
 void LR35902Cpu::store(Register reg, byte_t value)
@@ -195,7 +194,7 @@ void LR35902Cpu::store(Register reg, byte_t value)
         case Register::H: _rH = value; break;
         case Register::L: _rL = value; break;
         case Register::HL: _write(_rHL, value); break;
-        default: throw CpuFault();
+        default: throw CpuRegisterFault(_name, 0);
     }
 }
 
@@ -721,6 +720,7 @@ LR35902Cpu::dispatch(void)
 
     interrupt();
 
+    const addr_t pc = _rPC;
     byte_t op = _read(_rPC++);
 
     if (_state == State::Halted) {
@@ -976,7 +976,7 @@ LR35902Cpu::dispatch(void)
         OPCODE(0xFF, 16, 1, "RST 38H", _rst(0x38));
     default:
         _state = State::Fault;
-        throw CpuFault();
+        throw CpuOpcodeFault(_name, op, pc);
     }
 
     return _icycles;

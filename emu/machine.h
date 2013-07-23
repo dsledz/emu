@@ -54,10 +54,15 @@ struct Timer {
 
 typedef std::shared_ptr<Timer> Timer_ptr;
 
-class DeviceException: public EmuException {
-public:
-    DeviceException(const std::string &name): name(name) {}
-    std::string name;
+struct KeyError: public EmuException {
+    KeyError(const std::string &key):
+        EmuException("Missing Key: "),
+        key(key)
+    {
+        msg += key;
+    }
+
+    std::string key;
 };
 
 /**

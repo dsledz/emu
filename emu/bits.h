@@ -130,3 +130,32 @@ static inline bool bit_isset(uint16_t arg, int n)
 #endif
 
 typedef std::function<void ()> callback_t;
+
+/* XXX: Find a better place for this */
+
+#include <iostream>
+#include <iomanip>
+class Hex {
+public:
+    Hex(bool arg): v(arg), w(2) {}
+    Hex(byte_t arg): v(arg), w(2) {}
+    Hex(char arg): v(arg), w(2) {}
+    Hex(uint16_t arg): v(arg), w(4) {}
+    Hex(unsigned arg): v(arg), w(4) {}
+    Hex(size_t arg): v(arg), w(8) {}
+    Hex(int arg): v(arg), w(2) {}
+    Hex(reg16_t arg): v(arg.d), w(2) {}
+    Hex(reg32_t arg): v(arg.d), w(2) {}
+    unsigned v;
+    unsigned w;
+};
+
+static inline std::ostream& operator << (std::ostream &os,
+                                         const Hex & obj)
+{
+    os << std::hex << "0x" << std::setw(obj.w) << std::setfill('0')
+        << obj.v;
+    return os;
+}
+
+

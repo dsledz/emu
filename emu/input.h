@@ -84,20 +84,27 @@ enum class InputKey {
     Joy2Btn6  = 29,
 };
 
-class DuplicateInput: public EmuException
-{
-public:
-    DuplicateInput(InputKey in): in(in) { }
-
-    InputKey in;
+struct InputError: public EmuException {
+    InputError(InputKey key):
+        EmuException("Input error"),
+        key(key)
+    {
+    }
+    InputKey key;
 };
 
-class UnmappedInput: public EmuException
-{
-public:
-    UnmappedInput(InputKey in): in(in) { }
+struct DuplicateInput: public InputError {
+    DuplicateInput(InputKey key):
+        InputError(key)
+    {
+    }
+};
 
-    InputKey in;
+struct UnmappedInput: public InputError {
+    UnmappedInput(InputKey key):
+        InputError(key)
+    {
+    }
 };
 
 typedef std::function<void (LineState state)> input_fn;

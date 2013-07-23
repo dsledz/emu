@@ -31,5 +31,7 @@
 #include <sdl/sdl.h>
 
 class SDLException: public EMU::EmuException {
+public:
+    SDLException(): EmuException("SDL exception") { }
 };
 
