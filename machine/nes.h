@@ -228,7 +228,7 @@ private:
 
     std::vector<device_ptr> _our_devs;
 
-    std::unique_ptr<M6502::M6502Cpu> _cpu;
+    std::unique_ptr<M6502::n2A03Cpu> _cpu;
     std::unique_ptr<NESPPU> _ppu;
     mapper_ptr _mapper;
     Ram _ram;

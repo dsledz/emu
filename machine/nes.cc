@@ -61,8 +61,8 @@ NES::NES(const std::string &rom):
     for (auto it = ports.begin(); it != ports.end(); it++)
         add_input_port(*it);
 
-    _cpu = std::unique_ptr<M6502::M6502Cpu>(
-        new M6502::M6502Cpu(this, "cpu", MASTER_CLOCK/12, cpu_bus()));
+    _cpu = std::unique_ptr<M6502::n2A03Cpu>(
+        new M6502::n2A03Cpu(this, "cpu", MASTER_CLOCK/12, cpu_bus()));
 
     _ppu = std::unique_ptr<NESPPU>(
         new NESPPU(this, "ppu", MASTER_CLOCK/4));

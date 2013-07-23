@@ -42,7 +42,7 @@ public:
     virtual void execute(Time interval);
     virtual void set_line(InputLine line, LineState state);
 
-private:
+protected:
     /* Internal state */
     reg16_t  _rPC;
     byte_t _rA;
@@ -257,7 +257,9 @@ private:
         set_sz(result);
         _rA = result;
     }
-    void op_nd_adc(void) {
+    void op_adc(void) {
+        /* XXX: Decimal */
+        throw CpuFault();
         byte_t arg = fetch();
         uint32_t result = _rA + arg + _rF.C;
         set_sz(result);
@@ -265,12 +267,10 @@ private:
         _rF.V = bit_isset((_rA^arg^0x80) & (arg^result), 7);
         _rA = result;
     }
-    void op_nd_sbc(void) {
+    void op_sbc(void) {
+        /* XXX: Decimal */
+        throw CpuFault();
         byte_t arg = fetch();
-        if (_rF.D) {
-            /* XXX: Decimal */
-            //throw CpuFault();
-        }
         uint32_t result = _rA - arg - !_rF.C;
         set_sz(result);
         _rF.C = result < 0x100;
@@ -344,6 +344,39 @@ private:
         set_sz(result);
         _rX = result;
     }
+};
+
+class n2A03Cpu: public M6502Cpu
+{
+public:
+    n2A03Cpu(Machine *machine, const std::string &name, unsigned clock,
+             AddressBus16 *bus);
+    ~n2A03Cpu(void);
+
+    virtual void save(SaveState &state);
+    virtual void load(LoadState &state);
+    virtual void execute(Time interval);
+    virtual void set_line(InputLine line, LineState state);
+
+private:
+    void op_nd_adc(void) {
+        byte_t arg = fetch();
+        uint32_t result = _rA + arg + _rF.C;
+        set_sz(result);
+        _rF.C = bit_isset(result, 8);
+        _rF.V = bit_isset((_rA^arg^0x80) & (arg^result), 7);
+        _rA = result;
+    }
+    void op_nd_sbc(void) {
+        byte_t arg = fetch();
+        uint32_t result = _rA - arg - !_rF.C;
+        set_sz(result);
+        _rF.C = result < 0x100;
+        _rF.V = bit_isset((result^_rA) & (_rA^arg), 7);
+        _rA = result;
+    }
+
+    Cycles dispatch(void);
 };
 
 };
