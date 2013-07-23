@@ -133,20 +133,45 @@ Machine::set_render(render_cb cb)
     _render_cb = cb;
 }
 
-InputPort *
-Machine::add_input_port(const std::string &name)
+void
+Machine::add_ioport(const std::string &name)
 {
-    _ports.insert(make_pair(name, InputPort()));
-    return &_ports[name];
+    _ports.insert(make_pair(name, IOPort()));
 }
 
-InputPort *
-Machine::input_port(const std::string &name)
+IOPort *
+Machine::ioport(const std::string &name)
 {
     auto it = _ports.find(name);
     if (it == _ports.end())
         throw KeyError(name);
     return &it->second;
+}
+
+byte_t
+Machine::read_ioport(const std::string &name)
+{
+    IOPort *port = ioport(name);
+    return read_ioport(port);
+}
+
+void
+Machine::write_ioport(const std::string &name, byte_t value)
+{
+    IOPort *port = ioport(name);
+    write_ioport(port, value);
+}
+
+byte_t
+Machine::read_ioport(IOPort *port)
+{
+    return port->value;
+}
+
+void
+Machine::write_ioport(IOPort *port, byte_t value)
+{
+    port->value = value;
 }
 
 dipswitch_ptr

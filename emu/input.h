@@ -169,6 +169,17 @@ struct UnmappedInput: public InputError {
     }
 };
 
+/**
+ * An external port, capable of holding data. Ports are used to communicate
+ * between the machine and the outside world.
+ * XXX: Sometimes ports are abused for inter-device communication.
+ */
+struct IOPort {
+    IOPort(void) = default;
+
+    byte_t value;
+};
+
 typedef std::function<void (LineState state)> input_fn;
 
 struct InputKeyHash
@@ -179,19 +190,13 @@ struct InputKeyHash
     }
 };
 
-struct InputPort {
-    InputPort(void) = default;
-
-    byte_t value;
-};
-
 struct InputSignal
 {
-InputSignal(InputKey key, InputPort *port, int bit, bool active_high):
+InputSignal(InputKey key, IOPort *port, int bit, bool active_high):
     key(key), port(port), bit(bit), active_high(active_high) { }
 
 InputKey key;
-InputPort *port;
+IOPort *port;
 int bit;
 bool active_high;
 };

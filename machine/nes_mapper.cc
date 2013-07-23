@@ -41,16 +41,14 @@ NESMapper::NESMapper(Machine *machine, const iNesHeader *header, bvec &rom):
 {
     memcpy(&_header, header, sizeof(_header));
 
-    InputPort *mirror = _machine->input_port("MIRRORING");
-
     /* XXX: My horizontal mirroring never works */
 #if 0
     if (_header.hmirroring)
-        mirror->value = TwoScreenHMirroring;
+        _machine->write_ioport("MIRRORING", TwoScreenHMirroring);
     else
-        mirror->value = TwoScreenVMirroring;
+        _machine->write_ioport("MIRRORING", TwoScreenVMirroring);
 #else
-    mirror->value = TwoScreenVMirroring;
+    _machine->write_ioport("MIRRORING", TwoScreenVMirroring);
 #endif
 }
 
@@ -253,8 +251,7 @@ public:
         } else {
             switch (offset >> 13) {
             case 0: {
-                _machine->input_port("MIRRORING")->value =
-                    NameTableMirroring(_shift & 0x03);
+                _machine->write_ioport("MIRRORING", _shift & 0x03);
                 /* XXX: Remaing bits */
                 break;
             }
@@ -335,7 +332,7 @@ public:
     {
     }
 
-    void set_line(Line line, LineState state)
+    void line(Line line, LineState state)
     {
         switch (line) {
         case Line::INT0:
@@ -403,8 +400,8 @@ public:
             break;
         }
         case 0x2000:
-            _machine->input_port("MIRRORING")->value = bit_isset(value, 0) ?
-                TwoScreenHMirroring : TwoScreenVMirroring;
+            _machine->write_ioport("MIRRORING", bit_isset(value, 0) ?
+                TwoScreenHMirroring : TwoScreenVMirroring);
             break;
         case 0x2001:
             /* XXX: SRAM */

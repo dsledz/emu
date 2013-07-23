@@ -49,12 +49,12 @@ InputDevice::add(const InputSignal &signal)
 {
     if (signal.active_high) {
         add_input(signal.key, [=](LineState state) {
-            InputPort *port = signal.port;
+            IOPort *port = signal.port;
             bit_set(port->value, signal.bit, state == LineState::Assert);
         });
     } else {
         add_input(signal.key, [=](LineState state) {
-            InputPort *port = signal.port;
+            IOPort *port = signal.port;
             bit_set(port->value, signal.bit, state == LineState::Clear);
         });
     }

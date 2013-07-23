@@ -10,8 +10,8 @@ add_switches(Machine *machine)
 {
     dipswitch_ptr sw;
 
-    machine->add_input_port("DSWA");
-    machine->add_input_port("DSWB");
+    machine->add_ioport("DSWA");
+    machine->add_ioport("DSWB");
 
     sw = machine->add_switch("Difficulty", "DSWA", 0x03, 0x0);
     sw->add_option("Easy", 0x03);
@@ -81,7 +81,7 @@ TEST(DipswitchTest, set)
 
     machine.set_switch("Lives", "5");
 
-    byte_t actual = (machine.input_port("DSWB")->value & 0xC0);
+    byte_t actual = machine.read_ioport("DSWB") & 0xC0;
     EXPECT_EQ(0xC0, actual);
 }
 

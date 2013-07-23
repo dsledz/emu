@@ -211,7 +211,7 @@ private:
     bvec _blk0; /* Name Table 0 */
     bvec _blk1; /* Name Table 1 */
 
-    InputPort *_mirror;
+    IOPort *_mirror;
 
     AddressBus16 *_cpu_bus;
     AddressBus16 *_ppu_bus;

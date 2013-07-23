@@ -49,7 +49,7 @@ NESPPU::NESPPU(NES *machine, const std::string &name, unsigned hertz):
     _blk1.resize(0x0400);
     _palette_bytes.resize(0x0020);
 
-    _mirror = _machine->input_port("MIRRORING");
+    _mirror = _machine->ioport("MIRRORING");
 
     _cpu_bus = machine->cpu_bus();
     _ppu_bus = machine->ppu_bus();
@@ -401,7 +401,8 @@ NESPPU::ppu_write(offset_t offset, byte_t value)
 byte_t
 NESPPU::ppu_nt_read(offset_t offset)
 {
-    NameTableMirroring mirror = NameTableMirroring(_mirror->value);
+    NameTableMirroring mirror = NameTableMirroring(
+        _machine->read_ioport(_mirror));
     NameTable nt = NameTable((offset & 0x0C00) >> 10);
     offset &= 0x03ff;
     byte_t result = 0;
@@ -460,7 +461,8 @@ NESPPU::ppu_nt_read(offset_t offset)
 void
 NESPPU::ppu_nt_write(offset_t offset, byte_t value)
 {
-    NameTableMirroring mirror = NameTableMirroring(_mirror->value);
+    NameTableMirroring mirror = NameTableMirroring(
+        _machine->read_ioport(_mirror));
     NameTable nt = NameTable((offset & 0x0C00) >> 10);
     offset &= 0x03ff;
     switch (nt) {

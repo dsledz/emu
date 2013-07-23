@@ -59,7 +59,7 @@ NES::NES(const std::string &rom):
     _screen = std::unique_ptr<RasterScreen>(new RasterScreen(256, 240));
 
     for (auto it = ports.begin(); it != ports.end(); it++)
-        add_input_port(*it);
+        add_ioport(*it);
 
     _cpu = std::unique_ptr<M6502::n2A03Cpu>(
         new M6502::n2A03Cpu(this, "cpu", MASTER_CLOCK/12, cpu_bus()));
@@ -103,14 +103,14 @@ NES::NES(const std::string &rom):
             byte_t result = 0;
             switch (addr) {
             case 0x0016: {
-                byte_t keys = input_port("JOYPAD1")->value;
+                byte_t keys = read_ioport("JOYPAD1");
                 if (_joy1_shift < 8)
                     result = bit_isset(keys, _joy1_shift);
                 _joy1_shift++;
                 break;
             }
             case 0x0017: {
-                byte_t keys = input_port("JOYPAD2")->value;
+                byte_t keys = read_ioport("JOYPAD2");
                 if (_joy2_shift < 8)
                     result = bit_isset(keys, _joy2_shift);
                 _joy2_shift++;
@@ -139,7 +139,9 @@ NES::NES(const std::string &rom):
     /* Joypad 1 */
     InputDevice *input = &_input;
 
-    InputPort *port = input_port("JOYPAD1");
+    IOPort *port = NULL;
+
+    port = ioport("JOYPAD1");
     input->add(InputSignal(InputKey::Joy1Btn1, port, NESKey::A, true));
     input->add(InputSignal(InputKey::Joy1Btn2, port, NESKey::B, true));
     input->add(InputSignal(InputKey::Select1, port, NESKey::Select, true));
@@ -149,7 +151,7 @@ NES::NES(const std::string &rom):
     input->add(InputSignal(InputKey::Joy1Left, port, NESKey::Left, true));
     input->add(InputSignal(InputKey::Joy1Right, port, NESKey::Right, true));
 
-    port = input_port("JOYPAD2");
+    port = ioport("JOYPAD2");
     input->add(InputSignal(InputKey::Joy2Btn1, port, NESKey::A, true));
     input->add(InputSignal(InputKey::Joy2Btn2, port, NESKey::B, true));
     input->add(InputSignal(InputKey::Select2, port, NESKey::Select, true));

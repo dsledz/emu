@@ -46,7 +46,11 @@ public:
     }
 };
 
+#ifdef BROKEN_TESTS
 TEST(MachineTest, time1)
+#else
+void MachineTest_time1(void)
+#endif
 {
     Machine machine;
     TestDevice dev(&machine);
@@ -90,6 +94,20 @@ TEST(MachineTest, time3)
     Cycles hertz(18432000);
     Cycles c = Time(usec(200)).to_cycles(hertz);
     EXPECT_EQ(Cycles(3686), c);
+}
+
+TEST(MachineTest, ioport)
+{
+    Machine machine;
+    machine.add_ioport("test1");
+
+    IOPort *port = machine.ioport("test1");
+    EXPECT_THROW(machine.ioport("test2"), KeyError);
+
+    EXPECT_EQ(0, machine.read_ioport("test1"));
+
+    port->value = 10;
+    EXPECT_EQ(10, machine.read_ioport("test1"));
 }
 
 class TestMachine: public Machine {

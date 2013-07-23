@@ -71,7 +71,7 @@ struct KeyError: public EmuException {
  * Devices
  * Dipswitches
  * Timers
- * InputPorts
+ * IOPorts
  */
 class Machine {
 public:
@@ -97,11 +97,17 @@ public:
     void remove_timer(Timer_ptr timer);
 
     /**
-     * Declare an IO line.  IO lines can be used to communicate between
+     * Declare an IO port with the name of @a name.
+     * Ports 
+     * IO lines can be used to communicate between
      * different devices in a mailbox manner.
      */
-    InputPort *add_input_port(const std::string &name);
-    InputPort *input_port(const std::string &name);
+    void add_ioport(const std::string &name);
+    IOPort *ioport(const std::string &name);
+    byte_t read_ioport(const std::string &name);
+    byte_t read_ioport(IOPort *port);
+    void write_ioport(const std::string &name, byte_t value);
+    void write_ioport(IOPort *port, byte_t value);
 
     /**
      * Manage dipswitches
@@ -151,7 +157,7 @@ protected:
     std::unique_ptr<RasterScreen> _screen;
     render_cb _render_cb;
     std::map<std::string, dipswitch_ptr> _switches;
-    std::map<std::string, InputPort> _ports;
+    std::map<std::string, IOPort> _ports;
 
 private:
 

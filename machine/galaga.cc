@@ -122,8 +122,8 @@ Galaga::init_bus(void)
     /* Dipswitches */
     _bus->add(0x6800, 0xFFF8,
         [&](offset_t offset) -> byte_t {
-            byte_t dswa = input_port("DSWA")->value;
-            byte_t dswb = input_port("DSWB")->value;
+            byte_t dswa = read_ioport("DSWA");
+            byte_t dswb = read_ioport("DSWB");
             return (bit_isset(dswa, offset) << 1) | bit_isset(dswb, offset);
         },
         AddressBus16::DefaultWrite());
@@ -224,8 +224,8 @@ Galaga::init_switches(void)
 {
     dipswitch_ptr sw;
 
-    add_input_port("DSWA");
-    add_input_port("DSWB");
+    add_ioport("DSWA");
+    add_ioport("DSWB");
 
     sw = add_switch("Difficulty", "DSWA", 0x03, 0x00);
     sw->add_option("Easy", 0x03);

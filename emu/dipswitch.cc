@@ -54,14 +54,14 @@ Dipswitch::select(Machine *machine, const std::string &value)
     auto it = _options.find(value);
     if (it == _options.end())
         throw DipswitchValueException(value);
-    InputPort *port = machine->input_port(_port);
+    IOPort *port = machine->ioport(_port);
     bit_setmask(port->value, _mask, it->second);
 }
 
 void
 Dipswitch::set_default(Machine *machine)
 {
-    InputPort *port = machine->input_port(_port);
+    IOPort *port = machine->ioport(_port);
     bit_setmask(port->value, _mask, _def);
 }
 
