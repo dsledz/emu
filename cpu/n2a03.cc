@@ -62,17 +62,17 @@ n2A03Cpu::execute(Time period)
 }
 
 void
-n2A03Cpu::set_line(InputLine line, LineState state)
+n2A03Cpu::line(Line line, LineState state)
 {
     switch (line) {
-    case InputLine::RESET:
+    case Line::RESET:
         /* XXX: We should treat this as a line */
         _reset();
         break;
-    case InputLine::INT0:
+    case Line::INT0:
         _irq_line = state;
         break;
-    case InputLine::NMI:
+    case Line::NMI:
         _nmi_line = state;
         break;
     default:

@@ -67,17 +67,17 @@ M6502Cpu::execute(Time period)
 }
 
 void
-M6502Cpu::set_line(InputLine line, LineState state)
+M6502Cpu::line(Line line, LineState state)
 {
     switch (line) {
-    case InputLine::RESET:
+    case Line::RESET:
         /* XXX: We should treat this as a line */
         _reset();
         break;
-    case InputLine::INT0:
+    case Line::INT0:
         _irq_line = state;
         break;
-    case InputLine::NMI:
+    case Line::NMI:
         _nmi_line = state;
         break;
     default:

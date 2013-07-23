@@ -42,7 +42,7 @@ public:
     }
     virtual void tick(unsigned cycles) {
     }
-    virtual void set_line(InputLine line, LineState state) {
+    virtual void line(Line line, LineState state) {
     }
 };
 

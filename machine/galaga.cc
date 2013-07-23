@@ -137,19 +137,19 @@ Galaga::init_bus(void)
             case 0:
                 _main_irq = bit_isset(value, 0);
                 if (!_main_irq)
-                    set_line("maincpu", InputLine::INT0, LineState::Clear);
+                    set_line("maincpu", Line::INT0, LineState::Clear);
                 break;
             case 1:
                 _sub_irq = bit_isset(value, 0);
                 if (!_sub_irq)
-                    set_line("subcpu", InputLine::INT0, LineState::Clear);
+                    set_line("subcpu", Line::INT0, LineState::Clear);
                 break;
             case 2:
                 _snd_nmi = !bit_isset(value, 0);
                 break;
             case 3:
-                set_line("subcpu", InputLine::RESET, LineState::Pulse);
-                set_line("sndcpu", InputLine::RESET, LineState::Pulse);
+                set_line("subcpu", Line::RESET, LineState::Pulse);
+                set_line("sndcpu", Line::RESET, LineState::Pulse);
                 break;
             }
         });
@@ -202,18 +202,18 @@ Galaga::execute(Time interval)
             break;
         case 64:
             if (_snd_nmi)
-                set_line("sndcpu", InputLine::NMI, LineState::Pulse);
+                set_line("sndcpu", Line::NMI, LineState::Pulse);
             break;
         case 196:
             if (_snd_nmi)
-                set_line("sndcpu", InputLine::NMI, LineState::Pulse);
+                set_line("sndcpu", Line::NMI, LineState::Pulse);
             break;
         case 240:
             /* Vblank start */
             if (_main_irq)
-                set_line("maincpu", InputLine::INT0, LineState::Assert);
+                set_line("maincpu", Line::INT0, LineState::Assert);
             if (_sub_irq)
-                set_line("subcpu", InputLine::INT0, LineState::Assert);
+                set_line("subcpu", Line::INT0, LineState::Assert);
             break;
         }
     }

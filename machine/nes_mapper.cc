@@ -335,15 +335,15 @@ public:
     {
     }
 
-    void set_line(InputLine line, LineState state)
+    void set_line(Line line, LineState state)
     {
         switch (line) {
-        case InputLine::INT0:
+        case Line::INT0:
             if (state == LineState::Pulse) {
                 if (_irq_counter == 0) {
                     _irq_counter = _irq_reload;
                 } else if (--_irq_counter == 0 && _irq_enable) {
-                    _machine->set_line("cpu", InputLine::INT0,
+                    _machine->set_line("cpu", Line::INT0,
                         LineState::Assert);
                 }
             }
@@ -417,7 +417,7 @@ public:
             break;
         case 0x6000:
             _irq_enable = false;
-            _machine->set_line("cpu", InputLine::INT0, LineState::Clear);
+            _machine->set_line("cpu", Line::INT0, LineState::Clear);
             break;
         case 0x6001:
             _irq_enable = true;

@@ -34,9 +34,11 @@ Namco06::Namco06(Machine *machine, Device *parent):
     _children(),
     _control(0x00)
 {
-    _timer = Timer_ptr(new Timer( [=]() {
-            _parent->set_line(InputLine::NMI, LineState::Pulse);
-        }, Time(usec(200))));
+    _timer = Timer_ptr(new Timer(
+        [=]() {
+            _machine->set_line(_parent, Line::NMI, LineState::Pulse);
+        },
+        Time(usec(200))));
 }
 
 Namco06::~Namco06(void)
@@ -87,10 +89,10 @@ Namco06::write_control(addr_t addr, byte_t value)
 }
 
 void
-Namco06::set_line(InputLine line, LineState state)
+Namco06::line(Line line, LineState state)
 {
     switch (line) {
-    case InputLine::RESET:
+    case Line::RESET:
         DEBUG("06xx RESET");
         break;
     default:

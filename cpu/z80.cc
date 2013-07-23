@@ -132,19 +132,19 @@ Z80Cpu::_reset(void)
 }
 
 void
-Z80Cpu::set_line(InputLine line, LineState state)
+Z80Cpu::line(Line line, LineState state)
 {
     switch (line) {
-    case InputLine::RESET:
+    case Line::RESET:
         _reset_line = state;
         break;
-    case InputLine::INT0:
+    case Line::INT0:
         _int0_line = state;
         break;
-    case InputLine::NMI:
+    case Line::NMI:
         _nmi_line = state;
         break;
-    case InputLine::WAIT:
+    case Line::WAIT:
         _wait_line = state;
         break;
     default:

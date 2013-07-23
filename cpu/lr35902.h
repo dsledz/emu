@@ -115,7 +115,7 @@ public:
     virtual void load(LoadState &state);
     // XXX: Do we need to do something here?
     virtual void execute(Time interval);
-    virtual void set_line(InputLine, LineState state);
+    virtual void line(Line, LineState state);
 
     byte_t fetch(Register reg);
     void store(Register reg, byte_t value);

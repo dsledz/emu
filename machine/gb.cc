@@ -144,8 +144,8 @@ public:
             if (_tcycles > limit) {
                 _tcycles -= limit;
                 if (_tima == 0xff) {
-                    _machine->set_line("cpu", InputLine(GBInterrupt::Timeout),
-                                       LineState::Pulse);
+                    _machine->set_line("cpu",
+                        make_irq_line(GBInterrupt::Timeout), LineState::Pulse);
                     // Reset the overflow
                     _tima = _tma;
                 } else
@@ -154,9 +154,9 @@ public:
         }
     }
 
-    virtual void set_line(InputLine line, LineState state) {
+    virtual void set_line(Line line, LineState state) {
         switch (line) {
-        case InputLine::RESET:
+        case Line::RESET:
             _reset();
         default:
             break;

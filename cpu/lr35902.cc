@@ -114,25 +114,25 @@ LR35902Cpu::~LR35902Cpu(void)
 }
 
 void
-LR35902Cpu::set_line(InputLine line, LineState state)
+LR35902Cpu::line(Line line, LineState state)
 {
     switch (line) {
-    case InputLine::RESET:
+    case Line::RESET:
         _reset_line = state;
         break;
-    case InputLine::INT0: /* Interrupt::VBlank */
+    case Line::INT0: /* Interrupt::VBlank */
         bit_set(_IF, 0, true);
         break;
-    case InputLine::INT1: /* Interrupt::LCDStat */
+    case Line::INT1: /* Interrupt::LCDStat */
         bit_set(_IF, 1, true);
         break;
-    case InputLine::INT2: /* Interrupt::Timeout */
+    case Line::INT2: /* Interrupt::Timeout */
         bit_set(_IF, 2, true);
         break;
-    case InputLine::INT3: /* Interrupt::Serial */
+    case Line::INT3: /* Interrupt::Serial */
         bit_set(_IF, 3, true);
         break;
-    case InputLine::INT4: /* Interrupt::Joypad */
+    case Line::INT4: /* Interrupt::Joypad */
         bit_set(_IF, 4, true);
         break;
     default:

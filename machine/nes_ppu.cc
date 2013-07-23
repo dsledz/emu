@@ -189,7 +189,7 @@ NESPPU::step(void)
             _vram_locked = false;
             _status.vblank = 1;
             if (_reg1.nmi_enabled)
-                _machine->set_line("cpu", InputLine::NMI, LineState::Pulse);
+                _machine->set_line("cpu", Line::NMI, LineState::Pulse);
         }
     }
     if (_vpos < 20 || (!_reg2.bg_visible && !_reg2.spr_visible))
@@ -230,7 +230,7 @@ NESPPU::step(void)
     } else if (_hpos == 257) {
         _v.coarse_x = _t.coarse_x;
         _v.nt_hselect = _t.nt_hselect;
-        _machine->set_line("mapper", InputLine::INT0, LineState::Pulse);
+        _machine->set_line("mapper", Line::INT0, LineState::Pulse);
     } else if (_hpos == 280 && _vpos == 20) {
         _vram_locked = true;
         _v.fine_y = _t.fine_y;

@@ -40,7 +40,7 @@ public:
     virtual void save(SaveState &state);
     virtual void load(LoadState &state);
     virtual void execute(Time interval);
-    virtual void set_line(InputLine line, LineState state);
+    virtual void line(Line line, LineState state);
 
 protected:
     /* Internal state */
@@ -356,7 +356,7 @@ public:
     virtual void save(SaveState &state);
     virtual void load(LoadState &state);
     virtual void execute(Time interval);
-    virtual void set_line(InputLine line, LineState state);
+    virtual void line(Line line, LineState state);
 
 private:
     void op_nd_adc(void) {

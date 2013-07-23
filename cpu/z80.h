@@ -131,7 +131,7 @@ public:
     Z80Cpu(const Z80Cpu &cpu) = delete;
 
     virtual void execute(Time interval);
-    virtual void set_line(InputLine line, LineState state);
+    virtual void line(Line line, LineState state);
 
     /* Register accessors */
     void store(Reg r, byte_t arg);

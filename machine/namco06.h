@@ -45,7 +45,7 @@ public:
     byte_t read_control(addr_t addr);
     void write_control(addr_t addr, byte_t value);
 
-    virtual void set_line(InputLine line, LineState state);
+    virtual void line(Line line, LineState state);
 
 private:
     Device *_parent;

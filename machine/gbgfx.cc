@@ -236,12 +236,14 @@ GBGraphics::execute(Time interval)
             if (_ly == DISPLAY_LINES) {
                 // Wait until our frame is finished
                 _machine->render();
-                _machine->set_line("cpu", InputLine(GBInterrupt::VBlank),
-                                   LineState::Pulse);
+                _machine->set_line("cpu",
+                    make_irq_line(GBInterrupt::VBlank),
+                    LineState::Pulse);
                 _stat = (_stat & 0xfc) | LCDMode::VBlankMode;
                 if (bit_isset(_stat, STATBits::Mode01Int))
-                    _machine->set_line("cpu", InputLine(GBInterrupt::LCDStat),
-                                   LineState::Pulse);
+                    _machine->set_line("cpu",
+                        make_irq_line(GBInterrupt::LCDStat),
+                        LineState::Pulse);
             } else {
                 if (_ly == 0)
                     _screen->clear();
@@ -249,14 +251,16 @@ GBGraphics::execute(Time interval)
                     draw_scanline(_ly);
                 _stat = (_stat & 0xfc) | LCDMode::OAMMode;
                 if (bit_isset(_stat, STATBits::Mode10Int))
-                    _machine->set_line("cpu", InputLine(GBInterrupt::LCDStat),
-                                       LineState::Pulse);
+                    _machine->set_line("cpu",
+                        make_irq_line(GBInterrupt::LCDStat),
+                        LineState::Pulse);
             }
             // See if we need to trigger the lcd interrupt.
             if (bit_isset(_stat, STATBits::LYCInterrupt) &&
                 !(bit_isset(_stat, STATBits::Coincidence) ^ (_lyc == _ly)))
-                _machine->set_line("cpu", InputLine(GBInterrupt::LCDStat),
-                                   LineState::Pulse);
+                _machine->set_line("cpu",
+                    make_irq_line(GBInterrupt::LCDStat),
+                    LineState::Pulse);
         }
         break;
     case LCDMode::OAMMode:
@@ -272,8 +276,9 @@ GBGraphics::execute(Time interval)
             _fcycles -= ACTIVE_CYCLES;
             _stat = (_stat & 0xfc) | LCDMode::HBlankMode;
             if (bit_isset(_stat, STATBits::Mode00Int))
-                _machine->set_line("cpu", InputLine(GBInterrupt::LCDStat),
-                                   LineState::Pulse);
+                _machine->set_line("cpu",
+                    make_irq_line(GBInterrupt::LCDStat),
+                    LineState::Pulse);
         }
         break;
     case LCDMode::VBlankMode:
@@ -282,8 +287,9 @@ GBGraphics::execute(Time interval)
             _fcycles -= V_BLANK_CYCLES;
             _stat = (_stat & 0xfc) | LCDMode::OAMMode;
             if (bit_isset(_stat, STATBits::Mode10Int))
-                _machine->set_line("cpu", InputLine(GBInterrupt::LCDStat),
-                                   LineState::Pulse);
+                _machine->set_line("cpu",
+                    make_irq_line(GBInterrupt::LCDStat),
+                    LineState::Pulse);
         }
         break;
     }

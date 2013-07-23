@@ -174,6 +174,19 @@ Machine::reset_switches(void)
         it->second->set_default(this);
 }
 
+void
+Machine::set_line(const std::string &name, Line line, LineState state)
+{
+    set_line(dev(name), line, state);
+}
+
+void
+Machine::set_line(Device *dev, Line line, LineState state)
+{
+    /* XXX: Handle pulse */
+    dev->line(line, state);
+}
+
 MachineLoader EMU::loader __used;
 
 MachineDefinition::MachineDefinition(

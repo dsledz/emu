@@ -167,7 +167,7 @@ NES::NES(const std::string &rom):
 
     /* XXX: Cartridge Expansion 0x4018 - 0x5FFF */
 
-    set_line("cpu", InputLine::RESET, LineState::Pulse);
+    set_line("cpu", Line::RESET, LineState::Pulse);
 }
 
 NES::~NES(void)

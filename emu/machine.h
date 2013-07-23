@@ -132,11 +132,13 @@ public:
     Device *dev(const std::string &name);
 
     /**
-     * Set an input line on the device @a name.
+     * Set an line on the device @a name.
      */
-    void set_line(const std::string &name, InputLine line, LineState state) {
-        dev(name)->set_line(line, state);
-    }
+    void set_line(const std::string &name, Line line, LineState state);
+    /**
+     * Set the line on @a dev.
+     */
+    void set_line(Device *dev, Line line, LineState state);
 
     RasterScreen *screen(void);
     void set_render(render_cb cb);

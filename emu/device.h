@@ -69,7 +69,7 @@ public:
     /**
      * Signal one of the external lines.
      */
-    virtual void set_line(InputLine line, LineState state) { }
+    virtual void line(Line line, LineState state) { }
 
 protected:
     Machine *_machine;
