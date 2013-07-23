@@ -257,23 +257,19 @@ private:
         set_sz(result);
         _rA = result;
     }
-    void op_adc(void) {
+    void op_nd_adc(void) {
         byte_t arg = fetch();
-        if (_rF.D) {
-            /* XXX: Decimal */
-            throw CpuFault();
-        }
         uint32_t result = _rA + arg + _rF.C;
         set_sz(result);
         _rF.C = bit_isset(result, 8);
         _rF.V = bit_isset((_rA^arg^0x80) & (arg^result), 7);
         _rA = result;
     }
-    void op_sbc(void) {
+    void op_nd_sbc(void) {
         byte_t arg = fetch();
         if (_rF.D) {
             /* XXX: Decimal */
-            throw CpuFault();
+            //throw CpuFault();
         }
         uint32_t result = _rA - arg - !_rF.C;
         set_sz(result);

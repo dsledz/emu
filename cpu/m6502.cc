@@ -33,7 +33,7 @@ using namespace M6502;
 M6502Cpu::M6502Cpu(Machine *machine, const std::string &name, unsigned hertz,
                    AddressBus16 *bus):
     CpuDevice(machine, name, hertz),
-    _rPC(), _rA(), _rX(), _rY(),
+    _rPC(), _rA(), _rX(), _rY(), _rSR(), _rSP(),
     _nmi_line(LineState::Clear),
     _irq_line(LineState::Clear),
     _bus(bus),
@@ -93,7 +93,7 @@ M6502Cpu::_reset(void)
     _rX = 0;
     _rY = 0;
     _rSR = 0;
-    _rSP = 0;
+    _rSP = 0xff;
     _rPC.b.l = bus_read(0xFFFC);
     _rPC.b.h = bus_read(0xFFFD);
 }
@@ -209,7 +209,7 @@ M6502Cpu::dispatch(void)
         OPCODE(0x39, "AND abs,Y", Abs(_rY); op_and());
         OPCODE(0x3D, "AND abs,X", Abs(_rX); op_and());
         OPCODE(0x3E, "ROL abs,X", Abs(_rX); op_rol());
-        OPCODE(0x40, "RTI", _rSR = pop(); _rPC.b.l=pop(); _rPC.b.h=pop());
+        OPCODE(0x40, "RTI", _rSR = pop(); _rF.E = 1; _rPC.b.l=pop(); _rPC.b.h=pop());
         OPCODE(0x41, "EOR X,ind", XInd(); op_eor());
         OPCODE(0x45, "EOR zpg", Zpg(); op_eor());
         OPCODE(0x46, "LSR zpg", Zpg(); op_lsr());
@@ -228,22 +228,22 @@ M6502Cpu::dispatch(void)
         OPCODE(0x5D, "EOR abs,X", Abs(_rX); op_eor());
         OPCODE(0x5E, "LSR abs,X", Abs(_rX); op_lsr());
         OPCODE(0x60, "RTS", _rPC.b.l=pop(); _rPC.b.h=pop(); _rPC.d++);
-        OPCODE(0x61, "ADC X,ind", XInd(); op_adc());
-        OPCODE(0x65, "ADC zpg", Zpg(); op_adc());
+        OPCODE(0x61, "ADC X,ind", XInd(); op_nd_adc());
+        OPCODE(0x65, "ADC zpg", Zpg(); op_nd_adc());
         OPCODE(0x66, "ROR zpg", Zpg(); op_ror());
         OPCODE(0x68, "PLA", _rA=pop(); set_sz(_rA));
-        OPCODE(0x69, "ADC #", Imm(); op_adc());
+        OPCODE(0x69, "ADC #", Imm(); op_nd_adc());
         OPCODE(0x6A, "ROR Acc", Acc(); op_ror());
         OPCODE(0x6C, "JMP ind", Ind(); op_jmp());
-        OPCODE(0x6D, "ADC abs", Abs(); op_adc());
+        OPCODE(0x6D, "ADC abs", Abs(); op_nd_adc());
         OPCODE(0x6E, "ROR abs", Abs(); op_ror());
         OPCODE(0x70, "BVS", Rel(); op_branch(_rF.V));
-        OPCODE(0x71, "ADC ind,Y", IndY(); op_adc());
-        OPCODE(0x75, "ADC zpg,X", ZpgX(); op_adc());
+        OPCODE(0x71, "ADC ind,Y", IndY(); op_nd_adc());
+        OPCODE(0x75, "ADC zpg,X", ZpgX(); op_nd_adc());
         OPCODE(0x76, "ROR zpg,X", ZpgX(); op_ror());
         OPCODE(0x78, "SEI", _rF.I = 1);
-        OPCODE(0x79, "ADC abs,Y", Abs(_rY); op_adc());
-        OPCODE(0x7D, "ADC abs,X", Abs(_rX); op_adc());
+        OPCODE(0x79, "ADC abs,Y", Abs(_rY); op_nd_adc());
+        OPCODE(0x7D, "ADC abs,X", Abs(_rX); op_nd_adc());
         OPCODE(0x7E, "ROR abs,X", Abs(_rX); op_ror());
         OPCODE(0x81, "STA X,ind", XInd(); store(_rA));
         OPCODE(0x84, "STY zpg", Zpg(); store(_rY));
@@ -306,25 +306,26 @@ M6502Cpu::dispatch(void)
         OPCODE(0xDD, "CMP abs,X", Abs(_rX); op_cmp(_rA));
         OPCODE(0xDE, "DEC abs,X", Abs(_rX); op_dec());
         OPCODE(0xE0, "CPX #", Imm(); op_cmp(_rX));
-        OPCODE(0xE1, "SBC X,ind", XInd(); op_sbc());
+        OPCODE(0xE1, "SBC X,ind", XInd(); op_nd_sbc());
         OPCODE(0xE4, "CPX zpg", Zpg(); op_cmp(_rX));
-        OPCODE(0xE5, "SBC zpg", Zpg(); op_sbc());
+        OPCODE(0xE5, "SBC zpg", Zpg(); op_nd_sbc());
         OPCODE(0xE6, "INC zpg", Zpg(); op_inc());
         OPCODE(0xE8, "INX", op_inx());
-        OPCODE(0xE9, "SBC imm", Imm(); op_sbc());
+        OPCODE(0xE9, "SBC imm", Imm(); op_nd_sbc());
         OPCODE(0xEA, "NOP", );
         OPCODE(0xEC, "CPX abs", Abs(); op_cmp(_rX));
-        OPCODE(0xED, "SBC abs", Abs(); op_sbc());
+        OPCODE(0xED, "SBC abs", Abs(); op_nd_sbc());
         OPCODE(0xEE, "INC abs", Abs(); op_inc());
         OPCODE(0xF0, "BEQ", Rel(); op_branch(_rF.Z));
-        OPCODE(0xF1, "SBC ind,Y", IndY(); op_sbc());
-        OPCODE(0xF5, "SBC zpg,X", ZpgX(); op_sbc());
+        OPCODE(0xF1, "SBC ind,Y", IndY(); op_nd_sbc());
+        OPCODE(0xF5, "SBC zpg,X", ZpgX(); op_nd_sbc());
         OPCODE(0xF6, "INC zpg,X", ZpgX(); op_inc());
         OPCODE(0xF8, "SED", _rF.D = 0);
-        OPCODE(0xF9, "SBC abs,Y", Abs(_rY); op_sbc());
-        OPCODE(0xFD, "SBC abs,X", Abs(_rX); op_sbc());
+        OPCODE(0xF9, "SBC abs,Y", Abs(_rY); op_nd_sbc());
+        OPCODE(0xFD, "SBC abs,X", Abs(_rX); op_nd_sbc());
         OPCODE(0xFE, "INC abs,X", Abs(_rX); op_inc());
     default:
+        std::cout << "Unknown opcode: " << Hex(op) << std::endl;
         throw CpuFault();
     }
 
