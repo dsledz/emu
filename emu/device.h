@@ -25,8 +25,8 @@
 
 #include "bits.h"
 #include "state.h"
-#include "input.h"
 #include "io.h"
+#include "input.h"
 #include "timing.h"
 #include <list>
 

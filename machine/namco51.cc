@@ -50,18 +50,18 @@ void
 Namco51::write8(offset_t offset, byte_t value)
 {
     if (_coinage_bytes) {
-        DEBUG("51xx coinage write");
+        DBG("51xx coinage write");
         _coinage_bytes--;
         return;
     }
 
     switch (Command(value)) {
     case Command::Coinage:
-        DEBUG("Coinage bytes");
+        DBG("Coinage bytes");
         _coinage_bytes = 4;
         break;
     case Command::Credit:
-        DEBUG("51xx Credit Mode");
+        DBG("51xx Credit Mode");
         _mode = Mode::Credit;
         _read_count = 0;
         break;
@@ -72,7 +72,7 @@ Namco51::write8(offset_t offset, byte_t value)
         _remap = true;
         break;
     case Command::SwitchMode:
-        DEBUG("51xx Switch Mode");
+        DBG("51xx Switch Mode");
         _mode = Mode::Switch;
         _read_count = 0;
         break;
@@ -87,13 +87,13 @@ Namco51::read8(offset_t offset)
     if (_mode == Mode::Switch) {
         switch (_read_count++ % 3) {
         case 0: /* buttons & coins */
-            DEBUG("51xx Buttons");
+            DBG("51xx Buttons");
             return (read_port("IN0") | (read_port("IN1") << 4));
         case 1: /* joysticks */
-            DEBUG("51xx Joystick");
+            DBG("51xx Joystick");
             return (read_port("IN2") | (read_port("IN3") << 4));
         case 2: /* unusued */
-            DEBUG("51xx Unused");
+            DBG("51xx Unused");
             return 0x00;
         }
 
@@ -154,7 +154,7 @@ Namco51::read8(offset_t offset)
         }
     }
 
-    DEBUG("51xx Unknown READ");
+    DBG("51xx Unknown READ");
 
     return 0;
 }

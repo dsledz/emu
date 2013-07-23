@@ -105,7 +105,7 @@ extern Debug log;
 #define TRACE(fmt, args...) \
     EMU::log.trace(fmt);
 
-#define DEBUG(fmt, args...) \
+#define DBG(fmt, args...) \
     EMU::log.debug(fmt);
 
 #define INFO(fmt, args...) \

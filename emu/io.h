@@ -27,7 +27,6 @@
 #include <cassert>
 #include "bits.h"
 #include "radix.h"
-#include "input.h"
 
 namespace EMU {
 

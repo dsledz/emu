@@ -24,48 +24,61 @@
  */
 #pragma once
 
-#include "bits.h"
-#include "io.h"
-#include <map>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-namespace EMU {
-
-class Machine;
-
-struct DipswitchValueException: public EmuException {
-    DipswitchValueException(const std::string &value= ""):
-        EmuException("Unknown dipswitch value"),
-        value(value)
-    {
-        if (value != "")
-            msg += ": " + value;
-    }
-    std::string value;
+struct emu_screen {
+    short width;
+    short height;
+    uint32_t *data;
 };
 
-/**
- * Describe a single setting.
- */
-class Dipswitch {
-    public:
-        Dipswitch(const std::string &name, const std::string &port,
-                  byte_t mask, byte_t def);
-        ~Dipswitch(void);
+typedef void (*emu_render_func)(void *ctx, const struct emu_screen *screen);
 
-        void add_option(const std::string &name, byte_t value);
-
-        void select(Machine *machine, const std::string &name);
-
-        void set_default(Machine *machine);
-
-    private:
-        std::string _name;
-        std::string _port;
-        byte_t      _mask;
-        byte_t      _def;
-        std::map<std::string, byte_t> _options;
+enum emu_key {
+    EMU_KEY_NONE = 0,
+    EMU_KEY_JOY1UP,
+    EMU_KEY_JOY1DOWN,
+    EMU_KEY_JOY1LEFT,
+    EMU_KEY_JOY1RIGHT,
+    EMU_KEY_JOY1BTN1,
+    EMU_KEY_JOY1BTN2,
+    EMU_KEY_JOY1SELECT,
+    EMU_KEY_JOY1START,
+    EMU_KEY_COIN1,
 };
 
-typedef std::shared_ptr<Dipswitch> dipswitch_ptr;
-
+struct emu_event {
+    enum emu_key key;
+    bool pressed;
 };
+
+typedef void (*emu_input_func)(void *ctx, const struct emu_event *event);
+
+struct emu_config {
+    const char *driver;
+    const char *rom;
+    void *ctx;
+    emu_render_func render_fn;
+    emu_input_func   input_fn;
+};
+
+struct emu_state *
+emu_load(const struct emu_config *config);
+
+int
+emu_start(struct emu_state *emu);
+
+int
+emu_end(struct emu_state *emu);
+
+int
+emu_render(struct emu_state *emu, float *modelview);
+
+int
+emu_send_event(struct emu_state *emu, const struct emu_event *event);
+
+#ifdef __cplusplus
+};
+#endif

@@ -215,7 +215,7 @@ NESPPU::step(void)
                 _x++;
         }
     } else if (_hpos == 256) {
-        DEBUG("Line Start");
+        DBG("Line Start");
         if (_v.fine_y == 0x07) {
             _v.fine_y = 0;
             if (_v.coarse_y == 29) {

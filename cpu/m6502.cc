@@ -157,13 +157,13 @@ M6502Cpu::dispatch(void)
 {
     _icycles = Cycles(0);
     if (_nmi_line == LineState::Pulse) {
-        DEBUG("NMI triggered");
+        DBG("NMI triggered");
         _rF.B = 0;
         op_interrupt(0xFFFA);
         _nmi_line = LineState::Clear;
         return _icycles;
     } else if (_rF.I == 0 && _irq_line == LineState::Assert) {
-        DEBUG("IRQ triggered");
+        DBG("IRQ triggered");
         _rF.B = 0;
         _rF.I = 1;
         op_interrupt(0xFFFE);

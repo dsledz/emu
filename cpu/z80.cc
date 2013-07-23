@@ -123,7 +123,7 @@ Z80Cpu::step(void)
 void
 Z80Cpu::_reset(void)
 {
-    DEBUG("Z80 reset");
+    DBG("Z80 reset");
     _R = Registers();
     _iff1 = false;
     _iff2 = false;

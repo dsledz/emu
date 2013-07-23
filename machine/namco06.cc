@@ -93,10 +93,10 @@ Namco06::line(Line line, LineState state)
 {
     switch (line) {
     case Line::RESET:
-        DEBUG("06xx RESET");
+        DBG("06xx RESET");
         break;
     default:
-        DEBUG("Unrecognized signal");
+        DBG("Unrecognized signal");
         break;
     }
 }
