@@ -70,38 +70,17 @@ GBGraphics::GBGraphics(Gameboy *gameboy, unsigned hertz):
         });
     _bus->add(VideoReg::LYC, &_lyc);
     _bus->add(VideoReg::BGP, 0xFFFF,
-        [&] (offset_t offset) -> byte_t {
-            return _bgp;
-        },
-        [&] (offset_t offset, byte_t value) {
-            _bg_pal[0] = _global_pal[(value & 0x03)];
-            _bg_pal[1] = _global_pal[(value & 0x0C) >> 2];
-            _bg_pal[2] = _global_pal[(value & 0x30) >> 4];
-            _bg_pal[3] = _global_pal[(value & 0xC0) >> 6];
-            _bgp = value;
-        });
+        AddressBus16::DataRead(&_bgp),
+        WRITE_CB(GBGraphics::palette_write, this, &_bg_pal, &_bgp)
+        );
     _bus->add(VideoReg::OBP0, 0xFFFF,
-        [&] (offset_t offset) -> byte_t {
-            return _obp0;
-        },
-        [&] (offset_t offset, byte_t value) {
-            _obj0_pal[0] = trans;
-            _obj0_pal[1] = _global_pal[(value & 0x0C) >> 2];
-            _obj0_pal[2] = _global_pal[(value & 0x30) >> 4];
-            _obj0_pal[3] = _global_pal[(value & 0xC0) >> 6];
-            _obp0 = value;
-        });
+        AddressBus16::DataRead(&_obp0),
+        WRITE_CB(GBGraphics::palette_write, this, &_obj0_pal, &_obp0)
+        );
     _bus->add(VideoReg::OBP1, 0xFFFF,
-        [&] (offset_t offset) -> byte_t {
-            return _obp1;
-        },
-        [&] (offset_t offset, byte_t value) {
-            _obj1_pal[0] = trans;
-            _obj1_pal[1] = _global_pal[(value & 0x0C) >> 2];
-            _obj1_pal[2] = _global_pal[(value & 0x30) >> 4];
-            _obj1_pal[3] = _global_pal[(value & 0xC0) >> 6];
-            _obp1 = value;
-        });
+        AddressBus16::DataRead(&_obp1),
+        WRITE_CB(GBGraphics::palette_write, this, &_obj1_pal, &_obp1)
+        );
     _bus->add(VideoReg::WY, &_wy);
     _bus->add(VideoReg::WX, &_wx);
 
@@ -120,6 +99,17 @@ GBGraphics::GBGraphics(Gameboy *gameboy, unsigned hertz):
 
 GBGraphics::~GBGraphics(void)
 {
+}
+
+void
+GBGraphics::palette_write(ColorPalette<4> *pal, byte_t *pal_byte,
+                          offset_t offset, byte_t value)
+{
+    (*pal)[0] = trans;
+    (*pal)[1] = _global_pal[(value & 0x0C) >> 2];
+    (*pal)[2] = _global_pal[(value & 0x30) >> 4];
+    (*pal)[3] = _global_pal[(value & 0xC0) >> 6];
+    *pal_byte = value;
 }
 
 GfxObject<8, 8> *

@@ -220,6 +220,17 @@ public:
         void operator ()(offset_t offset, data_type d) { *data = d; }
         data_type *data;
     };
+    struct BufferRead {
+        BufferRead(bvec *d): data(d) { }
+        data_type operator ()(offset_t offset) { return (*data).at(offset); }
+        bvec *data;
+    };
+    struct BufferWrite {
+        BufferWrite(bvec *d): data(d) { }
+        void operator ()(offset_t offset, data_type d) {
+            (*data).at(offset) = d; }
+        bvec *data;
+    };
 
     struct IOPort
     {
@@ -275,6 +286,12 @@ public:
         add(port);
     }
 
+    void add(addr_type base, bvec *buf)
+    {
+        /* XXX: doesn't handle the mask correctly */
+        add(base, buf->size() - 1, BufferRead(buf), BufferWrite(buf));
+    }
+
     /* XXX: IODevice is hardcoded with an 16 bit addr, 8 bit bus. */
     void add(addr_type base, addr_type mask, IODevice *dev)
     {
@@ -310,5 +327,9 @@ DataBus<addr_t, 16, byte_t>::add(addr_t base, addr_t mask, IODevice *dev)
         });
     add(port);
 }
+
+#define WRITE_CB(cb, args...) std::bind(&cb, args, std::placeholders::_1, \
+                               std::placeholders::_2)
+#define READ_CB(cb, args...) std::bind(&cb, args, std::placeholders::_1)
 
 };

@@ -56,34 +56,16 @@ NESPPU::NESPPU(NES *machine, const std::string &name, unsigned hertz):
     _sprite_bus = machine->sprite_bus();
 
     _cpu_bus->add(0x2000, 0xE000,
-        [&](offset_t offset) -> byte_t {
-            return ppu_read(offset);
-        },
-        [&](offset_t offset, byte_t value) {
-            ppu_write(offset, value);
-        });
+        READ_CB(NESPPU::ppu_read, this),
+        WRITE_CB(NESPPU::ppu_write, this)
+    );
 
     _ppu_bus->add(0x2000, 0xE000,
-        [&](offset_t offset) -> byte_t {
-            if ((offset & 0x1f00) == 0x1F00)
-                return ppu_pal_read(offset);
-            else
-                return ppu_nt_read(offset);
-        },
-        [&](offset_t offset, byte_t value) {
-            if ((offset & 0x1f00) == 0x1F00)
-                ppu_pal_write(offset, value);
-            else
-                ppu_nt_write(offset, value);
-        });
+        READ_CB(NESPPU::ppu_bus_read, this),
+        WRITE_CB(NESPPU::ppu_bus_write, this)
+    );
 
-    machine->sprite_bus()->add(0x00, 0x00,
-        [&](offset_t offset) -> byte_t {
-            return _sram[offset];
-        },
-        [&](offset_t offset, byte_t value) {
-            _sram[offset] = value;
-        });
+    machine->sprite_bus()->add(0x00, &_sram);
 
     init_palette();
 }
@@ -503,6 +485,24 @@ NESPPU::ppu_pal_read(offset_t offset)
 {
     offset &= 0x001f;
     return _palette_bytes[offset];
+}
+
+byte_t
+NESPPU::ppu_bus_read(offset_t offset)
+{
+    if ((offset & 0x1f00) == 0x1F00)
+        return ppu_pal_read(offset);
+    else
+        return ppu_nt_read(offset);
+}
+
+void
+NESPPU::ppu_bus_write(offset_t offset, byte_t value)
+{
+    if ((offset & 0x1f00) == 0x1F00)
+        ppu_pal_write(offset, value);
+    else
+        ppu_nt_write(offset, value);
 }
 
 void

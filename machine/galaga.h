@@ -43,6 +43,10 @@ public:
     virtual void execute(Time interval);
 
 private:
+
+    byte_t dips_read(offset_t offset);
+    void latch_write(offset_t offset, byte_t value);
+
     void init_bus(void);
     void init_switches(void);
     void init_controls(void);

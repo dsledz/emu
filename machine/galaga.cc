@@ -118,62 +118,65 @@ Galaga::~Galaga(void)
 {
 }
 
+byte_t
+Galaga::dips_read(offset_t offset)
+{
+    byte_t dswa = read_ioport("DSWA");
+    byte_t dswb = read_ioport("DSWB");
+    return (bit_isset(dswa, offset) << 1) | bit_isset(dswb, offset);
+}
+
+void
+Galaga::latch_write(offset_t offset, byte_t value)
+{
+    switch (offset) {
+    case 0:
+        _main_irq = bit_isset(value, 0);
+        if (!_main_irq)
+            set_line("maincpu", Line::INT0, LineState::Clear);
+        break;
+    case 1:
+        _sub_irq = bit_isset(value, 0);
+        if (!_sub_irq)
+            set_line("subcpu", Line::INT0, LineState::Clear);
+        break;
+    case 2:
+        _snd_nmi = !bit_isset(value, 0);
+        break;
+    case 3:
+        set_line("subcpu", Line::RESET, LineState::Pulse);
+        set_line("sndcpu", Line::RESET, LineState::Pulse);
+        break;
+    }
+
+}
+
 void
 Galaga::init_bus(void)
 {
     /* Dipswitches */
     _bus->add(0x6800, 0xFFF8,
-        [&](offset_t offset) -> byte_t {
-            byte_t dswa = read_ioport("DSWA");
-            byte_t dswb = read_ioport("DSWB");
-            return (bit_isset(dswa, offset) << 1) | bit_isset(dswb, offset);
-        },
+        READ_CB(Galaga::dips_read, this),
         AddressBus16::DefaultWrite());
     /* XXX: Sound */
     _bus->add(0x6808, 0xFFF8);
     _bus->add(0x6810, 0xFFF0);
     _bus->add(0x6820, 0xFFF8,
         AddressBus16::DefaultRead(),
-        [&] (offset_t offset, byte_t value) {
-            switch (offset) {
-            case 0:
-                _main_irq = bit_isset(value, 0);
-                if (!_main_irq)
-                    set_line("maincpu", Line::INT0, LineState::Clear);
-                break;
-            case 1:
-                _sub_irq = bit_isset(value, 0);
-                if (!_sub_irq)
-                    set_line("subcpu", Line::INT0, LineState::Clear);
-                break;
-            case 2:
-                _snd_nmi = !bit_isset(value, 0);
-                break;
-            case 3:
-                set_line("subcpu", Line::RESET, LineState::Pulse);
-                set_line("sndcpu", Line::RESET, LineState::Pulse);
-                break;
-            }
-        });
+        WRITE_CB(Galaga::latch_write, this)
+        );
     /* XXX: Watchdog */
     _bus->add(0x6830, 0xFFFF);
 
     /* Namco06 (and children) */
     _bus->add(0x7000, 0xFF00,
-        [&](offset_t offset) -> byte_t {
-            return _namco06->read_child(offset);
-        },
-        [&](offset_t offset, byte_t value) {
-            _namco06->write_child(offset, value);
-        });
+        READ_CB(Namco06::read_child, _namco06.get()),
+        WRITE_CB(Namco06::write_child, _namco06.get())
+        );
     _bus->add(0x7100, 0xFFFF,
-        [&](offset_t offset) -> byte_t {
-            return _namco06->read_control(offset);
-        },
-        [&](offset_t offset, byte_t value) {
-            _namco06->write_control(offset, value);
-        });
-
+        READ_CB(Namco06::read_control, _namco06.get()),
+        WRITE_CB(Namco06::write_control, _namco06.get())
+        );
 
     /* Various ram */
     _bus->add(0x8000, 0xF800, &vram);

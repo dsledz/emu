@@ -124,6 +124,9 @@ private:
     byte_t ppu_read(offset_t offset);
     void ppu_write(offset_t offset, byte_t value);
 
+    byte_t ppu_bus_read(offset_t offset);
+    void ppu_bus_write(offset_t offset, byte_t value);
+
     byte_t ppu_nt_read(offset_t offset);
     void ppu_nt_write(offset_t offset, byte_t value);
 

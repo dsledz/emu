@@ -37,9 +37,14 @@ public:
         Machine(),
         bus(),
         cpu(this, "cpu", 1000000, &bus),
-        ram(0x2000)
+        ram(0x2000),
+        irq_vec(0x0008)
     {
         bus.add(0x0000, 0xE000, &ram);
+        bus.add(0xFFF8, 0xFFF8, &irq_vec);
+
+        irq_vec.write8(0x0006, 0x0000);
+        irq_vec.write8(0x0007, 0x0010);
 
         /* Our PC starts at 0x0000, but don't want to put code in the zpg */
         ram.write8(0x0000, 0x4C);
@@ -53,6 +58,7 @@ public:
     AddressBus16 bus;
     M6502Cpu cpu;
     Ram ram;
+    Ram irq_vec;
 };
 
 TEST(M6502Test, constructor)

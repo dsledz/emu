@@ -90,35 +90,29 @@ public:
     {
         cpu.load_rom(&rom, 0x000);
 
-        bus.add(AddressBus16::IOPort(0xFFFF, 0xFFFF,
-            [&](addr_t addr) {
-                return _data;
-            },
-            [&](addr_t addr, byte_t value) {
-                _data = value;
-            }));
-        bus.add(AddressBus16::IOPort(0xFFFE, 0xFFFF,
-            [&](addr_t addr) {
-                return _req;
-            },
-            [&](addr_t addr, byte_t value) {
-                if (_req_last != value) {
-                    _ack++;
-                    std::cout << _data;
-                    std::cout.flush();
-                }
-                _req_last = _req;
-                _req = value;
-            }));
-        bus.add(AddressBus16::IOPort(0xFFFD, 0xFFFF,
-            [&](addr_t addr) {
-                return _ack;
-            },
-            [&](addr_t addr, byte_t value) {
-                _ack = value;
-            }));
+        bus.add(0xFFFF, &_data);
+        bus.add(0xFFFE, 0xFFFF,
+                READ_CB(Zexall::req_read, this),
+                WRITE_CB(Zexall::req_write, this));
+        bus.add(0xFFFD, &_ack);
     }
     ~Zexall(void) {
+    }
+
+    byte_t req_read(byte_t vlaue)
+    {
+        return _req;
+    }
+
+    void req_write(offset_t offset, byte_t value)
+    {
+        if (_req_last != value) {
+            _ack++;
+            std::cout << _data;
+            std::cout.flush();
+        }
+        _req_last = _req;
+        _req = value;
     }
 
     AddressBus16 bus;
