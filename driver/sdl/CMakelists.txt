@@ -1,0 +1,17 @@
+include(FindSDL)
+find_package(OpenGL REQUIRED)
+find_package(SDL REQUIRED)
+
+include_directories(${SDL_INCLUDE_DIR})
+
+link_directories($ENV{SDLDIR}/lib)
+
+add_executable(sdlEmu
+    main.cc)
+
+target_link_libraries(sdlEmu
+    ${SDL_LIBRARY}
+    ${OPENGL_LIBRARY}
+    SDLmain
+    driver)
+

@@ -30,7 +30,9 @@ using namespace NESDriver;
 
 NESPPU::NESPPU(NES *machine, const std::string &name, unsigned hertz):
     CpuDevice(machine, name, hertz),
-    _color_table(), _palette(), _palette_bytes(),
+    _color_table(0x40),
+    _palette(0x20),
+    _palette_bytes(0x20),
     _reg1({}), _reg2({}), _status({}),
     _sram_addr(0),
     _v(),
@@ -39,16 +41,12 @@ NESPPU::NESPPU(NES *machine, const std::string &name, unsigned hertz):
     _latch(0),
     _flip_flop(false),
     _vram_locked(false),
-    _hpos(0), _vpos(0),
-    _sram(), _blk0(), _blk1()
+    _hpos(0),
+    _vpos(0),
+    _sram(256),
+    _blk0(0x0400),
+    _blk1(0x0400)
 {
-    /* 256 Bytes of sram */
-    _sram.resize(256);
-    /* 2K of memory in two chunks */
-    _blk0.resize(0x0400);
-    _blk1.resize(0x0400);
-    _palette_bytes.resize(0x0020);
-
     _mirror = _machine->ioport("MIRRORING");
 
     _cpu_bus = machine->cpu_bus();
@@ -67,7 +65,7 @@ NESPPU::NESPPU(NES *machine, const std::string &name, unsigned hertz):
 
     machine->sprite_bus()->add(0x00, &_sram);
 
-    init_palette();
+    reset();
 }
 
 NESPPU::~NESPPU(void)
@@ -85,6 +83,30 @@ NESPPU::execute(Time interval)
         _avail -= Cycles(1);
     }
 }
+
+void
+NESPPU::reset(void)
+{
+    _reg1.value = 0;
+    _reg2.value = 0;
+    _status.value = 0;
+    _v.d = 0;
+    _t.d = 0;
+    _x = 0;
+    _sram_addr = 0;
+    _latch = 0;
+    _flip_flop = false;
+    _vram_locked = false;
+    _hpos = 0;
+    _vpos = 0;
+    std::fill(_blk0.begin(), _blk0.end(), 0);
+    std::fill(_blk1.begin(), _blk1.end(), 0);
+    std::fill(_palette_bytes.begin(), _palette_bytes.end(), 0);
+    std::fill(_sram.begin(), _sram.end(), 0);
+
+    init_palette();
+}
+
 
 void
 NESPPU::cache_bg_tile(void)

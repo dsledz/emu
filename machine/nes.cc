@@ -50,13 +50,13 @@ const std::vector<std::string> NES::ports = {
     "JOYPAD2",
 };
 
-NES::NES(const std::string &rom):
+NES::NES(void):
     Machine(),
     _ram(0x0800),
     _joy1_shift(0),
     _joy2_shift(0)
 {
-    _screen = std::unique_ptr<RasterScreen>(new RasterScreen(256, 240));
+    add_screen(256, 240);
 
     for (auto it = ports.begin(); it != ports.end(); it++)
         add_ioport(*it);
@@ -66,9 +66,6 @@ NES::NES(const std::string &rom):
 
     _ppu = std::unique_ptr<NESPPU>(
         new NESPPU(this, "ppu", MASTER_CLOCK/4));
-
-    /* Cartridge */
-    _mapper = load_cartridge(this, rom);
 
     /* Program rom is on the CPU bus */
     _cpu_bus.add(0x8000, 0xFFFF,
@@ -167,16 +164,29 @@ NES::NES(const std::string &rom):
     _cpu_bus.add(0x1800, 0x1FFF, &_ram);
 
     /* XXX: Cartridge Expansion 0x4018 - 0x5FFF */
-
-    set_line("cpu", Line::RESET, LineState::Pulse);
 }
 
 NES::~NES(void)
 {
 }
 
+void
+NES::load_rom(const std::string &rom)
+{
+    /* Cartridge */
+    _mapper = load_cartridge(this, rom);
+}
+
+MachineInformation nes_info {
+    .name = "Nintendo Entertainment System",
+    .year = "1985",
+    .extension = "nes",
+    .cartridge = true,
+};
+
 MachineDefinition nes(
     "nes",
+    nes_info,
     [=](Options *opts) -> machine_ptr {
-        return machine_ptr(new NESDriver::NES(opts->rom));
+        return machine_ptr(new NESDriver::NES());
     });

@@ -131,7 +131,6 @@ private:
 
     void draw_scanline(int sy);
 
-    RasterScreen *_screen;
     AddressBus16 *_bus;
 
     Ram _vram;

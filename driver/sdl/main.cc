@@ -25,14 +25,83 @@
 
 #include "emu/emu.h"
 
-#include "machine/emulator.h"
-
-#include "sdl/sdl_util.h"
-#include "sdl/sdl_gfx.h"
-#include "sdl/sdl_input.h"
-#include "sdl/sdl_main.h"
+#include "driver/emulator.h"
+#include "driver/opengl.h"
 
 #include <getopt.h>
+
+#include <SDL.h>
+
+using namespace EMU;
+
+class SDLException: public EMU::EmuException {
+public:
+    SDLException(): EmuException("SDL exception") { }
+};
+
+struct SDLKeyHash
+{
+    size_t operator ()(const SDLKey &key) const {
+        return std::hash<int>()(static_cast<int>(key));
+    }
+};
+
+class SDLInput {
+public:
+    SDLInput(void);
+    ~SDLInput(void);
+
+    /**
+     * Process an sdl event.
+     */
+    void handle_input(SDL_Event *e, InputMap *dev);
+
+private:
+    std::unordered_map<SDLKey, InputKey, SDLKeyHash> _map;
+};
+
+SDLInput::SDLInput(void)
+{
+    _map[SDLK_LEFT]  = InputKey::Joy1Left;
+    _map[SDLK_RIGHT] = InputKey::Joy1Right;
+    _map[SDLK_UP]    = InputKey::Joy1Up;
+    _map[SDLK_DOWN]  = InputKey::Joy1Down;
+    _map[SDLK_SPACE] = InputKey::Joy1Btn1;
+    _map[SDLK_x]     = InputKey::Joy1Btn2;
+    _map[SDLK_1]     = InputKey::Start1;
+    _map[SDLK_2]     = InputKey::Start2;
+    _map[SDLK_5]     = InputKey::Coin1;
+    _map[SDLK_6]     = InputKey::Coin2;
+    _map[SDLK_7]     = InputKey::Service;
+    _map[SDLK_s]     = InputKey::Select1;
+}
+
+SDLInput::~SDLInput(void)
+{
+
+}
+
+void
+SDLInput::handle_input(SDL_Event *event, InputMap *dev)
+{
+    switch (event->type) {
+    case SDL_KEYUP: {
+        auto it = _map.find(event->key.keysym.sym);
+        if (it != _map.end())
+            dev->release(it->second);
+        break;
+    }
+    case SDL_KEYDOWN: {
+        auto it = _map.find(event->key.keysym.sym);
+        if (it != _map.end())
+            dev->depress(it->second);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
 
 class CLIOptions: public Options
 {
@@ -66,19 +135,33 @@ public:
     }
 };
 
-class CLIEmulator: public Emulator
+class SDLEmulator: public Emulator
 {
 public:
-    CLIEmulator(const Options &options):
+    SDLEmulator(const Options &options):
         Emulator(options)
     {
-        gfx.init(machine()->screen());
+        SDL_Surface * window = SDL_SetVideoMode(100, 100, 32,
+                SDL_HWSURFACE | SDL_OPENGL);
+        if (window == NULL)
+            throw SDLException();
 
         SDL_WM_SetCaption("Emulator", "Emulator");
 
+        _screen = std::unique_ptr<GLRasterScreen>(new GLRasterScreen());
+        machine()->set_screen(_screen.get());
+
+        /* Resize our window to the correct size. */
+        SDL_SetVideoMode(_screen->width(), _screen->height(), 32,
+                         SDL_HWSURFACE | SDL_OPENGL);
+        /* Reinit gl context */
+        _screen->init();
+
         /* Connect our graphics */
         machine()->set_render([&](RasterScreen *screen) {
-            gfx.render(screen);
+            screen->flip();
+            screen->render();
+            SDL_GL_SwapBuffers();
         });
 
         machine()->add_timer(Time(msec(1)),
@@ -92,6 +175,11 @@ public:
         SDL_Event event;
         while (SDL_PollEvent(&event))
             on_event(&event);
+    }
+
+    virtual void start(void) {
+        set_state(EmuState::Running);
+        do_execute();
     }
 
     void on_event(SDL_Event *event) {
@@ -120,7 +208,7 @@ public:
 
 private:
 
-    SDLGfx   gfx;
+    std::unique_ptr<GLRasterScreen> _screen;
     SDLInput input;
 };
 
@@ -132,7 +220,7 @@ extern "C" int main(int argc, char **argv)
 
         CLIOptions opts(argc, argv);
 
-        CLIEmulator emu(opts);
+        SDLEmulator emu(opts);
 
         emu.start();
     } catch (EmuException &e) {

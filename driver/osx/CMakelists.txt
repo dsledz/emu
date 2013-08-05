@@ -1,0 +1,69 @@
+find_package(OpenGL REQUIRED)
+
+set(NAME osxEmu)
+
+file(GLOB headers *.h)
+file(GLOB source *.m)
+file(GLOB xibs *.xib)
+
+add_executable(${NAME} MACOSX_BUNDLE
+    ${xibs}
+    ${headers}
+    ${source})
+
+set(VTK_VERSION 1.0)
+
+set(MACOSX_BUNDLE_INFO_STRING "${PROJECT_NAME}")
+set(MACOSX_BUNDLE_GUI_IDENTIFIER "org.sledz.osxEmu")
+set(MACOSX_BUNDLE_LONG_VERSION_STRING "${PROJECT_NAME} Version ${VTK_VERSION}")
+set(MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME})
+set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${VTK_VERSION})
+set(MACOSX_BUNDLE_BUNDLE_VERSION ${VTK_VERSION})
+set(MACOSX_BUNDLE_COPYRIGHT "Copyright 2013. All Rights Reserved.")
+
+set(MACOSX_BUNDLE_NSMAIN_NIB_FILE "MainMenu")
+set(MACOSX_BUNDLE_NSPRINCIPAL_CLASS "NSApplication")
+
+foreach(xib ${xibs})
+    set_target_properties(${NAME} PROPERTIES RESOURCE ${xib})
+endforeach()
+
+set_target_properties(${NAME}
+    PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY
+    "iPhone Developer: Dan Sledz")
+
+set_source_files_properties(
+    ${source}
+    PROPERTIES LANGUAGE C
+    )
+
+target_link_libraries(osxEmu
+    ${SDL_LIBRARY}
+    ${OPENGL_LIBRARY}
+    driver)
+
+add_framework(QuartzCore)
+add_framework(Cocoa)
+
+if (NOT EXECUTABLE_OUTPUT_PATH)
+  set (EXECUTABLE_OUTPUT_PATH ${SLEDEMU_BINARY_DIR})
+endif()
+
+# Set a custom plist file for the app bundle
+set_target_properties(${NAME} PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${SLEDEMU_SOURCE_DIR}/driver/osx/Info.plist)
+
+# Make sure the 'xibs' Directory is correctly created before we build
+add_custom_command (TARGET ${NAME} PRE_BUILD
+    COMMAND mkdir -p ${EXECUTABLE_OUTPUT_PATH}/\${CONFIGURATION}/${NAME}.app/Contents/Resources)
+
+add_custom_command (TARGET ${NAME} PRE_BUILD
+    COMMAND mkdir -p ${EXECUTABLE_OUTPUT_PATH}/\${CONFIGURATION}/${NAME}.app/Contents/MacOS)
+
+# Compile the .xib files using the 'ibtool' program with the destination being the app package
+foreach(xib MainWindow MainMenu)
+  add_custom_command (TARGET ${NAME} POST_BUILD 
+      COMMAND ibtool --errors --warnings --notices --output-format human-readable-text
+        --compile ${EXECUTABLE_OUTPUT_PATH}/\${CONFIGURATION}/${NAME}.app/Contents/Resources/${xib}.nib
+        ${SLEDEMU_SOURCE_DIR}/driver/osx/${xib}.xib
+        COMMENT "Compiling ${SLEDEMU_SOURCE_DIR}/drivers/osx/${xib}.xib")
+endforeach()

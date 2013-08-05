@@ -22,16 +22,48 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 #pragma once
 
-#include "emu/bits.h"
-#include "emu/exception.h"
+#include "emu/emu.h"
 
-#include <sdl/sdl.h>
+namespace EMU {
 
-class SDLException: public EMU::EmuException {
+class Emulator
+{
 public:
-    SDLException(): EmuException("SDL exception") { }
+    enum class EmuState {
+        Running,
+        Paused,
+        Stopped,
+    };
+
+    Emulator(const Options &options);
+    virtual ~Emulator(void);
+
+    virtual void load(const std::string &driver, const std::string &rom);
+    virtual void start(void) = 0;
+    virtual void stop(void);
+    virtual void pause(void);
+    virtual void reset(void);
+    virtual void render(void);
+    virtual void key_event(InputKey key, bool pressed);
+
+    Machine *machine(void);
+    const Options *options(void);
+
+protected:
+
+    void do_execute(void);
+    EmuState get_state(void);
+    void set_state(EmuState state);
+
+private:
+    std::mutex mtx;
+    std::condition_variable cv;
+
+    Emulator::EmuState _state;
+    Options _options;
+    machine_ptr _machine;
 };
 
+};

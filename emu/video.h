@@ -33,7 +33,8 @@ namespace EMU {
  * Defines an absolute color in the RGB space
  */
 struct RGBColor {
-    RGBColor() = default;
+    RGBColor(void) = default;
+    ~RGBColor(void) = default;
     RGBColor(unsigned r, unsigned g, unsigned b, unsigned a=0xff):
         _r(r), _g(g), _b(b), _a(a) { }
     RGBColor(uint32_t c): v(c) { }
@@ -91,21 +92,49 @@ public:
         ROT180 = 2,
         ROT270 = 3
     };
-    RasterScreen(short width, short height, Rotation rot=ROT0);
+    RasterScreen(Rotation rot=ROT0);
 
-    short width;   /* Width of the screen */
-    short pitch;   /* Line pitch */
-    short height;  /* Height of the screen */
-    Rotation rot;
+    RasterScreen(short width, short height, Rotation rot=ROT0);
+    virtual ~RasterScreen(void);
+
+    void set_rotation(Rotation rot);
+
+    virtual void resize(short width, short height);
+    virtual void render(void);
+    virtual void flip(void);
 
     void set(int x, int y, RGBColor color);
     const RGBColor get(int x, int y) const;
-    RGBColor *at(int x, int y);
 
     void clear(void);
 
-    std::vector<RGBColor> data;
-    RGBColor empty;
+    short width(void) const {
+        return _width;
+    }
+
+    short height(void) const {
+        return _height;
+    }
+
+    short pitch(void) const {
+        return _pitch;
+    }
+
+    const byte_t *fb(void) const {
+        return reinterpret_cast<const byte_t *>(_data.data());
+    }
+
+protected:
+    void do_resize(short width, short height);
+
+private:
+    short _width;   /* Width of the screen */
+    short _pitch;   /* Line pitch */
+    short _height;  /* Height of the screen */
+    Rotation _rot;
+
+    std::vector<RGBColor> _data;
+    RGBColor _empty;
 };
 
 typedef std::function<void (RasterScreen *)> render_cb;

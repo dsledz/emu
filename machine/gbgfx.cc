@@ -34,7 +34,6 @@ GBGraphics::GBGraphics(Gameboy *gameboy, unsigned hertz):
     _lcdc(0),
     _hertz(hertz)
 {
-    _screen = _machine->screen();
 
     _bus = gameboy->bus();
 
@@ -137,6 +136,7 @@ GBGraphics::get_obj(int idx)
 void
 GBGraphics::draw_scanline(int y)
 {
+    RasterScreen *screen = _machine->screen();
     if (bit_isset(_lcdc, LCDCBits::BGDisplay)) {
         auto cb = bit_isset(_lcdc, LCDCBits::BGTileMap) ?
                 _tilemap1 : _tilemap0;
@@ -146,7 +146,7 @@ GBGraphics::draw_scanline(int y)
             int idx = (iy / 8) * 32 + ix/8;
             auto *obj = cb(idx);
             RGBColor pen = _bg_pal[obj->at(ix % 8, iy % 8)];
-            _screen->set(x, y, pen);
+            screen->set(x, y, pen);
         }
     }
 
@@ -160,7 +160,7 @@ GBGraphics::draw_scanline(int y)
             auto *obj = cb(idx);
             // Find the correct pen.
             RGBColor pen = _bg_pal[obj->at(x % 8, iy % 8)];
-            _screen->set(_wx + x, y, pen);
+            screen->set(_wx + x, y, pen);
         }
     }
 
@@ -196,16 +196,16 @@ GBGraphics::draw_scanline(int y)
                 RGBColor color = (*pen)[obj->at(7 - x, iy)];
                 if (color != trans &&
                     (!bit_isset(flags, OAMFlags::SpritePriority) ||
-                     _screen->get(ix + x, y) == _global_pal[0]))
-                    _screen->set(ix + x, y, color);
+                     screen->get(ix + x, y) == _global_pal[0]))
+                    screen->set(ix + x, y, color);
             }
         } else {
             for (int x = 0; x < 8; x++) {
                 RGBColor color = (*pen)[obj->at(x, iy)];
                 if (color != trans &&
                     (!bit_isset(flags, OAMFlags::SpritePriority) ||
-                     _screen->get(ix + x, y) == _global_pal[0]))
-                    _screen->set(ix + x, y, color);
+                     screen->get(ix + x, y) == _global_pal[0]))
+                    screen->set(ix + x, y, color);
             }
         }
     }
@@ -236,7 +236,7 @@ GBGraphics::execute(Time interval)
                         LineState::Pulse);
             } else {
                 if (_ly == 0)
-                    _screen->clear();
+                    _machine->screen()->clear();
                 if (_ly < DISPLAY_LINES)
                     draw_scanline(_ly);
                 _stat = (_stat & 0xfc) | LCDMode::OAMMode;

@@ -48,7 +48,7 @@ TG16::TG16(const std::string &rom):
     init_joypad();
 
     /* XXX: Is this screen correct? */
-    _screen = std::unique_ptr<RasterScreen>(new RasterScreen(256, 216));
+    add_screen(256, 240);
 
     _cpu = std::unique_ptr<M6502::hu6280Cpu>(
         new M6502::hu6280Cpu(this, "cpu", MASTER_CLOCK/3, &_cpu_bus));
@@ -189,12 +189,6 @@ TG16::ram_write(offset_t offset, byte_t value)
     _ram.write8(offset, value);
 }
 
-MachineDefinition tg16(
-    "tg16",
-    [=](Options *opts) -> machine_ptr {
-        return machine_ptr(new TG16Driver::TG16(opts->rom));
-    });
-
 PSG::PSG(TG16 *tg16):
     Device(tg16, "psg")
 {
@@ -219,4 +213,18 @@ void
 PSG::write(offset_t offset, byte_t value)
 {
 }
+
+MachineInformation tg16_info {
+    .name = "TurboGrafx-16",
+    .year = "1989",
+    .cartridge = true,
+    .extension = "pce",
+};
+
+MachineDefinition tg16(
+    "tg16",
+    tg16_info,
+    [=](Options *opts) -> machine_ptr {
+        return machine_ptr(new TG16Driver::TG16(opts->rom));
+    });
 

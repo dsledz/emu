@@ -98,6 +98,12 @@ public:
     {
     }
 
+    virtual void reset()
+    {
+        _prg_offset = prg_bank(0);
+        _chr_offset = chr_bank(0);
+    }
+
     byte_t prg_read(offset_t offset)
     {
         if (_header.rom_banks == 1)
@@ -138,6 +144,13 @@ public:
 
     ~NESMapperUNROM(void)
     {
+    }
+
+    virtual void reset(void)
+    {
+        _prg_offset0 = prg_bank(0);
+        _prg_offset1 = prg_bank(_header.rom_banks -1 );
+        std::fill(_chr.begin(), _chr.end(), 0);
     }
 
     byte_t prg_read(offset_t offset)
@@ -185,6 +198,12 @@ public:
     {
     }
 
+    virtual void reset(void)
+    {
+        _prg_offset = prg_bank(0);
+        _chr_offset = chr_bank(0);
+    }
+
     byte_t prg_read(offset_t offset)
     {
         return _rom[_prg_offset + offset];
@@ -228,6 +247,17 @@ public:
 
     ~NESMapperMMC1(void)
     {
+    }
+
+    virtual void reset(void)
+    {
+        _prg_offset0 = prg_bank(0);
+        _prg_offset1 = prg_bank(_header.rom_banks - 1);
+        _chr_offset = chr_bank(0);
+        _shift = 0;
+        _shift_count = 0;
+        std::fill(_ram.begin(), _ram.end(), 0);
+        std::fill(_battery_ram.begin(), _battery_ram.end(), 0);
     }
 
     byte_t prg_read(offset_t offset)
@@ -319,6 +349,22 @@ public:
         _ram.resize(0x4000);
         _battery_ram.resize(0x2000);
 
+        reset();
+    }
+
+    ~NESMapperMMC3(void)
+    {
+    }
+
+    virtual void reset(void)
+    {
+        _irq_counter = 0;
+        _irq_reload = 0;
+        _irq_enable = 0;
+
+        std::fill(_ram.begin(), _ram.end(), 0);
+        std::fill(_battery_ram.begin(), _battery_ram.end(), 0);
+
         for (int i = 0; i < 8; i++)
             _chr_offset[i] = chr_bank1k(i);
 
@@ -328,13 +374,12 @@ public:
             prg_bank8k((_header.rom_banks - 1) * 2 + 1);
     }
 
-    ~NESMapperMMC3(void)
-    {
-    }
-
-    void line(Line line, LineState state)
+    virtual void line(Line line, LineState state)
     {
         switch (line) {
+        case Line::RESET:
+            reset();
+            break;
         case Line::INT0:
             if (state == LineState::Pulse) {
                 if (_irq_counter == 0) {

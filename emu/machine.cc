@@ -29,7 +29,11 @@ using namespace EMU;
 
 Machine::Machine(void):
     _clock(time_zero),
-    _quantum(6000)
+    _quantum(6000),
+    _screen(NULL),
+    _screen_width(0),
+    _screen_height(0),
+    _screen_rot(RasterScreen::ROT0)
 {
 }
 
@@ -37,6 +41,18 @@ Machine::~Machine(void)
 {
     /* Make sure all devices are disconnected */
     assert(_devs.empty());
+}
+
+void
+Machine::load_rom(const std::string &rom)
+{
+
+}
+
+void
+Machine::execute(Time interval)
+{
+
 }
 
 void
@@ -124,7 +140,7 @@ Machine::dev(const std::string &name)
 RasterScreen *
 Machine::screen(void)
 {
-    return _screen.get();
+    return _screen;
 }
 
 void
@@ -219,15 +235,43 @@ Machine::set_line(Device *dev, Line line, LineState state)
     dev->line(line, state);
 }
 
-MachineLoader EMU::loader __used;
+void
+Machine::add_screen(short width, short height, RasterScreen::Rotation rotation)
+{
+    _screen_width = width;
+    _screen_height = height;
+    _screen_rot = rotation;
+    if (_screen != NULL) {
+        _screen->set_rotation(_screen_rot);
+        _screen->resize(_screen_width, _screen_height);
+    }
+}
+
+void
+Machine::set_screen(RasterScreen *screen)
+{
+    /* XXX: Not exception safe */
+    _screen = screen;
+    _screen->set_rotation(_screen_rot);
+    _screen->resize(_screen_width, _screen_height);
+}
+
+MachineLoader *
+EMU::loader(void)
+{
+    static MachineLoader loader;
+    return &loader;
+}
 
 MachineDefinition::MachineDefinition(
     const std::string &name,
+    const MachineInformation &info,
     machine_create_fn fn):
     name(name),
+    info(info),
     fn(fn)
 {
-    loader.add_machine(this);
+    loader()->add_machine(this);
 }
 
 MachineDefinition::~MachineDefinition(void)
@@ -238,7 +282,7 @@ MachineDefinition::~MachineDefinition(void)
 void
 MachineDefinition::add(void)
 {
-    loader.add_machine(this);
+    loader()->add_machine(this);
 }
 
 MachineLoader::MachineLoader(void)
@@ -266,3 +310,24 @@ MachineLoader::load(Options *opts)
     throw KeyError(opts->driver);
 }
 
+const struct MachineDefinition *
+MachineLoader::find(const std::string &name)
+{
+    for (auto it = _machines.begin(); it != _machines.end(); it++) {
+        if ((*it)->name == name)
+            return *it;
+    }
+    throw KeyError(name);
+}
+
+std::list<MachineDefinition *>::const_iterator
+MachineLoader::start(void)
+{
+    return _machines.begin();
+}
+
+std::list<MachineDefinition *>::const_iterator
+MachineLoader::end(void)
+{
+    return _machines.end();
+}

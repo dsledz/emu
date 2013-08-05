@@ -71,6 +71,8 @@ public:
     NESMapper(Machine *machine, const iNesHeader *header, bvec &rom);
     virtual ~NESMapper(void);
 
+    virtual void reset(void) = 0;
+
     virtual byte_t prg_read(offset_t offset) = 0;
 
     virtual void prg_write(offset_t offset, byte_t value) { }
@@ -109,6 +111,7 @@ public:
     virtual ~NESPPU(void);
 
     virtual void execute(Time interval);
+    virtual void reset(void);
 
     int draw_bg(void);
     int draw_sprite(int color, int x, int y);
@@ -133,8 +136,8 @@ private:
     byte_t ppu_pal_read(offset_t offset);
     void ppu_pal_write(offset_t offset, byte_t value);
 
-    RGBColor _color_table[64];
-    RGBColor _palette[32];
+    std::vector<RGBColor> _color_table;
+    std::vector<RGBColor> _palette;
     bvec _palette_bytes;
 
     union {
@@ -227,8 +230,10 @@ mapper_ptr load_cartridge(NES *nes, const std::string &rom);
 class NES: public Machine
 {
 public:
-    NES(const std::string &rom);
+    NES(void);
     virtual ~NES(void);
+
+    virtual void load_rom(const std::string &rom);
 
     AddressBus16 *cpu_bus(void) {
         return &_cpu_bus;

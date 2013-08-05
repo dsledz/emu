@@ -70,7 +70,17 @@ public:
     /**
      * Signal one of the external lines.
      */
-    virtual void line(Line line, LineState state) { }
+    virtual void line(Line line, LineState state) {
+        switch (line) {
+        case Line::RESET:
+            reset();
+            break;
+        default:
+            break;
+        }
+    }
+
+    virtual void reset(void) { }
 
 protected:
     Machine *_machine;

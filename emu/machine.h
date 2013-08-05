@@ -81,6 +81,9 @@ public:
     Machine(void);
     virtual ~Machine(void);
 
+    virtual void load_rom(const std::string &rom);
+    virtual void execute(Time interval);
+
     /**
      * Add a device to the machine.  This device is synchronized
      * by the machine, ticking based on @a freq
@@ -121,8 +124,6 @@ public:
      * Run for a single time quantum.
      */
     void run(void);
-    virtual void execute(Time interval) {
-    }
 
     Time quantum(void) {
         return Time(Time(sec(1)) / _quantum);
@@ -147,11 +148,15 @@ public:
      */
     void set_line(Device *dev, Line line, LineState state);
 
+    void add_screen(short width, short height,
+        RasterScreen::Rotation rotation = RasterScreen::ROT0);
+    void set_screen(RasterScreen *screen);
+
     RasterScreen *screen(void);
     void set_render(render_cb cb);
     void render(void) {
-        if (_render_cb)
-            _render_cb(_screen.get());
+        if (_render_cb && _screen)
+            _render_cb(_screen);
     }
 
 protected:
@@ -160,7 +165,6 @@ protected:
     Time _clock;
     unsigned _quantum;
     InputMap _input;
-    std::unique_ptr<RasterScreen> _screen;
     render_cb _render_cb;
     std::map<std::string, dipswitch_ptr> _switches;
     std::map<std::string, IOPort> _ports;
@@ -168,21 +172,36 @@ protected:
 private:
 
     Device *dev(const std::string &name);
-
     void _schedule_timer(Timer_ptr timer);
+
+    RasterScreen *_screen;
+    short _screen_width;
+    short _screen_height;
+    RasterScreen::Rotation _screen_rot;
 };
 
 typedef std::unique_ptr<Machine> machine_ptr;
 
 typedef std::function<machine_ptr (Options *opts)> machine_create_fn;
 
+struct MachineInformation {
+    std::string name;
+    std::string year;
+    std::string extension;
+    bool cartridge;
+};
+
 struct MachineDefinition {
-    MachineDefinition(const std::string &name, machine_create_fn fn);
+    MachineDefinition(
+        const std::string &name,
+        const MachineInformation &info,
+        machine_create_fn fn);
     ~MachineDefinition(void);
 
     void add(void);
 
     std::string name;
+    MachineInformation info;
     machine_create_fn fn;
 };
 
@@ -193,13 +212,17 @@ public:
 
     void add_machine(struct MachineDefinition *definition);
 
+    const struct MachineDefinition *find(const std::string &name);
+    std::list<MachineDefinition *>::const_iterator start();
+    std::list<MachineDefinition *>::const_iterator end();
+
     machine_ptr load(Options *opts);
 
 private:
     std::list<MachineDefinition *> _machines;
 };
 
-extern MachineLoader loader;
+MachineLoader * loader(void);
 
 #define FORCE_UNDEFINED_SYMBOL(x) \
     extern MachineDefinition x; \

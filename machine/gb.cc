@@ -189,7 +189,7 @@ private:
 Gameboy::Gameboy(const std::string &rom_name):
     Machine()
 {
-    _screen = std::unique_ptr<RasterScreen>(new RasterScreen(160,144));
+    add_screen(160, 144);
 
     _bus = AddressBus16_ptr(new AddressBus16());
 
@@ -224,8 +224,16 @@ Gameboy::~Gameboy(void)
 
 }
 
+MachineInformation gb_info {
+    .name = "Gameboy",
+    .year = "1989",
+    .cartridge = true,
+    .extension = "gb",
+};
+
 MachineDefinition gb(
     "gb",
+    gb_info,
     [=](Options *opts) -> machine_ptr {
         return machine_ptr(new Gameboy(opts->rom));
     });

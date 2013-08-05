@@ -22,43 +22,78 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#pragma once
 
-#include "machine/emulator.h"
+#include <sys/types.h>
+#include <stdint.h>
 
-using namespace EMU;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-Emulator::Emulator(const Options &options):
-    _options(options),
-    _machine(),
-    _stop(false)
-{
-    EMU::log.set_level(_options.log_level);
-    /* XXX: Fix constness */
-    _machine = loader.load(const_cast<Options *>(&_options));
+enum emu_key {
+    EMU_KEY_NONE = 0,
+    EMU_KEY_JOY1UP,
+    EMU_KEY_JOY1DOWN,
+    EMU_KEY_JOY1LEFT,
+    EMU_KEY_JOY1RIGHT,
+    EMU_KEY_JOY1BTN1,
+    EMU_KEY_JOY1BTN2,
+    EMU_KEY_JOY1SELECT,
+    EMU_KEY_JOY1START,
+    EMU_KEY_COIN1,
+};
 
-    _machine->reset();
-}
+struct emu_event {
+    enum emu_key key;
+    bool pressed;
+};
+
+struct emu;
+
+struct emu *
+emu_new(void);
 
 void
-Emulator::start(void)
-{
-    while (!_stop)
-        _machine->run();
-}
+emu_free(struct emu *state);
+
+const char *
+emu_error(struct emu *state);
+
+struct emu_machine {
+    const char *name;
+    const char *driver;
+    const char *extension;
+    struct emu_machine *next;
+};
+
+struct emu_machine *
+emu_list_enum(struct emu *state);
 
 void
-Emulator::stop(void)
-{
-    _stop = true;
-}
+emu_list_free(struct emu_machine *m);
 
-Machine *
-Emulator::machine(void)
-{
-    return _machine.get();
-}
+int
+emu_machine_load(struct emu *state, const char *machine, const char *rom);
 
-FORCE_UNDEFINED_SYMBOL(galaga);
-FORCE_UNDEFINED_SYMBOL(gb);
-FORCE_UNDEFINED_SYMBOL(nes);
-FORCE_UNDEFINED_SYMBOL(tg16);
+int
+emu_machine_start(struct emu *state);
+
+int
+emu_machine_pause(struct emu *state);
+
+int
+emu_machine_stop(struct emu *state);
+
+int
+emu_machine_reset(struct emu *state);
+
+int
+emu_machine_render(struct emu *state);
+
+int
+emu_send_event(struct emu *state, const struct emu_event *event);
+
+#ifdef __cplusplus
+};
+#endif

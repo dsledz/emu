@@ -72,8 +72,7 @@ Galaga::Galaga(const std::string &rom):
     _sub_irq(false),
     _snd_nmi(false)
 {
-    _screen = std::unique_ptr<RasterScreen>(
-        new RasterScreen(224, 288, RasterScreen::ROT90));
+    add_screen(224, 288, RasterScreen::ROT90);
 
     _bus = AddressBus16_ptr(new AddressBus16());
 
@@ -197,8 +196,7 @@ Galaga::execute(Time interval)
         switch (_scanline) {
         case 16:
             draw_screen();
-            if (_render_cb)
-                _render_cb(_screen.get());
+            render();
             break;
         case 64:
             if (_snd_nmi)
@@ -417,7 +415,7 @@ Galaga::init_gfx(RomSet *romset)
 void
 Galaga::draw_screen(void)
 {
-    _screen->clear();
+    screen()->clear();
 
     draw_sprites();
     draw_bg();
@@ -457,7 +455,7 @@ Galaga::draw_sprites(void)
             for (int x = 0; x <= sizex; x++) {
                 auto *sprite = &_sprites[idx];
                 auto *palette = &_sprite_palette[pen];
-                draw_gfx(_screen.get(), palette,
+                draw_gfx(screen(), palette,
                     sprite + (y ^ (sizey & flipy)) * 2 + (x ^ (sizex & flipx)),
                     sx + (x * 16), sy + (y * 16),
                     flipx, flipy, _palette[0xf]);
@@ -487,14 +485,20 @@ Galaga::draw_bg(void)
             auto *palette = &_tile_palette[tile_map[index + 0x400] & 0x3f];
             int sx = tx * tile->w;
             int sy = ty * tile->h;
-            draw_gfx(_screen.get(), palette, tile, sx, sy,
+            draw_gfx(screen(), palette, tile, sx, sy,
                      false, false, _palette[0x1f]);
         }
     }
 }
 
+MachineInformation galaga_info {
+    .name = "Galaga",
+    .year = "1983",
+};
+
 MachineDefinition galaga(
     "galaga",
+    galaga_info,
     [=](Options *opts) -> machine_ptr {
         return machine_ptr(new Driver::Galaga(opts->rom));
     });
