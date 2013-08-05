@@ -35,10 +35,8 @@ class M6502Cpu: public CpuDevice
 public:
     M6502Cpu(Machine *machine, const std::string &name, unsigned clock,
              AddressBus16 *bus);
-    ~M6502Cpu(void);
+    virtual ~M6502Cpu(void);
 
-    virtual void save(SaveState &state);
-    virtual void load(LoadState &state);
     virtual void execute(Time interval);
     virtual void line(Line line, LineState state);
 
@@ -62,6 +60,7 @@ protected:
         } _rF;
     };
     byte_t _rSP;
+    byte_t _zpg;
 
     LineState _nmi_line;
     LineState _irq_line;
@@ -77,7 +76,6 @@ protected:
     AddressBus16 *_bus;
 
     /* Dispatch */
-    Cycles dispatch(void);
     void _reset(void);
 
     Cycles _icycles;
@@ -88,8 +86,8 @@ protected:
     std::string _op_name;
     addr_t _op_pc;
     addr_t _op_ind;
-    void op_log(byte_t op);
-    void op_set(const std::string &name) {
+    void log_op(byte_t op);
+    void start_op(const std::string &name) {
         _op_name = name;
     }
 
@@ -135,11 +133,12 @@ protected:
         if (_arg.ad.b.l < value)
             _add_icycles(1);
     }
-    inline void Ind() {
+    inline void Ind(byte_t value = 0) {
         _arg.mem = true;
         reg16_t addr;
         addr.b.l = pc_read();
         addr.b.h = pc_read();
+        _arg.ad.d += value;
         _arg.ad.b.l = bus_read(addr.d);
         addr.b.l++;
         _arg.ad.b.h = bus_read(addr.d);
@@ -148,7 +147,7 @@ protected:
         _arg.mem = true;
         reg16_t addr;
         addr.b.l = pc_read();
-        addr.b.h = 0;
+        addr.b.h = _zpg;
         _arg.ad.b.l = bus_read(addr.d);
         addr.b.l++;
         _arg.ad.b.h = bus_read(addr.d);
@@ -162,6 +161,15 @@ protected:
         _arg.ad.b.l = bus_read(addr);
         _arg.ad.b.h = bus_read((addr + 1) & 0xff);
     }
+    inline void ZpgInd(void) {
+        _arg.mem = true;
+        reg16_t addr;
+        addr.b.l = pc_read();
+        addr.b.h = _zpg;
+        _arg.ad.b.l = bus_read(addr.d);
+        addr.b.l++;
+        _arg.ad.b.h = bus_read(addr.d);
+    }
     inline void Imm(void) {
         _arg.mem = false;
         _arg.value = pc_read();
@@ -173,7 +181,7 @@ protected:
     inline void Zpg(byte_t index=0) {
         _arg.mem = true;
         _arg.ad.b.l = pc_read() + index;
-        _arg.ad.b.h = 0;
+        _arg.ad.b.h = _zpg;
     }
     inline void ZpgX(void) {
         Zpg(_rX);
@@ -193,13 +201,13 @@ protected:
     }
 
     void push(byte_t value) {
-        bus_write(0x0100 + _rSP, value);
+        bus_write((_zpg << 8) + 0x0100 + _rSP, value);
         _rSP--;
     }
 
     byte_t pop(void) {
         _rSP++;
-        return bus_read(0x0100 + _rSP);
+        return bus_read((_zpg << 8) + 0x0100 + _rSP);
     }
 
     /* Operations */
@@ -214,6 +222,7 @@ protected:
     void op_branch(bool jump) {
         if (jump) {
             _rPC = _arg.ad;
+            _add_icycles(2);
         }
     }
     void op_jmp(void) {
@@ -251,6 +260,24 @@ protected:
         set_sz(result);
         _rA = result;
     }
+    void op_rti(void) {
+        _rSR = pop();
+        _rF.E = 1;
+        _rPC.b.l = pop();
+        _rPC.b.h = pop();
+    }
+    void op_jsr(void) {
+        Abs();
+        _rPC.d--;
+        push(_rPC.b.h);
+        push(_rPC.b.l);
+        op_jmp();
+    }
+    void op_plp(void) {
+        _rSR = pop();
+        _rF.B = 1;
+        _rF.E = 1;
+    }
     void op_eor(void) {
         byte_t arg = fetch();
         byte_t result = _rA ^ arg;
@@ -259,7 +286,8 @@ protected:
     }
     void op_adc(void) {
         /* XXX: Decimal */
-        throw CpuFeatureFault(_name, "decimal");
+        if (_rF.D)
+            throw CpuFeatureFault(_name, "decimal");
         byte_t arg = fetch();
         uint32_t result = _rA + arg + _rF.C;
         set_sz(result);
@@ -269,7 +297,8 @@ protected:
     }
     void op_sbc(void) {
         /* XXX: Decimal */
-        throw CpuFeatureFault(_name, "decimal");
+        if (_rF.D)
+            throw CpuFeatureFault(_name, "decimal");
         byte_t arg = fetch();
         uint32_t result = _rA - arg - !_rF.C;
         set_sz(result);
@@ -344,6 +373,10 @@ protected:
         set_sz(result);
         _rX = result;
     }
+
+private:
+
+    Cycles dispatch(void);
 };
 
 class n2A03Cpu: public M6502Cpu
@@ -353,8 +386,6 @@ public:
              AddressBus16 *bus);
     ~n2A03Cpu(void);
 
-    virtual void save(SaveState &state);
-    virtual void load(LoadState &state);
     virtual void execute(Time interval);
     virtual void line(Line line, LineState state);
 
@@ -377,6 +408,325 @@ private:
     }
 
     Cycles dispatch(void);
+};
+
+class m65c02Cpu: public M6502Cpu
+{
+public:
+    m65c02Cpu(Machine *machine, const std::string &name, unsigned clock,
+              AddressBus16 *bus);
+    virtual ~m65c02Cpu(void);
+
+    virtual void execute(Time interval);
+    virtual void line(Line line, LineState state);
+
+protected:
+
+    void op_tsb(void) {
+        byte_t arg = fetch();
+        byte_t result = _rA | arg;
+        _rF.Z = (_rA & arg) == 0;
+        store(result);
+    }
+
+    void op_trb(void) {
+        byte_t arg = fetch();
+        byte_t result = ~_rA & arg;
+        _rF.Z = (_rA & arg) == 0;
+        store(result);
+    }
+
+    void op_bitimm(void) {
+        byte_t arg = fetch();
+        _rF.Z = (_rA & arg) == 0;
+    }
+
+    void op_ina(void) {
+        byte_t result = _rA + 1;
+        set_sz(result);
+        _rA = result;
+    }
+
+    void op_dea(void) {
+        byte_t result = _rA - 1;
+        set_sz(result);
+        _rA = result;
+    }
+
+    void op_phx(void) {
+        push(_rX);
+    }
+
+    void op_plx(void) {
+        byte_t result = pop();
+        _rX = result;
+        set_sz(result);
+    }
+
+    void op_phy(void) {
+        push(_rY);
+    }
+
+    void op_ply(void) {
+        byte_t result = pop();
+        _rY = result;
+        set_sz(result);
+    }
+
+    /* Only available on some WDC and Rockwell versions */
+    void op_smb(int bit) {
+        byte_t arg = fetch();
+        byte_t result = arg | (1 << bit);
+        store(result);
+    }
+
+    void op_rmb(int bit) {
+        byte_t arg = fetch();
+        byte_t result = arg & ~(1 << bit);
+        store(result);
+    }
+
+    void op_bbr(int bit) {
+        Zpg();
+        byte_t arg = fetch();
+        Rel();
+        op_branch(!bit_isset(arg, bit));
+    }
+
+    void op_bbs(int bit) {
+        Zpg();
+        byte_t arg = fetch();
+        Rel();
+        op_branch(bit_isset(arg, bit));
+    }
+
+private:
+
+    Cycles dispatch(void);
+    void reset(void);
+
+};
+
+class hu6280Cpu: public m65c02Cpu
+{
+public:
+    hu6280Cpu(Machine *machine, const std::string &name, unsigned clock,
+              AddressBus21 *bus);
+    virtual ~hu6280Cpu(void);
+
+    virtual void execute(Time interval);
+    virtual void line(Line line, LineState state);
+
+    byte_t irq_read(offset_t offset);
+    void irq_write(offset_t offset , byte_t value);
+
+    byte_t timer_read(offset_t offset);
+
+    void timer_write(offset_t offset, byte_t value);
+
+protected:
+
+    void op_sxy(void) {
+        _rX ^= _rY;
+        _rY ^= _rX;
+        _rX ^= _rY;
+    }
+    void op_sax(void) {
+        _rA ^= _rX;
+        _rX ^= _rA;
+        _rA ^= _rX;
+    }
+    void op_say(void) {
+        _rA ^= _rY;
+        _rY ^= _rA;
+        _rA ^= _rY;
+    }
+    void op_set(void) {
+        throw CpuFeatureFault(_name, "T flag");
+    }
+    void op_tstart(reg16_t *src, reg16_t *dest, reg16_t *len) {
+        src->b.l = pc_read();
+        src->b.h = pc_read();
+        dest->b.l = pc_read();
+        dest->b.h = pc_read();
+        len->b.l = pc_read();
+        len->b.h = pc_read();
+        push(_rY);
+        push(_rA);
+        push(_rX);
+    }
+    void op_tdd(void) {
+        reg16_t src, dest, len;
+        op_tstart(&src, &dest, &len);
+
+        do {
+            byte_t value = bus_read(src.d);
+            bus_write(dest.d, value);
+            dest.d -= 1;
+            src.d -= 1;
+            len.d -= 1;
+        } while (len.d != 0);
+
+        _rX = pop();
+        _rA = pop();
+        _rY = pop();
+    }
+    void op_tii(void) {
+        reg16_t src, dest, len;
+        op_tstart(&src, &dest, &len);
+
+        do {
+            byte_t value = bus_read(src.d);
+            bus_write(dest.d, value);
+            dest.d += 1;
+            src.d += 1;
+            len.d -= 1;
+        } while (len.d != 0);
+
+        _rX = pop();
+        _rA = pop();
+        _rY = pop();
+    }
+    void op_tin(void) {
+        reg16_t src, dest, len;
+        op_tstart(&src, &dest, &len);
+
+        do {
+            byte_t value = bus_read(src.d);
+            bus_write(dest.d, value);
+            src.d += 1;
+            len.d -= 1;
+        } while (len.d != 0);
+
+        _rX = pop();
+        _rA = pop();
+        _rY = pop();
+    }
+    void op_tai(void) {
+        reg16_t src, dest, len;
+        op_tstart(&src, &dest, &len);
+        int b = 0;
+
+        do {
+            byte_t value = bus_read(src.d + b);
+            bus_write(dest.d, value);
+            dest.d += 1;
+            len.d -= 1;
+            b ^= 1;
+        } while (len.d != 0);
+
+        _rX = pop();
+        _rA = pop();
+        _rY = pop();
+    }
+    void op_tia(void) {
+        reg16_t src, dest, len;
+        op_tstart(&src, &dest, &len);
+        int b = 0;
+
+        do {
+            byte_t value = bus_read(src.d);
+            bus_write(dest.d + b, value);
+            src.d += 1;
+            len.d -= 1;
+            b ^= 1;
+        } while (len.d != 0);
+
+        _rX = pop();
+        _rA = pop();
+        _rY = pop();
+    }
+
+    void op_tam(void) {
+        byte_t arg = fetch();
+        for (int i = 0; i < 8; i++)
+            if (bit_isset(arg, i))
+                _mmu_map[i] = _rA;
+    }
+    void op_tma(void) {
+        byte_t arg = fetch();
+        byte_t result = 0;
+        for (int i = 0; i < 8; i++)
+            if (bit_isset(arg, i))
+                result |= _mmu_map[i];
+        _rA = result;
+    }
+    void op_tst(byte_t value) {
+        byte_t arg = fetch();
+        _rF.N = bit_isset(arg, 7);
+        _rF.V = bit_isset(arg, 6);
+        _rF.Z = (value & arg) == 0;
+    }
+    void op_csl(void) {
+        _clock_div = 4;
+    }
+    void op_csh(void) {
+        _clock_div = 1;
+    }
+    void op_cla(void) {
+        _rA = 0;
+    }
+    void op_clx(void) {
+        _rX = 0;
+    }
+    void op_cly(void) {
+        _rY = 0;
+    }
+    void op_bsr(void) {
+        Rel();
+        _rPC.d--;
+        push(_rPC.b.h);
+        push(_rPC.b.l);
+        op_jmp();
+    }
+    void op_st0(void) {
+        Imm();
+        byte_t arg = fetch();
+        _data_bus->write(0x1FE000, arg);
+    }
+    void op_st1(void) {
+        Imm();
+        byte_t arg = fetch();
+        _data_bus->write(0x1FE002, arg);
+    }
+    void op_st2(void) {
+        Imm();
+        byte_t arg = fetch();
+        _data_bus->write(0x1FE003, arg);
+    }
+    void op_irq(addr_t vector, bool brk = false) {
+        /* XXX: interrupt */
+        _rF.B = brk;
+        push(_rPC.b.h);
+        push(_rPC.b.l);
+        push(_rSR);
+        _rF.I = 1;
+        _rF.D = 0;
+        _rPC.b.l = bus_read(vector);
+        _rPC.b.h = bus_read(vector + 1);
+    }
+
+private:
+
+    bool interrupt(void);
+
+    byte_t mmu_read(offset_t offset);
+    void mmu_write(offset_t offset, byte_t value);
+
+    Cycles dispatch(void);
+    void reset(void);
+
+    AddressBus21 *_data_bus;
+    AddressBus16 _mmu;
+    byte_t _mmu_map[8];
+    int _clock_div;
+
+    byte_t _irq_status;
+    byte_t _irq_disable;
+
+    bool _timer_status;
+    int _timer_load;
+    int _timer_value;
 };
 
 };

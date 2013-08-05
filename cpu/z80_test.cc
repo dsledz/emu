@@ -83,18 +83,18 @@ class Zexall: public Machine
 {
 public:
     Zexall(void):
-        bus(),
-        cpu(this, "cpu", 1000000, &bus),
+        bus(new AddressBus16()),
+        cpu(new Z80Cpu(this, "cpu", 1000000, bus.get())),
         rom("zex.bin"),
         _data(0), _req(0), _req_last(0), _ack(0)
     {
-        cpu.load_rom(&rom, 0x000);
+        cpu->load_rom(&rom, 0x0000);
 
-        bus.add(0xFFFF, &_data);
-        bus.add(0xFFFE, 0xFFFF,
-                READ_CB(Zexall::req_read, this),
-                WRITE_CB(Zexall::req_write, this));
-        bus.add(0xFFFD, &_ack);
+        bus->add(0xFFFF, &_data);
+        bus->add(0xFFFE, 0xFFFF,
+                 READ_CB(Zexall::req_read, this),
+                 WRITE_CB(Zexall::req_write, this));
+        bus->add(0xFFFD, &_ack);
     }
     ~Zexall(void) {
     }
@@ -115,8 +115,8 @@ public:
         _req = value;
     }
 
-    AddressBus16 bus;
-    Z80Cpu cpu;
+    std::unique_ptr<AddressBus16> bus;
+    std::unique_ptr<Z80Cpu> cpu;
     Rom rom;
     byte_t _data, _req, _req_last, _ack;
 };
@@ -125,5 +125,5 @@ TEST(Zexall_test, test)
 {
     Zexall zex;
 
-    zex.cpu.execute(Time(sec(10)));
+    zex.cpu->execute(Time(sec(10)));
 }
