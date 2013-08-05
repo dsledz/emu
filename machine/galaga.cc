@@ -23,13 +23,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "emu.h"
+#include "emu/emu.h"
 
-#include "galaga.h"
-
-#include "z80.h"
-#include "namco06.h"
-#include "namco51.h"
+#include "machine/galaga.h"
 
 using namespace EMU;
 using namespace Z80;

@@ -23,7 +23,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "emulator.h"
+#include "machine/emulator.h"
 
 using namespace EMU;
 

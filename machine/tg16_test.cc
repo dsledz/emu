@@ -25,9 +25,9 @@
 
 #include "gtest/gtest.h"
 
-#include "emu.h"
+#include "emu/emu.h"
 
-#include "tg16.h"
+#include "machine/tg16.h"
 
 using namespace EMU;
 using namespace TG16Driver;

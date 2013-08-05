@@ -23,9 +23,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "bits.h"
-#include "dipswitch.h"
-#include "machine.h"
+#include "emu/bits.h"
+#include "emu/dipswitch.h"
+#include "emu/machine.h"
 
 using namespace EMU;
 

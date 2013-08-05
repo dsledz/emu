@@ -23,7 +23,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ram.h"
+#include "emu/ram.h"
 
 using namespace EMU;
 

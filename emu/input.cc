@@ -23,7 +23,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "input.h"
+#include "emu/input.h"
 
 using namespace EMU;
 

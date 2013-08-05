@@ -25,8 +25,8 @@
 
 #pragma once
 
-#include "bits.h"
-#include "exception.h"
+#include "emu/bits.h"
+#include "emu/exception.h"
 
 #include <sdl/sdl.h>
 

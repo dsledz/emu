@@ -25,7 +25,7 @@
 
 #include "gtest/gtest.h"
 
-#include "m6502.h"
+#include "cpu/m6502.h"
 
 using namespace M6502;
 

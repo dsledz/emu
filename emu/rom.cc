@@ -23,7 +23,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "rom.h"
+#include "emu/rom.h"
 
 #include <dirent.h>
 #include <stdlib.h>

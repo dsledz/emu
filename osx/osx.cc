@@ -23,8 +23,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "emulator.h"
-#include "osx.h"
+#include "machine/emulator.h"
+#include "osx/osx.h"
 
 #include <future>
 

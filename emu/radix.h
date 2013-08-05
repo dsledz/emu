@@ -28,8 +28,8 @@
  */
 #pragma once
 
-#include "bits.h"
-#include "exception.h"
+#include "emu/bits.h"
+#include "emu/exception.h"
 
 #define MASK(width) ((1 << width) - 1)
 

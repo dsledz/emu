@@ -25,7 +25,7 @@
 
 #include "gtest/gtest.h"
 
-#include "emu.h"
+#include "emu/emu.h"
 using namespace EMU;
 #if 0
 TEST(Radix, simple)

@@ -25,9 +25,9 @@
 /*
  * Memory bank Controller
  */
-#include "emu.h"
+#include "emu/emu.h"
 
-#include "gbmbc.h"
+#include "machine/gbmbc.h"
 
 using namespace EMU;
 using namespace Driver;

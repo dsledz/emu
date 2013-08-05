@@ -25,7 +25,7 @@
 
 #include "gtest/gtest.h"
 
-#include "lr35902.h"
+#include "cpu/lr35902.h"
 
 using namespace LR35902;
 

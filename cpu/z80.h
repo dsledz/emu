@@ -27,7 +27,7 @@
  */
 #pragma once
 
-#include "emu.h"
+#include "emu/emu.h"
 #include <sstream>
 
 namespace Z80 {

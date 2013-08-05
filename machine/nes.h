@@ -23,9 +23,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "emu.h"
+#include "emu/emu.h"
 
-#include "m6502.h"
+#include "cpu/m6502.h"
 
 using namespace EMU;
 using namespace M6502;

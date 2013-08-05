@@ -23,7 +23,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "video.h"
+#include "emu/video.h"
 
 using namespace EMU;
 

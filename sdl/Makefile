@@ -1,7 +1,7 @@
 # SDL library
 export
 SDL_DIR= ../../SDL
-CPPFLAGS+= -I${SDL_DIR}/include -I../machine -I../cpu
+CPPFLAGS+= -I${SDL_DIR}/include
 LIBS+= -L${SDL_DIR}/lib -lSDLmain -lSDL -framework OpenGL -framework Cocoa
 
 SRCS= sdl_main.cc sdl_input.cc sdl_gfx.cc

@@ -6,7 +6,7 @@ DEBUG_FLAGS= -g
 CPPFLAGS= -Wall -Werror \
 	  -std=c++11 -stdlib=libc++ \
 	  -DGTEST_USE_OWN_TR1_TUPLE=1 -I${GTEST_INCLUDE} \
-	  ${CFLAGS} ${FLAGS} ${DEBUG_FLAGS} -I${CURDIR}/emu
+	  ${CFLAGS} ${FLAGS} ${DEBUG_FLAGS} -I${CURDIR}
 LIBS= -L${OBJS_DIR}
 
 OBJS_DIR=${CURDIR}/objs

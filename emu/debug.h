@@ -24,7 +24,7 @@
  */
 #pragma once
 
-#include "bits.h"
+#include "emu/bits.h"
 #include <iostream>
 #include <iomanip>
 #include <string>

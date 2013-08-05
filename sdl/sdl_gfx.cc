@@ -23,7 +23,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "sdl_gfx.h"
+#include "sdl/sdl_gfx.h"
 
 SDLGfx::SDLGfx(void):
     _scale(GfxScale::None)

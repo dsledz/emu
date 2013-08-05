@@ -23,11 +23,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "emu.h"
+#include "emu/emu.h"
 
-#include "namco51.h"
-#include "namco06.h"
-#include "z80.h"
+#include "machine/namco51.h"
+#include "machine/namco06.h"
+#include "cpu/z80.h"
 
 using namespace EMU;
 using namespace Z80;

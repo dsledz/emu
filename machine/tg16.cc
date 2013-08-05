@@ -22,7 +22,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "tg16.h"
+#include "machine/tg16.h"
 
 using namespace TG16Driver;
 

@@ -23,11 +23,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "emu.h"
+#include "emu/emu.h"
 
-#include "gb.h"
-#include "gbgfx.h"
-#include "gbmbc.h"
+#include "machine/gb.h"
+#include "machine/gbgfx.h"
+#include "machine/gbmbc.h"
 
 using namespace EMU;
 using namespace Driver;

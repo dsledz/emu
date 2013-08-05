@@ -27,9 +27,9 @@
  */
 #pragma once
 
-#include "emu.h"
+#include "emu/emu.h"
 
-#include "gb.h"
+#include "machine/gb.h"
 
 using namespace EMU;
 

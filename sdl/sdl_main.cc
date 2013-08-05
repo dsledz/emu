@@ -23,16 +23,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "emu.h"
+#include "emu/emu.h"
 
-#include "emulator.h"
+#include "machine/emulator.h"
 
-#include "sdl_util.h"
-#include "sdl_gfx.h"
-#include "sdl_input.h"
-#include "sdl_main.h"
+#include "sdl/sdl_util.h"
+#include "sdl/sdl_gfx.h"
+#include "sdl/sdl_input.h"
+#include "sdl/sdl_main.h"
 
-#include "getopt.h"
+#include <getopt.h>
 
 class CLIOptions: public Options
 {

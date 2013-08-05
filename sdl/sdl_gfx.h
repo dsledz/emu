@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "emu.h"
+#include "emu/emu.h"
 
 #include "sdl_util.h"
 

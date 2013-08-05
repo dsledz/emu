@@ -23,8 +23,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "input.h"
-#include "sdl_input.h"
+#include "emu/input.h"
+#include "sdl/sdl_input.h"
 
 using namespace EMU;
 

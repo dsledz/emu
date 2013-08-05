@@ -24,7 +24,7 @@
  */
 #pragma once
 
-#include "emu.h"
+#include "emu/emu.h"
 
 namespace EMU {
 

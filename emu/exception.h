@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "bits.h"
+#include "emu/bits.h"
 #include <stdexcept>
 #include <sstream>
 

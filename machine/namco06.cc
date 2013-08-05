@@ -23,8 +23,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "emu.h"
-#include "namco06.h"
+#include "emu/emu.h"
+#include "machine/namco06.h"
 
 using namespace EMU;
 

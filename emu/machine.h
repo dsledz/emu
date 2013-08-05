@@ -24,13 +24,13 @@
  */
 #pragma once
 
-#include "bits.h"
-#include "timing.h"
-#include "exception.h"
-#include "device.h"
-#include "video.h"
-#include "dipswitch.h"
-#include "options.h"
+#include "emu/bits.h"
+#include "emu/timing.h"
+#include "emu/exception.h"
+#include "emu/device.h"
+#include "emu/video.h"
+#include "emu/dipswitch.h"
+#include "emu/options.h"
 
 #include <map>
 

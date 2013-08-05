@@ -24,9 +24,9 @@
 
 #include "gtest/gtest.h"
 
-#include "emu.h"
+#include "emu/emu.h"
 
-#include "galaga.h"
+#include "machine/galaga.h"
 
 using namespace EMU;
 

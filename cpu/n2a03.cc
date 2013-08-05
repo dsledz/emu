@@ -23,7 +23,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "m6502.h"
+#include "cpu/m6502.h"
 
 #include <sstream>
 

@@ -23,9 +23,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "emu.h"
+#include "emu/emu.h"
 
-#include "namco51.h"
+#include "machine/namco51.h"
 
 using namespace EMU;
 

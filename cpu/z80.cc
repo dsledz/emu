@@ -23,7 +23,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "z80.h"
+#include "cpu/z80.h"
 
 using namespace EMU;
 using namespace Z80;

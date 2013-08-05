@@ -23,11 +23,11 @@
  */
 #pragma once
 
-#include "bits.h"
-#include "state.h"
-#include "io.h"
-#include "input.h"
-#include "timing.h"
+#include "emu/bits.h"
+#include "emu/state.h"
+#include "emu/io.h"
+#include "emu/input.h"
+#include "emu/timing.h"
 #include <list>
 
 namespace EMU {

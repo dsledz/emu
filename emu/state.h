@@ -27,7 +27,7 @@
  */
 #pragma once
 
-#include "bits.h"
+#include "emu/bits.h"
 
 namespace EMU {
 

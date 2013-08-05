@@ -26,9 +26,9 @@
  * Gameboy CPU. Similar, to a stripped down Z80
  */
 
-#include "emu.h"
+#include "emu/emu.h"
 
-#include "lr35902.h"
+#include "cpu/lr35902.h"
 
 using namespace EMU;
 using namespace LR35902;

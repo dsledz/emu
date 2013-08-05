@@ -23,9 +23,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "nes.h"
+#include "machine/nes.h"
 
-#include "m6502.h"
+#include "cpu/m6502.h"
 
 #define MASTER_CLOCK 21477270
 

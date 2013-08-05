@@ -25,10 +25,10 @@
 
 #pragma once
 
-#include "bits.h"
-#include "exception.h"
-#include "device.h"
-#include "io.h"
+#include "emu/bits.h"
+#include "emu/exception.h"
+#include "emu/device.h"
+#include "emu/io.h"
 
 #include <fstream>
 #include <sys/stat.h>

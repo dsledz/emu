@@ -24,9 +24,9 @@
  */
 #pragma once
 
-#include "bits.h"
-#include "exception.h"
-#include "io.h"
+#include "emu/bits.h"
+#include "emu/exception.h"
+#include "emu/io.h"
 
 namespace EMU {
 
