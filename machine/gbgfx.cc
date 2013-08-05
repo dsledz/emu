@@ -43,7 +43,7 @@ GBGraphics::GBGraphics(Gameboy *gameboy, unsigned hertz):
     _global_pal[2] = RGBColor(0x66, 0x66, 0x66);
     _global_pal[3] = RGBColor(0x00, 0x00, 0x00);
 
-    _bus->add(0x8000, 0xE000,
+    _bus->add(0x8000, 0x9FFF,
         [&] (offset_t offset) -> byte_t {
             return _vram.read8(offset);
         },
@@ -54,14 +54,14 @@ GBGraphics::GBGraphics(Gameboy *gameboy, unsigned hertz):
             }
             _vram.write8(offset, value);
         });
-    _bus->add(0xFE00, 0xFF00, &_oam);
+    _bus->add(0xFE00, 0xFE9F, &_oam);
 
     _bus->add(VideoReg::LCDC, &_lcdc);
     _bus->add(VideoReg::STAT, &_stat);
     _bus->add(VideoReg::SCY, &_scy);
     _bus->add(VideoReg::SCX, &_scx);
     _bus->add(VideoReg::LY, &_ly);
-    _bus->add(GBReg::DMA, 0xFFFF,
+    _bus->add(GBReg::DMA,
         AddressBus16::DefaultRead(),
         [&] (offset_t offset, byte_t arg) {
             addr_t src_addr = (addr_t)arg << 8;
@@ -69,15 +69,15 @@ GBGraphics::GBGraphics(Gameboy *gameboy, unsigned hertz):
                 _oam.write8(i, _bus->read(src_addr + i));
         });
     _bus->add(VideoReg::LYC, &_lyc);
-    _bus->add(VideoReg::BGP, 0xFFFF,
+    _bus->add(VideoReg::BGP,
         AddressBus16::DataRead(&_bgp),
         WRITE_CB(GBGraphics::palette_write, this, &_bg_pal, &_bgp)
         );
-    _bus->add(VideoReg::OBP0, 0xFFFF,
+    _bus->add(VideoReg::OBP0,
         AddressBus16::DataRead(&_obp0),
         WRITE_CB(GBGraphics::palette_write, this, &_obj0_pal, &_obp0)
         );
-    _bus->add(VideoReg::OBP1, 0xFFFF,
+    _bus->add(VideoReg::OBP1,
         AddressBus16::DataRead(&_obp1),
         WRITE_CB(GBGraphics::palette_write, this, &_obj1_pal, &_obp1)
         );

@@ -57,31 +57,31 @@ TG16::TG16(const std::string &rom):
         READ_CB(TG16::bank_read, this),
         WRITE_CB(TG16::bank_write, this));
 
-    _cpu_bus.add(0x1F0000, 0x001FFF,
+    _cpu_bus.add(0x1F0000, 0x1F1FFF,
         READ_CB(TG16::ram_read, this),
         WRITE_CB(TG16::ram_write, this));
 
-    _cpu_bus.add(0x1FE000, 0x0003FF,
+    _cpu_bus.add(0x1FE000, 0x1FE3FF,
         READ_CB(VDC::read, &_vdc),
         WRITE_CB(VDC::write, &_vdc));
 
-    _cpu_bus.add(0x1FE400, 0x0003FF,
+    _cpu_bus.add(0x1FE400, 0x1FE7FF,
         READ_CB(VDC::vce_read, &_vdc),
         WRITE_CB(VDC::vce_write, &_vdc));
 
-    _cpu_bus.add(0x1FE800, 0x0003FF,
+    _cpu_bus.add(0x1FE800, 0x1FEBFF,
         READ_CB(PSG::read, &_psg),
         WRITE_CB(PSG::write, &_psg));
 
-    _cpu_bus.add(0x1FEC00, 0x0003FF,
+    _cpu_bus.add(0x1FEC00, 0x1FEFFF,
         READ_CB(M6502::hu6280Cpu::timer_read, _cpu.get()),
         WRITE_CB(M6502::hu6280Cpu::timer_write, _cpu.get()));
 
-    _cpu_bus.add(0x1FF000, 0x0003FF,
+    _cpu_bus.add(0x1FF000, 0x1FF3FF,
         READ_CB(TG16::joypad_read, this),
         WRITE_CB(TG16::joypad_write, this));
 
-    _cpu_bus.add(0x1FF400, 0x0003FF,
+    _cpu_bus.add(0x1FF400, 0x1FF7FF,
         READ_CB(M6502::hu6280Cpu::irq_read, _cpu.get()),
         WRITE_CB(M6502::hu6280Cpu::irq_write, _cpu.get()));
 }

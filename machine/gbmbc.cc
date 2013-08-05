@@ -36,14 +36,14 @@ GBMBC::GBMBC(Gameboy *gameboy):
     Device(gameboy, "mbc"),
     _rom_bank(1), _ram_bank(0)
 {
-    gameboy->bus()->add(0x0000, 0xE000,
+    gameboy->bus()->add(0x0000, 0x1FFF,
         [&] (offset_t offset) -> byte_t {
             return _rom[offset];
         },
         [&] (offset_t offset, byte_t value) {
             return;
         });
-    gameboy->bus()->add(0x2000, 0xE000,
+    gameboy->bus()->add(0x2000, 0x3FFF,
         [&] (offset_t offset) -> byte_t {
             return _rom[offset + 0x2000];
         },
@@ -55,21 +55,21 @@ GBMBC::GBMBC(Gameboy *gameboy):
             if (_rom_bank == 0 || (_rom_bank * 0x4000) > _rom_size)
                 _rom_bank = 1;
         });
-    gameboy->bus()->add(0x4000, 0xE000,
+    gameboy->bus()->add(0x4000, 0x5FFF,
         [&] (offset_t offset) -> byte_t {
             return _rom[_rom_bank * 0x4000 + offset];
         },
         [&] (offset_t offset, byte_t value) {
             _ram_bank = value & 0x03;
         });
-    gameboy->bus()->add(0x6000, 0xE000,
+    gameboy->bus()->add(0x6000, 0x7FFF,
         [&] (offset_t offset) -> byte_t {
             return _rom[_rom_bank * 0x4000 + offset + 0x2000];
         },
         [&] (offset_t offset, byte_t value) {
             return;
         });
-    gameboy->bus()->add(0xA000, 0xE000,
+    gameboy->bus()->add(0xA000, 0xBFFF,
         [&] (offset_t offset) -> byte_t {
             return _ram[_ram_bank * 0x2000 + offset];
         },

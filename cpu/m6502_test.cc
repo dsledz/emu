@@ -40,8 +40,8 @@ public:
         ram(0x2000),
         irq_vec(0x0008)
     {
-        bus.add(0x0000, 0xE000, &ram);
-        bus.add(0xFFF8, 0xFFF8, &irq_vec);
+        bus.add(0x0000, 0x1FFF, &ram);
+        bus.add(0xFFF8, 0xFFFF, &irq_vec);
 
         irq_vec.write8(0x0006, 0x0000);
         irq_vec.write8(0x0007, 0x0010);

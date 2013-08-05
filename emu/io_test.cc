@@ -131,8 +131,8 @@ TEST(BusTest, Bus16by8)
     Bus16x8 bus;
 
     byte_t foo = 0;
-    bus.add(Bus16x8::IOPort(0x1000, 0xF000));
-    //bus.add(Bus16x8::IOPort(0x2000, 0xF000, &foo));
+    bus.add(Bus16x8::IOPort(0x1000, 0x1FFF));
+    //bus.add(Bus16x8::IOPort(0x2000, 0x2FFF, &foo));
     bus.add(0x2000, &foo);
 
     bus.read(0x1000);
@@ -157,8 +157,8 @@ TEST(BusTest, Bus16by16)
     Bus16x16 bus;
 
     uint16_t foo = 0;
-    bus.add(Bus16x16::IOPort(0x1000, 0xF000));
-    bus.add(Bus16x16::IOPort(0x2000, 0xF000, &foo));
+    bus.add(Bus16x16::IOPort(0x1000, 0x1FFF));
+    bus.add(Bus16x16::IOPort(0x2000, 0x2FFF, &foo));
 
     bus.read(0x1000);
     bus.write(0x1000, 0x0000);
@@ -177,10 +177,10 @@ TEST(BusTest, Bus21by8)
     Bus21x8 bus;
 
     uint8_t bar = 0;
-    bus.add(0x1F0000, 0x0003FF, Bus21x8::DataRead(&bar),
+    bus.add(0x1F0000, 0x1F03FF, Bus21x8::DataRead(&bar),
         Bus21x8::DataWrite(&bar));
     uint8_t foo = 0;
-    bus.add(0x1FE000, 0x0003FF, Bus21x8::DataRead(&foo),
+    bus.add(0x1FE000, 0x1FE3FF, Bus21x8::DataRead(&foo),
         Bus21x8::DataWrite(&foo));
 
     EXPECT_EQ(0, bus.read(0x1FE048));
@@ -197,8 +197,8 @@ TEST(BusTest, Bus24x16)
     Bus24x16 bus;
 
     uint16_t foo = 0x2211;
-    bus.add(Bus24x16::IOPort(0x1000,   0xFFF000, &foo));
-    bus.add(Bus24x16::IOPort(0x100000, 0xFFFFFF, &foo));
+    bus.add(Bus24x16::IOPort(0x1000,   0x1000, &foo));
+    bus.add(Bus24x16::IOPort(0x100000, 0x100000, &foo));
 
     EXPECT_EQ(foo, bus.read(0x100000));
     EXPECT_EQ(bus.read(0x1000), bus.read(0x100000));

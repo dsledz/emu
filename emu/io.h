@@ -165,10 +165,10 @@ public:
     {
     }
 
-    void add(addr_type key, addr_type keymask, const Val &val)
+    void add(addr_type key, addr_type keyend, const Val &val)
     {
         assert(_entries.size() == 16);
-        Entry entry(key, key + keymask, val);
+        Entry entry(key, keyend, val);
 
         const int start = bucket(entry.start);
         const int end = bucket(entry.end);
@@ -248,17 +248,17 @@ public:
 
     struct IOPort
     {
-        IOPort(addr_type base, addr_type mask):
-            base(base), mask(mask),
+        IOPort(addr_type base, addr_type end):
+            base(base), end(end),
             read(DefaultRead()), write(DefaultWrite()) { }
-        IOPort(addr_type base, addr_type mask, data_type *data):
-            base(base), mask(mask),
+        IOPort(addr_type base, addr_type end, data_type *data):
+            base(base), end(end),
             read(DataRead(data)), write(DataWrite(data)) { }
-        IOPort(addr_type base, addr_type mask, read_fn read, write_fn write):
-            base(base), mask(mask), read(read), write(write) { }
+        IOPort(addr_type base, addr_type end, read_fn read, write_fn write):
+            base(base), end(end), read(read), write(write) { }
 
         addr_type base;
-        addr_type mask;
+        addr_type end;
         read_fn read;
         write_fn write;
     };
@@ -285,37 +285,41 @@ public:
 
     void add(const IOPort &dev)
     {
-        _map.add(dev.base, dev.mask, dev);
+        _map.add(dev.base, dev.end, dev);
     }
 
-    void add(addr_type base, addr_type mask)
+    void add(addr_type base, addr_type end)
     {
-        IOPort port(base, mask);
+        IOPort port(base, end);
         add(port);
     }
 
-    void add(addr_type base, addr_type mask, read_fn read, write_fn write)
+    void add(addr_type base, addr_type end, read_fn read, write_fn write)
     {
-        IOPort port(base, mask, read, write);
+        IOPort port(base, end, read, write);
+        add(port);
+    }
+
+    void add(addr_type base, read_fn read, write_fn write)
+    {
+        IOPort port(base, base, read, write);
         add(port);
     }
 
     void add(addr_type base, bvec *buf)
     {
-        /* XXX: doesn't handle the mask correctly */
-        add(base, buf->size() - 1, BufferRead(buf), BufferWrite(buf));
+        add(base, base + buf->size() - 1, BufferRead(buf), BufferWrite(buf));
     }
 
     /* XXX: IODevice is hardcoded with an 16 bit addr, 8 bit bus. */
-    void add(addr_type base, addr_type mask, IODevice *dev)
+    void add(addr_type base, addr_type end, IODevice *dev)
     {
         throw DeviceFault("DataBus");
     }
 
     void add(addr_type base, data_type *data)
     {
-        IOPort port(base, ((1 << addr_width) - 1),
-                    DataRead(data), DataWrite(data));
+        IOPort port(base, base, DataRead(data), DataWrite(data));
         add(port);
     }
 

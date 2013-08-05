@@ -71,7 +71,7 @@ NES::NES(const std::string &rom):
     _mapper = load_cartridge(this, rom);
 
     /* Program rom is on the CPU bus */
-    _cpu_bus.add(0x8000, 0x8000,
+    _cpu_bus.add(0x8000, 0xFFFF,
         [&](addr_t addr) -> byte_t {
             return _mapper->prg_read(addr);
         },
@@ -80,7 +80,7 @@ NES::NES(const std::string &rom):
         });
 
     /* Chr rom is on the PPU bus */
-    _ppu_bus.add(0x0000, 0xE000,
+    _ppu_bus.add(0x0000, 0x1FFF,
         [&](addr_t addr) -> byte_t {
             return _mapper->chr_read(addr);
         },
@@ -89,7 +89,7 @@ NES::NES(const std::string &rom):
         });
 
     /* SRAM is on the CPU bus */
-    _cpu_bus.add(0x6000, 0xE000,
+    _cpu_bus.add(0x6000, 0x7FFF,
         [&](addr_t addr) -> byte_t {
             return _mapper->sram_read(addr);
         },
@@ -98,7 +98,7 @@ NES::NES(const std::string &rom):
         });
 
     /* XXX: APU registers 0x4000 - 0x4017 */
-    _cpu_bus.add(0x4000, 0xE000,
+    _cpu_bus.add(0x4000, 0x5FFF,
         [&](addr_t addr) -> byte_t {
             byte_t result = 0;
             switch (addr) {
@@ -161,10 +161,10 @@ NES::NES(const std::string &rom):
     input->add(InputSignal(InputKey::Joy2Right, port, NESKey::Right, true));
 
     /* 2K ram mirrored 4x */
-    _cpu_bus.add(0x0000, 0xF800, &_ram);
-    _cpu_bus.add(0x0800, 0xF800, &_ram);
-    _cpu_bus.add(0x1000, 0xF800, &_ram);
-    _cpu_bus.add(0x1800, 0xF800, &_ram);
+    _cpu_bus.add(0x0000, 0x07FF, &_ram);
+    _cpu_bus.add(0x0800, 0x0FFF, &_ram);
+    _cpu_bus.add(0x1000, 0x17FF, &_ram);
+    _cpu_bus.add(0x1800, 0x1FFF, &_ram);
 
     /* XXX: Cartridge Expansion 0x4018 - 0x5FFF */
 

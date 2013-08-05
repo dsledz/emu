@@ -155,37 +155,36 @@ void
 Galaga::init_bus(void)
 {
     /* Dipswitches */
-    _bus->add(0x6800, 0xFFF8,
+    _bus->add(0x6800, 0x6807,
         READ_CB(Galaga::dips_read, this),
         AddressBus16::DefaultWrite());
     /* XXX: Sound */
-    _bus->add(0x6808, 0xFFF8);
-    _bus->add(0x6810, 0xFFF0);
-    _bus->add(0x6820, 0xFFF8,
+    _bus->add(0x6808, 0x681F);
+    _bus->add(0x6820, 0x6827,
         AddressBus16::DefaultRead(),
         WRITE_CB(Galaga::latch_write, this)
         );
     /* XXX: Watchdog */
-    _bus->add(0x6830, 0xFFFF);
+    _bus->add(0x6830, 0x6830);
 
     /* Namco06 (and children) */
-    _bus->add(0x7000, 0xFF00,
+    _bus->add(0x7000, 0x70FF,
         READ_CB(Namco06::read_child, _namco06.get()),
         WRITE_CB(Namco06::write_child, _namco06.get())
         );
-    _bus->add(0x7100, 0xFFFF,
+    _bus->add(0x7100,
         READ_CB(Namco06::read_control, _namco06.get()),
         WRITE_CB(Namco06::write_control, _namco06.get())
         );
 
     /* Various ram */
-    _bus->add(0x8000, 0xF800, &vram);
-    _bus->add(0x8800, 0xF800, &ram1);
-    _bus->add(0x9000, 0xF800, &ram2);
-    _bus->add(0x9800, 0xF800, &ram3);
+    _bus->add(0x8000, 0x87FF, &vram);
+    _bus->add(0x8800, 0x8FFF, &ram1);
+    _bus->add(0x9000, 0x97FF, &ram2);
+    _bus->add(0x9800, 0x9FFF, &ram3);
 
     /* XXX: Star control */
-    _bus->add(0xA000, 0xFFF8);
+    _bus->add(0xA000, 0xA007);
 }
 
 void

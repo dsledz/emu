@@ -55,12 +55,12 @@ NESPPU::NESPPU(NES *machine, const std::string &name, unsigned hertz):
     _ppu_bus = machine->ppu_bus();
     _sprite_bus = machine->sprite_bus();
 
-    _cpu_bus->add(0x2000, 0xE000,
+    _cpu_bus->add(0x2000, 0x3FFF,
         READ_CB(NESPPU::ppu_read, this),
         WRITE_CB(NESPPU::ppu_write, this)
     );
 
-    _ppu_bus->add(0x2000, 0xE000,
+    _ppu_bus->add(0x2000, 0x3FFF,
         READ_CB(NESPPU::ppu_bus_read, this),
         WRITE_CB(NESPPU::ppu_bus_write, this)
     );

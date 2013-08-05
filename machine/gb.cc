@@ -74,7 +74,7 @@ public:
         input->add(InputSignal(InputKey::Select1, _port, GBKey::Select, false));
         input->add(InputSignal(InputKey::Start1, _port, GBKey::Start, false));
 
-        gameboy->bus()->add(GBReg::KEYS, 0xFFFF,
+        gameboy->bus()->add(GBReg::KEYS,
             [&](offset_t offset) -> byte_t {
                 return _value;
             },
@@ -99,12 +99,14 @@ class GBSerialIO: public Device {
 public:
     GBSerialIO(Gameboy *gameboy):
         Device(gameboy, "serial") {
-        gameboy->bus()->add(GBReg::SB, 0xFFFF);
-        gameboy->bus()->add(GBReg::SC, 0xFFFF);
+        gameboy->bus()->add(GBReg::SB, &_sb);
+        gameboy->bus()->add(GBReg::SC, &_sc);
     }
     virtual ~GBSerialIO(void) {
     }
 private:
+    uint8_t _sb;
+    uint8_t _sc;
 };
 
 class GBTimer: public Device {
@@ -204,18 +206,17 @@ Gameboy::Gameboy(const std::string &rom_name):
 
     _ram = std::unique_ptr<Ram>(new Ram(0x2000));
     /* XXX: Ram isn't mirrored */
-    _bus->add(0xC000, 0xE000, _ram.get());
+    _bus->add(0xC000, 0xDFFF, _ram.get());
+    _bus->add(0xE000, 0xFDFF, _ram.get());
 
     _hiram = std::unique_ptr<Ram>(new Ram(0x80));
-    _bus->add(0xFF80, 0xFF80, _hiram.get());
+    _bus->add(0xFF80, 0xFFFF, _hiram.get());
 
     /* XXX: Some games need this. */
-    _bus->add(0xFF7F, 0xFFFF);
+    _bus->add(0xFF7F, 0xFF7F);
 
     // XXX: Sound
-    _bus->add(0xFF10, 0xFFF0);
-    _bus->add(0xFF20, 0xFFF0);
-    _bus->add(0xFF30, 0xFFF0);
+    _bus->add(0xFF10, 0xFF3F);
 }
 
 Gameboy::~Gameboy(void)
