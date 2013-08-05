@@ -45,6 +45,8 @@ namespace EMU {
 struct EmuException: public std::exception {
     const std::string &message() { return msg; }
 
+    virtual const char *what(void) const noexcept { return msg.c_str(); }
+
 protected:
     EmuException(const std::string &msg): msg(msg) { }
 
@@ -119,13 +121,13 @@ struct CpuFeatureFault: public CpuFault {
  * Bus Error
  */
 struct BusError: public EmuException {
-    BusError(addr_t addr): EmuException("Bus fault"), address(addr)
+    BusError(uint32_t addr): EmuException("Bus fault: "), address(addr)
     {
         std::stringstream ss;
-        ss << ": " << Hex(addr);
-        msg = ss.str();
+        ss << Hex(addr);
+        msg += ss.str();
     }
-    addr_t address;
+    uint32_t address;
 };
 
 };

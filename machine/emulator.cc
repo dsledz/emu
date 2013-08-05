@@ -35,6 +35,8 @@ Emulator::Emulator(const Options &options):
     EMU::log.set_level(_options.log_level);
     /* XXX: Fix constness */
     _machine = loader.load(const_cast<Options *>(&_options));
+
+    _machine->reset();
 }
 
 void
@@ -59,3 +61,4 @@ Emulator::machine(void)
 FORCE_UNDEFINED_SYMBOL(galaga);
 FORCE_UNDEFINED_SYMBOL(gb);
 FORCE_UNDEFINED_SYMBOL(nes);
+FORCE_UNDEFINED_SYMBOL(tg16);

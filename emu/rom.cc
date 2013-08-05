@@ -25,7 +25,8 @@
 
 #include "rom.h"
 
-#include "dirent.h"
+#include <dirent.h>
+#include <stdlib.h>
 
 using namespace EMU;
 
@@ -33,11 +34,17 @@ void
 EMU::read_rom(const std::string &name, bvec &rom)
 {
     struct stat sb;
-    if (stat(name.c_str(), &sb) == -1)
+    std::string path;
+    if (getenv("ROM_PATH") != NULL && name[0] != '/') {
+        path = getenv("ROM_PATH");
+        path += "/";
+    }
+    path += name;
+    if (stat(path.c_str(), &sb) == -1)
         throw RomException(name);
     rom.resize(sb.st_size);
     try {
-        std::ifstream file(name, std::ios::in | std::ios::binary);
+        std::ifstream file(path, std::ios::in | std::ios::binary);
         file.read((char *)&rom[0], rom.size());
     } catch (std::ifstream::failure e) {
         throw RomException(name);

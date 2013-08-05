@@ -36,7 +36,7 @@ using namespace Z80;
 using namespace Driver;
 
 RomDefinition galaga_rom(void) {
-    RomDefinition rom("roms/galaga");
+    RomDefinition rom("galaga");
     rom.regions.push_back(RomRegion("maincpu", {
         "gg1_1b.3p", "gg1_2b.3m", "gg1_3.2m", "gg1_4b.2l"
     }));
@@ -50,7 +50,7 @@ RomDefinition galaga_rom(void) {
 };
 
 RomDefinition galagao_rom(void) {
-    RomDefinition rom("roms/galaga");
+    RomDefinition rom("galaga");
     rom.regions.push_back(RomRegion("maincpu", {
         "gg1-1.3p", "gg1-2.3m", "gg1-3.2m", "gg1-4.2l"
     }));

@@ -133,9 +133,15 @@ public:
     }
 
     /**
+     * Reset all devices.
+     */
+    void reset(void);
+
+    /**
      * Set an line on the device @a name.
      */
     void set_line(const std::string &name, Line line, LineState state);
+
     /**
      * Set the line on @a dev.
      */

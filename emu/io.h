@@ -134,7 +134,7 @@ public:
     virtual byte_t *direct(offset_t offset) = 0;
 };
 
-template<class Val, typename addr_type>
+template<class Val, typename addr_type, int addr_width>
 class MemoryMap
 {
 private:
@@ -154,9 +154,12 @@ private:
     typedef std::vector<Entry> entry_list;
 
 public:
-    MemoryMap(void)
+    MemoryMap(void):
+        _shift(addr_width - 4),
+        _mask(0x0F),
+        _entries(16)
     {
-        _entries.resize(16);
+        assert(_entries.size() == 16);
     }
     ~MemoryMap(void)
     {
@@ -164,30 +167,41 @@ public:
 
     void add(addr_type key, addr_type keymask, const Val &val)
     {
-        Entry entry(key, key | ~keymask, val);
+        assert(_entries.size() == 16);
+        Entry entry(key, key + keymask, val);
 
-        const int start = (entry.start & 0xF000) >> 12;
-        const int end = (entry.end & 0xF000) >> 12;
-        for (int i = start; i <= end; i++)
-            _entries[i].push_back(entry);
+        const int start = bucket(entry.start);
+        const int end = bucket(entry.end);
+        for (int i = start; i <= end; i++) {
+            entry_list &list = _entries.at(i);
+            /* Check for duplicates */
+            for (auto it = list.begin(); it != list.end(); it++)
+                if (it->match(key))
+                    throw EMU::BusError(key);
+            list.push_back(entry);
+        }
     }
 
     Val &find(addr_type key)
     {
-        const int bucket = (key & 0xF000) >> 12;
-        entry_list &list = _entries[bucket];
+        assert(_entries.size() == 16);
+        entry_list &list = _entries.at(bucket(key));
         for (auto it = list.begin(); it != list.end(); it++)
             if (it->match(key))
                 return it->value;
         throw EMU::BusError(key);
     }
 
-    void add(addr_type key, const Val &val) {
-        add(key, 0xffff, val);
+    const size_t bucket(addr_type key) {
+        size_t tmp = (key >> _shift) & _mask;
+        assert(tmp < _entries.size());
+        return tmp;
     }
 
 private:
 
+    int _shift;
+    int _mask;
     std::vector<entry_list> _entries;
 };
 
@@ -258,13 +272,13 @@ public:
 
     void write(addr_type addr, data_type data)
     {
-        auto it = _map.find(addr);
+        IOPort & it = _map.find(addr);
         addr -= it.base;
         it.write(addr, data);
     }
     data_type read(addr_type addr)
     {
-        auto it = _map.find(addr);
+        IOPort & it = _map.find(addr);
         addr -= it.base;
         return it.read(addr);
     }
@@ -300,19 +314,22 @@ public:
 
     void add(addr_type base, data_type *data)
     {
-        IOPort port(base, 0xFFFF, data);
+        IOPort port(base, ((1 << addr_width) - 1),
+                    DataRead(data), DataWrite(data));
         add(port);
     }
 
 private:
-    MemoryMap<IOPort, addr_type> _map;
+    MemoryMap<IOPort, addr_type, addr_width> _map;
 
     /* XXX: The radix tree is slow */
     // RadixTree<IOPort, addr_type, addr_width> _map;
 };
 
-typedef DataBus<addr_t, 16, byte_t> AddressBus16;
-typedef DataBus<addr_t, 8, byte_t>  AddressBus8;
+typedef DataBus<uint32_t, 21, byte_t> AddressBus21;
+typedef DataBus<uint16_t, 16, byte_t> AddressBus16;
+typedef DataBus<uint16_t, 8, byte_t>  AddressBus8;
+typedef DataBus<uint16_t, 16, uint16_t> AddressBus16x16;
 typedef std::unique_ptr<AddressBus16> AddressBus16_ptr;
 
 template<> inline void

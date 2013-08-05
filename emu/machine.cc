@@ -200,6 +200,13 @@ Machine::reset_switches(void)
 }
 
 void
+Machine::reset(void)
+{
+    for (auto it = _devs.begin(); it != _devs.end(); it++)
+        set_line(*it, Line::RESET, LineState::Pulse);
+}
+
+void
 Machine::set_line(const std::string &name, Line line, LineState state)
 {
     set_line(dev(name), line, state);

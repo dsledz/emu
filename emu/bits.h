@@ -51,6 +51,7 @@ typedef unsigned char byte_t;
 typedef unsigned short addr_t; /* XXX: Allow different address types. */
 typedef unsigned offset_t;
 typedef std::vector<byte_t> bvec;
+typedef std::vector<uint16_t> u16vec;
 typedef unsigned char reg8_t;
 
 union reg16_t {
@@ -158,9 +159,24 @@ public:
 static inline std::ostream& operator << (std::ostream &os,
                                          const Hex & obj)
 {
-    os << std::hex << "0x" << std::setw(obj.w) << std::setfill('0')
+    os << std::hex << "0x" << std::setfill('0') << std::setw(obj.w)
         << obj.v;
     return os;
 }
 
+static inline void set_byte(reg16_t &reg, int b, byte_t value)
+{
+    if (b == 0)
+        reg.b.l = value;
+    else
+        reg.b.h = value;
+}
+
+static inline byte_t get_byte(reg16_t &reg, int b)
+{
+    if (b == 0)
+        return reg.b.l;
+    else
+        return reg.b.h;
+}
 
