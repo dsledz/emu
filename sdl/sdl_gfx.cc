@@ -26,7 +26,7 @@
 #include "sdl_gfx.h"
 
 SDLGfx::SDLGfx(void):
-    _scale(GfxScale::Scaneline2x)
+    _scale(GfxScale::None)
 {
 }
 
