@@ -188,7 +188,7 @@ NESPPU::step(void)
         _hpos = 0;
         _vpos = (_vpos + 1) % 261;
         if (_vpos == 0) {
-            _machine->render();
+            _machine->screen()->flip();
             _machine->screen()->clear();
             _vram_locked = false;
             _status.vblank = 1;

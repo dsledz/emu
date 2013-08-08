@@ -105,19 +105,18 @@ enum TG16Key {
 void
 TG16::init_joypad(void)
 {
-    InputMap *input = &_input;
     IOPort *port = NULL;
 
     add_ioport("JOYPAD1");
     port = ioport("JOYPAD1");
-    input->add(InputSignal(InputKey::Joy1Btn2,  port, TG16Key::II, false));
-    input->add(InputSignal(InputKey::Joy1Btn1,  port, TG16Key::I, false));
-    input->add(InputSignal(InputKey::Select1,   port, TG16Key::Select, false));
-    input->add(InputSignal(InputKey::Start1,    port, TG16Key::Run, false));
-    input->add(InputSignal(InputKey::Joy1Up,    port, TG16Key::Up, false));
-    input->add(InputSignal(InputKey::Joy1Down,  port, TG16Key::Down, false));
-    input->add(InputSignal(InputKey::Joy1Left,  port, TG16Key::Left, false));
-    input->add(InputSignal(InputKey::Joy1Right, port, TG16Key::Right, false));
+    add_input(InputSignal(InputKey::Joy1Btn2,  port, TG16Key::II, false));
+    add_input(InputSignal(InputKey::Joy1Btn1,  port, TG16Key::I, false));
+    add_input(InputSignal(InputKey::Select1,   port, TG16Key::Select, false));
+    add_input(InputSignal(InputKey::Start1,    port, TG16Key::Run, false));
+    add_input(InputSignal(InputKey::Joy1Up,    port, TG16Key::Up, false));
+    add_input(InputSignal(InputKey::Joy1Down,  port, TG16Key::Down, false));
+    add_input(InputSignal(InputKey::Joy1Left,  port, TG16Key::Left, false));
+    add_input(InputSignal(InputKey::Joy1Right, port, TG16Key::Right, false));
 }
 
 byte_t

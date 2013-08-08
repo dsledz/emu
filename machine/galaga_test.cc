@@ -40,14 +40,10 @@ TEST(GalagaTest, run10)
         machine.run();
     }
     machine.add_timer(Time(msec(100)), [&]() {
-        press = !press;
-        if (press) {
-            machine.input()->depress(InputKey::Start1);
-        } else {
-            machine.input()->release(InputKey::Start1);
-        }
+            press = !press;
+            machine.send_input(InputKey::Start1, press);
         },
-        Time(msec(100)));
+        true);
     for (unsigned i = 0; i < steps*2; i++) {
         machine.run();
     }
@@ -71,11 +67,11 @@ TEST(GalagaTest, input)
     for (unsigned i = 0; i < steps; i++) {
         machine.run();
     }
-    machine.input()->depress(InputKey::Coin1);
+    machine.send_input(InputKey::Coin1, true);
     for (unsigned i = 0; i < 1000; i++) {
         machine.run();
     }
-    machine.input()->release(InputKey::Coin1);
+    machine.send_input(InputKey::Coin1, false);
     for (unsigned i = 0; i < 1000; i++) {
         machine.run();
     }

@@ -28,8 +28,7 @@
 using namespace EMU;
 
 Machine::Machine(void):
-    _clock(time_zero),
-    _quantum(6000),
+    Clockable("machine"),
     _screen(NULL),
     _screen_width(0),
     _screen_height(0),
@@ -50,6 +49,23 @@ Machine::load_rom(const std::string &rom)
 }
 
 void
+Machine::execute(void)
+{
+    Time interval(usec(20));
+    while (left() >= interval) {
+        _timers.run(interval);
+
+        execute(interval);
+        for_each(_devs.begin(), _devs.end(), [=](Device *dev) {
+                 dev->execute(interval);
+                 });
+        do_advance(interval);
+    }
+
+    do_set_state(State::Waiting);
+}
+
+void
 Machine::execute(Time interval)
 {
 
@@ -67,36 +83,17 @@ Machine::remove_device(Device *dev)
     _devs.remove(dev);
 }
 
-Timer_ptr
-Machine::add_timer(Time deadline, callback_t callback, Time period)
+TimerItem_ptr
+Machine::add_timer(Time timeout, callback_t callback, bool periodic)
 {
-    deadline += _clock;
-    Timer_ptr timer(new Timer(deadline, callback, period));
-    add_timer(timer);
-    return timer;
+    if (periodic)
+        return _timers.add_periodic(timeout, callback);
+    else
+        return _timers.add_timeout(timeout, callback);
 }
 
 void
-Machine::_schedule_timer(Timer_ptr timer)
-{
-    auto it = _timers.begin();
-    while (it != _timers.end()) {
-        if ((*it)->deadline > timer->deadline)
-            break;
-        it++;
-    }
-    _timers.insert(it, timer);
-}
-
-void
-Machine::add_timer(Timer_ptr timer)
-{
-    timer->deadline = _clock + timer->period;
-    _schedule_timer(timer);
-}
-
-void
-Machine::remove_timer(Timer_ptr timer)
+Machine::remove_timer(TimerItem_ptr timer)
 {
     _timers.remove(timer);
 }
@@ -104,27 +101,6 @@ Machine::remove_timer(Timer_ptr timer)
 void
 Machine::run(void)
 {
-    Time end = _clock + quantum();
-    Time interval(usec(20));
-    while (_clock < end) {
-        // Trigger any expired events
-        while (!_timers.empty() && _timers.front()->deadline < _clock) {
-            Timer_ptr t = _timers.front();
-            _timers.pop_front();
-            t->callback();
-            if (t->period != time_zero) {
-                /* XXX: This isn't exact */
-                t->deadline += t->period;
-                add_timer(t);
-            }
-        }
-
-        execute(interval);
-        for_each(_devs.begin(), _devs.end(), [=](Device *dev) {
-                 dev->execute(interval);
-                 });
-        _clock += interval;
-    }
 }
 
 Device *
@@ -141,12 +117,6 @@ RasterScreen *
 Machine::screen(void)
 {
     return _screen;
-}
-
-void
-Machine::set_render(render_cb cb)
-{
-    _render_cb = cb;
 }
 
 void
@@ -188,6 +158,21 @@ void
 Machine::write_ioport(IOPort *port, byte_t value)
 {
     port->value = value;
+}
+
+void
+Machine::add_input(const InputSignal &signal)
+{
+    _input.add(signal);
+}
+
+void
+Machine::send_input(InputKey key, bool pressed)
+{
+    if (pressed)
+        _input.depress(key);
+    else
+        _input.release(key);
 }
 
 dipswitch_ptr

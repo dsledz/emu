@@ -231,7 +231,7 @@ VDC::step(void)
                 _satb_write = 0;
             }
         } else if (_vpos == VBEND) {
-            _machine->render();
+            _machine->screen()->flip();
             _machine->screen()->clear();
             _flags.vblank = 0;
             _bgvtile = _reg[BYR].d / 8;

@@ -98,13 +98,13 @@ struct InputKeyHash
 
 struct InputSignal
 {
-InputSignal(InputKey key, IOPort *port, int bit, bool active_high):
-    key(key), port(port), bit(bit), active_high(active_high) { }
+    InputSignal(InputKey key, IOPort *port, int bit, bool active_high):
+        key(key), port(port), bit(bit), active_high(active_high) { }
 
-InputKey key;
-IOPort *port;
-int bit;
-bool active_high;
+    InputKey key;
+    IOPort *port;
+    int bit;
+    bool active_high;
 };
 
 /**
@@ -115,11 +115,6 @@ class InputMap
 public:
     InputMap(void);
     ~InputMap(void);
-
-    /**
-     * Add an input mapping between an input and a function.
-     */
-    void add_input(InputKey in, input_fn fn);
 
     void add(const InputSignal &signal);
 
@@ -145,6 +140,8 @@ private:
             throw UnmappedInput(in);
         return it->second;
     }
+
+    void add_input(InputKey in, input_fn fn);
 
     std::unordered_map<InputKey, input_fn, InputKeyHash> _input_map;
 };

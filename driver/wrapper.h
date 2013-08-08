@@ -44,6 +44,11 @@ enum emu_key {
     EMU_KEY_COIN1,
 };
 
+struct emu_key_info {
+    enum emu_key key;
+    const char *name;
+};
+
 struct emu_event {
     enum emu_key key;
     bool pressed;

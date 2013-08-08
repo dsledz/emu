@@ -39,11 +39,6 @@ public:
         machine()->set_screen(_screen.get());
 
         _screen->init();
-
-        machine()->set_render([&](RasterScreen *screen) {
-            mtx_lock lock(mtx);
-            screen->flip();
-        });
     }
 
     virtual ~OSXEmulator(void)
@@ -228,37 +223,30 @@ emu_machine_render(struct emu *state)
     return 0;
 }
 
+typedef std::tuple<std::string, enum emu_key, InputKey> key_tuple;
+
+#define KEY(name, a, b) \
+    std::make_tuple(name, a, b)
+
+static std::vector<key_tuple> keys = {
+    KEY("Joystick 1 Up", EMU_KEY_JOY1UP, InputKey::Joy1Up),
+    KEY("Joystick 1 Down", EMU_KEY_JOY1DOWN, InputKey::Joy1Down),
+    KEY("Joystick 1 Left", EMU_KEY_JOY1LEFT, InputKey::Joy1Left),
+    KEY("Joystick 1 Right", EMU_KEY_JOY1RIGHT, InputKey::Joy1Right),
+    KEY("Joystick 1 Btn1", EMU_KEY_JOY1BTN1, InputKey::Joy1Btn1),
+    KEY("Joystick 1 Btn2", EMU_KEY_JOY1BTN2, InputKey::Joy1Btn2),
+    KEY("Joystick 1 Select", EMU_KEY_JOY1SELECT, InputKey::Select1),
+    KEY("Joystick 1 Start", EMU_KEY_JOY1START, InputKey::Start1),
+};
+
 int
 emu_send_event(struct emu *state, const struct emu_event *event)
 {
-    switch (event->key) {
-    case EMU_KEY_JOY1UP:
-        state->emulator->key_event(InputKey::Joy1Up, event->pressed);
-        break;
-    case EMU_KEY_JOY1DOWN:
-        state->emulator->key_event(InputKey::Joy1Down, event->pressed);
-        break;
-    case EMU_KEY_JOY1LEFT:
-        state->emulator->key_event(InputKey::Joy1Left, event->pressed);
-        break;
-    case EMU_KEY_JOY1RIGHT:
-        state->emulator->key_event(InputKey::Joy1Right, event->pressed);
-        break;
-    case EMU_KEY_JOY1BTN1:
-        state->emulator->key_event(InputKey::Joy1Btn1, event->pressed);
-        break;
-    case EMU_KEY_JOY1BTN2:
-        state->emulator->key_event(InputKey::Joy1Btn2, event->pressed);
-        break;
-    case EMU_KEY_JOY1SELECT:
-        state->emulator->key_event(InputKey::Select1, event->pressed);
-        break;
-    case EMU_KEY_JOY1START:
-        state->emulator->key_event(InputKey::Start1, event->pressed);
-        break;
-    default:
-        break;
+    for (auto it = keys.begin(); it != keys.end(); it++) {
+        if (std::get<1>(*it) == event->key) {
+            state->emulator->key_event(std::get<2>(*it), event->pressed);
+            break;
+        }
     }
-
     return 0;
 }

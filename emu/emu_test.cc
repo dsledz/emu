@@ -46,42 +46,6 @@ public:
     }
 };
 
-#ifdef BROKEN_TESTS
-TEST(MachineTest, time1)
-#else
-void MachineTest_time1(void)
-#endif
-{
-    Machine machine;
-    TestDevice dev(&machine);
-    machine.add_device(&dev);
-    bool called = false;
-    Time period = machine.quantum();
-    Timer_ptr short_timer = machine.add_timer(
-        period - Time(msec(2)),
-        [&](){ called = !called; },
-        period
-        );
-    bool delayed = false;
-    Timer_ptr long_timer = machine.add_timer(
-        Time(msec(500)),
-        [&](){ delayed = true; },
-        time_zero
-        );
-    EXPECT_EQ(false, called);
-    EXPECT_EQ(false, delayed);
-    machine.run();
-    EXPECT_EQ(true, called);
-    EXPECT_EQ(false, delayed);
-    machine.run();
-    EXPECT_EQ(false, called);
-    EXPECT_EQ(false, delayed);
-    machine.remove_timer(short_timer);
-    machine.run();
-    EXPECT_EQ(false, called);
-    EXPECT_EQ(false, delayed);
-}
-
 TEST(MachineTest, time2)
 {
     EXPECT_EQ(50000, Time(usec(50)).ns);
@@ -148,19 +112,18 @@ TEST(MachineTest, input_map)
     machine.add_ioport("PORT1");
     machine.add_ioport("PORT2");
 
-    InputMap *input = machine.input();
     IOPort *port = machine.ioport("PORT1");
-    input->add(InputSignal(InputKey::Joy1Btn1, port, NESKey::A, true));
-    input->add(InputSignal(InputKey::Joy1Btn2, port, NESKey::B, true));
-    input->add(InputSignal(InputKey::Select1, port, NESKey::Select, true));
-    input->add(InputSignal(InputKey::Start1, port, NESKey::Start, true));
-    input->add(InputSignal(InputKey::Joy1Up, port, NESKey::Up, true));
-    input->add(InputSignal(InputKey::Joy1Down, port, NESKey::Down, true));
-    input->add(InputSignal(InputKey::Joy1Left, port, NESKey::Left, true));
-    input->add(InputSignal(InputKey::Joy1Right, port, NESKey::Right, true));
+    machine.add_input(InputSignal(InputKey::Joy1Btn1, port, NESKey::A, true));
+    machine.add_input(InputSignal(InputKey::Joy1Btn2, port, NESKey::B, true));
+    machine.add_input(InputSignal(InputKey::Select1, port, NESKey::Select, true));
+    machine.add_input(InputSignal(InputKey::Start1, port, NESKey::Start, true));
+    machine.add_input(InputSignal(InputKey::Joy1Up, port, NESKey::Up, true));
+    machine.add_input(InputSignal(InputKey::Joy1Down, port, NESKey::Down, true));
+    machine.add_input(InputSignal(InputKey::Joy1Left, port, NESKey::Left, true));
+    machine.add_input(InputSignal(InputKey::Joy1Right, port, NESKey::Right, true));
 
     EXPECT_THROW(
-        input->add(InputSignal(InputKey::Joy1Btn1, port, NESKey::A, true)),
+        machine.add_input(InputSignal(InputKey::Joy1Btn1, port, NESKey::A, true)),
         DuplicateInput);
 }
 

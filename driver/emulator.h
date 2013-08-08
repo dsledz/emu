@@ -40,7 +40,6 @@ public:
     Emulator(const Options &options);
     virtual ~Emulator(void);
 
-    virtual void load(const std::string &driver, const std::string &rom);
     virtual void start(void) = 0;
     virtual void stop(void);
     virtual void pause(void);
@@ -60,7 +59,9 @@ protected:
 private:
     std::mutex mtx;
     std::condition_variable cv;
+    std::future<void> task;
 
+    RealTimeClock _clock;
     Emulator::EmuState _state;
     Options _options;
     machine_ptr _machine;

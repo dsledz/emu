@@ -1,5 +1,6 @@
 add_library(emu
     emu.cc
+    task.cc
     input.cc
     machine.cc
     ram.cc
@@ -10,6 +11,7 @@ add_library(emu
 if (BUILD_TESTING)
     add_executable(emu-check
         emu_test.cc
+        time_test.cc
         debug_test.cc
         dipswitch_test.cc
         io_test.cc)

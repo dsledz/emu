@@ -77,8 +77,6 @@ private:
     bool _main_irq;
     bool _sub_irq;
     bool _snd_nmi;
-    Timer_ptr _snd_timer;
-    Timer_ptr _vblank_timer;
 
     /* Graphic Data */
     ColorPalette<32> _palette;

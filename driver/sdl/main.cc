@@ -46,62 +46,20 @@ struct SDLKeyHash
     }
 };
 
-class SDLInput {
-public:
-    SDLInput(void);
-    ~SDLInput(void);
-
-    /**
-     * Process an sdl event.
-     */
-    void handle_input(SDL_Event *e, InputMap *dev);
-
-private:
-    std::unordered_map<SDLKey, InputKey, SDLKeyHash> _map;
+std::unordered_map<SDLKey, InputKey, SDLKeyHash> key_map = {
+    std::make_tuple(SDLK_LEFT, InputKey::Joy1Left),
+    std::make_tuple(SDLK_RIGHT, InputKey::Joy1Right),
+    std::make_tuple(SDLK_UP, InputKey::Joy1Up),
+    std::make_tuple(SDLK_DOWN, InputKey::Joy1Down),
+    std::make_tuple(SDLK_SPACE, InputKey::Joy1Btn1),
+    std::make_tuple(SDLK_x, InputKey::Joy1Btn2),
+    std::make_tuple(SDLK_1, InputKey::Start1),
+    std::make_tuple(SDLK_2, InputKey::Start2),
+    std::make_tuple(SDLK_5, InputKey::Coin1),
+    std::make_tuple(SDLK_6, InputKey::Coin2),
+    std::make_tuple(SDLK_7, InputKey::Service),
+    std::make_tuple(SDLK_s, InputKey::Select1),
 };
-
-SDLInput::SDLInput(void)
-{
-    _map[SDLK_LEFT]  = InputKey::Joy1Left;
-    _map[SDLK_RIGHT] = InputKey::Joy1Right;
-    _map[SDLK_UP]    = InputKey::Joy1Up;
-    _map[SDLK_DOWN]  = InputKey::Joy1Down;
-    _map[SDLK_SPACE] = InputKey::Joy1Btn1;
-    _map[SDLK_x]     = InputKey::Joy1Btn2;
-    _map[SDLK_1]     = InputKey::Start1;
-    _map[SDLK_2]     = InputKey::Start2;
-    _map[SDLK_5]     = InputKey::Coin1;
-    _map[SDLK_6]     = InputKey::Coin2;
-    _map[SDLK_7]     = InputKey::Service;
-    _map[SDLK_s]     = InputKey::Select1;
-}
-
-SDLInput::~SDLInput(void)
-{
-
-}
-
-void
-SDLInput::handle_input(SDL_Event *event, InputMap *dev)
-{
-    switch (event->type) {
-    case SDL_KEYUP: {
-        auto it = _map.find(event->key.keysym.sym);
-        if (it != _map.end())
-            dev->release(it->second);
-        break;
-    }
-    case SDL_KEYDOWN: {
-        auto it = _map.find(event->key.keysym.sym);
-        if (it != _map.end())
-            dev->depress(it->second);
-        break;
-    }
-    default:
-        break;
-    }
-}
-
 
 class CLIOptions: public Options
 {
@@ -157,20 +115,20 @@ public:
         /* Reinit gl context */
         _screen->init();
 
-        /* Connect our graphics */
-        machine()->set_render([&](RasterScreen *screen) {
-            screen->flip();
-            screen->render();
-            SDL_GL_SwapBuffers();
-        });
-
         machine()->add_timer(Time(msec(1)),
             [&]() {
                 SDL_Event event;
                 while (SDL_PollEvent(&event))
                     on_event(&event);
             },
-            Time(msec(1)));
+            true);
+
+        machine()->add_timer(Time(usec(16666)),
+            [&]() {
+                _screen->render();
+                SDL_GL_SwapBuffers();
+            },
+            true);
 
         SDL_Event event;
         while (SDL_PollEvent(&event))
@@ -197,8 +155,12 @@ public:
                 if (event->type == SDL_KEYDOWN)
                     EMU::log.set_level(EMU::LogLevel::Trace);
                 break;
-            default:
-                input.handle_input(event, machine()->input());
+            default: {
+                auto it = key_map.find(event->key.keysym.sym);
+                if (it != key_map.end())
+                    machine()->send_input(
+                        it->second, event->type == SDL_KEYDOWN);
+            }
             }
             break;
         default:
@@ -209,7 +171,6 @@ public:
 private:
 
     std::unique_ptr<GLRasterScreen> _screen;
-    SDLInput input;
 };
 
 extern "C" int main(int argc, char **argv)

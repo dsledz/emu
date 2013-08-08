@@ -34,11 +34,6 @@ Namco06::Namco06(Machine *machine, Device *parent):
     _children(),
     _control(0x00)
 {
-    _timer = Timer_ptr(new Timer(
-        [=]() {
-            _machine->set_line(_parent, Line::NMI, LineState::Pulse);
-        },
-        Time(usec(200))));
 }
 
 Namco06::~Namco06(void)
@@ -83,9 +78,16 @@ void
 Namco06::write_control(addr_t addr, byte_t value)
 {
     _control = value;
-    _machine->remove_timer(_timer);
+    _timers.remove(_timer);
     if ((_control & 0x0F) != 0)
-        _machine->add_timer(_timer);
+        _timer = _timers.add_periodic(Time(usec(200)),
+               std::bind(&Namco06::timer_func, this));
+}
+
+void
+Namco06::execute(Time interval)
+{
+    _timers.run(interval);
 }
 
 void
@@ -101,4 +103,9 @@ Namco06::line(Line line, LineState state)
     }
 }
 
+void
+Namco06::timer_func(void)
+{
+    _machine->set_line(_parent, Line::NMI, LineState::Pulse);
+}
 

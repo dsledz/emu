@@ -36,24 +36,6 @@
 
 namespace EMU {
 
-/**
- * A sing shot machine event.
- */
-struct Timer {
-    Timer(Time deadline, callback_t callback):
-        deadline(deadline), callback(callback), period(sec(0)) { }
-    Timer(Time deadline, callback_t callback, Time period):
-        deadline(deadline), callback(callback), period(period) { }
-    Timer(callback_t callback, Time period):
-        deadline(time_zero), callback(callback), period(period) { }
-
-    Time deadline;
-    callback_t callback;
-    Time period;
-};
-
-typedef std::shared_ptr<Timer> Timer_ptr;
-
 struct KeyError: public EmuException {
     KeyError(const std::string &key):
         EmuException("Missing Key: "),
@@ -73,7 +55,7 @@ struct KeyError: public EmuException {
  * Timers
  * IOPorts
  */
-class Machine {
+class Machine: public Clockable {
 public:
     /**
      * Initialize the machine with a master clock rate of @a hertz
@@ -81,8 +63,18 @@ public:
     Machine(void);
     virtual ~Machine(void);
 
+    //virtual void power(void);
+    virtual void execute(void);
+
     virtual void load_rom(const std::string &rom);
     virtual void execute(Time interval);
+
+    /* Public functions */
+    void set_switch(const std::string &name, const std::string &value);
+    void send_input(InputKey key, bool pressed);
+    void reset(void);
+    void run(void);
+    void set_screen(RasterScreen *screen);
 
     /**
      * Add a device to the machine.  This device is synchronized
@@ -95,9 +87,8 @@ public:
      * Add a timer. The timer will fire at the start of the next tick after
      * the deadline.
      */
-    Timer_ptr add_timer(Time deadline, callback_t callback, Time period);
-    void add_timer(Timer_ptr timer);
-    void remove_timer(Timer_ptr timer);
+    TimerItem_ptr add_timer(Time timeout, callback_t callback, bool periodic);
+    void remove_timer(TimerItem_ptr timer);
 
     /**
      * Declare an IO port with the name of @a name.
@@ -117,62 +108,31 @@ public:
      */
     dipswitch_ptr add_switch(const std::string &name,
         const std::string &port, byte_t mask, byte_t def);
-    void set_switch(const std::string &name, const std::string &value);
     void reset_switches(void);
 
-    /**
-     * Run for a single time quantum.
-     */
-    void run(void);
-
-    Time quantum(void) {
-        return Time(Time(sec(1)) / _quantum);
-    }
-
-    InputMap *input(void) {
-        return &_input;
-    }
-
-    /**
-     * Reset all devices.
-     */
-    void reset(void);
+    void add_input(const InputSignal &signal);
 
     /**
      * Set an line on the device @a name.
      */
     void set_line(const std::string &name, Line line, LineState state);
-
-    /**
-     * Set the line on @a dev.
-     */
     void set_line(Device *dev, Line line, LineState state);
 
     void add_screen(short width, short height,
         RasterScreen::Rotation rotation = RasterScreen::ROT0);
-    void set_screen(RasterScreen *screen);
-
     RasterScreen *screen(void);
-    void set_render(render_cb cb);
-    void render(void) {
-        if (_render_cb && _screen)
-            _render_cb(_screen);
-    }
-
-protected:
-    std::list<Device *> _devs;
-    std::list<Timer_ptr> _timers;
-    Time _clock;
-    unsigned _quantum;
-    InputMap _input;
-    render_cb _render_cb;
-    std::map<std::string, dipswitch_ptr> _switches;
-    std::map<std::string, IOPort> _ports;
 
 private:
 
     Device *dev(const std::string &name);
-    void _schedule_timer(Timer_ptr timer);
+    void schedule_timer(TimerItem_ptr timer);
+
+    InputMap _input;
+    render_cb _render_cb;
+    std::list<Device *> _devs;
+    TimerQueue _timers;
+    std::map<std::string, dipswitch_ptr> _switches;
+    std::map<std::string, IOPort> _ports;
 
     RasterScreen *_screen;
     short _screen_width;

@@ -55,26 +55,32 @@ class GBJoypad: public Device {
     };
 
 public:
-    GBJoypad(Gameboy *gameboy):
-        Device(gameboy, "joypad"),
+    GBJoypad(Gameboy *gb):
+        Device(gb, "joypad"),
         _value(0x00)
     {
-        gameboy->add_ioport("IN0");
+        gb->add_ioport("IN0");
 
-        _port = gameboy->ioport("IN0");
-        gameboy->write_ioport(_port, 0xFF);
-        InputMap *input = gameboy->input();
-        input->add(InputSignal(InputKey::Joy1Left,_port, GBKey::Left, false));
-        input->add(InputSignal(InputKey::Joy1Right, _port, GBKey::Right,
-            false));
-        input->add(InputSignal(InputKey::Joy1Up, _port, GBKey::Up, false));
-        input->add(InputSignal(InputKey::Joy1Down,  _port, GBKey::Down, false));
-        input->add(InputSignal(InputKey::Joy1Btn1,  _port, GBKey::A, false));
-        input->add(InputSignal(InputKey::Joy1Btn2,  _port, GBKey::B, false));
-        input->add(InputSignal(InputKey::Select1, _port, GBKey::Select, false));
-        input->add(InputSignal(InputKey::Start1, _port, GBKey::Start, false));
+        _port = gb->ioport("IN0");
+        gb->write_ioport(_port, 0xFF);
+        gb->add_input(InputSignal(InputKey::Joy1Left,_port, GBKey::Left,
+                                  false));
+        gb->add_input(InputSignal(InputKey::Joy1Right, _port, GBKey::Right,
+                                  false));
+        gb->add_input(InputSignal(InputKey::Joy1Up, _port, GBKey::Up,
+                                  false));
+        gb->add_input(InputSignal(InputKey::Joy1Down,  _port, GBKey::Down,
+                                  false));
+        gb->add_input(InputSignal(InputKey::Joy1Btn1,  _port, GBKey::A,
+                                  false));
+        gb->add_input(InputSignal(InputKey::Joy1Btn2,  _port, GBKey::B,
+                                  false));
+        gb->add_input(InputSignal(InputKey::Select1, _port, GBKey::Select,
+                                  false));
+        gb->add_input(InputSignal(InputKey::Start1, _port, GBKey::Start,
+                                  false));
 
-        gameboy->bus()->add(GBReg::KEYS,
+        gb->bus()->add(GBReg::KEYS,
             [&](offset_t offset) -> byte_t {
                 return _value;
             },

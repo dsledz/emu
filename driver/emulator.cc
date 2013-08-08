@@ -42,11 +42,6 @@ Emulator::~Emulator(void)
 }
 
 void
-Emulator::load(const std::string &driver, const std::string &rom)
-{
-}
-
-void
 Emulator::start(void)
 {
     set_state(EmuState::Running);
@@ -85,6 +80,7 @@ Emulator::render(void)
 void
 Emulator::do_execute(void)
 {
+    _machine->power();
     do {
         {
             std::unique_lock<std::mutex> lock(mtx);
@@ -94,7 +90,9 @@ Emulator::do_execute(void)
                 break;
         }
 
-        _machine->run();
+        _machine->add_time(_clock.get_delta());
+        struct timespec t = { 0, 10000000 };
+        nanosleep(&t, NULL);
     } while (true);
 }
 
@@ -110,6 +108,7 @@ Emulator::set_state(EmuState state)
 {
     std::lock_guard<std::mutex> lock(mtx);
     _state = state;
+    _clock.reset();
     cv.notify_one();
 }
 
@@ -128,11 +127,7 @@ Emulator::options(void)
 void
 Emulator::key_event(InputKey key, bool pressed)
 {
-    InputMap *map = machine()->input();
-    if (pressed)
-        map->depress(key);
-    else
-        map->release(key);
+    machine()->send_input(key, pressed);
 }
 
 FORCE_UNDEFINED_SYMBOL(galaga);

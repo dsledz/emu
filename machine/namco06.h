@@ -45,12 +45,18 @@ public:
     byte_t read_control(addr_t addr);
     void write_control(addr_t addr, byte_t value);
 
+    virtual void execute(Time interval);
     virtual void line(Line line, LineState state);
 
 private:
+
+    void timer_func(void);
+
+    bool _pulse;
     Device *_parent;
     IODevice *_children[4];
-    Timer_ptr _timer;
+    TimerItem_ptr _timer;
+    TimerQueue _timers;
     byte_t _control;
 };
 

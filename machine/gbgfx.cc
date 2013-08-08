@@ -225,7 +225,7 @@ GBGraphics::execute(Time interval)
             _ly = (_ly + 1) % SCANLINES;
             if (_ly == DISPLAY_LINES) {
                 // Wait until our frame is finished
-                _machine->render();
+                _machine->screen()->flip();
                 _machine->set_line("cpu",
                     make_irq_line(GBInterrupt::VBlank),
                     LineState::Pulse);

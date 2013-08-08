@@ -81,22 +81,22 @@ struct Cycles {
 };
 
 struct nsec {
-    explicit nsec(unsigned v): v(v) { }
+    explicit nsec(uint64_t v): v(v) { }
     uint64_t v;
 };
 
 struct usec {
-    explicit usec(unsigned v): v(v) { }
+    explicit usec(uint64_t v): v(v) { }
     uint64_t v;
 };
 
 struct msec {
-    explicit msec(unsigned v): v(v) { }
+    explicit msec(uint64_t v): v(v) { }
     uint64_t v;
 };
 
 struct sec {
-    explicit sec(unsigned v): v(v) { }
+    explicit sec(uint64_t v): v(v) { }
     uint64_t v;
 };
 
@@ -153,6 +153,14 @@ struct Time {
         return ns < rhs.ns;
     }
 
+    bool operator <=(const Time &rhs) const {
+        return ns <= rhs.ns;
+    }
+
+    bool operator >=(const Time &rhs) const {
+        return ns >= rhs.ns;
+    }
+
     uint64_t ns;
 };
 
@@ -163,12 +171,10 @@ extern const Time time_zero;
  */
 class RealTimeClock {
     public:
-        RealTimeClock(const Cycles &hz) {
+        RealTimeClock(void) {
             _clock = mach_absolute_time();
             mach_timebase_info_data_t timebase;
             mach_timebase_info(&timebase);
-            _hz_per_nano = ((double)(hz.v) * timebase.numer) /
-                (1000000000 * timebase.denom);
         }
         ~RealTimeClock(void) { }
 
@@ -177,18 +183,182 @@ class RealTimeClock {
         }
 
         /* Return the number of ticks since last call */
-        struct Cycles get_ticks(void) {
-
+        Time get_delta(void) {
             uint64_t now = mach_absolute_time();
             uint64_t delta = (now - _clock);
-
             _clock = now;
-            return Cycles(delta * _hz_per_nano);
+
+            return Time(nsec(delta));
+        }
+
+        Time now(void) {
+            return Time(nsec(mach_absolute_time()));
         }
 
     private:
-        double _hz_per_nano;
         uint64_t _clock;
+};
+
+struct WorkItem {
+    WorkItem(callback_t callback):
+        _callback(callback) { }
+
+    void operator()(void) {
+        _callback();
+    }
+
+private:
+    callback_t _callback;
+};
+
+struct TimerItem: public WorkItem {
+    TimerItem(Time timeout, callback_t callback, bool periodic=false):
+        WorkItem(callback), _timeout(timeout), _periodic(periodic),
+        _deadline(time_zero) { }
+
+    bool expired(Time time) {
+        return _deadline <= time;
+    }
+
+    const Time deadline(void) {
+        return _deadline;
+    }
+
+    void schedule(Time abs) {
+        _deadline = abs + _timeout;
+    }
+
+    bool periodic(void) {
+        return _periodic;
+    }
+
+private:
+
+    Time _timeout;
+    bool _periodic;
+    Time _deadline;
+};
+
+template<typename mtx_type>
+class unlock_guard {
+public:
+    unlock_guard(mtx_type & m): _mtx(m) {
+        _mtx.unlock();
+    }
+    ~unlock_guard(void) {
+        _mtx.lock();
+    }
+
+private:
+    mtx_type & _mtx;
+};
+typedef std::lock_guard<std::mutex> lock_mtx;
+typedef unlock_guard<std::mutex> unlock_mtx;
+
+typedef std::shared_ptr<TimerItem> TimerItem_ptr;
+
+class TimerQueue {
+public:
+    TimerQueue(void);
+    ~TimerQueue(void);
+
+    void stop(void);
+    Time run(Time delta);
+
+    TimerItem_ptr add_periodic(Time period, callback_t callback);
+    TimerItem_ptr add_timeout(Time timeout, callback_t callback);
+    bool remove(TimerItem_ptr timer);
+
+private:
+
+    void add(TimerItem_ptr timer);
+
+    TimerItem_ptr pop(Time deadline);
+    void wait(void);
+
+    Time _clock;
+
+    std::mutex mtx;
+    std::condition_variable cv;
+
+    std::list<TimerItem_ptr> _timers;
+
+    bool _quit;
+};
+
+/**
+ * Create a clockable device.
+ * Each device operates on a notion of virtual time, this is usually translated
+ * to hertz befor being used.
+ */
+class Clockable {
+public:
+    enum class State {
+        Running, /* Executing */
+        Waiting, /* Waiting for an event */
+        Paused,  /* Paused, events won't wake us. */
+        Stopped, /* Dead */
+    };
+
+    Clockable(const std::string &name);
+    virtual ~Clockable(void);
+
+    virtual void power(void);
+    virtual void execute(void) = 0;
+
+    const std::string &name(void) {
+        return _name;
+    }
+
+    const Time now(void) {
+        return _current_time;
+    }
+
+    const Time left(void) {
+        return _avail_time;
+    }
+
+    Clockable::State state(void);
+
+    void add_time(Time interval);
+
+    void wait_state(State state);
+
+    void wait(void);
+
+protected:
+    void do_advance(Time interval) {
+        assert(_avail_time >= interval);
+        _current_time += interval;
+        _avail_time -= interval;
+    }
+
+    void do_run(void);
+
+    void do_set_state(State state);
+    Clockable::State do_get_state(void);
+
+    std::future<void> _task;
+private:
+    std::mutex _mtx;
+    std::condition_variable _cv;
+
+    State _state;
+    TimerQueue _queue;
+    std::string _name;
+    Time _current_time;
+    Time _avail_time;
+};
+
+class Scheduler {
+public:
+    Scheduler(void);
+    ~Scheduler(void);
+
+    void add(Clockable *dev);
+
+private:
+    std::list<Clockable *> _devices;
 };
 
 };
