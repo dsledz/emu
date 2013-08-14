@@ -117,6 +117,8 @@ TG16::init_joypad(void)
     add_input(InputSignal(InputKey::Joy1Down,  port, TG16Key::Down, false));
     add_input(InputSignal(InputKey::Joy1Left,  port, TG16Key::Left, false));
     add_input(InputSignal(InputKey::Joy1Right, port, TG16Key::Right, false));
+    _joypad_data = 0;
+    _joypad = 0;
 }
 
 byte_t
@@ -168,12 +170,13 @@ TG16::joypad_read(offset_t offset)
 void
 TG16::joypad_write(offset_t offset, byte_t value)
 {
-    if (bit_isset(value, 1))
-        _joypad = 0;
-    else if (!_joypad_data && bit_isset(value, 0))
-        _joypad = (_joypad + 1) & 0x07;
+    if (!_joypad_data && bit_isset(value, 0))
+        _joypad = (_joypad + 1) % 8;
 
     _joypad_data = bit_isset(value, 0);
+
+    if (bit_isset(value, 1))
+        _joypad = 0;
 }
 
 byte_t

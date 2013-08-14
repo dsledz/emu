@@ -78,7 +78,7 @@ private:
     uint8_t bg_pixel(void);
 
     void sprite_cache(void);
-    uint8_t sprite_pixel(void);
+    uint8_t sprite_pixel(uint8_t bg);
 
     RGBColor vce(uint8_t color, bool sprite);
 
@@ -113,20 +113,27 @@ private:
             uint16_t p = pattern;
             sy -= y;
             sx -= x;
+            if (xflip)
+                sx = ((cgx + 1) * 16) - 1 - sx;
             while (sx >= 16) {
                 sx -= 16;
                 p++;
             }
             sx = 15 - sx;
+            if (yflip)
+                sy = ((cgy + 1) * 16) - 1 -  sy;
+            while (sy >= 16) {
+                sy -= 16;
+                p += (cgx + 1);
+            }
             p <<= 6;
             p += sy;
-            /* XXX: Deal with width sprites */
             uint8_t color =
                 (bit_isset(vram[p].d, sx) << 0) |
                 (bit_isset(vram[p + 16].d, sx) << 1) |
                 (bit_isset(vram[p + 32].d, sx) << 2) |
                 (bit_isset(vram[p + 48].d, sx) << 3);
-            return (color != 0) ? color | pal : 0;
+            return (color != 0) ? color | (pal << 4): 0;
         }
 
         uint16_t y;
@@ -158,12 +165,11 @@ private:
     uint8_t _bgpal;
     reg16_t _bgp0;
     reg16_t _bgp1;
+    uint16_t _bgy;
     uint8_t _bghtile;
     uint8_t _bghidx;
-    uint8_t _bghend;
     uint8_t _bgvtile;
     uint8_t _bgvidx;
-    uint8_t _bgvend;
 
     /* External registers */
     union {
