@@ -61,13 +61,11 @@ public:
 
     void render(void)
     {
-        mtx_lock lock(mtx);
         _screen->render();
     }
 
 private:
 
-    std::mutex mtx;
     std::future<void> task;
 
     std::unique_ptr<GLRasterScreen> _screen;
