@@ -682,17 +682,17 @@ protected:
     void op_st0(void) {
         Imm();
         byte_t arg = fetch();
-        _data_bus->write(0x1FE000, arg);
+        bus_write(0x0000, arg);
     }
     void op_st1(void) {
         Imm();
         byte_t arg = fetch();
-        _data_bus->write(0x1FE002, arg);
+        bus_write(0x0002, arg);
     }
     void op_st2(void) {
         Imm();
         byte_t arg = fetch();
-        _data_bus->write(0x1FE003, arg);
+        bus_write(0x0003, arg);
     }
     void op_irq(addr_t vector, bool brk = false) {
         /* XXX: interrupt */
