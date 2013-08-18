@@ -311,27 +311,27 @@ get_transform(GfxScale scale)
     return transform;
 }
 
-OGLRasterScreen::OGLRasterScreen(void):
+GLSLRasterScreen::GLSLRasterScreen(void):
     RasterScreen(),
     _scale(GfxScale::None)
 {
     _transform = get_transform(_scale);
 }
 
-OGLRasterScreen::~OGLRasterScreen(void)
+GLSLRasterScreen::~GLSLRasterScreen(void)
 {
 
 }
 
 void
-OGLRasterScreen::resize(short width, short height)
+GLSLRasterScreen::resize(short width, short height)
 {
     do_resize(width, height);
     _transform->resize(width, height);
 }
 
 void
-OGLRasterScreen::init(void)
+GLSLRasterScreen::init(void)
 {
     /* XXX: Our screen should be dynamic based on the game's screen. */
     TextureVertex gScreenData[] = {
@@ -372,13 +372,13 @@ OGLRasterScreen::init(void)
 }
 
 void
-OGLRasterScreen::flip(void)
+GLSLRasterScreen::flip(void)
 {
     _transform->render(this);
 }
 
 void
-OGLRasterScreen::render(void)
+GLSLRasterScreen::render(void)
 {
     GLuint tmp;
     glGenTextures(1, &tmp);

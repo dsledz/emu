@@ -206,12 +206,12 @@ enum class GfxScale {
 typedef std::unique_ptr<GfxTransform> gfx_transform_ptr;
 gfx_transform_ptr get_transform(GfxScale scale);
 
-class OGLRasterScreen: public RasterScreen
+class GLSLRasterScreen: public RasterScreen
 {
 public:
 
-    OGLRasterScreen(void);
-    virtual ~OGLRasterScreen(void);
+    GLSLRasterScreen(void);
+    virtual ~GLSLRasterScreen(void);
 
     virtual void resize(short width, short height);
     virtual void render(void);
