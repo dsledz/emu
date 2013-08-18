@@ -115,29 +115,27 @@ public:
         /* Reinit gl context */
         _screen->init();
 
-        machine()->add_timer(Time(msec(1)),
-            [&]() {
-                SDL_Event event;
-                while (SDL_PollEvent(&event))
-                    on_event(&event);
-            },
-            true);
-
-        machine()->add_timer(Time(usec(16666)),
-            [&]() {
-                _screen->render();
-                SDL_GL_SwapBuffers();
-            },
-            true);
-
         SDL_Event event;
         while (SDL_PollEvent(&event))
             on_event(&event);
     }
 
     virtual void start(void) {
+        machine()->load_rom(options()->rom);
+        machine()->reset();
+
         set_state(EmuState::Running);
-        do_execute();
+        task = std::async(std::launch::async, &Emulator::do_execute, this);
+
+        while (get_state() == EmuState::Running) {
+            SDL_Event event;
+            while (SDL_PollEvent(&event))
+                on_event(&event);
+
+            _screen->render();
+            SDL_GL_SwapBuffers();
+        }
+
     }
 
     void on_event(SDL_Event *event) {
@@ -171,6 +169,8 @@ public:
 private:
 
     std::unique_ptr<GLRasterScreen> _screen;
+
+    std::future<void> task;
 };
 
 extern "C" int main(int argc, char **argv)
