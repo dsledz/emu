@@ -23,6 +23,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "opts.h"
 #include "driver/emulator.h"
 
 #include <future>
@@ -237,7 +238,8 @@ private:
 
 typedef std::lock_guard<std::mutex> mtx_lock;
 
-/* XXX: Rewrite in terms of OpenGL shaders */
+#if OPENGL_LEGACY
+
 class GLRasterScreen: public RasterScreen
 {
 public:
@@ -255,4 +257,5 @@ private:
     std::unique_ptr<GfxTransform> _transform;
     GfxScale _scale;
 };
+#endif
 

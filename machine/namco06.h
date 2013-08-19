@@ -52,7 +52,6 @@ private:
 
     void timer_func(void);
 
-    bool _pulse;
     Device *_parent;
     IODevice *_children[4];
     TimerItem_ptr _timer;

@@ -1,0 +1,4 @@
+/* Configuration options */
+#pragma once
+
+#define OPENGL_LEGACY @OPENGL_LEGACY@

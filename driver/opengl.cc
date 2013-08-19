@@ -81,7 +81,6 @@ ShaderProgram::build(
  *                 |___/
  */
 
-#if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
 static std::string frag_source = R"(
 varying lowp vec4 colorVarying;
 varying lowp vec2 TexCoordOut;
@@ -91,17 +90,6 @@ void main(void)
 {
     gl_FragColor = texture2D(Texture, TexCoordOut);
 })";
-#else
-static std::string frag_source = R"(
-#version 120
-varying vec2 TexCoordOut;
-uniform sampler2D Texture;
-
-void main(void)
-{
-    gl_FragColor = texture2D(Texture, TexCoordOut);
-})";
-#endif
 
 
 /* __     __        _              ____  _               _
@@ -111,7 +99,6 @@ void main(void)
  *    \_/ \___|_|   \__\___/_/\_\ |____/|_| |_|\__,_|\__,_|\___|_|
  */
 
-#if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
 static std::string vert_source = R"(
 attribute vec4 Position;
 attribute vec2 TexCoordIn;
@@ -126,26 +113,9 @@ void main()
 {
     colorVarying = vec4(1.0, 1.0, 1.0, 1.0);
 
-    gl_Position = Projection * Modelview * Position;
+    gl_Position = Modelview * Position;
     TexCoordOut = TexCoordIn;
 })";
-#else
-static std::string vert_source = R"(
-#version 120
-attribute vec3 Position;
-attribute vec2 TexCoordIn;
-
-uniform mat4 Projection;
-uniform mat4 Modelview;
-
-varying vec2 TexCoordOut;
-
-void main()
-{
-    gl_Position = Projection * Modelview * vec4(Position, 1.0);
-    TexCoordOut = TexCoordIn;
-})";
-#endif
 
 class GfxTransformNone: public GfxTransform
 {
@@ -394,11 +364,11 @@ GLSLRasterScreen::render(void)
                  _transform->height(), 0, GL_RGBA, GL_UNSIGNED_BYTE,
                  _transform->fb());
 
-    float modelview[] = {
-        1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, -4.0, 1.0,
+    float modelviewprojection[] = {
+        2.25642, 0.0, 0.0, 0.0,
+        0.0, 1.56969, 0.0, 0.0,
+        0.0, 0.0, -1.002, -1.0,
+        0.0, 0.0, 2.3048, 2.5
     };
 
     float projection[] = {
@@ -409,7 +379,7 @@ GLSLRasterScreen::render(void)
 
     glUseProgram(_program);
 
-    glUniformMatrix4fv(_var_Modelview, 1, 0, modelview);
+    glUniformMatrix4fv(_var_Modelview, 1, 0, modelviewprojection);
     glUniformMatrix4fv(_var_Projection, 1, 0, projection);
 
     glBindBuffer(GL_ARRAY_BUFFER, _screen_buffer);
@@ -426,6 +396,7 @@ GLSLRasterScreen::render(void)
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
+#if OPENGL_LEGACY
 GLRasterScreen::GLRasterScreen(void):
     RasterScreen(),
     _scale(GfxScale::None)
@@ -498,5 +469,4 @@ GLRasterScreen::render(void)
     glFlush();
 
 }
-
-
+#endif

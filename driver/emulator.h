@@ -50,9 +50,9 @@ public:
     Machine *machine(void);
     const Options *options(void);
 
+    void do_execute(void);
 protected:
 
-    void do_execute(void);
     EmuState get_state(void);
     void set_state(EmuState state);
 

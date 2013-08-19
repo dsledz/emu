@@ -13,7 +13,7 @@
 @interface ViewController () {
     GLKMatrix4 _modelViewProjectionMatrix;
     
-    struct emu_state *_emu;
+    struct emu *_emu;
 }
 @property (strong, nonatomic) EAGLContext *context;
 @property (strong, nonatomic) GLKBaseEffect *effect;
@@ -79,26 +79,25 @@
     NSBundle *mainBundle = [NSBundle mainBundle];
 #if 1
     NSString *myRom = [mainBundle pathForResource: @"mario" ofType:@"nes"];
-    struct emu_config config = {
-        .driver = "nes",
-        .rom = [myRom cStringUsingEncoding:[NSString defaultCStringEncoding]],
-    };
+    const char *driver = "nes";
 #else
     NSString *myRom = [mainBundle pathForResource: @"drmario" ofType:@"gb"];
-    struct emu_config config = {
-        .driver = "gb",
-        .rom = [myRom cStringUsingEncoding:[NSString defaultCStringEncoding]],
-    };
+    const char *driver = "gb";
 #endif
-    _emu = emu_load(&config);
-    emu_start(_emu);
+    const char *rom = [myRom cStringUsingEncoding:[NSString defaultCStringEncoding]];
+    _emu = emu_new();
+
+    emu_machine_load(_emu, driver, rom);
+    emu_machine_start(_emu);
 }
 
 - (void)tearDownEMU
 {
     [EAGLContext setCurrentContext:self.context];
-    
-    emu_end(_emu);
+
+    emu_machine_stop(_emu);
+
+    emu_free(_emu);
 }
 #pragma mark - Touch
 
@@ -164,7 +163,9 @@
 {
     glClearColor(0.65f, 0.65f, 0.65f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    emu_machine_render(_emu);
     
-    emu_render(_emu, _modelViewProjectionMatrix.m);
+    glFlush();
 }
 @end

@@ -29,13 +29,19 @@
 
 using namespace EMU;
 
+#if OPENGL_LEGACY
+#define GL_SCREEN GLRasterScreen
+#else
+#define GL_SCREEN GLSLRasterScreen
+#endif
+
 class OSXEmulator: public Emulator
 {
 public:
     OSXEmulator(const Options &options):
         Emulator(options)
     {
-        _screen = std::unique_ptr<GLRasterScreen>(new GLRasterScreen());
+        _screen = std::unique_ptr<GL_SCREEN>(new GL_SCREEN());
         machine()->set_screen(_screen.get());
 
         _screen->init();
@@ -68,7 +74,7 @@ private:
 
     std::future<void> task;
 
-    std::unique_ptr<GLRasterScreen> _screen;
+    std::unique_ptr<GL_SCREEN> _screen;
 };
 
 
