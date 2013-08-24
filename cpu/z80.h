@@ -28,7 +28,6 @@
 #pragma once
 
 #include "emu/emu.h"
-#include <sstream>
 
 namespace Z80 {
 
@@ -116,12 +115,6 @@ public:
 #define _rsHL  _R._sHL.d
 #define _rI    _R._I
 #define _rR    _R._R
-
-enum class IME {
-    Disabled = 0,
-    Shadow = 1,
-    Enabled = 2
-};
 
 class Z80Cpu: public EMU::CpuDevice {
 public:
