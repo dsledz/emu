@@ -21,7 +21,7 @@ macro(add_framework fwname)
 endmacro(add_framework)
 
 option(BUILD_IOS "Build iOS Support" OFF)
-option(BUILD_OSX "Build OSX" ON)
+option(BUILD_OSX "Build OSX" OFF)
 option(BUILD_SDL "Build SDL" ON)
 option(BUILD_TESTING "Enable testing" ON)
 
