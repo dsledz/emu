@@ -88,7 +88,7 @@ TEST(ClockableTest, real_time)
 
     Time total = Time(sec(0));
     RealTimeClock clock;
-    while (total < Time(sec(10))) {
+    while (total < Time(msec(100))) {
         Time interval = clock.get_delta();
         test.add_time(interval);
         struct timespec t = { 0, 1000000 };
@@ -97,7 +97,7 @@ TEST(ClockableTest, real_time)
     }
 
     test.wait_state(Clockable::State::Waiting);
-    EXPECT_EQ(50000, test.value);
+    EXPECT_GT(500 + 10, test.value);
 }
 
 
