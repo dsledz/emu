@@ -399,7 +399,7 @@ GLSLRasterScreen::render(void)
 #if OPENGL_LEGACY
 GLRasterScreen::GLRasterScreen(void):
     RasterScreen(),
-    _scale(GfxScale::None)
+    _scale(GfxScale::Scale2x)
 {
     _transform = get_transform(_scale);
 }

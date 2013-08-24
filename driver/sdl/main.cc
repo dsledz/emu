@@ -110,7 +110,7 @@ public:
         machine()->set_screen(_screen.get());
 
         /* Resize our window to the correct size. */
-        SDL_SetVideoMode(_screen->width(), _screen->height(), 32,
+        SDL_SetVideoMode(_screen->width() * 2, _screen->height() * 2, 32,
                          SDL_HWSURFACE | SDL_OPENGL);
         /* Reinit gl context */
         _screen->init();
