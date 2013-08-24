@@ -22,20 +22,36 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-/**
- * Roll up header for emulator files.
- */
-#pragma once
 
-#include "emu/bits.h"
-#include "emu/exception.h"
-#include "emu/debug.h"
-#include "emu/state.h"
-#include "emu/device.h"
-#include "emu/io.h"
-#include "emu/ram.h"
-#include "emu/rom.h"
-#include "emu/video.h"
-#include "emu/machine.h"
-#include "emu/options.h"
-#include "emu/cpu.h"
+#include "emu/test.h"
+
+using namespace EMU;
+using namespace EMUTest;
+
+class TestCpu: public Cpu<AddressBus16> {
+public:
+    TestCpu(Machine *machine, const std::string &name, unsigned hertz,
+            AddressBus16 *bus):
+        Cpu(machine, name, hertz, bus)
+    {
+    }
+    virtual ~TestCpu(void)
+    {
+    }
+
+    virtual Cycles step(void)
+    {
+        return Cycles(1);
+    }
+
+    virtual std::string dasm(addr_type addr)
+    {
+        return "NOP";
+    }
+};
+
+TEST(CpuTest, constructor)
+{
+    TestMachine<TestCpu> machine;
+}
+
