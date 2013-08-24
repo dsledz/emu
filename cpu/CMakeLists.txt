@@ -4,7 +4,8 @@ add_library(cpu
     m6502.cc
     n2a03.cc
     m65c02.cc
-    hu6280.cc)
+    hu6280.cc
+    m6809.cc)
 target_link_libraries(cpu
     emu)
 
@@ -13,7 +14,8 @@ if (BUILD_TESTING)
         z80_test.cc
         lr35902_test.cc
         m6502_test.cc
-        hu6280_test.cc)
+        hu6280_test.cc
+        m6809_test.cc)
     target_link_libraries(cpu-check
         cpu
         gtest gtest_main)
