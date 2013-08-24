@@ -53,7 +53,7 @@ GBGraphics::GBGraphics(Gameboy *gameboy, unsigned hertz):
             }
             _vram.write8(offset, value);
         });
-    _bus->add(0xFE00, 0xFE9F, &_oam);
+    _bus->add(0xFE00, 0xFEFF, &_oam);
 
     _bus->add(VideoReg::LCDC, &_lcdc);
     _bus->add(VideoReg::STAT, &_stat);
@@ -165,10 +165,7 @@ GBGraphics::draw_scanline(int y)
     }
 
     int sprites = 0;
-    bool large a_unused = bit_isset(_lcdc, LCDCBits::OBJSize);
-    /* XXX: Large sprites are 8x16 and need a different handler */
-    if (large)
-        throw CpuFeatureFault(_name, "large sprites");
+    int height = bit_isset(_lcdc, LCDCBits::OBJSize) ? 16 : 8;
     for (unsigned i = 160; i >= 4 && sprites < 10; i -= 4) {
         byte_t *b = _oam.direct(i-4);
         int iy = b[Oam::OamY] - 8;
@@ -177,13 +174,18 @@ GBGraphics::draw_scanline(int y)
         int flags = b[Oam::OamFlags];
 
         iy -= y;
-        if (iy < 0 || iy >= 8)
+        if (iy < 0 || iy >= height)
             continue;
 
         sprites++;
 
         if (!bit_isset(flags, OAMFlags::SpriteFlipY))
-            iy = 7 - iy;
+            iy = height - 1 - iy;
+
+        if (iy >= 8) {
+            iy -= 8;
+            idx++;
+        }
 
         auto *obj = get_obj(idx);
         auto *pen = &_obj0_pal;
