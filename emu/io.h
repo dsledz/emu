@@ -212,10 +212,13 @@ private:
  * It's recommended to use on of the pre-defined typedefs
  *
  */
-template<typename addr_type, int addr_width, typename data_type>
+template<typename _addr_type, int addr_width, typename _data_type>
 class DataBus
 {
 public:
+    typedef _addr_type addr_type;
+    typedef _data_type data_type;
+
     typedef std::function<data_type (offset_t)> read_fn;
     typedef std::function<void (offset_t, data_type)> write_fn;
     struct DefaultRead {
