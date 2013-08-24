@@ -137,6 +137,16 @@ public:
     void store(Reg r, byte_t arg);
     byte_t fetch(Reg r);
 
+    /** Hack to place a specifc value on the databus, required
+     * for IM 2 */
+    void set_data(byte_t arg) {
+        _data = arg;
+    }
+
+    DataBus8x8 *io(void) {
+        return &_io;
+    };
+
     /**
      * Load a rom image at a specified offset.
      */
@@ -177,6 +187,9 @@ private:
     void op_set(const std::string &name) {
         _op.name = name;
     }
+
+    byte_t _data;
+    DataBus8x8 _io;
 
     Cycles _icycles;      /**< Current number of cycles for instruction */
 
@@ -350,8 +363,8 @@ private:
     void _exx(void);
     void _push(byte_t high, byte_t low);
     void _pop(byte_t &high, byte_t &low);
-    void _in(byte_t &orig, byte_t port) { /* XXX: nop */ }
-    void _out(byte_t port, byte_t value) { /* XXX: nop */ }
+    void _in(byte_t &orig, byte_t port);
+    void _out(byte_t port, byte_t value);
     void _neg(byte_t &orig);
     void _otir(void) { /*XXX: nop */ }
     void _im(int mode) { _imode = mode; };

@@ -24,6 +24,7 @@
  */
 
 #include "emu/bits.h"
+#include "emu/exception.h"
 #include "emu/timing.h"
 
 using namespace EMU;
@@ -107,8 +108,13 @@ Clockable::do_run(void)
             if (_state == State::Stopped)
                 break;
         }
-
-        execute();
+        try {
+            execute();
+        } catch (EmuException &e) {
+            std::cout << "Exception: " << e.what() << std::endl;
+            std::unique_lock<std::mutex> lock(_mtx);
+            _state = State::Stopped;
+        }
     } while (true);
 }
 

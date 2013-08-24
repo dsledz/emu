@@ -334,6 +334,7 @@ typedef DataBus<uint32_t, 21, byte_t> AddressBus21;
 typedef DataBus<uint16_t, 16, byte_t> AddressBus16;
 typedef DataBus<uint16_t, 8, byte_t>  AddressBus8;
 typedef DataBus<uint16_t, 16, uint16_t> AddressBus16x16;
+typedef DataBus<uint8_t, 8, byte_t> DataBus8x8;
 typedef std::unique_ptr<AddressBus16> AddressBus16_ptr;
 
 template<> inline void

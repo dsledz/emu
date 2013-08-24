@@ -2,6 +2,7 @@ add_library(machine
     galaga.cc
     namco51.cc
     namco06.cc
+    pacman.cc
     gb.cc
     gbgfx.cc
     gbmbc.cc

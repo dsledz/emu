@@ -35,7 +35,7 @@ Registers::Registers(void):
     _HL(0xFFFF),
     _IX(0xFFFF),
     _IY(0xFFFF),
-    _SP(0xFFFF),
+    _SP(0x0000),
     _PC(0x0000),
     _sAF(0xFFFF),
     _sBC(0xFFFF),
@@ -107,9 +107,14 @@ Z80Cpu::step(void)
             interrupt(0x0038);
             return _icycles;
             break;
-        case 2:
-            throw CpuFault(_name, "Unsupported Interrupt mode 2");
+        case 2: {
+            reg16_t irq;
+            irq.b.l = bus_read((_rI << 8) | _data);
+            irq.b.h = bus_read(((_rI << 8) | _data) + 1);
+            interrupt(irq.d);
+            return _icycles;
             break;
+        }
         }
     }
 
@@ -834,6 +839,18 @@ Z80Cpu::_pop(byte_t &high, byte_t &low)
 {
     low = bus_read(_rSP++);
     high = bus_read(_rSP++);
+}
+
+void
+Z80Cpu::_in(byte_t &orig, byte_t port)
+{
+    orig = _io.read(port);
+}
+
+void
+Z80Cpu::_out(byte_t port, byte_t value)
+{
+    _io.write(port, value);
 }
 
 void
@@ -1664,6 +1681,7 @@ Z80Cpu::dispatch_ed(void)
         OPCODE(0x43, 20, 4, "LD (d16), BC", _ld16i(_d16(), _rBC));
         OPCODE(0x44,  8, 2, "NEG", _neg(_rA));
         OPCODE(0x45, 14, 2, "RET N", _retn());
+        OPCODE(0x47,  9, 2, "LD I, A", _ld(_rI, _rA));
         OPCODE(0x48, 12, 2, "IN C, (C)", _in(_rC, _rC));
         OPCODE(0x49, 12, 2, "OUT (C), C", _out(_rC, _rC));
         OPCODE(0x4A, 15, 2, "ADC HL, BC", _adc16(_rHL, _rBC));
@@ -1684,6 +1702,7 @@ Z80Cpu::dispatch_ed(void)
         OPCODE(0x5B, 20, 2, "LD DE, (d16)", _ld16(_rDE, _i16()));
         OPCODE(0x5C,  8, 2, "NEG", _neg(_rA));
         OPCODE(0x5D, 14, 2, "RET N", _retn());
+        OPCODE(0x5E,  8, 2, "IM 2", _im(2));
         OPCODE(0x5F,  9, 2, "LD A, R", _ld(_rA, _rR));
         OPCODE(0x60, 12, 2, "IN H, (C)", _in(_rH, _rC));
         OPCODE(0x61, 12, 2, "OUT (C), H", _out(_rC, _rH));
@@ -1887,5 +1906,7 @@ Z80Cpu::interrupt(addr_t addr)
     _iff2 = _iff1;
     _iff1 = false;
     _add_icycles(20);
+    if (_state == DeviceState::Halted)
+        _state = DeviceState::Running;
 }
 
