@@ -137,6 +137,12 @@ static inline bool bit_isset(uint16_t arg, int n)
 
 typedef std::function<void ()> callback_t;
 
+template<typename T>
+static inline uint8_t __attribute__((const)) val(T t)
+{
+    return static_cast<typename std::underlying_type<T>::type>(t);
+}
+
 /* XXX: Find a better place for this */
 
 #include <iostream>

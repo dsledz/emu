@@ -2,6 +2,7 @@ add_library(emu
     emu.cc
     task.cc
     input.cc
+    jit.cc
     machine.cc
     ram.cc
     rom.cc
@@ -12,6 +13,7 @@ if (BUILD_TESTING)
     add_executable(emu-check
         cpu_test.cc
         emu_test.cc
+        jit_test.cc
         time_test.cc
         debug_test.cc
         dipswitch_test.cc
