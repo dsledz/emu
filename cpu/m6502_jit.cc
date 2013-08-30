@@ -28,17 +28,30 @@
 using namespace EMU;
 using namespace M6502JIT;
 
-#define OPCODE(op, name, addr, oper)  { op, name, \
+extern "C" uint8_t
+m6502_bus_read(JITCpu *cpu, uint16_t addr);
+extern "C" void
+m6502_bus_write(JITCpu *cpu, uint16_t addr, uint8_t value);
+
+#define OPCODE(code, name, addr, op) { \
+    code, \
+    name, \
     std::bind(&M6502Cpu::addr, this), \
-    std::bind(&M6502Cpu::oper, this) }
+    std::bind(&M6502Cpu::op, this), \
+    std::bind(&M6502Cpu::addr ## _jit, this, _1), \
+    std::bind(&M6502Cpu::op ## _jit, this), \
+}
 
 M6502Cpu::M6502Cpu(Machine *machine, const std::string &name,
                             unsigned hertz, AddressBus16 *bus):
     Cpu(machine, name, hertz, bus),
     _nmi_line(LineState::Clear),
     _irq_line(LineState::Clear),
-    state()
+    state(),
+    _jit(),
+    _jit_state(this, m6502_bus_read, m6502_bus_write)
 {
+    using namespace std::placeholders;
     M6502Opcode opcodes[] = {
         OPCODE(0x00, "BRK", Inherent, BRK),
         OPCODE(0x01, "ORA X,ind", XIndirect, ORA),
@@ -263,7 +276,42 @@ M6502Cpu::step(void)
         return get_icycles();
     }
 
-    return dispatch();
+    uint16_t pc = state.PC.d;
+    auto it = _jit_cache.find(pc);
+    if (it == _jit_cache.end()) {
+        JITBlock block = compile(pc);
+        _jit_cache.insert(std::make_pair(block.pc, block));
+        it = _jit_cache.find(pc);
+    }
+
+    return jit_dispatch(&it->second);
+}
+
+JITBlock
+M6502Cpu::compile(uint16_t start_pc)
+{
+    _jit.reset();
+    bool done = false;
+    int len = 0;
+    while (!done) {
+        uint16_t pc = start_pc + len;
+        uint8_t code = bus_read(pc);
+
+        auto it = _opcodes.find(code);
+        if (it == _opcodes.end()) {
+            std::cout << "Unknown opcode: " << Hex(code) << std::endl;
+            throw CpuOpcodeFault(_name, code, pc);
+        }
+        M6502Opcode *op = &it->second;
+
+        len += op->jit_address(pc);
+        done = !op->jit_op();
+    }
+
+    _jit.xMOV16(RegEA, start_pc + len);
+    _jit.xSETPC(RegEA);
+    _jit.xRETQ();
+    return JITBlock(_jit.code(), start_pc);
 }
 
 void
@@ -342,3 +390,42 @@ M6502Cpu::dispatch(void)
 
     return get_icycles();
 }
+
+Cycles
+M6502Cpu::jit_dispatch(JITBlock *block)
+{
+    uintptr_t func = reinterpret_cast<uintptr_t>(block->code());
+
+    asm volatile(
+        "mov %0, %%r15;\n"
+        "mov %1, %%r14;\n"
+        "movw 0(%%r15), %%ax;\n"
+        "movw 2(%%r15), %%bx;\n"
+        "pushw 8(%%r15);\n" /* flags */
+        "popfw;\n"
+        "callq *%2;\n"
+        "pushfw;\n"
+        "popw 8(%%r15);\n"
+        "movw %%ax, 0(%%r15);\n"
+        "movw %%bx, 2(%%r15);\n"
+        :
+        : "r"(&state), "r"(&_jit_state), "m"(func)
+        : "rax", "rbx", "rcx", "rdx", "rdi", "rsi"
+    );
+
+    return Cycles(10); /* XXX: Complete lie */
+}
+
+uint8_t
+m6502_bus_read(JITCpu *cpu, uint16_t addr)
+{
+    return cpu->bus_read(addr);
+}
+
+void
+m6502_bus_write(JITCpu *cpu, uint16_t addr, uint8_t value)
+{
+    cpu->bus_write(addr, value);
+}
+
+
