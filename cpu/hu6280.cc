@@ -215,7 +215,7 @@ hu6280Cpu::dispatch(void)
         OPCODE(0x1D, "ORA abs,X", Abs(_rX); op_ora());
         OPCODE(0x1E, "ASL abs,X", Abs(_rX); op_asl());
         OPCODE(0x1F, "BBR1", op_bbr(1));
-        OPCODE(0x20, "JSR abs", op_jsr());
+        OPCODE(0x20, "JSR abs", Abs(); op_jsr());
         OPCODE(0x21, "AND X,ind", XInd(); op_and());
         OPCODE(0x22, "SAX", op_sax());
         OPCODE(0x23, "ST2 #", op_st2());

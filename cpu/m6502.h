@@ -42,7 +42,7 @@ public:
 
 protected:
     /* Internal state */
-    reg16_t  _rPC;
+    reg16_t _rPC;
     byte_t _rA;
     byte_t _rX;
     byte_t _rY;
@@ -65,13 +65,9 @@ protected:
     LineState _nmi_line;
     LineState _irq_line;
 
-    struct operand {
-        bool mem;
-        union {
-            reg16_t  ad;
-            byte_t value;
-        };
-    } _arg;
+    bool    _mem;
+    reg16_t _rEA;
+    reg8_t  _rTmp;
 
     AddressBus16 *_bus;
 
@@ -107,16 +103,16 @@ protected:
     };
 
     byte_t fetch(void) {
-        if (_arg.mem) {
-            return bus_read(_arg.ad.d);
+        if (_mem) {
+            return bus_read(_rEA.d);
         } else {
-            return _arg.value;
+            return _rTmp;
         }
     }
 
     void store(byte_t value) {
-        if (_arg.mem) {
-            bus_write(_arg.ad.d, value);
+        if (_mem) {
+            bus_write(_rEA.d, value);
         } else {
             /* XXX: Assume accumulator */
             _rA = value;
@@ -125,63 +121,66 @@ protected:
 
     /* Addressing mode */
     inline void Abs(byte_t value = 0) {
-        _arg.mem = true;
-        _arg.ad.b.l = pc_read();
-        _arg.ad.b.h = pc_read();
+        _mem = true;
+        _rEA.b.l = pc_read();
+        _rEA.b.h = pc_read();
         /* Handle page overflow */
-        _arg.ad.d += value;
-        if (_arg.ad.b.l < value)
+        _rEA.d += value;
+        if (_rEA.b.l < value)
             _add_icycles(1);
     }
     inline void Ind(byte_t value = 0) {
-        _arg.mem = true;
+        _mem = true;
         reg16_t addr;
         addr.b.l = pc_read();
         addr.b.h = pc_read();
-        _arg.ad.d += value;
-        _arg.ad.b.l = bus_read(addr.d);
-        addr.b.l++;
-        _arg.ad.b.h = bus_read(addr.d);
+        addr.d += value;
+        _rEA.b.l = bus_read(addr.d);
+        addr.d++;
+        _rEA.b.h = bus_read(addr.d);
     }
     inline void IndY(void) {
-        _arg.mem = true;
+        _mem = true;
         reg16_t addr;
         addr.b.l = pc_read();
         addr.b.h = _zpg;
-        _arg.ad.b.l = bus_read(addr.d);
+        _rEA.b.l = bus_read(addr.d);
         addr.b.l++;
-        _arg.ad.b.h = bus_read(addr.d);
-        _arg.ad.d += _rY;
-        if (_arg.ad.b.l < _rY)
+        _rEA.b.h = bus_read(addr.d);
+        _rEA.d += _rY;
+        if (_rEA.b.l < _rY)
             _add_icycles(1);
     }
     inline void XInd(void) {
-        _arg.mem = true;
-        addr_t addr = (pc_read() + _rX) & 0xff;
-        _arg.ad.b.l = bus_read(addr);
-        _arg.ad.b.h = bus_read((addr + 1) & 0xff);
+        _mem = true;
+        reg16_t addr;
+        addr.b.l = pc_read() + _rX;
+        addr.b.h = _zpg;
+        _rEA.b.l = bus_read(addr.d);
+        addr.b.l++;
+        _rEA.b.h = bus_read(addr.d);
     }
     inline void ZpgInd(void) {
-        _arg.mem = true;
+        _mem = true;
         reg16_t addr;
         addr.b.l = pc_read();
         addr.b.h = _zpg;
-        _arg.ad.b.l = bus_read(addr.d);
+        _rEA.b.l = bus_read(addr.d);
         addr.b.l++;
-        _arg.ad.b.h = bus_read(addr.d);
+        _rEA.b.h = bus_read(addr.d);
     }
     inline void Imm(void) {
-        _arg.mem = false;
-        _arg.value = pc_read();
+        _mem = false;
+        _rTmp = pc_read();
     }
     inline void Acc(void) {
-        _arg.mem = false;
-        _arg.value = _rA;
+        _mem = false;
+        _rTmp = _rA;
     }
     inline void Zpg(byte_t index=0) {
-        _arg.mem = true;
-        _arg.ad.b.l = pc_read() + index;
-        _arg.ad.b.h = _zpg;
+        _mem = true;
+        _rEA.b.l = pc_read() + index;
+        _rEA.b.h = _zpg;
     }
     inline void ZpgX(void) {
         Zpg(_rX);
@@ -191,8 +190,8 @@ protected:
     }
     inline void Rel(void) {
         char tmp = pc_read();
-        _arg.ad = _rPC;
-        _arg.ad.d += tmp;
+        _rEA = _rPC;
+        _rEA.d += tmp;
     }
 
     inline void set_sz(byte_t result) {
@@ -221,12 +220,12 @@ protected:
     }
     void op_branch(bool jump) {
         if (jump) {
-            _rPC = _arg.ad;
+            _rPC = _rEA;
             _add_icycles(2);
         }
     }
     void op_jmp(void) {
-        _rPC = _arg.ad;
+        _rPC = _rEA;
     }
     void op_ora(void) {
         byte_t arg = fetch();
@@ -267,7 +266,6 @@ protected:
         _rPC.b.h = pop();
     }
     void op_jsr(void) {
-        Abs();
         _rPC.d--;
         push(_rPC.b.h);
         push(_rPC.b.l);
@@ -285,22 +283,36 @@ protected:
         _rA = result;
     }
     void op_adc(void) {
-        /* XXX: Decimal */
-        if (_rF.D)
-            throw CpuFeatureFault(_name, "decimal");
+        uint32_t result;
         byte_t arg = fetch();
-        uint32_t result = _rA + arg + _rF.C;
+        /* XXX: Decimal */
+        if (_rF.D) {
+            uint8_t l = (_rA & 0x0F) + (arg & 0x0F) + _rF.C;
+            if (l > 9)
+                l += 6;
+            uint8_t h = (_rA >> 4) + (arg >> 4) + (l >> 4);
+            result = (h << 4) | (l & 0x0F);
+        } else {
+            result = _rA + arg + _rF.C;
+        }
         set_sz(result);
         _rF.C = bit_isset(result, 8);
         _rF.V = bit_isset((_rA^arg^0x80) & (arg^result), 7);
         _rA = result;
     }
     void op_sbc(void) {
-        /* XXX: Decimal */
-        if (_rF.D)
-            throw CpuFeatureFault(_name, "decimal");
         byte_t arg = fetch();
-        uint32_t result = _rA - arg - !_rF.C;
+        uint32_t result;
+        if (_rF.D) {
+            uint8_t l = ((_rA & 0x0F) - (arg & 0x0F) - !_rF.C) & 0x0F;
+            _rF.C = (l <= 9);
+            if (l > 9)
+                l -= 6;
+            uint8_t h = (_rA >> 4) - (arg >> 4) - !_rF.C;
+            result = (h << 4) | (l & 0x0F);
+        } else {
+            result = _rA - arg - !_rF.C;
+        }
         set_sz(result);
         _rF.C = result < 0x100;
         _rF.V = bit_isset((result^_rA) & (_rA^arg), 7);

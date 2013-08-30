@@ -2,6 +2,7 @@ add_library(cpu
     z80.cc
     lr35902.cc
     m6502.cc
+    m6502v2.cc
     n2a03.cc
     m65c02.cc
     hu6280.cc

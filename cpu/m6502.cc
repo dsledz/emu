@@ -104,9 +104,9 @@ M6502Cpu::log_op(byte_t op)
         std::string it = str.substr(lastPos, pos - lastPos);
         os << " ";
         if (it == "abs" || it == "abs,X" || it == "abs,Y")
-            os << Hex(_arg.ad);
+            os << Hex(_rEA);
         else if (it == "ind")
-            os << Hex(_op_ind) << " " << Hex(_arg.ad);
+            os << Hex(_op_ind) << " " << Hex(_rEA);
         else if (it == "LDX")
             os << Hex(_rX);
         else if (it == "LDY")
@@ -120,14 +120,14 @@ M6502Cpu::log_op(byte_t op)
         else if (it == "STA")
             os << Hex(_rA);
         else if (it == "#")
-            os << Hex(_arg.value);
+            os << Hex(_rTmp);
         else if (it == "BEQ")
-            os << "BEQ " << Hex(_arg.ad);
+            os << "BEQ " << Hex(_rEA);
         else if (it == "zpg" || it == "zpg,X" || it == "zpg,Y" ||
                  it == "ind,Y" || it == "X,ind")
-            os << Hex(_arg.ad);
+            os << Hex(_rEA);
         else if (it == "(zpg)")
-            os << Hex(_arg.ad);
+            os << Hex(_rEA);
         else
             os << it;
         lastPos = str.find_first_not_of(delimiters, pos);
@@ -182,12 +182,12 @@ M6502Cpu::dispatch(void)
         OPCODE(0x19, "ORA abs,Y", Abs(_rY); op_ora());
         OPCODE(0x1D, "ORA abs,X", Abs(_rX); op_ora());
         OPCODE(0x1E, "ASL abs,X", Abs(_rX); op_asl());
-        OPCODE(0x20, "JSR", Abs(); _rPC.d--; push(_rPC.b.h); push(_rPC.b.l); op_jmp());
+        OPCODE(0x20, "JSR", Abs(); op_jsr());
         OPCODE(0x21, "AND X,ind", XInd(); op_and());
         OPCODE(0x24, "BIT zpg", Zpg(); op_bit());
         OPCODE(0x25, "AND zpg", Zpg(); op_and());
         OPCODE(0x26, "ROL zpg", Zpg(); op_rol());
-        OPCODE(0x28, "PLP", _rSR = pop(); _rF.B = 1; _rF.E = 1);
+        OPCODE(0x28, "PLP", op_plp());
         OPCODE(0x29, "AND #", Imm(); op_and());
         OPCODE(0x2A, "ROL A", Acc(); op_rol());
         OPCODE(0x2C, "BIT abs", Abs(); op_bit());
@@ -201,7 +201,7 @@ M6502Cpu::dispatch(void)
         OPCODE(0x39, "AND abs,Y", Abs(_rY); op_and());
         OPCODE(0x3D, "AND abs,X", Abs(_rX); op_and());
         OPCODE(0x3E, "ROL abs,X", Abs(_rX); op_rol());
-        OPCODE(0x40, "RTI", _rSR = pop(); _rF.E = 1; _rPC.b.l=pop(); _rPC.b.h=pop());
+        OPCODE(0x40, "RTI", op_rti());
         OPCODE(0x41, "EOR X,ind", XInd(); op_eor());
         OPCODE(0x45, "EOR zpg", Zpg(); op_eor());
         OPCODE(0x46, "LSR zpg", Zpg(); op_lsr());
@@ -326,3 +326,5 @@ M6502Cpu::dispatch(void)
 
     return _icycles;
 }
+
+
