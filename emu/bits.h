@@ -85,21 +85,23 @@ union reg32_t {
  * |____/|_|\__|  \___/| .__/|___/
  *                     |_|
  */
-template<typename T>
-static inline void bit_set(byte_t &arg, T bit, bool val)
+template<typename A, typename T>
+static inline void bit_set(A &arg, T bit, bool val)
 {
     auto n = static_cast<typename std::underlying_type<T>::type>(bit);
     arg &= ~(1 << n);
     arg |= (val ? (1 << n) : 0);
 }
 
-static inline void bit_set(byte_t &arg, int n, bool val)
+template<typename A>
+static inline void bit_set(A &arg, int n, bool val)
 {
     arg &= ~(1 << n);
     arg |= (val ? (1 << n) : 0);
 }
 
-static inline void bit_set(byte_t &arg, unsigned n, bool val)
+template<typename A>
+static inline void bit_set(A &arg, unsigned n, bool val)
 {
     arg &= ~(1 << n);
     arg |= (val ? (1 << n) : 0);

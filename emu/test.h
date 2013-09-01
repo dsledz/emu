@@ -50,6 +50,8 @@ public:
         bus.add(0x0000, ram.size() - 1,
             READ_CB(Ram::read8, &ram),
             WRITE_CB(Ram::write8, &ram));
+
+        set_line("maincpu", Line::RESET, LineState::Pulse);
     }
     ~TestMachine(void)
     {

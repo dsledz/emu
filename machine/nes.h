@@ -25,10 +25,10 @@
 
 #include "emu/emu.h"
 
-#include "cpu/m6502.h"
+#include "cpu/m6502/m6502.h"
 
 using namespace EMU;
-using namespace M6502;
+using namespace M6502v2;
 
 namespace NESDriver {
 
@@ -252,7 +252,7 @@ private:
 
     std::vector<device_ptr> _our_devs;
 
-    std::unique_ptr<M6502::n2A03Cpu> _cpu;
+    std::unique_ptr<M6502Cpu> _cpu;
     std::unique_ptr<NESPPU> _ppu;
     mapper_ptr _mapper;
     Ram _ram;

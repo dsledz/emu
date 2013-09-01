@@ -81,11 +81,9 @@ public:
         add_icycles(1);
     }
 
-    void test_step(void) {
+    virtual void test_step(void) {
         step();
     }
-
-protected:
 
     /* Process a single clock cycle */
     virtual Cycles step(void) = 0;

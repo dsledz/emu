@@ -25,7 +25,7 @@
 
 #include "machine/nes.h"
 
-#include "cpu/m6502.h"
+#include "cpu/m6502/m6502.h"
 
 #define MASTER_CLOCK 21477270
 
@@ -61,8 +61,8 @@ NES::NES(void):
     for (auto it = ports.begin(); it != ports.end(); it++)
         add_ioport(*it);
 
-    _cpu = std::unique_ptr<M6502::n2A03Cpu>(
-        new M6502::n2A03Cpu(this, "cpu", MASTER_CLOCK/12, cpu_bus()));
+    _cpu = std::unique_ptr<M6502Cpu>(
+        new M6502Cpu(this, "cpu", MASTER_CLOCK/12, cpu_bus()));
 
     _ppu = std::unique_ptr<NESPPU>(
         new NESPPU(this, "ppu", MASTER_CLOCK/4));

@@ -138,6 +138,11 @@ public:
 
     }
 
+    virtual void stop(void) {
+        Emulator::stop();
+        task.get();
+    }
+
     void on_event(SDL_Event *event) {
         switch (event->type) {
         case SDL_QUIT:
