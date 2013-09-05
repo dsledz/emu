@@ -1,7 +1,7 @@
 add_subdirectory(m6502)
+add_subdirectory(z80)
 
 add_library(cpu
-    z80.cc
     lr35902.cc
     m6502.cc
     n2a03.cc
@@ -10,11 +10,11 @@ add_library(cpu
     m6809.cc)
 target_link_libraries(cpu
     m6502
+    z80
     emu)
 
 if (BUILD_TESTING)
     add_executable(cpu-check
-        z80_test.cc
         lr35902_test.cc
         m6502_test.cc
         hu6280_test.cc

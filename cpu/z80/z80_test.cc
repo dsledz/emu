@@ -25,7 +25,7 @@
 
 #include "gtest/gtest.h"
 
-#include "cpu/z80.h"
+#include "cpu/z80/z80.h"
 #include "emu/rom.h"
 
 using namespace Z80;
