@@ -44,6 +44,45 @@ enum class Reg {
     HL = 0x06,
 };
 
+struct Z80State {
+    union {
+        struct {
+            union {
+                struct {
+                    byte_t C:1;   /**< carry flag */
+                    byte_t N:1;   /**< add/substract */
+                    byte_t V:1;  /**< parity/overflow */
+                    byte_t X:1;
+                    byte_t H:1;   /**< half carry */
+                    byte_t Y:1;
+                    byte_t Z:1;   /**< zero flag */
+                    byte_t S:1;   /**< sign flag */
+                } f;
+                reg8_t l;
+            };
+            reg8_t h;
+        } b;
+        uint16_t d;
+    } AF;
+    reg16_t BC;
+    reg16_t DE;
+    reg16_t HL;
+    reg16_t IX;
+    reg16_t IY;
+    reg16_t SP;
+    reg16_t PC;
+
+    reg8_t I;
+    reg8_t R;
+
+    reg16_t AF2;
+    reg16_t BC2;
+    reg16_t DE2;
+    reg16_t HL2;
+
+    reg16_t EA;
+};
+
 struct Registers {
 public:
     Registers(void);
@@ -146,6 +185,12 @@ public:
     void load_rom(Rom *rom, addr_t offset);
 
 private:
+    enum Prefix {
+        NoPrefix = 0x00,
+        DDPrefix = 0xDD,
+        FDPrefix = 0xFD,
+    } _prefix;
+
     /* Operation specific state */
     struct Z80Op {
         Z80Op(void): name("NONE") { }
@@ -168,11 +213,7 @@ private:
     Cycles step(void);
     Cycles dispatch(void);
     void dispatch_cb(void);
-    void dispatch_dd(void);
-    void dispatch_dd_cb(void);
     void dispatch_ed(void);
-    void dispatch_fd(void);
-    void dispatch_fd_cb(void);
     void interrupt(addr_t addr);
 
     /* Trace support */
@@ -247,17 +288,31 @@ private:
         _op.d8 = pc_read();
         return _rIY + _op.d8;
     }
+    inline addr_t _dAddr(void) {
+        if (_prefix == DDPrefix)
+            _op.d16 = _dIX();
+        else if (_prefix == FDPrefix)
+            _op.d16 = _dIY();
+        else
+            _op.d16 = _rHL;
+        return _op.d16;
+    }
     inline byte_t _iIX(void) {
-        _op.i8 = bus_read(_dIX());
-        return _op.i8;
+        return _i8(_dIX());
     }
     inline byte_t _iIY(void) {
-        _op.i8 = bus_read(_dIY());
+        return _i8(_dIY());
+    }
+    inline byte_t _iHL(void) {
+        _op.i8 = bus_read(_rHL);
         return _op.i8;
     }
     inline byte_t _i8(addr_t addr) {
         _op.i8 = bus_read(addr);
         return _op.i8;
+    }
+    inline byte_t _iAddr(void) {
+        return _i8(_dAddr());
     }
     inline uint16_t _i16(void) {
         _op.d16 = pc_read() | (pc_read() << 8);

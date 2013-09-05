@@ -23,61 +23,26 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "gtest/gtest.h"
-
-#include "cpu/z80/z80.h"
+#include "emu/test.h"
 #include "emu/rom.h"
 
+#include "cpu/z80/z80.h"
+
+using namespace EMU;
+using namespace EMUTest;
 using namespace Z80;
 
-#define LOAD(code) \
-    ram.write8(pc++, code)
-#define LOAD1(code, arg1) \
-    ram.write8(pc++, code); \
-    ram.write8(pc++, arg1);
-#define LOAD2(code, arg1, arg2) \
-    ram.write8(pc++, code); \
-    ram.write8(pc++, arg1); \
-    ram.write8(pc++, arg2);
+#if 0
+typedef TestMachine<Z80Cpu, 0x0000> Z80Machine;
 
-class Z80Test: public ::testing::Test {
-    public:
-        Z80Test(void):
-            machine(),
-            bus(),
-            cpu(&machine, "cpu", 1000000, &bus),
-            ram(0x2000), pc(0)
-        {
-            bus.add(0x0000, 0xE000, &ram);
-        }
-
-        Machine machine;
-        AddressBus16 bus;
-        Z80Cpu cpu;
-        Ram ram;
-        addr_t pc;
-};
-
-TEST_F(Z80Test, Constructor)
+TEST(Z80Test, opcode_dd)
 {
-}
+    Z80Machine machine;
 
-/* NOP */
-TEST_F(Z80Test, opcode_0x00)
-{
-    LOAD(0x00);
-    cpu.execute(Time(usec(30)));
-}
+    LOAD4(0xDD, 0x21, 0x34, 0x12);  /* LD IX, $1234 */
 
-/* LD BC, d16 */
-TEST_F(Z80Test, opcode_0x01)
-{
-    LOAD2(0x01, 0x12, 0x34);
-    cpu.execute(Time(usec(10)));
-
-    EXPECT_EQ(0x34, cpu.fetch(Reg::B));
-    EXPECT_EQ(0x12, cpu.fetch(Reg::C));
 }
+#endif
 
 class Zexall: public Machine
 {
@@ -95,6 +60,10 @@ public:
                  READ_CB(Zexall::req_read, this),
                  WRITE_CB(Zexall::req_write, this));
         bus->add(0xFFFD, &_ack);
+
+        cpu->io()->add(0x01, 0x01,
+            DataBus8x8::DefaultRead(),
+            DataBus8x8::DefaultWrite());
     }
     ~Zexall(void) {
     }
@@ -125,5 +94,10 @@ TEST(Zexall_test, test)
 {
     Zexall zex;
 
-    zex.cpu->execute(Time(sec(10)));
+    //EMU::log.set_level(LogLevel::Trace);
+
+    while (true) {
+        zex.add_time(Time(sec(1000)));
+        zex.execute();
+    }
 }

@@ -76,5 +76,10 @@ public:
     machine.write8(op); \
     machine.write8(arg1); \
     machine.write8(arg2);
+#define LOAD4(op, arg1, arg2, arg3) \
+    machine.write8(op); \
+    machine.write8(arg1); \
+    machine.write8(arg2); \
+    machine.write8(arg3);
 
 };

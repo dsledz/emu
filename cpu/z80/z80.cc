@@ -52,6 +52,7 @@ Registers::~Registers(void)
 Z80Cpu::Z80Cpu(Machine *machine, const std::string &name, unsigned hertz,
                AddressBus16 *bus):
     CpuDevice(machine, name, hertz),
+    _prefix(NoPrefix),
     _icycles(0),
     _op(),
     _R(),
@@ -180,7 +181,6 @@ Z80Cpu::fetch(Reg reg)
         case Reg::E: return _rE;
         case Reg::H: return _rH;
         case Reg::L: return _rL;
-        case Reg::HL: return bus_read(_rHL);
         default: throw CpuFault(_name, "Unknown register read");
     }
 }
@@ -196,7 +196,6 @@ Z80Cpu::store(Reg reg, byte_t value)
         case Reg::E: _rE = value; break;
         case Reg::H: _rH = value; break;
         case Reg::L: _rL = value; break;
-        case Reg::HL: bus_write(_rHL, value); break;
         default: throw CpuFault(_name, "Unknown register write");
     }
 }
@@ -1106,7 +1105,7 @@ Z80Cpu::op_log(void)
         else if (it == "HL")
             os << Hex(_rHL);
         else if (it == "(HL)")
-            os << "(" << Hex(_rHL) << ")";
+            os << Hex(_op.i8);
         else if (it == "AF")
             os << Hex(_rAF);
         else if (it == "AF'")
@@ -1158,28 +1157,31 @@ Z80Cpu::dispatch(void)
         _op.opcode = 0x00; /* NOP */
     }
 
-    byte_t &vrH = _rH;
-    byte_t &vrL = _rL;
-    uint16_t &vrHL = _rHL;
-    addr_t vAddr = _rHL;
+    byte_t *vrH = &_rH;
+    byte_t *vrL = &_rL;
+    uint16_t *vrHL = &_rHL;
 
-#if 0
-    if (_op.opcode == 0xDD) {
+    switch (_op.opcode) {
+    case DDPrefix:
+        _prefix = DDPrefix;
         _op.opcode = pc_read();
-        vrH = _rIXh;
-        vrL = _rIXl;
-        vrHL = _rIX;
-        vAddr = _rIX;
+        vrH = &_rIXh;
+        vrL = &_rIXl;
+        vrHL = &_rIX;
         _add_icycles(4); /* XXX: Wrong! */
-    } else if (_op.opcode == 0xFD) {
+        break;
+    case FDPrefix:
+        _prefix = FDPrefix;
         _op.opcode = pc_read();
-        vrH = _rIYh;
-        vrL = _rIYl;
-        vrHL = _rIY;
-        vAddr = _rIY; /* XXX: Wrong! */
+        vrH = &_rIYh;
+        vrL = &_rIYl;
+        vrHL = &_rIY;
         _add_icycles(4);
+        break;
+    default:
+        _prefix = NoPrefix;
+        break;
     }
-#endif
 
     _rR = ((_rR + 1) % 128) | (_rR & 0x80);
 
@@ -1195,7 +1197,7 @@ Z80Cpu::dispatch(void)
         OPCODE(0x06,  7, 2, "LD B,d8", _ld(_rB, _d8()));
         OPCODE(0x07,  4, 1, "RLCA", _rlca());
         OPCODE(0x08,  4, 1, "EX AF,AF'", _ex(_rAF, _rsAF));
-        OPCODE(0x09, 11, 1, "ADD HL,BC", _add16(vrHL, _rBC));
+        OPCODE(0x09, 11, 1, "ADD HL,BC", _add16(*vrHL, _rBC));
         OPCODE(0x0A,  7, 1, "LD A,(BC)", _ld(_rA, bus_read(_rBC)));
         OPCODE(0x0B,  6, 1, "DEC BC", _dec16(_rBC));
         OPCODE(0x0C,  4, 1, "INC C", _inc(_rC));
@@ -1211,7 +1213,7 @@ Z80Cpu::dispatch(void)
         OPCODE(0x16,  7, 2, "LD D,d8", _ld(_rD, _d8()));
         OPCODE(0x17,  4, 1, "RLA", _rla());
         OPCODE(0x18, 12, 2, "JR r8", _jr(true, _r8()));
-        OPCODE(0x19, 11, 1, "ADD HL,DE", _add16(vrHL, _rDE));
+        OPCODE(0x19, 11, 1, "ADD HL,DE", _add16(*vrHL, _rDE));
         OPCODE(0x1A,  7, 1, "LD A,(DE)", _ld(_rA, bus_read(_rDE)));
         OPCODE(0x1B,  6, 1, "DEC DE", _dec16(_rDE));
         OPCODE(0x1C,  4, 1, "INC E", _inc(_rE));
@@ -1219,31 +1221,31 @@ Z80Cpu::dispatch(void)
         OPCODE(0x1E,  7, 2, "LD E,d8", _ld(_rE, _d8()));
         OPCODE(0x1F,  4, 1, "RRA", _rra());
         OPCODE(0x20,  7, 2, "JR NZ,r8", _jr(!_flags.Z, _r8()));
-        OPCODE(0x21, 10, 3, "LD HL,d16", _ld16(vrHL, _d16()));
-        OPCODE(0x22, 16, 3, "LD (d16), HL", _ld16i(_d16(), vrHL));
-        OPCODE(0x23,  7, 1, "INC HL", _inc16(vrHL));
-        OPCODE(0x24,  4, 1, "INC H", _inc(vrH));
-        OPCODE(0x25,  4, 1, "DEC H", _dec(vrH));
-        OPCODE(0x26,  7, 2, "LD H,d8", _ld(vrH, _d8()));
+        OPCODE(0x21, 10, 3, "LD HL,d16", _ld16(*vrHL, _d16()));
+        OPCODE(0x22, 16, 3, "LD (d16), HL", _ld16i(_d16(), *vrHL));
+        OPCODE(0x23,  7, 1, "INC HL", _inc16(*vrHL));
+        OPCODE(0x24,  4, 1, "INC H", _inc(*vrH));
+        OPCODE(0x25,  4, 1, "DEC H", _dec(*vrH));
+        OPCODE(0x26,  7, 2, "LD H,d8", _ld(*vrH, _d8()));
         OPCODE(0x27,  4, 1, "DAA", _daa());
         OPCODE(0x28,  7, 2, "JR Z,r8", _jr(_flags.Z, _r8()));
-        OPCODE(0x29, 11, 1, "ADD HL,HL", _add16(vrHL, vrHL));
-        OPCODE(0x2A, 16, 3, "LD HL, (d16)", _ld16(_rHL, _i16()));
-        OPCODE(0x2B,  6, 1, "DEC HL", _dec16(vrHL));
-        OPCODE(0x2C,  4, 1, "INC L", _inc(vrL));
-        OPCODE(0x2D,  4, 1, "DEC L", _dec(vrL));
-        OPCODE(0x2E,  7, 2, "LD L,d8", _ld(vrL, _d8()));
+        OPCODE(0x29, 11, 1, "ADD HL,HL", _add16(*vrHL, *vrHL));
+        OPCODE(0x2A, 16, 3, "LD HL, (d16)", _ld16(*vrHL, _i16()));
+        OPCODE(0x2B,  6, 1, "DEC HL", _dec16(*vrHL));
+        OPCODE(0x2C,  4, 1, "INC L", _inc(*vrL));
+        OPCODE(0x2D,  4, 1, "DEC L", _dec(*vrL));
+        OPCODE(0x2E,  7, 2, "LD L,d8", _ld(*vrL, _d8()));
         OPCODE(0x2F,  4, 2, "CPL", _cpl());
         OPCODE(0x30,  7, 2, "JR NC,r8", _jr(!_flags.C, _r8()));
         OPCODE(0x31, 10, 3, "LD SP,d16", _ld16(_rSP, _d16()));
         OPCODE(0x32, 13, 3, "LD (d16), A", _ldmem(_d16(), _rA));
         OPCODE(0x33,  6, 1, "INC SP", _inc16(_rSP));
-        OPCODE(0x34, 11, 1, "INC (HL)", _inci(vrHL));
-        OPCODE(0x35, 11, 1, "DEC (HL)", _deci(vrHL));
-        OPCODE(0x36, 10, 2, "LD (HL),d8", _ldmem(_rHL, _d8()));
+        OPCODE(0x34, 11, 1, "INC (HL)", _inci(_dAddr()));
+        OPCODE(0x35, 11, 1, "DEC (HL)", _deci(_dAddr()));
+        OPCODE(0x36, 10, 2, "LD (HL),d8", _ldmem(_dAddr(), _d8()));
         OPCODE(0x37,  4, 1, "SCF", _scf());
         OPCODE(0x38,  7 ,2, "JR C,r8", _jr(_flags.C, _r8()));
-        OPCODE(0x39, 11, 1, "ADD HL,SP", _add16(vrHL, _rSP));
+        OPCODE(0x39, 11, 1, "ADD HL,SP", _add16(*vrHL, _rSP));
         OPCODE(0x3A, 13, 3, "LD A,(d16)", _ld(_rA, _i8(_d16())));
         OPCODE(0x3B,  6, 1, "DEC SP", _dec16(_rSP));
         OPCODE(0x3C,  4, 1, "INC A", _inc(_rA));
@@ -1254,129 +1256,129 @@ Z80Cpu::dispatch(void)
         OPCODE(0x41,  4, 1, "LD B,C", _ld(_rB, _rC));
         OPCODE(0x42,  4, 1, "LD B,D", _ld(_rB, _rD));
         OPCODE(0x43,  4, 1, "LD B,E", _ld(_rB, _rE));
-        OPCODE(0x44,  4, 1, "LD B,H", _ld(_rB, vrH));
-        OPCODE(0x45,  4, 1, "LD B,L", _ld(_rB, vrL));
-        OPCODE(0x46,  7, 1, "LD B,(HL)", _ld(_rB, _i8(vAddr)));
+        OPCODE(0x44,  4, 1, "LD B,H", _ld(_rB, *vrH));
+        OPCODE(0x45,  4, 1, "LD B,L", _ld(_rB, *vrL));
+        OPCODE(0x46,  7, 1, "LD B,(HL)", _ld(_rB, _iAddr()));
         OPCODE(0x47,  4, 1, "LD B,A", _ld(_rB, _rA));
         OPCODE(0x48,  4, 1, "LD C,B", _ld(_rC, _rB));
         OPCODE(0x49,  4, 1, "LD C,C", _ld(_rC, _rC));
         OPCODE(0x4A,  4, 1, "LD C,D", _ld(_rC, _rD));
         OPCODE(0x4B,  4, 1, "LD C,E", _ld(_rC, _rE));
-        OPCODE(0x4C,  4, 1, "LD C,H", _ld(_rC, vrH));
-        OPCODE(0x4D,  4, 1, "LD C,L", _ld(_rC, vrL));
-        OPCODE(0x4E,  7, 1, "LD C,(HL)", _ld(_rC, _i8(vAddr)));
+        OPCODE(0x4C,  4, 1, "LD C,H", _ld(_rC, *vrH));
+        OPCODE(0x4D,  4, 1, "LD C,L", _ld(_rC, *vrL));
+        OPCODE(0x4E,  7, 1, "LD C,(HL)", _ld(_rC, _iAddr()));
         OPCODE(0x4F,  4, 1, "LD C,A", _ld(_rC, _rA));
         OPCODE(0x50,  4, 1, "LD D,B", _ld(_rD, _rB));
         OPCODE(0x51,  4, 1, "LD D,C", _ld(_rD, _rC));
         OPCODE(0x52,  4, 1, "LD D,D", _ld(_rD, _rD));
         OPCODE(0x53,  4, 1, "LD D,E", _ld(_rD, _rE));
-        OPCODE(0x54,  4, 1, "LD D,H", _ld(_rD, vrH));
-        OPCODE(0x55,  4, 1, "LD D,L", _ld(_rD, vrL));
-        OPCODE(0x56,  7, 1, "LD D,(HL)", _ld(_rD, _i8(vAddr)));
+        OPCODE(0x54,  4, 1, "LD D,H", _ld(_rD, *vrH));
+        OPCODE(0x55,  4, 1, "LD D,L", _ld(_rD, *vrL));
+        OPCODE(0x56,  7, 1, "LD D,(HL)", _ld(_rD, _iAddr()));
         OPCODE(0x57,  4, 1, "LD D,A", _ld(_rD, _rA));
         OPCODE(0x58,  4, 1, "LD E,B", _ld(_rE, _rB));
         OPCODE(0x59,  4, 1, "LD E,C", _ld(_rE, _rC));
         OPCODE(0x5A,  4, 1, "LD E,D", _ld(_rE, _rD));
         OPCODE(0x5B,  4, 1, "LD E,E", _ld(_rE, _rE));
-        OPCODE(0x5C,  4, 1, "LD E,H", _ld(_rE, vrH));
-        OPCODE(0x5D,  4, 1, "LD E,L", _ld(_rE, vrL));
-        OPCODE(0x5E,  7, 1, "LD E,(HL)", _ld(_rE, _i8(vAddr)));
+        OPCODE(0x5C,  4, 1, "LD E,H", _ld(_rE, *vrH));
+        OPCODE(0x5D,  4, 1, "LD E,L", _ld(_rE, *vrL));
+        OPCODE(0x5E,  7, 1, "LD E,(HL)", _ld(_rE, _iAddr()));
         OPCODE(0x5F,  4, 1, "LD E,A", _ld(_rE, _rA));
-        OPCODE(0x60,  4, 1, "LD H,B", _ld(vrH, _rB));
-        OPCODE(0x61,  4, 1, "LD H,C", _ld(vrH, _rC));
-        OPCODE(0x62,  4, 1, "LD H,D", _ld(vrH, _rD));
-        OPCODE(0x63,  4, 1, "LD H,E", _ld(vrH, _rE));
-        OPCODE(0x64,  4, 1, "LD H,H", _ld(vrH, vrH));
-        OPCODE(0x65,  4, 1, "LD H,L", _ld(vrH, vrL));
-        OPCODE(0x66,  7, 1, "LD H,(HL)", _ld(vrH, _i8(vAddr)));
-        OPCODE(0x67,  4, 1, "LD H,A", _ld(vrH, _rA));
-        OPCODE(0x68,  4, 1, "LD L,B", _ld(vrL, _rB));
-        OPCODE(0x69,  4, 1, "LD L,C", _ld(vrL, _rC));
-        OPCODE(0x6A,  4, 1, "LD L,D", _ld(vrL, _rD));
-        OPCODE(0x6B,  4, 1, "LD L,E", _ld(vrL, _rE));
-        OPCODE(0x6C,  4, 1, "LD L,H", _ld(vrL, vrH));
-        OPCODE(0x6D,  4, 1, "LD L,L", _ld(vrL, vrL));
-        OPCODE(0x6E,  7, 1, "LD L,(HL)", _ld(vrL, _i8(vAddr)));
-        OPCODE(0x6F,  4, 1, "LD L,A", _ld(vrL, _rA));
-        OPCODE(0x70,  7, 1, "LD (HL),B", _ldmem(vrHL, _rB));
-        OPCODE(0x71,  7, 1, "LD (HL),C", _ldmem(vrHL, _rC));
-        OPCODE(0x72,  7, 1, "LD (HL),D", _ldmem(vrHL, _rD));
-        OPCODE(0x73,  7, 1, "LD (HL),E", _ldmem(vrHL, _rE));
-        OPCODE(0x74,  7, 1, "LD (HL),H", _ldmem(vrHL, vrH));
-        OPCODE(0x75,  7, 1, "LD (HL),L", _ldmem(vrHL, vrL));
+        OPCODE(0x60,  4, 1, "LD H,B", _ld(*vrH, _rB));
+        OPCODE(0x61,  4, 1, "LD H,C", _ld(*vrH, _rC));
+        OPCODE(0x62,  4, 1, "LD H,D", _ld(*vrH, _rD));
+        OPCODE(0x63,  4, 1, "LD H,E", _ld(*vrH, _rE));
+        OPCODE(0x64,  4, 1, "LD H,H", _ld(*vrH, *vrH));
+        OPCODE(0x65,  4, 1, "LD H,L", _ld(*vrH, *vrL));
+        OPCODE(0x66,  7, 1, "LD H,(HL)", _ld(_rH, _iAddr()));
+        OPCODE(0x67,  4, 1, "LD H,A", _ld(*vrH, _rA));
+        OPCODE(0x68,  4, 1, "LD L,B", _ld(*vrL, _rB));
+        OPCODE(0x69,  4, 1, "LD L,C", _ld(*vrL, _rC));
+        OPCODE(0x6A,  4, 1, "LD L,D", _ld(*vrL, _rD));
+        OPCODE(0x6B,  4, 1, "LD L,E", _ld(*vrL, _rE));
+        OPCODE(0x6C,  4, 1, "LD L,H", _ld(*vrL, *vrH));
+        OPCODE(0x6D,  4, 1, "LD L,L", _ld(*vrL, *vrL));
+        OPCODE(0x6E,  7, 1, "LD L,(HL)", _ld(_rL, _iAddr()));
+        OPCODE(0x6F,  4, 1, "LD L,A", _ld(*vrL, _rA));
+        OPCODE(0x70,  7, 1, "LD (HL),B", _ldmem(_dAddr(), _rB));
+        OPCODE(0x71,  7, 1, "LD (HL),C", _ldmem(_dAddr(), _rC));
+        OPCODE(0x72,  7, 1, "LD (HL),D", _ldmem(_dAddr(), _rD));
+        OPCODE(0x73,  7, 1, "LD (HL),E", _ldmem(_dAddr(), _rE));
+        OPCODE(0x74,  7, 1, "LD (HL),H", _ldmem(_dAddr(), _rH));
+        OPCODE(0x75,  7, 1, "LD (HL),L", _ldmem(_dAddr(), _rL));
         OPCODE(0x76,  4, 1, "HALT", _halt());
-        OPCODE(0x77,  7, 1, "LD (HL),A", _ldmem(vrHL, _rA));
+        OPCODE(0x77,  7, 1, "LD (HL),A", _ldmem(_dAddr(), _rA));
         OPCODE(0x78,  4, 1, "LD A,B", _ld(_rA, _rB));
         OPCODE(0x79,  4, 1, "LD A,C", _ld(_rA, _rC));
         OPCODE(0x7A,  4, 1, "LD A,D", _ld(_rA, _rD));
         OPCODE(0x7B,  4, 1, "LD A,E", _ld(_rA, _rE));
-        OPCODE(0x7C,  4, 1, "LD A,H", _ld(_rA, vrH));
-        OPCODE(0x7D,  4, 1, "LD A,L", _ld(_rA, vrL));
-        OPCODE(0x7E,  7, 1, "LD A,(HL)", _ld(_rA, _i8(vAddr)));
+        OPCODE(0x7C,  4, 1, "LD A,H", _ld(_rA, *vrH));
+        OPCODE(0x7D,  4, 1, "LD A,L", _ld(_rA, *vrL));
+        OPCODE(0x7E,  7, 1, "LD A,(HL)", _ld(_rA, _iAddr()));
         OPCODE(0x7F,  4, 1, "LD A,A", _ld(_rA, _rA));
         OPCODE(0x80,  4, 1, "ADD A,B", _add(_rA, _rB));
         OPCODE(0x81,  4, 1, "ADD A,C", _add(_rA, _rC));
         OPCODE(0x82,  4, 1, "ADD A,D", _add(_rA, _rD));
         OPCODE(0x83,  4, 1, "ADD A,E", _add(_rA, _rE));
-        OPCODE(0x84,  4, 1, "ADD A,H", _add(_rA, vrH));
-        OPCODE(0x85,  4, 1, "ADD A,L", _add(_rA, vrL));
-        OPCODE(0x86,  7, 1, "ADD A,(HL)", _add(_rA, _i8(vAddr)));
+        OPCODE(0x84,  4, 1, "ADD A,H", _add(_rA, *vrH));
+        OPCODE(0x85,  4, 1, "ADD A,L", _add(_rA, *vrL));
+        OPCODE(0x86,  7, 1, "ADD A,(HL)", _add(_rA, _iAddr()));
         OPCODE(0x87,  4, 1, "ADD A,A", _add(_rA, _rA));
         OPCODE(0x88,  4, 1, "ADC A,B", _adc(_rA, _rB));
         OPCODE(0x89,  4, 1, "ADC A,C", _adc(_rA, _rC));
         OPCODE(0x8A,  4, 1, "ADC A,D", _adc(_rA, _rD));
         OPCODE(0x8B,  4, 1, "ADC A,E", _adc(_rA, _rE));
-        OPCODE(0x8C,  4, 1, "ADC A,H", _adc(_rA, vrH));
-        OPCODE(0x8D,  4, 1, "ADC A,L", _adc(_rA, vrL));
-        OPCODE(0x8E,  7, 1, "ADC A,(HL)", _adc(_rA, _i8(vAddr)));
+        OPCODE(0x8C,  4, 1, "ADC A,H", _adc(_rA, *vrH));
+        OPCODE(0x8D,  4, 1, "ADC A,L", _adc(_rA, *vrL));
+        OPCODE(0x8E,  7, 1, "ADC A,(HL)", _adc(_rA, _iAddr()));
         OPCODE(0x8F,  4, 1, "ADC A,A", _adc(_rA, _rA));
         OPCODE(0x90,  4, 1, "SUB B", _sub(_rA, _rB));
         OPCODE(0x91,  4, 1, "SUB C", _sub(_rA, _rC));
         OPCODE(0x92,  4, 1, "SUB D", _sub(_rA, _rD));
         OPCODE(0x93,  4, 1, "SUB E", _sub(_rA, _rE));
-        OPCODE(0x94,  4, 1, "SUB H", _sub(_rA, vrH));
-        OPCODE(0x95,  4, 1, "SUB L", _sub(_rA, vrL));
-        OPCODE(0x96,  7, 1, "SUB (HL)", _sub(_rA, _i8(vAddr)));
+        OPCODE(0x94,  4, 1, "SUB H", _sub(_rA, *vrH));
+        OPCODE(0x95,  4, 1, "SUB L", _sub(_rA, *vrL));
+        OPCODE(0x96,  7, 1, "SUB (HL)", _sub(_rA, _iAddr()));
         OPCODE(0x97,  4, 1, "SUB A", _sub(_rA, _rA));
         OPCODE(0x98,  4, 1, "SBC A,B", _sbc(_rA, _rB));
         OPCODE(0x99,  4, 1, "SBC A,C", _sbc(_rA, _rC));
         OPCODE(0x9A,  4, 1, "SBC A,D", _sbc(_rA, _rD));
         OPCODE(0x9B,  4, 1, "SBC A,E", _sbc(_rA, _rE));
-        OPCODE(0x9C,  4, 1, "SBC A,H", _sbc(_rA, vrH));
-        OPCODE(0x9D,  4, 1, "SBC A,L", _sbc(_rA, vrL));
-        OPCODE(0x9E,  7, 1, "SBC A,(HL)", _sbc(_rA, _i8(vAddr)));
+        OPCODE(0x9C,  4, 1, "SBC A,H", _sbc(_rA, *vrH));
+        OPCODE(0x9D,  4, 1, "SBC A,L", _sbc(_rA, *vrL));
+        OPCODE(0x9E,  7, 1, "SBC A,(HL)", _sbc(_rA, _iAddr()));
         OPCODE(0x9F,  4, 1, "SBC A,A", _sbc(_rA, _rA));
         OPCODE(0xA0,  4, 1, "AND B", _and(_rA, _rB));
         OPCODE(0xA1,  4, 1, "AND C", _and(_rA, _rC));
         OPCODE(0xA2,  4, 1, "AND D", _and(_rA, _rD));
         OPCODE(0xA3,  4, 1, "AND E", _and(_rA, _rE));
-        OPCODE(0xA4,  4, 1, "AND H", _and(_rA, vrH));
-        OPCODE(0xA5,  4, 1, "AND L", _and(_rA, vrL));
-        OPCODE(0xA6,  4, 1, "AND (HL)", _and(_rA, _i8(vAddr)));
+        OPCODE(0xA4,  4, 1, "AND H", _and(_rA, *vrH));
+        OPCODE(0xA5,  4, 1, "AND L", _and(_rA, *vrL));
+        OPCODE(0xA6,  4, 1, "AND (HL)", _and(_rA, _iAddr()));
         OPCODE(0xA7,  4, 1, "AND A", _and(_rA, _rA));
         OPCODE(0xA8,  4, 1, "XOR B", _xor(_rA, _rB));
         OPCODE(0xA9,  4, 1, "XOR C", _xor(_rA, _rC));
         OPCODE(0xAA,  4, 1, "XOR D", _xor(_rA, _rD));
         OPCODE(0xAB,  4, 1, "XOR E", _xor(_rA, _rE));
-        OPCODE(0xAC,  4, 1, "XOR H", _xor(_rA, vrH));
-        OPCODE(0xAD,  4, 1, "XOR L", _xor(_rA, vrL));
-        OPCODE(0xAE,  7, 2, "XOR (HL)", _xor(_rA, _i8(vAddr)));
+        OPCODE(0xAC,  4, 1, "XOR H", _xor(_rA, *vrH));
+        OPCODE(0xAD,  4, 1, "XOR L", _xor(_rA, *vrL));
+        OPCODE(0xAE,  7, 2, "XOR (HL)", _xor(_rA, _iAddr()));
         OPCODE(0xAF,  4, 1, "XOR A", _xor(_rA, _rA));
         OPCODE(0xB0,  4, 1, "OR B", _or(_rA, _rB));
         OPCODE(0xB1,  4, 1, "OR C", _or(_rA, _rC));
         OPCODE(0xB2,  4, 1, "OR D", _or(_rA, _rD));
         OPCODE(0xB3,  4, 1, "OR E", _or(_rA, _rE));
-        OPCODE(0xB4,  4, 1, "OR H", _or(_rA, vrH));
-        OPCODE(0xB5,  4, 1, "OR L", _or(_rA, vrL));
-        OPCODE(0xB6,  7, 1, "OR (HL)", _or(_rA, _i8(vAddr)));
+        OPCODE(0xB4,  4, 1, "OR H", _or(_rA, *vrH));
+        OPCODE(0xB5,  4, 1, "OR L", _or(_rA, *vrL));
+        OPCODE(0xB6,  7, 1, "OR (HL)", _or(_rA, _iAddr()));
         OPCODE(0xB7,  4, 1, "OR A", _or(_rA, _rA));
         OPCODE(0xB8,  4, 1, "CP B", _cp(_rA, _rB));
         OPCODE(0xB9,  4, 1, "CP C", _cp(_rA, _rC));
         OPCODE(0xBA,  4, 1, "CP D", _cp(_rA, _rD));
         OPCODE(0xBB,  4, 1, "CP E", _cp(_rA, _rE));
-        OPCODE(0xBC,  4, 1, "CP H", _cp(_rA, vrH));
-        OPCODE(0xBD,  4, 1, "CP L", _cp(_rA, vrL));
-        OPCODE(0xBE,  7, 1, "CP (HL)", _cp(_rA, _i8(vAddr)));
+        OPCODE(0xBC,  4, 1, "CP H", _cp(_rA, *vrH));
+        OPCODE(0xBD,  4, 1, "CP L", _cp(_rA, *vrL));
+        OPCODE(0xBE,  7, 1, "CP (HL)", _cp(_rA, _iAddr()));
         OPCODE(0xBF,  4, 1, "CP A", _cp(_rA, _rA));
         OPCODE(0xC0,  5, 1, "RET NZ", _ret(!_flags.Z));
         OPCODE(0xC1, 10, 1, "POP BC", _pop(_rB, _rC));
@@ -1407,19 +1409,18 @@ Z80Cpu::dispatch(void)
         OPCODE(0xDA, 10, 3, "JP C,a16", _jp(_flags.C, _d16()));
         OPCODE(0xDB, 11, 2, "IN A, d8", _in(_rA, _d8()));
         OPCODE(0xDC, 10, 3, "CALL C, a16", _call(_flags.C, _d16()));
-        OPCODE(0xDD,  0, 1, "PREFIX IX", dispatch_dd());
         OPCODE(0xDE,  7, 2, "SBC A,d8", _sbc(_rA, _d8()));
         OPCODE(0xDF, 11, 1, "RST 18H", _rst(0x18));
         OPCODE(0xE0,  5, 1, "RET PO", _ret(!_flags.V));
-        OPCODE(0xE1, 10, 1, "POP HL", _pop(vrH, vrL));
+        OPCODE(0xE1, 10, 1, "POP HL", _pop(*vrH, *vrL));
         OPCODE(0xE2, 10, 3, "JP PO,a16", _jp(!_flags.V, _d16()));
-        OPCODE(0xE3, 19, 1, "EX (SP),HL", _exi(_rSP, vrH, vrL));
+        OPCODE(0xE3, 19, 1, "EX (SP),HL", _exi(_rSP, *vrH, *vrL));
         OPCODE(0xE4, 10, 3, "CALL PO,a16", _call(!_flags.V, _d16()));
-        OPCODE(0xE5, 16, 1, "PUSH HL", _push(vrH, vrL));
+        OPCODE(0xE5, 16, 1, "PUSH HL", _push(*vrH, *vrL));
         OPCODE(0xE6,  7, 2, "AND d8", _and(_rA, _d8()));
         OPCODE(0xE7, 16, 1, "RST 20H", _rst(0x20));
         OPCODE(0xE8,  5, 1, "RET PE", _ret(_flags.V));
-        OPCODE(0xE9,  4, 1, "JP HL", _jp(true, vrHL));
+        OPCODE(0xE9,  4, 1, "JP HL", _jp(true, *vrHL));
         OPCODE(0xEA,  4, 3, "JP PE,a16", _jp(_flags.V, _d16()));
         OPCODE(0xEB,  4, 1, "EX DE, HL", _ex(_rDE, _rHL));
         OPCODE(0xEC, 10, 3, "CALL PE,a16", _call(_flags.V, _d16()));
@@ -1435,11 +1436,10 @@ Z80Cpu::dispatch(void)
         OPCODE(0xF6,  7, 2, "OR d8", _or(_rA, _d8()));
         OPCODE(0xF7, 11, 1, "RST 30H", _rst(0x30));
         OPCODE(0xF8,  5, 1, "RET M", _ret(_flags.S));
-        OPCODE(0xF9,  6, 1, "LD SP,HL", _ld16(_rSP, vrHL));
+        OPCODE(0xF9,  6, 1, "LD SP,HL", _ld16(_rSP, *vrHL));
         OPCODE(0xFA,  4, 3, "JP M,a16", _jp(_flags.S, _d16()));
         OPCODE(0xFB,  4, 1, "EI", _ei());
         OPCODE(0xFC, 10, 3, "CALL M,a16", _call(_flags.S, _d16()));
-        OPCODE(0xFD,  0, 0, "PREFIX IY", dispatch_fd());
         OPCODE(0xFE,  7, 2, "CP d8", _cp(_rA, _d8()));
         OPCODE(0xFF, 11, 1, "RST 38H", _rst(0x38));
     default:
@@ -1457,10 +1457,29 @@ Z80Cpu::dispatch(void)
 void
 Z80Cpu::dispatch_cb(void)
 {
-    byte_t op = pc_read();
+    byte_t op;
+    byte_t value;
+    addr_t addr;
+    if (_prefix == DDPrefix) {
+        addr = _dIX();
+        op = pc_read();
+        value = _i8(addr);
+        _add_icycles(8);
+    } else if (_prefix == FDPrefix) {
+        addr = _dIY();
+        op = pc_read();
+        value = _i8(addr);
+        _add_icycles(8);
+    } else {
+        addr = _rHL;
+        op = pc_read();
+        if (Reg(op & 0x07) == Reg::HL)
+            value = _i8(addr);
+        else
+            value = fetch(Reg(op & 0x07));
+    }
     int bit = (op & 0x38) >> 3;
     Reg reg = Reg(op & 0x07);
-    byte_t value = fetch(reg);
     byte_t dest = 0;
     if ((op & 0xC0) == 0x00) {
         if ((op & 0xF8) == 0x00) {
@@ -1480,172 +1499,34 @@ Z80Cpu::dispatch_cb(void)
         } else if ((op & 0xF8) == 0x38) {
             _srl(dest, value);
         }
-        store(reg, dest);
-        (reg == Reg::HL) ? _add_icycles(15) : _add_icycles(8);
+        if (Reg::HL == reg) {
+            _add_icycles(15);
+            bus_write(addr, dest);
+        } else {
+            _add_icycles(8);
+            store(reg, dest);
+        }
     } else if ((op & 0xC0) == 0x40) {
         _bit_test(value, bit);
         (reg == Reg::HL) ? _add_icycles(12) : _add_icycles(8);
     } else if ((op & 0xC0) == 0x80) {
         _bit_reset(dest, value, bit);
-        store(reg, dest);
-        (reg == Reg::HL) ? _add_icycles(15) : _add_icycles(8);
-    } else if ((op & 0xC0) == 0xC0) {
-        _bit_set(dest, value, bit);
-        store(reg, dest);
-        (reg == Reg::HL) ? _add_icycles(15) : _add_icycles(8);
-    }
-}
-
-void
-Z80Cpu::dispatch_dd(void)
-{
-    byte_t op = pc_read();
-
-    switch (op) {
-        OPCODE(0x09, 15, 2, "ADD IX, BC", _add16(_rIX, _rBC));
-        OPCODE(0x19, 15, 2, "ADD IX, DE", _add16(_rIX, _rDE));
-        OPCODE(0x21, 14, 4, "LD IX, d16", _ld16(_rIX, _d16()));
-        OPCODE(0x22, 20, 4, "LD (d16), IX", _ld16i(_d16(), _rIX));
-        OPCODE(0x23, 10, 3, "INC IX", _inc16(_rIX));
-        OPCODE(0x24,  8, 2, "INC IXh", _inc(_rIXh));
-        OPCODE(0x25,  8, 2, "DEC IXh", _dec(_rIXh));
-        OPCODE(0x26, 11, 3, "LD IXh, d8", _ld(_rIXh, _d8()));
-        OPCODE(0x29, 15, 2, "ADD IX, IX", _add16(_rIX, _rIX));
-        OPCODE(0x2A, 20, 4, "LD IX, (d16)", _ld16(_rIX, _i16()));
-        OPCODE(0x2B, 10, 3, "DEC IX", _dec16(_rIX));
-        OPCODE(0x2C,  8, 2, "INC IXl", _inc(_rIXl));
-        OPCODE(0x2D,  8, 2, "DEC IXl", _dec(_rIXl));
-        OPCODE(0x2E, 11, 3, "LD IXl, d8", _ld(_rIXl, _d8()));
-        OPCODE(0x34, 23, 2, "INC (IX+d)", _inci(_dIX()));
-        OPCODE(0x35, 23, 2, "DEC (IX+d)", _deci(_dIX()));
-        OPCODE(0x36, 19, 4, "LD (IX+d), n", _ldmem(_dIX(), _d8()));
-        OPCODE(0x39, 15, 2, "ADD IX, SP", _add16(_rIX, _rSP));
-        OPCODE(0x44,  8, 2, "LD B, IXh", _ld(_rB, _rIXh));
-        OPCODE(0x45,  8, 2, "LD B, IXl", _ld(_rB, _rIXl));
-        OPCODE(0x46, 19, 3, "LD B, (IX+d)", _ld(_rB, _iIX()));
-        OPCODE(0x4C,  8, 2, "LD C, IXh", _ld(_rC, _rIXh));
-        OPCODE(0x4D,  8, 2, "LD C, IXl", _ld(_rC, _rIXl));
-        OPCODE(0x4E, 19, 3, "LD C, (IX+d)", _ld(_rC, _iIX()));
-        OPCODE(0x54,  8, 2, "LD D, IXh", _ld(_rD, _rIXh));
-        OPCODE(0x55,  8, 2, "LD D, IXl", _ld(_rD, _rIXl));
-        OPCODE(0x56, 19, 3, "LD D, (IX+d)", _ld(_rD, _iIX()));
-        OPCODE(0x5C,  8, 2, "LD E, IXh", _ld(_rE, _rIXh));
-        OPCODE(0x5D,  8, 2, "LD E, IXl", _ld(_rE, _rIXl));
-        OPCODE(0x5E, 19, 3, "LD E, (IX+d)", _ld(_rE, _iIX()));
-        OPCODE(0x60,  8, 2, "LD IXh, B", _ld(_rIXh, _rB));
-        OPCODE(0x61,  8, 2, "LD IXh, C", _ld(_rIXh, _rC));
-        OPCODE(0x62,  8, 2, "LD IXh, D", _ld(_rIXh, _rD));
-        OPCODE(0x63,  8, 2, "LD IXh, E", _ld(_rIXh, _rE));
-        OPCODE(0x64,  8, 2, "LD IXh, IXh", _ld(_rIXh, _rIXh));
-        OPCODE(0x65,  8, 2, "LD IXh, IXl", _ld(_rIXh, _rIXl));
-        OPCODE(0x66, 19, 3, "LD H, (IX+d)", _ld(_rH, _iIX()));
-        OPCODE(0x67,  8, 2, "LD IXh, A", _ld(_rIXh, _rA));
-        OPCODE(0x68,  8, 2, "LD IXl, B", _ld(_rIXl, _rB));
-        OPCODE(0x69,  8, 2, "LD IXl, C", _ld(_rIXl, _rC));
-        OPCODE(0x6A,  8, 2, "LD IXl, D", _ld(_rIXl, _rD));
-        OPCODE(0x6B,  8, 2, "LD IXl, E", _ld(_rIXl, _rE));
-        OPCODE(0x6C,  8, 2, "LD IXl, IXh", _ld(_rIXl, _rIXh));
-        OPCODE(0x6D,  8, 2, "LD IXl, IXl", _ld(_rIXl, _rIXl));
-        OPCODE(0x6E, 19, 3, "LD L, (IX+d)", _ld(_rL, _iIX()));
-        OPCODE(0x6F,  8, 2, "LD IXl, A", _ld(_rIXl, _rA));
-        OPCODE(0x70, 19, 3, "LD (IX+d), B", _ldmem(_dIX(), _rB));
-        OPCODE(0x71, 19, 3, "LD (IX+d), C", _ldmem(_dIX(), _rC));
-        OPCODE(0x72, 19, 3, "LD (IX+d), D", _ldmem(_dIX(), _rD));
-        OPCODE(0x73, 19, 3, "LD (IX+d), E", _ldmem(_dIX(), _rE));
-        OPCODE(0x74, 19, 3, "LD (IX+d), H", _ldmem(_dIX(), _rH));
-        OPCODE(0x75, 19, 3, "LD (IX+d), L", _ldmem(_dIX(), _rL));
-        OPCODE(0x77, 19, 3, "LD (IX+d), A", _ldmem(_dIX(), _rA));
-        OPCODE(0x7C,  8, 2, "LD A, IXh", _ld(_rA, _rIXh));
-        OPCODE(0x7D,  8, 2, "LD A, IXl", _ld(_rA, _rIXl));
-        OPCODE(0x7E, 19, 3, "LD A, (IX+d)", _ld(_rA, _iIX()));
-        OPCODE(0x84,  8, 2, "ADD A, IXh", _add(_rA, _rIXh));
-        OPCODE(0x85,  8, 2, "ADD A, IXl", _add(_rA, _rIXl));
-        OPCODE(0x86,  8, 3, "ADD A, (IX+d)", _add(_rA, _iIX()));
-        OPCODE(0x8C,  8, 2, "ADC A, IXh", _adc(_rA, _rIXh));
-        OPCODE(0x8D,  8, 2, "ADC A, IXl", _adc(_rA, _rIXl));
-        OPCODE(0x8E,  8, 3, "ADC A, (IX+d)", _adc(_rA, _iIX()));
-        OPCODE(0x94,  8, 2, "SUB A, IXh", _sub(_rA, _rIXh));
-        OPCODE(0x95,  8, 2, "SUB A, IXl", _sub(_rA, _rIXl));
-        OPCODE(0x96,  8, 3, "SUB A, (IX+d)", _sub(_rA, _iIX()));
-        OPCODE(0x9C,  8, 2, "SBC A, IXh", _sbc(_rA, _rIXh));
-        OPCODE(0x9D,  8, 2, "SBC A, IXl", _sbc(_rA, _rIXl));
-        OPCODE(0x9E,  8, 3, "SBC A, (IX+d)", _sbc(_rA, _iIX()));
-        OPCODE(0xA4,  8, 2, "AND A, IXh", _and(_rA, _rIXh));
-        OPCODE(0xA5,  8, 2, "AND A, IXl", _and(_rA, _rIXl));
-        OPCODE(0xA6,  8, 3, "AND A, (IX+d)", _and(_rA, _iIX()));
-        OPCODE(0xAC,  8, 2, "XOR A, IXh", _xor(_rA, _rIXh));
-        OPCODE(0xAD,  8, 2, "XOR A, IXl", _xor(_rA, _rIXl));
-        OPCODE(0xAE,  8, 3, "XOR A, (IX+d)", _xor(_rA, _iIX()));
-        OPCODE(0xB4,  8, 2, "OR A, IXh", _or(_rA, _rIXh));
-        OPCODE(0xB5,  8, 2, "OR A, IXl", _or(_rA, _rIXl));
-        OPCODE(0xB6,  8, 3, "OR A, (IX+d)", _or(_rA, _iIX()));
-        OPCODE(0xBC,  8, 2, "CP A, IXh", _cp(_rA, _rIXh));
-        OPCODE(0xBD,  8, 2, "CP A, IXl", _cp(_rA, _rIXl));
-        OPCODE(0xBE,  8, 3, "CP A, (IX+d)", _cp(_rA, _iIX()));
-        OPCODE(0xCB,  0, 2, "IX BITS", dispatch_dd_cb());
-        OPCODE(0xE1, 14, 2, "POP IX", _pop(_rIXh, _rIXl));
-        OPCODE(0xE3, 23, 2, "EX (SP), IX", _exi(_rSP, _rIXh, _rIXl));
-        OPCODE(0xE5, 15, 2, "PUSH IX", _push(_rIXh, _rIXl));
-        OPCODE(0xE9,  8, 2, "JP IX", _ld16(_rPC, _rIX));
-        OPCODE(0xF9, 10, 2, "LD SP, IX", _ld16(_rSP, _rIX));
-    default:
-        break;
-#if 0
-        {
-            std::stringstream ss;
-            ss << "Unknown opcode:" << Hex(op);
-            ERROR(ss.str());
-        }
-        _state = DeviceState::Fault;
-        throw CpuFault();
-#endif
-    }
-}
-
-void
-Z80Cpu::dispatch_dd_cb(void)
-{
-    addr_t addr = _dIX();
-    byte_t op = pc_read();
-    int bit = (op & 0x38) >> 3;
-    byte_t value = _i8(addr);
-    byte_t dest = 0;
-    if ((op & 0xC0) == 0x00) {
-        if ((op & 0xF8) == 0x00) {
-            _rlc(dest, value);
-        } else if ((op & 0xF8) == 0x08) {
-            _rrc(dest, value);
-        } else if ((op & 0xF8) == 0x10) {
-            _rl(dest, value);
-        } else if ((op & 0xF8) == 0x18) {
-            _rr(dest, value);
-        } else if ((op & 0xF8) == 0x20) {
-            _sla(dest, value);
-        } else if ((op & 0xF8) == 0x28) {
-            _sra(dest, value);
-        } else if ((op & 0xF8) == 0x30) {
-            _sll(dest, value);
-        } else if ((op & 0xF8) == 0x38) {
-            _srl(dest, value);
-        }
-        if (Reg::HL == Reg(op & 0x7))
+        if (Reg::HL == reg) {
+            _add_icycles(15);
             bus_write(addr, dest);
-        else
-            store(Reg(op & 0x7), dest);
-        _add_icycles(23);
-    } else if ((op & 0xC0) == 0x40) {
-        _bit_test(value, bit);
-        _flags.Y = bit_isset(addr, 13);
-        _flags.X = bit_isset(addr, 11);
-        _add_icycles(20);
-    } else if ((op & 0xC0) == 0x80) {
-        _bit_reset(dest, value, bit);
-        _ldmem(addr, dest);
-        _add_icycles(23);
+        } else {
+            _add_icycles(8);
+            store(reg, dest);
+        }
     } else if ((op & 0xC0) == 0xC0) {
         _bit_set(dest, value, bit);
-        _ldmem(addr, dest);
-        _add_icycles(23);
+        if (Reg::HL == reg) {
+            _add_icycles(15);
+            bus_write(addr, dest);
+        } else {
+            _add_icycles(8);
+            store(reg, dest);
+        }
     }
 }
 
@@ -1724,159 +1605,6 @@ Z80Cpu::dispatch_ed(void)
     default:
         _state = DeviceState::Fault;
         throw CpuOpcodeFault("z80", op, pc);
-    }
-}
-
-void
-Z80Cpu::dispatch_fd(void)
-{
-    byte_t op = pc_read();
-
-    switch (op) {
-        OPCODE(0x09, 15, 2, "ADD IY, BC", _add16(_rIY, _rBC));
-        OPCODE(0x19, 15, 2, "ADD IY, DE", _add16(_rIY, _rDE));
-        OPCODE(0x21, 14, 4, "LD IY, d16", _ld16(_rIY, _d16()));
-        OPCODE(0x22, 20, 4, "LD (d16), IY", _ld16i(_d16(), _rIY));
-        OPCODE(0x23, 10, 3, "INC IY", _inc16(_rIY));
-        OPCODE(0x24,  8, 2, "INC IYh", _inc(_rIYh));
-        OPCODE(0x25,  8, 2, "DEC IYh", _dec(_rIYh));
-        OPCODE(0x26, 11, 3, "LD IYh, d8", _ld(_rIYh, _d8()));
-        OPCODE(0x29, 15, 2, "ADD IY, IY", _add16(_rIY, _rIY));
-        OPCODE(0x2A, 20, 4, "LD IY, (d16)", _ld16(_rIY, _i16()));
-        OPCODE(0x2B, 10, 3, "DEC IY", _dec16(_rIY));
-        OPCODE(0x2C,  8, 2, "INC IYl", _inc(_rIYl));
-        OPCODE(0x2D,  8, 2, "DEC IYl", _dec(_rIYl));
-        OPCODE(0x2E, 11, 3, "LD IYl, d8", _ld(_rIYl, _d8()));
-        OPCODE(0x34, 23, 2, "INC (IY+d)", _inci(_dIY()));
-        OPCODE(0x35, 23, 2, "DEC (IY+d)", _deci(_dIY()));
-        OPCODE(0x36, 19, 4, "LD (IY+d), n", _ldmem(_dIY(), _d8()));
-        OPCODE(0x39, 15, 2, "ADD IY, SP", _add16(_rIY, _rSP));
-        OPCODE(0x44,  8, 2, "LD B, IYh", _ld(_rB, _rIYh));
-        OPCODE(0x45,  8, 2, "LD B, IYl", _ld(_rB, _rIYl));
-        OPCODE(0x46, 19, 3, "LD B, (IY+d)", _ld(_rB, _iIY()));
-        OPCODE(0x4C,  8, 2, "LD C, IYh", _ld(_rC, _rIYh));
-        OPCODE(0x4D,  8, 2, "LD C, IYl", _ld(_rC, _rIYl));
-        OPCODE(0x4E, 19, 3, "LD C, (IY+d)", _ld(_rC, _iIY()));
-        OPCODE(0x54,  8, 2, "LD D, IYh", _ld(_rD, _rIYh));
-        OPCODE(0x55,  8, 2, "LD D, IYl", _ld(_rD, _rIYl));
-        OPCODE(0x56, 19, 3, "LD D, (IY+d)", _ld(_rD, _iIY()));
-        OPCODE(0x5C,  8, 2, "LD E, IYh", _ld(_rE, _rIYh));
-        OPCODE(0x5D,  8, 2, "LD E, IYl", _ld(_rE, _rIYl));
-        OPCODE(0x5E, 19, 3, "LD E, (IY+d)", _ld(_rE, _iIY()));
-        OPCODE(0x60,  8, 2, "LD IYh, B", _ld(_rIYh, _rB));
-        OPCODE(0x61,  8, 2, "LD IYh, C", _ld(_rIYh, _rC));
-        OPCODE(0x62,  8, 2, "LD IYh, D", _ld(_rIYh, _rD));
-        OPCODE(0x63,  8, 2, "LD IYh, E", _ld(_rIYh, _rE));
-        OPCODE(0x64,  8, 2, "LD IYh, IYh", _ld(_rIYh, _rIYh));
-        OPCODE(0x65,  8, 2, "LD IYh, IYl", _ld(_rIYh, _rIYl));
-        OPCODE(0x66, 19, 3, "LD H, (IY+d)", _ld(_rH, _iIY()));
-        OPCODE(0x67,  8, 2, "LD IYh, A", _ld(_rIYh, _rA));
-        OPCODE(0x68,  8, 2, "LD IYl, B", _ld(_rIYl, _rB));
-        OPCODE(0x69,  8, 2, "LD IYl, C", _ld(_rIYl, _rC));
-        OPCODE(0x6A,  8, 2, "LD IYl, D", _ld(_rIYl, _rD));
-        OPCODE(0x6B,  8, 2, "LD IYl, E", _ld(_rIYl, _rE));
-        OPCODE(0x6C,  8, 2, "LD IYl, IYh", _ld(_rIYl, _rIYh));
-        OPCODE(0x6D,  8, 2, "LD IYl, IYl", _ld(_rIYl, _rIYl));
-        OPCODE(0x6E, 19, 3, "LD L, (IY+d)", _ld(_rL, _iIY()));
-        OPCODE(0x6F,  8, 2, "LD IYl, A", _ld(_rIYl, _rA));
-        OPCODE(0x70, 19, 3, "LD (IY+d), B", _ldmem(_dIY(), _rB));
-        OPCODE(0x71, 19, 3, "LD (IY+d), C", _ldmem(_dIY(), _rC));
-        OPCODE(0x72, 19, 3, "LD (IY+d), D", _ldmem(_dIY(), _rD));
-        OPCODE(0x73, 19, 3, "LD (IY+d), E", _ldmem(_dIY(), _rE));
-        OPCODE(0x74, 19, 3, "LD (IY+d), H", _ldmem(_dIY(), _rH));
-        OPCODE(0x75, 19, 3, "LD (IY+d), L", _ldmem(_dIY(), _rL));
-        OPCODE(0x77, 19, 3, "LD (IY+d), A", _ldmem(_dIY(), _rA));
-        OPCODE(0x7C,  8, 2, "LD A, IYh", _ld(_rA, _rIYh));
-        OPCODE(0x7D,  8, 2, "LD A, IYl", _ld(_rA, _rIYl));
-        OPCODE(0x7E, 19, 3, "LD A, (IY+d)", _ld(_rA, _iIY()));
-        OPCODE(0x84,  8, 2, "ADD A, IYh", _add(_rA, _rIYh));
-        OPCODE(0x85,  8, 2, "ADD A, IYl", _add(_rA, _rIYl));
-        OPCODE(0x86,  8, 3, "ADD A, (IY+d)", _add(_rA, _iIY()));
-        OPCODE(0x8C,  8, 2, "ADC A, IYh", _adc(_rA, _rIYh));
-        OPCODE(0x8D,  8, 2, "ADC A, IYl", _adc(_rA, _rIYl));
-        OPCODE(0x8E,  8, 3, "ADC A, (IY+d)", _adc(_rA, _iIY()));
-        OPCODE(0x94,  8, 2, "SUB A, IYh", _sub(_rA, _rIYh));
-        OPCODE(0x95,  8, 2, "SUB A, IYl", _sub(_rA, _rIYl));
-        OPCODE(0x96,  8, 3, "SUB A, (IY+d)", _sub(_rA, _iIY()));
-        OPCODE(0x9C,  8, 2, "SBC A, IYh", _sbc(_rA, _rIYh));
-        OPCODE(0x9D,  8, 2, "SBC A, IYl", _sbc(_rA, _rIYl));
-        OPCODE(0x9E,  8, 3, "SBC A, (IY+d)", _sbc(_rA, _iIY()));
-        OPCODE(0xA4,  8, 2, "AND A, IYh", _and(_rA, _rIYh));
-        OPCODE(0xA5,  8, 2, "AND A, IYl", _and(_rA, _rIYl));
-        OPCODE(0xA6,  8, 3, "AND A, (IY+d)", _and(_rA, _iIY()));
-        OPCODE(0xAC,  8, 2, "XOR A, IYh", _xor(_rA, _rIYh));
-        OPCODE(0xAD,  8, 2, "XOR A, IYl", _xor(_rA, _rIYl));
-        OPCODE(0xAE,  8, 3, "XOR A, (IY+d)", _xor(_rA, _iIY()));
-        OPCODE(0xB4,  8, 2, "OR A, IYh", _or(_rA, _rIYh));
-        OPCODE(0xB5,  8, 2, "OR A, IYl", _or(_rA, _rIYl));
-        OPCODE(0xB6,  8, 3, "OR A, (IY+d)", _or(_rA, _iIY()));
-        OPCODE(0xBC,  8, 2, "CP A, IYh", _cp(_rA, _rIYh));
-        OPCODE(0xBD,  8, 2, "CP A, IYl", _cp(_rA, _rIYl));
-        OPCODE(0xBE,  8, 3, "CP A, (IY+d)", _cp(_rA, _iIY()));
-        OPCODE(0xCB,  0, 2, "IY BITS", dispatch_fd_cb());
-        OPCODE(0xE1, 14, 2, "POP IY", _pop(_rIYh, _rIYl));
-        OPCODE(0xE3, 23, 2, "EX (SP), IY", _exi(_rSP, _rIYh, _rIYl));
-        OPCODE(0xE5, 15, 2, "PUSH IY", _push(_rIYh, _rIYl));
-        OPCODE(0xE9,  8, 2, "JP IY", _ld16(_rPC, _rIY));
-        OPCODE(0xF9, 10, 2, "LD SP, IY", _ld16(_rSP, _rIY));
-    default:
-        break;
-#if 0
-        {
-            std::stringstream ss;
-            ss << "Unknown opcode:" << Hex(op);
-            ERROR(ss.str());
-        }
-        _state = DeviceState::Fault;
-        throw CpuFault();
-#endif
-    }
-}
-
-void
-Z80Cpu::dispatch_fd_cb(void)
-{
-    addr_t addr = _dIY();
-    byte_t op = pc_read();
-    int bit = (op & 0x38) >> 3;
-    byte_t value = _i8(addr);
-    byte_t dest = 0;
-    if ((op & 0xC0) == 0x00) {
-        if ((op & 0xF8) == 0x00) {
-            _rlc(dest, value);
-        } else if ((op & 0xF8) == 0x08) {
-            _rrc(dest, value);
-        } else if ((op & 0xF8) == 0x10) {
-            _rl(dest, value);
-        } else if ((op & 0xF8) == 0x18) {
-            _rr(dest, value);
-        } else if ((op & 0xF8) == 0x20) {
-            _sla(dest, value);
-        } else if ((op & 0xF8) == 0x28) {
-            _sra(dest, value);
-        } else if ((op & 0xF8) == 0x30) {
-            _sll(dest, value);
-        } else if ((op & 0xF8) == 0x38) {
-            _srl(dest, value);
-        }
-        if (Reg::HL == Reg(op & 0x7))
-            bus_write(addr, dest);
-        else
-            store(Reg(op & 0x7), dest);
-        _add_icycles(23);
-    } else if ((op & 0xC0) == 0x40) {
-        _bit_test(value, bit);
-        _flags.Y = bit_isset(addr, 13);
-        _flags.X = bit_isset(addr, 11);
-        _add_icycles(20);
-    } else if ((op & 0xC0) == 0x80) {
-        _bit_reset(dest, value, bit);
-        _ldmem(addr, dest);
-        _add_icycles(23);
-    } else if ((op & 0xC0) == 0xC0) {
-        _bit_set(dest, value, bit);
-        _ldmem(addr, dest);
-        _add_icycles(23);
     }
 }
 
