@@ -36,11 +36,11 @@ RomDefinition galaga_rom(void) {
     rom.regions.push_back(RomRegion("maincpu", {
         "gg1_1b.3p", "gg1_2b.3m", "gg1_3.2m", "gg1_4b.2l"
     }));
-    rom.regions.push_back(RomRegion("subcpu", { "gg1_5b.3f" }));
-    rom.regions.push_back(RomRegion("sndcpu", { "gg1_7b.2c" }));
-    rom.regions.push_back(RomRegion("palette", {
-        "prom-5.5n", "prom-4.2n", "prom-3.1c" }));
-    rom.regions.push_back(RomRegion("tiles", { "gg1_9.4l" }));
+    rom.regions.push_back(RomRegion("subcpu",  { "gg1_5b.3f" }));
+    rom.regions.push_back(RomRegion("sndcpu",  { "gg1_7b.2c" }));
+    rom.regions.push_back(RomRegion("prom1",   { "prom-5.5n" }));
+    rom.regions.push_back(RomRegion("prom2",   { "prom-4.2n", "prom-3.1c" }));
+    rom.regions.push_back(RomRegion("tiles",   { "gg1_9.4l" }));
     rom.regions.push_back(RomRegion("sprites", { "gg1_11.4d", "gg1_10.4f" }));
     return rom;
 };
@@ -351,17 +351,15 @@ Galaga::init_sprite(GfxObject<16, 16> *s, byte_t *b)
     }
 }
 
-void
-Galaga::init_gfx(RomSet *romset)
+/**
+ * Color Palette is defined as:
+ * RRRGGGBB
+ */
+static RGBColor
+convert(uint8_t *b_ptr)
 {
-    /**
-     * Color Palette is defined as:
-     * RRRGGGBB
-     */
-    Rom * palette_rom = romset->rom("palette");
-    for (unsigned i = 0; i < _palette.size; i++) {
-        byte_t b = palette_rom->read8(i);
-        _palette[i] = RGBColor(
+    uint8_t b = *b_ptr;
+    return RGBColor(
             0x21 * bit_isset(b, 0) +
             0x47 * bit_isset(b, 1) +
             0x97 * bit_isset(b, 2),
@@ -371,16 +369,22 @@ Galaga::init_gfx(RomSet *romset)
             0x21 * 0 +
             0x47 * bit_isset(b, 6) +
             0x97 * bit_isset(b, 7));
-    }
+}
+
+
+void
+Galaga::init_gfx(RomSet *romset)
+{
+    m_colors.init(romset->rom("prom1")->direct(0x00), convert);
 
     /* XXX: Characters Palette */
-    byte_t * char_rom = romset->rom("palette")->direct(0x20);
+    byte_t * char_rom = romset->rom("prom2")->direct(0x00);
     for (unsigned i = 0; i < 64*4; i+=4) {
         auto *palette = &_tile_palette[i/4];
-        (*palette)[0] = _palette[(char_rom[i+0] & 0x0f) + 0x10];
-        (*palette)[1] = _palette[(char_rom[i+1] & 0x0f) + 0x10];
-        (*palette)[2] = _palette[(char_rom[i+2] & 0x0f) + 0x10];
-        (*palette)[3] = _palette[(char_rom[i+3] & 0x0f) + 0x10];
+        (*palette)[0] = m_colors[(char_rom[i+0] & 0x0f) + 0x10];
+        (*palette)[1] = m_colors[(char_rom[i+1] & 0x0f) + 0x10];
+        (*palette)[2] = m_colors[(char_rom[i+2] & 0x0f) + 0x10];
+        (*palette)[3] = m_colors[(char_rom[i+3] & 0x0f) + 0x10];
     }
 
     /* Decode characters */
@@ -392,13 +396,13 @@ Galaga::init_gfx(RomSet *romset)
     }
 
     /* XXX: Sprites Palette */
-    byte_t * sprite_rom = romset->rom("palette")->direct(0x0120);
+    byte_t * sprite_rom = romset->rom("prom2")->direct(0x0100);
     for (unsigned i = 0; i < 64*4; i+=4) {
         auto *palette = &_sprite_palette[i/4];
-        (*palette)[0] = _palette[sprite_rom[i+0] & 0x0f];
-        (*palette)[1] = _palette[sprite_rom[i+1] & 0x0f];
-        (*palette)[2] = _palette[sprite_rom[i+2] & 0x0f];
-        (*palette)[3] = _palette[sprite_rom[i+3] & 0x0f];
+        (*palette)[0] = m_colors[sprite_rom[i+0] & 0x0f];
+        (*palette)[1] = m_colors[sprite_rom[i+1] & 0x0f];
+        (*palette)[2] = m_colors[sprite_rom[i+2] & 0x0f];
+        (*palette)[3] = m_colors[sprite_rom[i+3] & 0x0f];
     }
 
     /* Decode sprites */
@@ -457,7 +461,7 @@ Galaga::draw_sprites(void)
                 draw_gfx(screen(), palette,
                     sprite + (y ^ (sizey & flipy)) * 2 + (x ^ (sizex & flipx)),
                     sx + (x * 16), sy + (y * 16),
-                    flipx, flipy, _palette[0xf]);
+                    flipx, flipy, m_colors[0xf]);
             }
         }
     }
@@ -485,7 +489,7 @@ Galaga::draw_bg(void)
             int sx = tx * tile->w;
             int sy = ty * tile->h;
             draw_gfx(screen(), palette, tile, sx, sy,
-                     false, false, _palette[0x1f]);
+                     false, false, m_colors[0x1f]);
         }
     }
 }

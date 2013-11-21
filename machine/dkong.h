@@ -24,67 +24,83 @@
  */
 
 #include "emu/emu.h"
-#include "emu/gfx.h"
 
-#include "machine/namco51.h"
-#include "machine/namco06.h"
 #include "cpu/z80/z80.h"
+#include "machine/i8257.h"
 
 using namespace EMU;
 using namespace Z80;
 
 namespace Driver {
 
-class Galaga: public Machine
+class DonkeyKongGfx: public GfxDevice
 {
 public:
-    Galaga(const std::string &rom);
-    virtual ~Galaga(void);
+    DonkeyKongGfx(Machine *machine, const std::string &name, unsigned hertz, AddressBus16 *bus);
+    ~DonkeyKongGfx(void);
+
+    void init(RomSet *romset);
+
+    void vmem_write(offset_t offset, uint8_t value);
+    uint8_t vmem_read(offset_t offset);
+    void palette_write(offset_t offset, uint8_t value);
+    void nmi_mask_write(uint8_t value);
 
     virtual void execute(Time interval);
 
 private:
 
-    byte_t dips_read(offset_t offset);
-    void latch_write(offset_t offset, byte_t value);
-
-    void init_bus(void);
-    void init_switches(void);
-    void init_controls(void);
-
-    void init_gfx(RomSet *romset);
     void init_sprite(GfxObject<16, 16> *obj, byte_t *b);
     void init_tile(GfxObject<8, 8> *obj, byte_t *b);
 
-    void draw_bg(void);
-    void draw_sprites(void);
-    void draw_screen(void);
+    void draw_screen(RasterScreen *screen);
+    void draw_bg(RasterScreen *screen);
+    void draw_sprites(RasterScreen *screen);
 
-    Ram vram, ram1, ram2, ram3;
-    Z80Cpu_ptr _main_cpu;
-    Z80Cpu_ptr _sub_cpu;
-    Z80Cpu_ptr _snd_cpu;
-    Namco51_ptr _namco51;
-    Namco06_ptr _namco06;
+    Ram vram;
 
-    AddressBus16_ptr _bus;
+    AddressBus16 *_bus;
+
+    /* Lines */
+    bool _nmi_mask;
 
     /* Graphics simulation */
     int _scanline;
     Cycles _avail;
     unsigned _hertz;
 
-    /* Interrupt lines */
-    bool _main_irq;
-    bool _sub_irq;
-    bool _snd_nmi;
-
     /* Graphic Data */
-    ColorMap<32, RGBColor> m_colors;
-    GfxObject<8,8> _tiles[128];
-    ColorPalette<4> _tile_palette[64];
+    byte_t _palette_select;
+    std::array<uint8_t, 256> _palette_index;
+    std::array<ColorPalette<4>, 64> _palette;
+    GfxObject<8,8> _tiles[256];
     GfxObject<16,16> _sprites[128];
-    ColorPalette<4> _sprite_palette[64];
+};
+
+typedef std::unique_ptr<DonkeyKongGfx> DonkeyKongGfx_ptr;
+
+class DonkeyKong: public Machine
+{
+public:
+    DonkeyKong(const std::string &rom);
+    virtual ~DonkeyKong(void);
+
+private:
+    void latch_write(offset_t offset, byte_t value);
+    byte_t latch_read(offset_t offset);
+
+    void init_bus(void);
+    void init_switches(void);
+    void init_controls(void);
+
+    Ram ram;
+    Z80Cpu_ptr _main_cpu;
+    I8257_ptr _i8257;
+    DonkeyKongGfx_ptr _gfx;
+
+    AddressBus16_ptr _bus;
+
+    unsigned _hertz;
 };
 
 };

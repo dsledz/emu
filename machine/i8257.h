@@ -22,69 +22,53 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#pragma once
 
 #include "emu/emu.h"
-#include "emu/gfx.h"
-
-#include "machine/namco51.h"
-#include "machine/namco06.h"
-#include "cpu/z80/z80.h"
 
 using namespace EMU;
-using namespace Z80;
 
-namespace Driver {
+/* XXX: This seems wrong */
+namespace EMU {
 
-class Galaga: public Machine
+class I8257: public CpuDevice
 {
 public:
-    Galaga(const std::string &rom);
-    virtual ~Galaga(void);
+    I8257(Machine *machine, const std::string &name, unsigned hertz, AddressBus16 *bus);
+    virtual ~I8257(void);
 
     virtual void execute(Time interval);
 
+    void write_cb(offset_t offset, byte_t value);
+    byte_t read_cb(offset_t offset);
+
+    void dma(void);
+
 private:
+    struct Channel {
+        reg16_t    address;
+        reg16_t    count;
+    } _channels[4];
 
-    byte_t dips_read(offset_t offset);
-    void latch_write(offset_t offset, byte_t value);
+    union {
+        struct {
+            uint8_t autoload:1;
+            uint8_t tcstop:1;
+            uint8_t extwr:1;
+            uint8_t rprio:1;
+            uint8_t dma3:1;
+            uint8_t dma2:1;
+            uint8_t dma1:1;
+            uint8_t dma0:1;
+        } mode;
+        uint8_t val;
+    } _mode;
 
-    void init_bus(void);
-    void init_switches(void);
-    void init_controls(void);
-
-    void init_gfx(RomSet *romset);
-    void init_sprite(GfxObject<16, 16> *obj, byte_t *b);
-    void init_tile(GfxObject<8, 8> *obj, byte_t *b);
-
-    void draw_bg(void);
-    void draw_sprites(void);
-    void draw_screen(void);
-
-    Ram vram, ram1, ram2, ram3;
-    Z80Cpu_ptr _main_cpu;
-    Z80Cpu_ptr _sub_cpu;
-    Z80Cpu_ptr _snd_cpu;
-    Namco51_ptr _namco51;
-    Namco06_ptr _namco06;
-
-    AddressBus16_ptr _bus;
-
-    /* Graphics simulation */
-    int _scanline;
-    Cycles _avail;
-    unsigned _hertz;
-
-    /* Interrupt lines */
-    bool _main_irq;
-    bool _sub_irq;
-    bool _snd_nmi;
-
-    /* Graphic Data */
-    ColorMap<32, RGBColor> m_colors;
-    GfxObject<8,8> _tiles[128];
-    ColorPalette<4> _tile_palette[64];
-    GfxObject<16,16> _sprites[128];
-    ColorPalette<4> _sprite_palette[64];
+    int _last_channel;
+    int _flip_flop;
+    byte_t _status;
+    AddressBus16 *_bus;
 };
 
+typedef std::unique_ptr<I8257> I8257_ptr;
 };

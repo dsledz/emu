@@ -102,5 +102,18 @@ protected:
     Cycles _avail;
 };
 
+class GfxDevice: public Device {
+public:
+    GfxDevice(Machine *machine, const std::string &name, unsigned hertz):
+        Device(machine, name), _hertz(hertz), _avail(0) { }
+    virtual ~GfxDevice(void) { }
+
+    virtual void execute(Time period) = 0;
+
+protected:
+    unsigned _hertz;
+    Cycles _avail;
+};
+
 };
 

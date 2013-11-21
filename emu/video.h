@@ -35,12 +35,17 @@ namespace EMU {
 struct RGBColor {
     RGBColor(void) = default;
     ~RGBColor(void) = default;
+    RGBColor(const RGBColor &rhs): v(rhs.v) { }
     RGBColor(unsigned r, unsigned g, unsigned b, unsigned a=0xff):
         _r(r), _g(g), _b(b), _a(a) { }
     RGBColor(uint32_t c): v(c) { }
 
     bool operator !=(const RGBColor &rhs) const { return v != rhs.v; };
     bool operator ==(const RGBColor &rhs) const { return v == rhs.v; };
+    RGBColor & operator=(const RGBColor &rhs) {
+        this->v = rhs.v;
+        return *this;
+    }
     union {
         struct { uint8_t _r; uint8_t _g; uint8_t _b; uint8_t _a; };
         uint32_t v;
@@ -53,6 +58,9 @@ static inline RGBColor operator *(const RGBColor &rhs, unsigned i)
     res._r *= i; res._g *= i; res._b *= i;
     return res;
 }
+
+#define RGB_3B(a,b,c) (0x21*c+0x47*b+0x97*a)
+#define RGB_4B(a,b,c,d) (0x14*d+0x24*c+0x43*b+0x83*a)
 
 static const RGBColor trans(0x00, 0x00, 0x00, 0x00);
 

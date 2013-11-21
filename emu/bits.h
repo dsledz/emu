@@ -37,6 +37,7 @@
 #include <list>
 #include <memory>
 #include <cassert>
+#include <array>
 
 #define a_unused __attribute((unused))
 

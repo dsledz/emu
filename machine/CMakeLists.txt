@@ -1,8 +1,11 @@
 add_library(machine
+    dkong.cc
+    dkonggfx.cc
     galaga.cc
     namco51.cc
     namco06.cc
     pacman.cc
+    i8257.cc
     gb.cc
     gbgfx.cc
     gbmbc.cc
