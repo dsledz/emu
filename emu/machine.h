@@ -52,10 +52,9 @@ struct KeyError: public EmuException {
  * Each machine consists of:
  * Devices
  * Dipswitches
- * Timers
  * IOPorts
  */
-class Machine: public Clockable {
+class Machine {
 public:
     /**
      * Initialize the machine with a master clock rate of @a hertz
@@ -63,8 +62,8 @@ public:
     Machine(void);
     virtual ~Machine(void);
 
-    //virtual void power(void);
-    virtual void execute(void);
+    void poweron(void);
+    void poweroff(void);
 
     virtual void load_rom(const std::string &rom);
 
@@ -75,19 +74,8 @@ public:
     void run(void);
     void set_screen(RasterScreen *screen);
 
-    /**
-     * Add a device to the machine.  This device is synchronized
-     * by the machine, ticking based on @a freq
-     */
     void add_device(Device *dev);
     void remove_device(Device *dev);
-
-    /**
-     * Add a timer. The timer will fire at the start of the next tick after
-     * the deadline.
-     */
-    TimerItem_ptr add_timer(Time timeout, callback_t callback, bool periodic);
-    void remove_timer(TimerItem_ptr timer);
 
     /**
      * Declare an IO port with the name of @a name.
@@ -121,21 +109,31 @@ public:
         RasterScreen::Rotation rotation = RasterScreen::ROT0);
     RasterScreen *screen(void);
 
+    /**
+     * Temp
+     */
+    void set_time(EmuTime now) {
+        m_sim_clock.set(now);
+    }
+
+protected:
+
+    void log(LogLevel level, const std::string &fmt, ...);
+
 private:
-
     Device *dev(const std::string &name);
-    void schedule_timer(TimerItem_ptr timer);
 
-    InputMap _input;
-    std::list<Device *> _devs;
-    TimerQueue _timers;
-    std::map<std::string, dipswitch_ptr> _switches;
-    std::map<std::string, IOPort> _ports;
+    EmuScheduler m_scheduler;
+    EmuSimClock m_sim_clock;
+    InputMap m_input;
+    std::list<Device *> m_devs;
+    std::map<std::string, dipswitch_ptr> m_switches;
+    std::map<std::string, IOPort> m_ports;
 
-    RasterScreen *_screen;
-    short _screen_width;
-    short _screen_height;
-    RasterScreen::Rotation _screen_rot;
+    RasterScreen *m_screen;
+    short m_screen_width;
+    short m_screen_height;
+    RasterScreen::Rotation m_screen_rot;
 };
 
 typedef std::unique_ptr<Machine> machine_ptr;
@@ -177,7 +175,7 @@ public:
     machine_ptr load(Options *opts);
 
 private:
-    std::list<MachineDefinition *> _machines;
+    std::list<MachineDefinition *> m_machines;
 };
 
 MachineLoader * loader(void);

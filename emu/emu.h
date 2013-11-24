@@ -33,6 +33,7 @@
 #include "emu/state.h"
 #include "emu/device.h"
 #include "emu/io.h"
+#include "emu/bus.h"
 #include "emu/ram.h"
 #include "emu/rom.h"
 #include "emu/video.h"

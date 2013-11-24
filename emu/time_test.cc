@@ -30,6 +30,7 @@
 
 using namespace EMU;
 
+#if 0
 class TestClockable: public Clockable {
 public:
     TestClockable(void): Clockable("test")
@@ -100,6 +101,32 @@ TEST(ClockableTest, real_time)
     EXPECT_GT(500 + 10, test.value);
 }
 
+TEST(ClockableTest, task)
+{
+    TestClockable test;
+
+    EmuScheduler sched;
+    EmuTask_ptr task = test.create_task();
+
+    sched.add(task);
+
+    EXPECT_EQ(0, test.value);
+
+    Time total = Time(sec(0));
+    RealTimeClock clock;
+    while (total < Time(msec(100))) {
+        Time interval = clock.get_delta();
+        test.add_time(interval);
+        struct timespec t = { 0, 1000000 };
+        nanosleep(&t, NULL);
+        total += interval;
+    }
+
+    test.wait_state(Clockable::State::Waiting);
+    test.set_state(Clockable::State::Stopped);
+    EXPECT_GT(500 + 10, test.value);
+}
+#endif
 
 TEST(TimerQueueTest, periodic)
 {

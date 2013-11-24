@@ -169,7 +169,8 @@ struct M6809Opcode {
     std::function<void (void)> operation;
 };
 
-class M6809Cpu: public EMU::Cpu<AddressBus16> {
+class M6809Cpu: public EMU::Cpu<AddressBus16>
+{
 public:
     M6809Cpu(Machine *machine, const std::string &name, unsigned hertz,
              AddressBus16 *bus);
@@ -186,7 +187,7 @@ public:
         return &_state;
     }
 
-    virtual Cycles step(void);
+    virtual void step(void);
     virtual std::string dasm(addr_type addr);
 
 private:
@@ -229,11 +230,11 @@ private:
     }
 
     ADDR(Extended) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     ADDR(Relative) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     ADDR(Indexed) {
@@ -267,7 +268,7 @@ private:
             case 15: /* [address] + one byte*/
                 break;
             default:
-                throw DeviceFault(_name, "Invalid Instruction");
+                throw DeviceFault(name(), "Invalid Instruction");
             }
 
         } else {
@@ -280,7 +281,7 @@ private:
 
     /* Instructions */
     OP(ABX) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(ADCA) {
@@ -333,11 +334,11 @@ private:
     }
 
     OP(ANDCC) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(ASL) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(ASLA) {
@@ -353,7 +354,7 @@ private:
     }
 
     OP(ASR) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(ASRA) {
@@ -474,7 +475,7 @@ private:
     }
 
     OP(CLR) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(CLRA) {
@@ -502,11 +503,11 @@ private:
     }
 
     OP(CMPX) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(COM) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(COMA) {
@@ -522,15 +523,15 @@ private:
     }
 
     OP(CWAI) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(DAA) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(DEC) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(DECA) {
@@ -560,11 +561,11 @@ private:
     }
 
     OP(EXG) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(INC) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(INCA) {
@@ -580,19 +581,19 @@ private:
     }
 
     OP(JMP) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(JSR) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(LBRA) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(LBSR) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(LDA) {
@@ -610,35 +611,35 @@ private:
     }
 
     OP(LDD) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(LDX) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(LDU) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(LEAX) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(LEAY) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(LEAS) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(LEAU) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(LSL) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(LSLA) {
@@ -654,7 +655,7 @@ private:
     }
 
     OP(LSR) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(LSRA) {
@@ -676,7 +677,7 @@ private:
     }
 
     OP(NEG) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(NEGA) {
@@ -707,7 +708,7 @@ private:
     }
 
     OP(ORCC) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(PSHS) {
@@ -731,11 +732,11 @@ private:
     }
 
     OP(RESET) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(ROL) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(ROLA) {
@@ -751,7 +752,7 @@ private:
     }
 
     OP(ROR) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(RORA) {
@@ -778,7 +779,7 @@ private:
     }
 
     OP(RTS) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(SBCA) {
@@ -796,7 +797,7 @@ private:
     }
 
     OP(SEX) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(STA) {
@@ -808,15 +809,15 @@ private:
     }
 
     OP(STD) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(STX) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(STU) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(SUBA) {
@@ -832,27 +833,27 @@ private:
     }
 
     OP(SUBD) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(SWI) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(SWI2) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(SWI3) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(SYNC) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(TST) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
     OP(TSTA) {
@@ -866,7 +867,7 @@ private:
     }
 
     OP(TFR) {
-        throw DeviceFault(_name);
+        throw DeviceFault(name());
     }
 
 private:
@@ -937,7 +938,7 @@ private:
         }
     }
 
-    Cycles dispatch(void);
+    void dispatch(void);
     void check_interrupt(void);
     void take_interrupt(uint16_t addr);
 

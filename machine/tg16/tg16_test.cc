@@ -30,7 +30,7 @@
 #include "machine/tg16/tg16.h"
 
 using namespace EMU;
-using namespace TG16Driver;
+using namespace TG16Machine;
 
 TEST(TG16Test, create)
 {

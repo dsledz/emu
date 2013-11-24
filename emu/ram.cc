@@ -27,35 +27,30 @@
 
 using namespace EMU;
 
-Ram::Ram(size_t size)
+RamDevice::RamDevice(Machine *machine, const std::string &name, size_t size):
+    IODevice(machine, name, size),
+    m_ram(size)
 {
-    _ram.resize(size);
 }
 
-Ram::~Ram(void)
+RamDevice::~RamDevice(void)
 {
 }
 
 void
-Ram::write8(offset_t offset, byte_t arg)
+RamDevice::write8(offset_t offset, uint8_t value)
 {
-    _ram[offset] = arg;
+    m_ram[offset] = value;
 }
 
-byte_t
-Ram::read8(offset_t offset)
+uint8_t
+RamDevice::read8(offset_t offset)
 {
-    return _ram[offset];
+    return m_ram[offset];
 }
 
-size_t
-Ram::size(void)
+uint8_t *
+RamDevice::direct(offset_t offset)
 {
-    return _ram.size();
-}
-
-byte_t *
-Ram::direct(offset_t offset)
-{
-    return &_ram[offset];
+    return &m_ram[offset];
 }

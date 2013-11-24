@@ -290,7 +290,7 @@ void
 M6809Cpu::log_op(uint16_t pc, const M6809Opcode *op)
 {
     std::stringstream os;
-    os << std::setw(8) << _name << ":"
+    os << std::setw(8) << name() << ":"
        << Hex(pc) << ":" << Hex(op->code) << ":"
        << op->name << " = >";
     const std::string &str = op->name;
@@ -305,7 +305,7 @@ M6809Cpu::log_op(uint16_t pc, const M6809Opcode *op)
         lastPos = str.find_first_not_of(delimiters, pos);
         pos = str.find_first_of(delimiters, lastPos);
     }
-    TRACE(os.str());
+    DEVICE_TRACE(os.str());
 }
 
 std::string
@@ -337,16 +337,13 @@ M6809Cpu::_reset(void)
     _rPC = bus_read16(_rEA);
 }
 
-Cycles
+void
 M6809Cpu::step(void)
 {
-    set_icycles(0);
-    /* XXX: Interrupts */
-
-    return dispatch();
+    dispatch();
 }
 
-Cycles
+void
 M6809Cpu::dispatch(void)
 {
     uint16_t pc = _rPC;
@@ -359,7 +356,7 @@ M6809Cpu::dispatch(void)
     auto it = _opcodes.find(code);
     if (it == _opcodes.end()) {
         std::cout << "Unknown opcode: " << Hex(code) << std::endl;
-        throw CpuOpcodeFault(_name, code, pc);
+        throw CpuOpcodeFault(name(), code, pc);
     }
 
     M6809Opcode op = it->second;
@@ -372,8 +369,6 @@ M6809Cpu::dispatch(void)
     }
 
     /* XXX: Some addressing modes have postfix beahvior */
-
-    return get_icycles();
 }
 
 void

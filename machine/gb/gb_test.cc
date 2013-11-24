@@ -32,7 +32,7 @@ using namespace EMU;
 
 TEST(GameboyTest, run)
 {
-    Driver::Gameboy machine("tetris.gb");
+    GBMachine::Gameboy machine("tetris.gb");
 
     for (unsigned i = 0; i < 6000; i++)
         machine.run();

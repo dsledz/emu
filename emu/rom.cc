@@ -51,6 +51,10 @@ EMU::read_rom(const std::string &name, bvec &rom)
     }
 }
 
+Rom::Rom(void)
+{
+}
+
 Rom::Rom(const std::string &path) {
     read_rom(path, _rom);
 }
@@ -59,14 +63,8 @@ Rom::~Rom(void)
 {
 }
 
-void
-Rom::write8(offset_t offset, byte_t arg)
-{
-    _rom[offset] = arg;
-}
-
-byte_t
-Rom::read8(offset_t offset)
+uint8_t
+Rom::read8(offset_t offset) const
 {
     return _rom[offset];
 }
@@ -77,8 +75,20 @@ Rom::size(void)
     return _rom.size();
 }
 
-byte_t *
+uint8_t *
 Rom::direct(offset_t offset)
+{
+    return &_rom[offset];
+}
+
+void
+Rom::append(const bvec &data)
+{
+    _rom.insert(_rom.end(), data.begin(), data.end());
+}
+
+const uint8_t *
+Rom::direct(offset_t offset) const
 {
     return &_rom[offset];
 }

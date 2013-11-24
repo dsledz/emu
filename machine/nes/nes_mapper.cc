@@ -26,7 +26,7 @@
 #include "machine/nes/nes.h"
 
 using namespace EMU;
-using namespace NESDriver;
+using namespace NESMachine;
 
 enum {
     ROM_BANK_SIZE = 0x4000,
@@ -513,7 +513,7 @@ enum class Mapper {
 };
 
 mapper_ptr
-NESDriver::load_cartridge(NES *nes, const std::string &name)
+NESMachine::load_cartridge(NES *nes, const std::string &name)
 {
     bvec rom;
     iNesHeader header;

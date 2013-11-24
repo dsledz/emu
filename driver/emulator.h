@@ -61,6 +61,7 @@ private:
     std::condition_variable cv;
     std::future<void> task;
 
+    EmuScheduler m_scheduler;
     RealTimeClock _clock;
     Emulator::EmuState _state;
     Options _options;

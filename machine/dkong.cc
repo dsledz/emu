@@ -29,7 +29,7 @@
 
 using namespace EMU;
 using namespace Z80;
-using namespace Driver;
+using namespace Arcade;
 
 RomDefinition dkong_rom(void) {
     RomDefinition rom("dkong");
@@ -53,9 +53,10 @@ RomDefinition dkong_rom(void) {
 
 DonkeyKong::DonkeyKong(const std::string &rom):
     Machine(),
-    ram(0x1000),
-    _hertz(18432000)
+    m_ram(this, "ram", 0x1000),
+    _nmi_mask(false)
 {
+    unsigned hertz = 18432000;
     add_screen(224, 256, RasterScreen::ROT90);
 
     _bus = AddressBus16_ptr(new AddressBus16());
@@ -70,12 +71,12 @@ DonkeyKong::DonkeyKong(const std::string &rom):
 
     RomSet romset(roms);
 
-    _main_cpu = Z80Cpu_ptr(new Z80Cpu(this, "maincpu", _hertz/6, _bus.get()));
+    _main_cpu = Z80Cpu_ptr(new Z80Cpu(this, "maincpu", hertz/6, _bus.get()));
     _main_cpu->load_rom(romset.rom("maincpu"), 0x0000);
 
-    _i8257 = I8257_ptr(new I8257(this, "i8257", _hertz/6, _bus.get()));
+    _i8257 = I8257_ptr(new I8257(this, "i8257", hertz/6, _bus.get()));
 
-    _gfx = DonkeyKongGfx_ptr(new DonkeyKongGfx(this, "gfx", _hertz, _bus.get()));
+    _gfx = DonkeyKongGfx_ptr(new DonkeyKongGfx(this, "gfx", hertz, _bus.get()));
     _gfx->init(&romset);
 
     _gfx->register_callback(16, [&](void) {
@@ -160,7 +161,9 @@ DonkeyKong::init_controls(void)
 void
 DonkeyKong::init_bus(void)
 {
-    _bus->add(0x6000, 0x6fff, &ram);
+    _bus->add(0x6000, 0x6fff,
+        READ_CB(RamDevice::read8, &m_ram),
+        WRITE_CB(RamDevice::write8, &m_ram));
     _bus->add(0x7000, 0x77ff,
         READ_CB(DonkeyKongGfx::vmem_read, _gfx.get()),
         WRITE_CB(DonkeyKongGfx::vmem_write, _gfx.get()));
@@ -228,6 +231,6 @@ MachineDefinition dkong(
     "dkong",
     donkeykong_info,
     [=](Options *opts) -> machine_ptr {
-        return machine_ptr(new Driver::DonkeyKong(opts->rom));
+        return machine_ptr(new Arcade::DonkeyKong(opts->rom));
     });
 

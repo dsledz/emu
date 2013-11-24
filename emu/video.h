@@ -33,7 +33,7 @@ namespace EMU {
  * Defines an absolute color in the RGB space
  */
 struct RGBColor {
-    RGBColor(void) = default;
+    RGBColor(void): v(0) { }
     ~RGBColor(void) = default;
     RGBColor(const RGBColor &rhs): v(rhs.v) { }
     RGBColor(unsigned r, unsigned g, unsigned b, unsigned a=0xff):
@@ -67,12 +67,12 @@ static const RGBColor trans(0x00, 0x00, 0x00, 0x00);
 template<int width>
 struct ColorPalette {
     inline RGBColor &operator[](unsigned i) {
-        return _colors[i];
+        return m_colors[i];
     }
     static const unsigned size = width;
 
 private:
-    RGBColor _colors[width];
+    std::array<RGBColor, width> m_colors;
 };
 
 /* XXX: GfxObject should be based on a palette */
@@ -85,7 +85,7 @@ struct GfxObject {
     entry_t at(int x, int y) {
         return data[y * w + x];
     }
-    entry_t data[width * height];
+    std::array<entry_t, width * height> data;
 };
 
 /**

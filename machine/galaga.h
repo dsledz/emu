@@ -32,8 +32,9 @@
 
 using namespace EMU;
 using namespace Z80;
+using namespace Device;
 
-namespace Driver {
+namespace Arcade {
 
 class GalagaGfx: public GfxDevice
 {
@@ -50,7 +51,7 @@ public:
 
 private:
 
-    Ram vram;
+    RamDevice vram;
 
     void init_sprite(GfxObject<16, 16> *obj, byte_t *b);
     void init_tile(GfxObject<8, 8> *obj, byte_t *b);
@@ -58,7 +59,7 @@ private:
     void draw_bg(RasterScreen *screen);
     void draw_sprites(RasterScreen *screen);
 
-    AddressBus16_ptr _bus;
+    AddressBus16 *_bus;
 
     /* Graphic Data */
     ColorMap<32, RGBColor> m_colors;
@@ -93,7 +94,7 @@ private:
     void draw_sprites(void);
     void draw_screen(void);
 
-    Ram ram1, ram2, ram3;
+    RamDevice ram1, ram2, ram3;
     Z80Cpu_ptr _main_cpu;
     Z80Cpu_ptr _sub_cpu;
     Z80Cpu_ptr _snd_cpu;
@@ -102,8 +103,6 @@ private:
     GalagaGfx_ptr _gfx;
 
     AddressBus16_ptr _bus;
-
-    unsigned _hertz;
 
     /* Interrupt lines */
     bool _main_irq;

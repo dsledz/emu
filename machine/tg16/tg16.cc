@@ -24,7 +24,7 @@
 
 #include "machine/tg16/tg16.h"
 
-using namespace TG16Driver;
+using namespace TG16Machine;
 
 /* XXX wrong */
 #define MASTER_CLOCK 21477270
@@ -32,7 +32,7 @@ using namespace TG16Driver;
 TG16::TG16(const std::string &rom):
     Machine(),
     _cpu_bus(),
-    _ram(0x2000),
+    _ram(this, "ram", 0x2000),
     _vdc(this, MASTER_CLOCK),
     _psg(this)
 {
@@ -147,7 +147,7 @@ TG16::bank_read(offset_t offset)
 void
 TG16::bank_write(offset_t offset, byte_t value)
 {
-    DBG("bank_write");
+    MACHINE_DEBUG("bank_write");
 }
 
 byte_t
@@ -200,11 +200,6 @@ PSG::~PSG(void)
 {
 }
 
-void
-PSG::execute(Time interval)
-{
-}
-
 byte_t
 PSG::read(offset_t offset)
 {
@@ -227,6 +222,6 @@ MachineDefinition tg16(
     "tg16",
     tg16_info,
     [=](Options *opts) -> machine_ptr {
-        return machine_ptr(new TG16Driver::TG16(opts->rom));
+        return machine_ptr(new TG16Machine::TG16(opts->rom));
     });
 

@@ -94,6 +94,7 @@ M6502Cpu::M6502Cpu(Machine *machine, const std::string &name,
     Cpu(machine, name, hertz, bus),
     _nmi_line(LineState::Clear),
     _irq_line(LineState::Clear),
+    _reset_line(LineState::Clear),
     _state(),
     _jit(),
     _jit_state(this, m6502_bus_read, m6502_bus_write, m6502_get_flags)
@@ -268,7 +269,7 @@ M6502Cpu::line(Line line, LineState state)
     switch (line) {
     case Line::RESET:
         /* XXX: We should treat this as a line */
-        _reset();
+        _reset_line = state;
         break;
     case Line::INT0:
         _irq_line = state;
@@ -312,14 +313,17 @@ M6502Cpu::test_step(void)
 #endif
 }
 
-Cycles
+void
 M6502Cpu::step(void)
 {
-    set_icycles(0);
-
     /* Interrupts */
-    if (_nmi_line == LineState::Pulse) {
-        DBG("NMI triggered");
+    if (_reset_line == LineState::Pulse) {
+        DEVICE_DEBUG("Reset triggered");
+        _reset();
+        _reset_line = LineState::Clear;
+        return;
+    } else if (_nmi_line == LineState::Pulse) {
+        DEVICE_DEBUG("NMI triggered");
         _state.F.B = 0;
         push(_state.PC.b.h);
         push(_state.PC.b.l);
@@ -327,9 +331,9 @@ M6502Cpu::step(void)
         _state.PC.b.l = bus_read(0xFFFA);
         _state.PC.b.h = bus_read(0xFFFB);
         _nmi_line = LineState::Clear;
-        return get_icycles();
+        return;
     } else if (_state.F.I == 0 && _irq_line == LineState::Assert) {
-        DBG("IRQ triggered");
+        DEVICE_DEBUG("IRQ triggered");
         _state.F.B = 0;
         _state.F.I = 1;
         push(_state.PC.b.h);
@@ -337,14 +341,14 @@ M6502Cpu::step(void)
         push(_state.SR);
         _state.PC.b.l = bus_read(0xFFFE);
         _state.PC.b.h = bus_read(0xFFFF);
-        return get_icycles();
+        return;
     }
 
     uint16_t pc = _state.PC.d;
 #if JIT
-    return jit_dispatch(pc);
+    jit_dispatch(pc);
 #else
-    return dispatch(pc);
+    dispatch(pc);
 #endif
 }
 
@@ -365,7 +369,7 @@ M6502Cpu::jit_compile(uint16_t start_pc)
         auto it = _opcodes.find(code);
         if (it == _opcodes.end()) {
             std::cout << "Unknown opcode: " << Hex(code) << std::endl;
-            throw CpuOpcodeFault(_name, code, pc);
+            throw CpuOpcodeFault(name(), code, pc);
         }
         M6502Opcode *op = &it->second;
 
@@ -396,21 +400,21 @@ M6502Cpu::log_state(void)
     os << " Y: " << Hex(_state.Y);
     os << " F: " << Hex(_state.SR);
     os << " S: " << Hex(_state.SP);
-    TRACE(os.str());
+    DEVICE_TRACE(os.str());
 }
 
 void
 M6502Cpu::log_op(const M6502Opcode *op, uint16_t pc, const uint8_t *instr)
 {
     std::stringstream os;
-    os << std::setw(8) << _name << ":"
+    os << std::setw(8) << name() << ":"
        << Hex(pc) << ":" << Hex(op->code) << ":"
        << op->name << " ";
     if (op->bytes == 2)
         os << Hex(instr[1]);
     else if (op->bytes == 3)
         os << Hex(instr[1] | (instr[2] << 8));
-    TRACE(os.str());
+    DEVICE_TRACE(os.str());
     return;
     os << " = >";
     const std::string &str = op->name;
@@ -451,7 +455,7 @@ M6502Cpu::log_op(const M6502Opcode *op, uint16_t pc, const uint8_t *instr)
         lastPos = str.find_first_not_of(delimiters, pos);
         pos = str.find_first_of(delimiters, lastPos);
     }
-    TRACE(os.str());
+    DEVICE_TRACE(os.str());
 }
 
 std::string
@@ -460,7 +464,7 @@ M6502Cpu::dasm(addr_type addr)
     return "";
 }
 
-Cycles
+void
 M6502Cpu::dispatch(uint16_t pc)
 {
     uint8_t buf[8] = {};
@@ -469,7 +473,7 @@ M6502Cpu::dispatch(uint16_t pc)
     auto it = _opcodes.find(buf[0]);
     if (it == _opcodes.end()) {
         std::cout << "Unknown opcode: " << Hex(buf[0]) << std::endl;
-        throw CpuOpcodeFault(_name, buf[0], pc);
+        throw CpuOpcodeFault(name(), buf[0], pc);
     }
 
     M6502Opcode *op = &it->second;
@@ -482,10 +486,10 @@ M6502Cpu::dispatch(uint16_t pc)
         log_state();
     }
 
-    return get_icycles();
+    return;
 }
 
-Cycles
+void
 M6502Cpu::jit_dispatch(uint16_t pc)
 {
     JITBlock *block = NULL;
@@ -517,7 +521,7 @@ M6502Cpu::jit_dispatch(uint16_t pc)
             auto it = _opcodes.find(code);
             if (it == _opcodes.end()) {
                 std::cout << "Unknown opcode: " << Hex(code) << std::endl;
-                throw CpuOpcodeFault(_name, code, pc + off);
+                throw CpuOpcodeFault(name(), code, pc + off);
             }
             M6502Opcode *op = &it->second;
             log_op(op, pc + off, source.data() + off);
@@ -556,9 +560,8 @@ M6502Cpu::jit_dispatch(uint16_t pc)
     _state.F.N = bit_isset(_state.NativeFlags.d, Flags::SF);
 
     // Account for the extra cycles if we branched
+    add_icycles(block->cycles);
     if (_state.PC.d != (block->pc + block->len))
-        return block->cycles + Cycles(2);
-    else
-        return block->cycles;
+        add_icycles(2);
 }
 

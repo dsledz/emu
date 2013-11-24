@@ -27,33 +27,41 @@
 
 #include "machine/gb/lr35902.h"
 
-using namespace LR35902;
+using namespace GBMachine;
 
 #define LOAD(code) \
-    ram.write8(pc++, code)
+    ram[pc++] = code;
 #define LOAD1(code, arg1) \
-    ram.write8(pc++, code); \
-    ram.write8(pc++, arg1);
+    ram[pc++] = code; \
+    ram[pc++] = arg1;
 #define LOAD2(code, arg1, arg2) \
-    ram.write8(pc++, code); \
-    ram.write8(pc++, arg1); \
-    ram.write8(pc++, arg2);
+    ram[pc++] = code; \
+    ram[pc++] = arg1; \
+    ram[pc++] = arg2;
 
 class LR35902Test: public ::testing::Test {
-    public:
-        LR35902Test(void):
-            machine(),
-            bus(),
-            cpu(&machine, "test", 1000000, &bus),
-            ram(0x2000), pc(0x100) {
-            bus.add(0x0000, 0xE000, &ram);
-        }
+public:
+    LR35902Test(void):
+        machine(),
+        bus(),
+        cpu(&machine, "test", 1000000, &bus),
+        ram(0x2000),
+        pc(0x100)
+    {
+        bus.add(0x0000, 0xE000,
+            [&](offset_t offset) -> byte_t {
+                return ram[offset];
+            },
+            [&](offset_t offset, byte_t data) {
+                ram[offset] = data;
+        });
+    }
 
-        Machine machine;
-        AddressBus16 bus;
-        LR35902Cpu cpu;
-        Ram ram;
-        addr_t pc;
+    Machine machine;
+    AddressBus16 bus;
+    LR35902Cpu cpu;
+    bvec ram;
+    addr_t pc;
 };
 
 TEST_F(LR35902Test, Constructor)
@@ -63,13 +71,13 @@ TEST_F(LR35902Test, Constructor)
 TEST_F(LR35902Test, opcode_0x00)
 {
     LOAD(0x00);
-    cpu.execute(Time(usec(30)));
+    cpu.execute();
 }
 
 TEST_F(LR35902Test, opcode_0x01)
 {
     LOAD2(0x1, 0x12, 0x34);
-    cpu.execute(Time(usec(30)));
+    cpu.execute();
 
     EXPECT_EQ(0x34, cpu.fetch(Register::B));
     EXPECT_EQ(0x12, cpu.fetch(Register::C));

@@ -42,12 +42,10 @@ n2A03Cpu::~n2A03Cpu(void)
 }
 
 void
-n2A03Cpu::execute(Time period)
+n2A03Cpu::execute(void)
 {
-    _avail += period.to_cycles(Cycles(_hertz));
-
-    while (_avail > 0) {
-        _avail -= dispatch();
+    while (true) {
+        add_icycles(dispatch());
     }
 }
 
@@ -83,13 +81,13 @@ n2A03Cpu::dispatch(void)
 {
     _icycles = Cycles(0);
     if (_nmi_line == LineState::Pulse) {
-        DBG("NMI triggered");
+        DEVICE_DEBUG("NMI triggered");
         _rF.B = 0;
         op_interrupt(0xFFFA);
         _nmi_line = LineState::Clear;
         return _icycles;
     } else if (_rF.I == 0 && _irq_line == LineState::Assert) {
-        DBG("IRQ triggered");
+        DEVICE_DEBUG("IRQ triggered");
         _rF.B = 0;
         _rF.I = 1;
         op_interrupt(0xFFFE);
@@ -252,7 +250,7 @@ n2A03Cpu::dispatch(void)
         OPCODE(0xFE, "INC abs,X", Abs(_rX); op_inc());
     default:
         std::cout << "Unknown opcode: " << Hex(op) << std::endl;
-        throw CpuOpcodeFault(_name, op, _op_pc);
+        throw CpuOpcodeFault(name(), op, _op_pc);
     }
 
     IF_LOG(Trace)

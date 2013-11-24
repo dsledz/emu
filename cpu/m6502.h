@@ -30,14 +30,14 @@ using namespace EMU;
 
 namespace M6502 {
 
-class M6502Cpu: public CpuDevice
+class M6502Cpu: public ClockedDevice
 {
 public:
     M6502Cpu(Machine *machine, const std::string &name, unsigned clock,
              AddressBus16 *bus);
     virtual ~M6502Cpu(void);
 
-    virtual void execute(Time interval);
+    virtual void execute(void);
     virtual void line(Line line, LineState state);
 
 protected:
@@ -64,6 +64,7 @@ protected:
 
     LineState _nmi_line;
     LineState _irq_line;
+    LineState _reset_line;
 
     bool    _mem;
     reg16_t _rEA;
@@ -398,7 +399,7 @@ public:
              AddressBus16 *bus);
     ~n2A03Cpu(void);
 
-    virtual void execute(Time interval);
+    virtual void execute(void);
     virtual void line(Line line, LineState state);
 
 private:
@@ -429,7 +430,7 @@ public:
               AddressBus16 *bus);
     virtual ~m65c02Cpu(void);
 
-    virtual void execute(Time interval);
+    virtual void execute(void);
     virtual void line(Line line, LineState state);
 
 protected:
@@ -526,7 +527,7 @@ public:
               AddressBus21 *bus);
     virtual ~hu6280Cpu(void);
 
-    virtual void execute(Time interval);
+    virtual void execute(void);
     virtual void line(Line line, LineState state);
 
     byte_t irq_read(offset_t offset);
@@ -554,7 +555,7 @@ protected:
         _rA ^= _rY;
     }
     void op_set(void) {
-        throw CpuFeatureFault(_name, "T flag");
+        throw CpuFeatureFault(name(), "T flag");
     }
     void op_tstart(reg16_t *src, reg16_t *dest, reg16_t *len) {
         src->b.l = pc_read();

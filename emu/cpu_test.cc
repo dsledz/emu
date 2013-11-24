@@ -39,9 +39,9 @@ public:
     {
     }
 
-    virtual Cycles step(void)
+    virtual void step(void)
     {
-        return Cycles(1);
+        add_icycles(1);
     }
 
     virtual std::string dasm(addr_type addr)

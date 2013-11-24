@@ -26,7 +26,7 @@
 
 #include "emu/bits.h"
 #include "emu/io.h"
-#include <map>
+#include "emu/exception.h"
 
 namespace EMU {
 

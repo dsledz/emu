@@ -29,9 +29,8 @@
 #include "machine/gb/lr35902.h"
 
 using namespace EMU;
-using namespace LR35902;
 
-namespace Driver {
+namespace GBMachine {
 
 class GBGraphics;
 class GBMBC;
@@ -72,11 +71,11 @@ public:
 private:
     AddressBus16_ptr _bus;
 
-    std::unique_ptr<LR35902::LR35902Cpu> _cpu;
+    std::unique_ptr<LR35902Cpu> _cpu;
     std::unique_ptr<GBGraphics> _gfx;
-    std::unique_ptr<Ram> _ram;
+    std::unique_ptr<RamDevice> _ram;
     std::unique_ptr<GBMBC> _mbc;
-    std::unique_ptr<Ram> _hiram;
+    std::unique_ptr<RamDevice> _hiram;
 
     device_ptr _timer;
     device_ptr _serial;

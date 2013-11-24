@@ -31,13 +31,13 @@ using namespace EMU;
 /* XXX: This seems wrong */
 namespace EMU {
 
-class I8257: public CpuDevice
+class I8257: public ClockedDevice
 {
 public:
     I8257(Machine *machine, const std::string &name, unsigned hertz, AddressBus16 *bus);
     virtual ~I8257(void);
 
-    virtual void execute(Time interval);
+    virtual void execute(void);
 
     void write_cb(offset_t offset, byte_t value);
     byte_t read_cb(offset_t offset);

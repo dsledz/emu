@@ -94,7 +94,7 @@ public:
     void log_op(const M6502Opcode *op, uint16_t pc, const uint8_t *instr);
 
     virtual void test_step(void);
-    virtual Cycles step(void);
+    virtual void step(void);
     virtual std::string dasm(addr_type addr);
 
     byte_t fetch(void) {
@@ -122,12 +122,13 @@ public:
 
 protected:
     void _reset(void);
-    Cycles dispatch(uint16_t pc);
-    Cycles jit_dispatch(uint16_t pc);
+    void dispatch(uint16_t pc);
+    void jit_dispatch(uint16_t pc);
     jit_block_ptr jit_compile(uint16_t pc);
 
     LineState _nmi_line;
     LineState _irq_line;
+    LineState _reset_line;
     M6502State _state;
     JITEmitter _jit;
     JITState   _jit_state;

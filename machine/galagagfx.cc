@@ -29,11 +29,11 @@
 
 using namespace EMU;
 using namespace Z80;
-using namespace Driver;
+using namespace Arcade;
 
 GalagaGfx::GalagaGfx(Machine *machine, const std::string &name, unsigned hertz, AddressBus16 *bus):
     GfxDevice(machine, name, hertz),
-    vram(0x0800),
+    vram(machine, "vram", 0x0800),
     _bus(bus)
 {
 

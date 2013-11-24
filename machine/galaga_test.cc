@@ -30,9 +30,10 @@
 
 using namespace EMU;
 
+#if 0
 TEST(GalagaTest, run10)
 {
-    Driver::Galaga machine("");
+    Arcade::Galaga machine("");
     bool press = false;
     /* 10 seconds of runtime */
     unsigned steps = 6000 * 10;
@@ -48,10 +49,11 @@ TEST(GalagaTest, run10)
         machine.run();
     }
 }
+#endif
 
 TEST(GalagaTest, run100)
 {
-    Driver::Galaga machine("");
+    Arcade::Galaga machine("");
     /* 10 seconds of runtime */
     unsigned steps = 6000 * 10;
     for (unsigned i = 0; i < steps; i++) {
@@ -61,7 +63,7 @@ TEST(GalagaTest, run100)
 
 TEST(GalagaTest, input)
 {
-    Driver::Galaga machine("");
+    Arcade::Galaga machine("");
 
     unsigned steps = 6000 * 6;
     for (unsigned i = 0; i < steps; i++) {
@@ -79,5 +81,5 @@ TEST(GalagaTest, input)
 
 TEST(GalagaTest, load)
 {
-    Driver::Galaga machine("");
+    Arcade::Galaga machine("");
 }

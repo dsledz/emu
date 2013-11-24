@@ -25,14 +25,13 @@
 
 #include "machine/gb/gbgfx.h"
 
-using namespace Driver;
+using namespace GBMachine;
 
 GBGraphics::GBGraphics(Gameboy *gameboy, unsigned hertz):
-    Device(gameboy, "gfx"),
-    _vram(0x2000),
-    _oam(0x100),
-    _lcdc(0),
-    _hertz(hertz)
+    ClockedDevice(gameboy, "gfx", hertz),
+    _vram(gameboy, "vram", 0x2000),
+    _oam(gameboy, "oam", 0x100),
+    _lcdc(0)
 {
 
     _bus = gameboy->bus();
@@ -53,7 +52,9 @@ GBGraphics::GBGraphics(Gameboy *gameboy, unsigned hertz):
             }
             _vram.write8(offset, value);
         });
-    _bus->add(0xFE00, 0xFEFF, &_oam);
+    _bus->add(0xFE00, 0xFEFF,
+        READ_CB(RamDevice::read8, &_oam),
+        WRITE_CB(RamDevice::write8, &_oam));
 
     _bus->add(VideoReg::LCDC, &_lcdc);
     _bus->add(VideoReg::STAT, &_stat);
@@ -136,7 +137,7 @@ GBGraphics::get_obj(int idx)
 void
 GBGraphics::draw_scanline(int y)
 {
-    RasterScreen *screen = _machine->screen();
+    RasterScreen *screen = machine()->screen();
     if (bit_isset(_lcdc, LCDCBits::BGDisplay)) {
         auto cb = bit_isset(_lcdc, LCDCBits::BGTileMap) ?
                 _tilemap1 : _tilemap0;
@@ -214,9 +215,9 @@ GBGraphics::draw_scanline(int y)
 }
 
 void
-GBGraphics::execute(Time interval)
+GBGraphics::execute(void)
 {
-    _fcycles += interval.to_cycles(Cycles(_hertz)).v;
+    _fcycles += m_avail.v;
 
     switch (_stat & 0x03) {
     case LCDMode::HBlankMode:
@@ -227,30 +228,30 @@ GBGraphics::execute(Time interval)
             _ly = (_ly + 1) % SCANLINES;
             if (_ly == DISPLAY_LINES) {
                 // Wait until our frame is finished
-                _machine->screen()->flip();
-                _machine->set_line("cpu",
+                machine()->screen()->flip();
+                machine()->set_line("cpu",
                     make_irq_line(GBInterrupt::VBlank),
                     LineState::Pulse);
                 _stat = (_stat & 0xfc) | LCDMode::VBlankMode;
                 if (bit_isset(_stat, STATBits::Mode01Int))
-                    _machine->set_line("cpu",
+                    machine()->set_line("cpu",
                         make_irq_line(GBInterrupt::LCDStat),
                         LineState::Pulse);
             } else {
                 if (_ly == 0)
-                    _machine->screen()->clear();
+                    machine()->screen()->clear();
                 if (_ly < DISPLAY_LINES)
                     draw_scanline(_ly);
                 _stat = (_stat & 0xfc) | LCDMode::OAMMode;
                 if (bit_isset(_stat, STATBits::Mode10Int))
-                    _machine->set_line("cpu",
+                    machine()->set_line("cpu",
                         make_irq_line(GBInterrupt::LCDStat),
                         LineState::Pulse);
             }
             // See if we need to trigger the lcd interrupt.
             if (bit_isset(_stat, STATBits::LYCInterrupt) &&
                 !(bit_isset(_stat, STATBits::Coincidence) ^ (_lyc == _ly)))
-                _machine->set_line("cpu",
+                machine()->set_line("cpu",
                     make_irq_line(GBInterrupt::LCDStat),
                     LineState::Pulse);
         }
@@ -268,7 +269,7 @@ GBGraphics::execute(Time interval)
             _fcycles -= ACTIVE_CYCLES;
             _stat = (_stat & 0xfc) | LCDMode::HBlankMode;
             if (bit_isset(_stat, STATBits::Mode00Int))
-                _machine->set_line("cpu",
+                machine()->set_line("cpu",
                     make_irq_line(GBInterrupt::LCDStat),
                     LineState::Pulse);
         }
@@ -279,7 +280,7 @@ GBGraphics::execute(Time interval)
             _fcycles -= V_BLANK_CYCLES;
             _stat = (_stat & 0xfc) | LCDMode::OAMMode;
             if (bit_isset(_stat, STATBits::Mode10Int))
-                _machine->set_line("cpu",
+                machine()->set_line("cpu",
                     make_irq_line(GBInterrupt::LCDStat),
                     LineState::Pulse);
         }

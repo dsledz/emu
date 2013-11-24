@@ -30,7 +30,7 @@
 #include "machine/gb/gbmbc.h"
 
 using namespace EMU;
-using namespace Driver;
+using namespace GBMachine;
 
 class GBJoypad: public Device {
     enum GBKey {
@@ -85,7 +85,7 @@ public:
                 return _value;
             },
             [&](offset_t offset, byte_t arg) {
-                byte_t keys = _machine->read_ioport("IN0");
+                byte_t keys = machine()->read_ioport("IN0");
                 if (bit_isset(arg, ButtonsSelect))
                     arg = (arg & 0xF0) | ((keys & 0xF0) >> 4);
                 if (bit_isset(arg, ArrowSelect))
@@ -115,11 +115,10 @@ private:
     uint8_t _sc;
 };
 
-class GBTimer: public Device {
+class GBTimer: public ClockedDevice {
 public:
     GBTimer(Gameboy *gameboy, unsigned hertz):
-        Device(gameboy, "timer"),
-        _hertz(hertz)
+        ClockedDevice(gameboy, "timer", hertz)
     {
         gameboy->bus()->add(GBReg::TIMA, &_tima);
         gameboy->bus()->add(GBReg::TMA, &_tma);
@@ -129,11 +128,11 @@ public:
     virtual ~GBTimer(void) {
     }
 
-    virtual void execute(Time interval) {
-        unsigned cycles = interval.to_cycles(Cycles(_hertz)).v;
-        _cycles += cycles;
-        _dcycles += cycles;
-        _tcycles += cycles;
+    virtual void execute(void) {
+        _cycles += m_avail.v;
+        _dcycles += m_avail.v;
+        _tcycles += m_avail.v;
+        m_avail = Cycles(0);
 
         if (_dcycles > 256) {
             _dcycles -= 256;
@@ -151,7 +150,7 @@ public:
             if (_tcycles > limit) {
                 _tcycles -= limit;
                 if (_tima == 0xff) {
-                    _machine->set_line("cpu",
+                    machine()->set_line("cpu",
                         make_irq_line(GBInterrupt::Timeout), LineState::Pulse);
                     // Reset the overflow
                     _tima = _tma;
@@ -210,13 +209,19 @@ Gameboy::Gameboy(const std::string &rom_name):
     _mbc = std::unique_ptr<GBMBC>(new GBMBC(this));
     _mbc->load_rom(rom_name);
 
-    _ram = std::unique_ptr<Ram>(new Ram(0x2000));
+    _ram = std::unique_ptr<RamDevice>(new RamDevice(this, "ram", 0x2000));
     /* XXX: Ram isn't mirrored */
-    _bus->add(0xC000, 0xDFFF, _ram.get());
-    _bus->add(0xE000, 0xFDFF, _ram.get());
+    _bus->add(0xC000, 0xDFFF,
+        READ_CB(RamDevice::read8, _ram.get()),
+        WRITE_CB(RamDevice::write8, _ram.get()));
+    _bus->add(0xE000, 0xFDFF,
+        READ_CB(RamDevice::read8, _ram.get()),
+        WRITE_CB(RamDevice::write8, _ram.get()));
 
-    _hiram = std::unique_ptr<Ram>(new Ram(0x80));
-    _bus->add(0xFF80, 0xFFFF, _hiram.get());
+    _hiram = std::unique_ptr<RamDevice>(new RamDevice(this, "hiram", 0x80));
+    _bus->add(0xFF80, 0xFFFF,
+        READ_CB(RamDevice::read8, _hiram.get()),
+        WRITE_CB(RamDevice::write8, _hiram.get()));
 
     /* XXX: Some games need this. */
     _bus->add(0xFF7F, 0xFF7F);

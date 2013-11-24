@@ -44,12 +44,12 @@ public:
         Machine(),
         bus(),
         cpu(this, "maincpu", TEST_CLOCK, &bus),
-        ram(0x10000),
+        ram(this, "ram", 0x10000),
         pc(initial_pc)
     {
         bus.add(0x0000, ram.size() - 1,
-            READ_CB(Ram::read8, &ram),
-            WRITE_CB(Ram::write8, &ram));
+            READ_CB(RamDevice::read8, &ram),
+            WRITE_CB(RamDevice::write8, &ram));
 
         set_line("maincpu", Line::RESET, LineState::Pulse);
     }
@@ -63,7 +63,7 @@ public:
 
     typename CpuType::bus_type bus;
     CpuType cpu;
-    Ram ram;
+    RamDevice ram;
     unsigned pc;
 };
 

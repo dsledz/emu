@@ -155,14 +155,14 @@ public:
 #define _rI    _R._I
 #define _rR    _R._R
 
-class Z80Cpu: public EMU::CpuDevice {
+class Z80Cpu: public EMU::ClockedDevice {
 public:
     Z80Cpu(Machine *machine, const std::string &name, unsigned hertz,
            AddressBus16 *bus);
     ~Z80Cpu(void);
     Z80Cpu(const Z80Cpu &cpu) = delete;
 
-    virtual void execute(Time interval);
+    virtual void execute(void);
     virtual void line(Line line, LineState state);
 
     /* Register accessors */
@@ -235,7 +235,6 @@ private:
     bool _iff2;
     bool _iwait;
     int _imode;
-    DeviceState _state; /**< CPU state */
     LineState _nmi_line;
     LineState _int0_line;
     LineState _reset_line;

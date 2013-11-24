@@ -26,7 +26,7 @@
 
 #include "machine/gb/gb.h"
 
-namespace Driver {
+namespace GBMachine {
 
 // 201 - 207
 #define H_BLANK_CYCLES 201
@@ -105,14 +105,14 @@ enum STATBits {
     LCDModeBit0  = 0
 };
 
-class GBGraphics: public Device {
+class GBGraphics: public ClockedDevice {
 public:
     GBGraphics(Gameboy *gameboy, unsigned hertz);
     virtual ~GBGraphics(void);
 
     virtual void save(SaveState &state) { }
     virtual void load(LoadState &state) { }
-    virtual void execute(Time interval);
+    virtual void execute(void);
     virtual void line(Line line, LineState state) { }
 
 private:
@@ -133,8 +133,8 @@ private:
 
     AddressBus16 *_bus;
 
-    Ram _vram;
-    Ram _oam;
+    RamDevice _vram;
+    RamDevice _oam;
 
     byte_t _lcdc;
     byte_t _stat;
@@ -151,7 +151,6 @@ private:
     ColorPalette<4> _global_pal, _obj0_pal, _obj1_pal, _bg_pal;
     GfxObject<8,8> _objs[384];
 
-    unsigned _hertz;
     unsigned _fcycles;
 };
 

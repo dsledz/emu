@@ -52,7 +52,7 @@ protected:
     }
 
     OP(SET) {
-        throw CpuFeatureFault(_name, "T flag");
+        throw CpuFeatureFault(name(), "T flag");
     }
 
     void op_tstart(reg16_t *src, reg16_t *dest, reg16_t *len) {
@@ -149,17 +149,17 @@ protected:
     }
 
     OP(TAM) {
-        throw CpuFeatureFault(_name, "MMU");
+        throw CpuFeatureFault(name(), "MMU");
     }
 
     OP(TMA) {
-        throw CpuFeatureFault(_name, "MMU");
+        throw CpuFeatureFault(name(), "MMU");
     }
 
     OP(TST) {
         Immediate();
         int value = fetch();
-        throw CpuFeatureFault(_name, "NYI");
+        throw CpuFeatureFault(name(), "NYI");
         fetch();
         state.F.N = bit_isset(state.ARG, 7);
         state.F.V = bit_isset(state.ARG, 6);
@@ -167,11 +167,11 @@ protected:
     }
 
     OP(CSL) {
-        throw CpuFeatureFault(_name, "Speed");
+        throw CpuFeatureFault(name(), "Speed");
     }
 
     OP(CSH) {
-        throw CpuFeatureFault(_name, "Spped");
+        throw CpuFeatureFault(name(), "Spped");
     }
 
     OP(CLA) {

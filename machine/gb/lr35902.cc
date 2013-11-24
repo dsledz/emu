@@ -31,7 +31,7 @@
 #include "machine/gb/lr35902.h"
 
 using namespace EMU;
-using namespace LR35902;
+using namespace GBMachine;
 
 Registers::Registers(void): _AF({}), _BC({}), _DE({}), _HL({}), _SP({}), _PC({})
 {
@@ -94,7 +94,7 @@ uint16_t Registers::get(Register r)
 
 LR35902Cpu::LR35902Cpu(Machine *machine, const std::string &name,
                        unsigned hertz, AddressBus16 *bus):
-    CpuDevice(machine, name, hertz),
+    ClockedDevice(machine, name, hertz),
     _bus(bus),
     _R(),
     _ime(IME::Disabled),
@@ -179,7 +179,7 @@ byte_t LR35902Cpu::fetch(Register reg)
         case Register::H: return _rH;
         case Register::L: return _rL;
         case Register::HL: return _read(_rHL);
-        default: throw CpuRegisterFault(_name, 0);
+        default: throw CpuRegisterFault(name(), 0);
     }
 }
 
@@ -194,7 +194,7 @@ void LR35902Cpu::store(Register reg, byte_t value)
         case Register::H: _rH = value; break;
         case Register::L: _rL = value; break;
         case Register::HL: _write(_rHL, value); break;
-        default: throw CpuRegisterFault(_name, 0);
+        default: throw CpuRegisterFault(name(), 0);
     }
 }
 
@@ -976,7 +976,7 @@ LR35902Cpu::dispatch(void)
         OPCODE(0xFF, 16, 1, "RST 38H", _rst(0x38));
     default:
         _state = State::Fault;
-        throw CpuOpcodeFault(_name, op, pc);
+        throw CpuOpcodeFault(name(), op, pc);
     }
 
     return _icycles;
@@ -992,14 +992,12 @@ LR35902Cpu::load(LoadState &state)
 {
 }
 
-void LR35902Cpu::execute(Time interval)
+void LR35902Cpu::execute(void)
 {
-    _avail += interval.to_cycles(Cycles(_hertz));
-
     /* Execute as much as possible. We'll save the left over cycles for the
      * next call. Hopefully this is okay. */
-    while (_avail > 0) {
-        _avail -= dispatch();
+    while (m_avail > 0) {
+        m_avail -= dispatch();
     }
 
 }

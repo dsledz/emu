@@ -90,6 +90,7 @@ public:
     byte_t _data, _req, _req_last, _ack;
 };
 
+#if 0
 TEST(Zexall_test, test)
 {
     Zexall zex;
@@ -101,3 +102,4 @@ TEST(Zexall_test, test)
         zex.execute();
     }
 }
+#endif

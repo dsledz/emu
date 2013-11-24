@@ -27,19 +27,7 @@
 
 using namespace EMU;
 
-Device::Device(Machine *machine, const std::string &name):
-    _machine(machine), _name(name)
-{
-    _machine->add_device(this);
-}
-
-
-Device::~Device(void)
-{
-    _machine->remove_device(this);
-}
-
 const Time EMU::time_zero = Time(sec(0));
 
-Debug EMU::log = Debug(std::cout);
+Debug EMU::log(std::cout);
 

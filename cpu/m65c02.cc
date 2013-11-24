@@ -45,12 +45,10 @@ m65c02Cpu::reset(void)
 }
 
 void
-m65c02Cpu::execute(Time period)
+m65c02Cpu::execute(void)
 {
-    _avail += period.to_cycles(Cycles(_hertz));
-
-    while (_avail > 0) {
-        _avail -= dispatch();
+    while (true) {
+        add_icycles(dispatch());
     }
 }
 
@@ -280,7 +278,7 @@ m65c02Cpu::dispatch(void)
             _add_icycles(3);
         } else {
             std::cout << "Unknown opcode: " << Hex(op) << std::endl;
-            throw CpuOpcodeFault(_name, op, _op_pc);
+            throw CpuOpcodeFault(name(), op, _op_pc);
         }
     }
 

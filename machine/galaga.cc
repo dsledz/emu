@@ -29,7 +29,8 @@
 
 using namespace EMU;
 using namespace Z80;
-using namespace Driver;
+using namespace Arcade;
+using namespace Device;
 
 RomDefinition galaga_rom(void) {
     RomDefinition rom("galaga");
@@ -61,14 +62,15 @@ RomDefinition galagao_rom(void) {
 
 Galaga::Galaga(const std::string &rom):
     Machine(),
-    ram1(0x0400),
-    ram2(0x0400),
-    ram3(0x0400),
-    _hertz(18432000),
+    ram1(this, "ram1", 0x0400),
+    ram2(this, "ram2", 0x0400),
+    ram3(this, "ram3", 0x0400),
     _main_irq(false),
     _sub_irq(false),
     _snd_nmi(false)
 {
+    unsigned hertz = 18432000;
+
     add_screen(224, 288, RasterScreen::ROT90);
 
     _bus = AddressBus16_ptr(new AddressBus16());
@@ -87,13 +89,13 @@ Galaga::Galaga(const std::string &rom):
 
     RomSet romset(roms);
 
-    _main_cpu = Z80Cpu_ptr(new Z80Cpu(this, "maincpu", _hertz/6, _bus.get()));
+    _main_cpu = Z80Cpu_ptr(new Z80Cpu(this, "maincpu", hertz/6, _bus.get()));
     _main_cpu->load_rom(romset.rom("maincpu"), 0x0000);
 
-    _sub_cpu = Z80Cpu_ptr(new Z80Cpu(this, "subcpu", _hertz/6, _bus.get()));
+    _sub_cpu = Z80Cpu_ptr(new Z80Cpu(this, "subcpu", hertz/6, _bus.get()));
     _sub_cpu->load_rom(romset.rom("subcpu"), 0x0000);
 
-    _snd_cpu = Z80Cpu_ptr(new Z80Cpu(this, "sndcpu", _hertz/6, _bus.get()));
+    _snd_cpu = Z80Cpu_ptr(new Z80Cpu(this, "sndcpu", hertz/6, _bus.get()));
     _snd_cpu->load_rom(romset.rom("sndcpu"), 0x0000);
 
     _namco06 = Namco06_ptr(new Namco06(this, _main_cpu.get()));
@@ -101,7 +103,7 @@ Galaga::Galaga(const std::string &rom):
     _namco51 = Namco51_ptr(new Namco51(this));
     _namco06->add_child(0, _namco51.get());
 
-    _gfx = GalagaGfx_ptr(new GalagaGfx(this, "gfx", _hertz, _bus.get()));
+    _gfx = GalagaGfx_ptr(new GalagaGfx(this, "gfx", hertz, _bus.get()));
     _gfx->init(&romset);
 
     _gfx->register_callback(16, [&](void) {
@@ -196,9 +198,17 @@ Galaga::init_bus(void)
         READ_CB(GalagaGfx::vmem_read, _gfx.get()),
         WRITE_CB(GalagaGfx::vmem_write, _gfx.get()));
 
-    _bus->add(0x8800, 0x8FFF, &ram1);
-    _bus->add(0x9000, 0x97FF, &ram2);
-    _bus->add(0x9800, 0x9FFF, &ram3);
+    _bus->add(0x8800, 0x8FFF,
+        READ_CB(RamDevice::read8, &ram1),
+        WRITE_CB(RamDevice::write8, &ram1));
+
+    _bus->add(0x9000, 0x97FF,
+        READ_CB(RamDevice::read8, &ram2),
+        WRITE_CB(RamDevice::write8, &ram2));
+
+    _bus->add(0x9800, 0x9FFF,
+        READ_CB(RamDevice::read8, &ram3),
+        WRITE_CB(RamDevice::write8, &ram3));
 
     /* XXX: Star control */
     _bus->add(0xA000, 0xA007);
@@ -308,5 +318,5 @@ MachineDefinition galaga(
     "galaga",
     galaga_info,
     [=](Options *opts) -> machine_ptr {
-        return machine_ptr(new Driver::Galaga(opts->rom));
+        return machine_ptr(new Arcade::Galaga(opts->rom));
     });

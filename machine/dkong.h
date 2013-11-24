@@ -31,7 +31,7 @@
 using namespace EMU;
 using namespace Z80;
 
-namespace Driver {
+namespace Arcade {
 
 class DonkeyKongGfx: public GfxDevice
 {
@@ -55,7 +55,7 @@ private:
     void draw_bg(RasterScreen *screen);
     void draw_sprites(RasterScreen *screen);
 
-    Ram vram;
+    RamDevice vram;
 
     AddressBus16 *_bus;
 
@@ -83,7 +83,7 @@ private:
     void init_switches(void);
     void init_controls(void);
 
-    Ram ram;
+    RamDevice m_ram;
     Z80Cpu_ptr _main_cpu;
     I8257_ptr _i8257;
     DonkeyKongGfx_ptr _gfx;
@@ -92,8 +92,6 @@ private:
 
     /* Lines */
     bool _nmi_mask;
-
-    unsigned _hertz;
 };
 
 };

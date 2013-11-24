@@ -27,7 +27,7 @@
 
 #include "cpu/m6502.h"
 
-namespace TG16Driver {
+namespace TG16Machine {
 
 enum VDCReg {
     MAWR = 0,
@@ -52,13 +52,13 @@ enum VDCReg {
 
 class TG16;
 
-class VDC: public CpuDevice
+class VDC: public ClockedDevice
 {
 public:
     VDC(TG16 *tg16, unsigned hertz);
     virtual ~VDC(void);
 
-    virtual void execute(Time interval);
+    virtual void execute(void);
 
     byte_t read(offset_t offset);
     void write(offset_t offset, byte_t value);
@@ -203,8 +203,6 @@ public:
     PSG(TG16 *tg16);
     virtual ~PSG(void);
 
-    virtual void execute(Time interval);
-
     byte_t read(offset_t offset);
     void write(offset_t offset, byte_t value);
 };
@@ -230,7 +228,7 @@ private:
 
     std::unique_ptr<M6502::hu6280Cpu> _cpu;
     AddressBus21 _cpu_bus;
-    Ram _ram;
+    RamDevice _ram;
     VDC _vdc;
     PSG _psg;
     bvec _rom;

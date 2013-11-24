@@ -26,7 +26,7 @@
 #include "machine/nes/nes.h"
 
 using namespace EMU;
-using namespace NESDriver;
+using namespace NESMachine;
 
 NESPPU::NESPPU(NES *machine, const std::string &name, unsigned hertz):
     ClockedDevice(machine, name, hertz),
@@ -47,7 +47,7 @@ NESPPU::NESPPU(NES *machine, const std::string &name, unsigned hertz):
     _blk0(0x0400),
     _blk1(0x0400)
 {
-    _mirror = _machine->ioport("MIRRORING");
+    _mirror = machine->ioport("MIRRORING");
 
     _cpu_bus = machine->cpu_bus();
     _ppu_bus = machine->ppu_bus();
@@ -74,13 +74,10 @@ NESPPU::~NESPPU(void)
 }
 
 void
-NESPPU::execute(Time interval)
+NESPPU::execute(void)
 {
-    _avail += interval.to_cycles(Cycles(_hertz));
-
-    while (_avail > 0) {
-        step();
-        _avail -= Cycles(1);
+    while (true) {
+        add_icycles(step());
     }
 }
 
@@ -180,7 +177,7 @@ NESPPU::draw_sprite(int color, int x, int y)
     return color;
 }
 
-void
+Cycles
 NESPPU::step(void)
 {
     _hpos++;
@@ -188,25 +185,27 @@ NESPPU::step(void)
         _hpos = 0;
         _vpos = (_vpos + 1) % 261;
         if (_vpos == 0) {
-            _machine->screen()->flip();
-            _machine->screen()->clear();
+            machine()->screen()->flip();
+            machine()->screen()->clear();
             _vram_locked = false;
             _status.vblank = 1;
-            if (_reg1.nmi_enabled)
-                _machine->set_line("cpu", Line::NMI, LineState::Pulse);
+            if (_reg1.nmi_enabled) {
+                machine()->set_line("cpu", Line::NMI, LineState::Pulse);
+            }
         }
     }
     if (_vpos < 20 || (!_reg2.bg_visible && !_reg2.spr_visible))
-        return;
+        return Cycles(1);
     if (_vpos >= 21 && _hpos == 0) {
         int sy = _vpos - 21;
+        bool sprite0_hit = _status.sprite0_hit;
         for (int sx = 0; sx < 256; sx++) {
             int color = 0;
             if (_reg2.bg_visible && (_reg2.bg_clip || sx >= 8))
                 color = draw_bg();
             if (_reg2.spr_visible && (_reg2.spr_clip || sx >= 8))
                 color = draw_sprite(color, sx, sy);
-            _machine->screen()->set(sx, sy, _palette[color]);
+            machine()->screen()->set(sx, sy, _palette[color]);
             if (_x == 0x07) {
                 _x = 0;
                 if (_v.coarse_x == 0x1F) {
@@ -218,8 +217,12 @@ NESPPU::step(void)
             } else
                 _x++;
         }
+        if (!sprite0_hit && _status.sprite0_hit) {
+            _hpos += 255;
+            return Cycles(256);
+        }
     } else if (_hpos == 256) {
-        DBG("Line Start");
+        DEVICE_DEBUG("Line Start");
         if (_v.fine_y == 0x07) {
             _v.fine_y = 0;
             if (_v.coarse_y == 29) {
@@ -234,7 +237,7 @@ NESPPU::step(void)
     } else if (_hpos == 257) {
         _v.coarse_x = _t.coarse_x;
         _v.nt_hselect = _t.nt_hselect;
-        _machine->set_line("mapper", Line::INT0, LineState::Pulse);
+        machine()->set_line("mapper", Line::INT0, LineState::Pulse);
     } else if (_hpos == 280 && _vpos == 20) {
         _vram_locked = true;
         _v.fine_y = _t.fine_y;
@@ -260,6 +263,7 @@ NESPPU::step(void)
             _sprites.push_back(idx);
         }
     }
+    return Cycles(1);
 }
 
 void
@@ -406,7 +410,7 @@ byte_t
 NESPPU::ppu_nt_read(offset_t offset)
 {
     NameTableMirroring mirror = NameTableMirroring(
-        _machine->read_ioport(_mirror));
+        machine()->read_ioport(_mirror));
     NameTable nt = NameTable((offset & 0x0C00) >> 10);
     offset &= 0x03ff;
     byte_t result = 0;
@@ -466,7 +470,7 @@ void
 NESPPU::ppu_nt_write(offset_t offset, byte_t value)
 {
     NameTableMirroring mirror = NameTableMirroring(
-        _machine->read_ioport(_mirror));
+        machine()->read_ioport(_mirror));
     NameTable nt = NameTable((offset & 0x0C00) >> 10);
     offset &= 0x03ff;
     switch (nt) {

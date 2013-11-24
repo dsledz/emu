@@ -32,10 +32,11 @@ using namespace M6502;
 
 M6502Cpu::M6502Cpu(Machine *machine, const std::string &name, unsigned hertz,
                    AddressBus16 *bus):
-    CpuDevice(machine, name, hertz),
+    ClockedDevice(machine, name, hertz),
     _rPC(), _rA(), _rX(), _rY(), _rSR(), _rSP(), _zpg(0),
     _nmi_line(LineState::Clear),
     _irq_line(LineState::Clear),
+    _reset_line(LineState::Clear),
     _bus(bus),
     _icycles(0)
 {
@@ -47,12 +48,10 @@ M6502Cpu::~M6502Cpu(void)
 }
 
 void
-M6502Cpu::execute(Time period)
+M6502Cpu::execute(void)
 {
-    _avail += period.to_cycles(Cycles(_hertz));
-
-    while (_avail > 0) {
-        _avail -= dispatch();
+    while (true) {
+        add_icycles(dispatch());
     }
 }
 
@@ -61,8 +60,7 @@ M6502Cpu::line(Line line, LineState state)
 {
     switch (line) {
     case Line::RESET:
-        /* XXX: We should treat this as a line */
-        _reset();
+        _reset_line = state;
         break;
     case Line::INT0:
         _irq_line = state;
@@ -92,7 +90,7 @@ void
 M6502Cpu::log_op(byte_t op)
 {
     std::stringstream os;
-    os << std::setw(8) << _name << ":"
+    os << std::setw(8) << name() << ":"
        << Hex(_op_pc) << ":" << Hex(op) << ":"
        << _op_name << " = >";
     const std::string &str = _op_name;
@@ -133,7 +131,7 @@ M6502Cpu::log_op(byte_t op)
         lastPos = str.find_first_not_of(delimiters, pos);
         pos = str.find_first_of(delimiters, lastPos);
     }
-    TRACE(os.str());
+    DEVICE_TRACE(os.str());
 }
 
 #define OPCODE(op, name, func) \
@@ -148,14 +146,19 @@ Cycles
 M6502Cpu::dispatch(void)
 {
     _icycles = Cycles(0);
-    if (_nmi_line == LineState::Pulse) {
-        DBG("NMI triggered");
+    if (_reset_line == LineState::Pulse) {
+        DEVICE_DEBUG("Reset triggered");
+        _reset();
+        _reset_line = LineState::Clear;
+        return _icycles;
+    } else if (_nmi_line == LineState::Pulse) {
+        DEVICE_DEBUG("NMI triggered");
         _rF.B = 0;
         op_interrupt(0xFFFA);
         _nmi_line = LineState::Clear;
         return _icycles;
     } else if (_rF.I == 0 && _irq_line == LineState::Assert) {
-        DBG("IRQ triggered");
+        DEVICE_DEBUG("IRQ triggered");
         _rF.B = 0;
         _rF.I = 1;
         op_interrupt(0xFFFE);
@@ -318,7 +321,7 @@ M6502Cpu::dispatch(void)
         OPCODE(0xFE, "INC abs,X", Abs(_rX); op_inc());
     default:
         std::cout << "Unknown opcode: " << Hex(op) << std::endl;
-        throw CpuOpcodeFault(_name, op, _op_pc);
+        throw CpuOpcodeFault(name(), op, _op_pc);
     }
 
     IF_LOG(Trace)

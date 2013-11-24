@@ -28,15 +28,15 @@
 #include "emu/io.h"
 #include "emu/input.h"
 #include "emu/timing.h"
-#include <list>
 
 namespace EMU {
 
-enum class DeviceState {
-    Running = 0,
-    Halted = 1,
-    Stopped = 2,
-    Fault = 3,
+enum class DeviceStatus {
+    Off      = 0,
+    Halted   = 1,
+    Running  = 2,
+    Stopped  = 3,
+    Fault    = 4,
 };
 
 class Machine;
@@ -49,136 +49,107 @@ public:
     Device(Machine *machine, const std::string &name);
     virtual ~Device(void);
 
-    Machine *machine(void) {
-        return _machine;
-    }
-    const std::string &name(void) {
-        return _name;
-    }
+    Machine *machine(void);
+    const std::string &name(void);
+
+    void task(void);
+
     /**
-     * Save the device state.
+     * Return the local clock.
      */
-    virtual void save(SaveState &state) { }
-    /**
-     * Restore the device state.
-     */
-    virtual void load(LoadState &state) { }
-    /**
-     * Simulate the device for the next interval.
-     */
-    virtual void execute(Time interval) { }
+    virtual EmuClock *clock(void);
+
     /**
      * Signal one of the external lines.
      */
-    virtual void line(Line line, LineState state) {
-        switch (line) {
-        case Line::RESET:
-            reset();
-            break;
-        default:
-            break;
-        }
-    }
+    virtual void line(Line line, LineState state);
 
-    virtual void reset(void) { }
+    virtual void reset(void);
+
+    virtual void task_loop(void);
+
+    virtual void set_status(DeviceStatus status);
+    virtual void wait_status(DeviceStatus status);
+    virtual DeviceStatus get_status(void);
 
 protected:
-    Machine *_machine;
-    std::string _name;
+
+    void log(LogLevel level, const std::string &fmt, ...);
+
+    void wait(DeviceStatus status);
+
+    std::string              m_name;
+    Machine                 *m_machine;
+    DeviceStatus             m_status;
+    DeviceStatus             m_target_status;
+    std::condition_variable  m_cv;
+    std::mutex               m_mtx;
 };
 
 typedef std::unique_ptr<Device> device_ptr;
 
-class CpuDevice: public Device {
+class IODevice: public Device {
 public:
-    CpuDevice(Machine *machine, const std::string &name, unsigned hertz):
-        Device(machine, name), _hertz(hertz), _avail(0) { }
-    virtual ~CpuDevice(void) { }
+    IODevice(Machine *machine, const std::string &name, size_t size);
+    virtual ~IODevice(void);
 
-    virtual void execute(Time period) = 0;
+    size_t size(void);
+
+    virtual void write8(offset_t offset, byte_t arg) = 0;
+    virtual byte_t read8(offset_t offset) = 0;
+    virtual byte_t *direct(offset_t offset) = 0;
 
 protected:
-    unsigned _hertz;
-    Cycles _avail;
+    size_t m_size;
 };
 
-/**
- * Emulation device. Specific chips implement the device class.
- */
-class ClockedDevice: public Clockable {
+class ClockedDevice: public Device {
 public:
-    ClockedDevice(Machine *machine, const std::string &name):
-        Clockable(name), _machine(machine), _name(name) { }
-    virtual ~ClockedDevice(void) { }
+    ClockedDevice(Machine *machine, const std::string &name, unsigned hertz);
+    virtual ~ClockedDevice(void);
 
-    Machine *machine(void) {
-        return _machine;
-    }
-    const std::string &name(void) {
-        return _name;
-    }
-    /**
-     * Save the device state.
-     */
-    virtual void save(SaveState &state) { }
-    /**
-     * Restore the device state.
-     */
-    virtual void load(LoadState &state) { }
-    /**
-     * Simulate the device for the next interval.
-     */
-    virtual void execute(void) { }
-    /**
-     * Signal one of the external lines.
-     */
-    virtual void line(Line line, LineState state) {
-        switch (line) {
-        case Line::RESET:
-            reset();
-            break;
-        default:
-            break;
-        }
+    virtual void execute(void) = 0;
+
+    virtual EmuClock *clock(void);
+
+    virtual void task_loop(void);
+
+    void add_icycles(unsigned cycles) {
+        const Cycles c(cycles);
+        if (__builtin_expect((m_avail < c), 0))
+            wait_icycles(c);
+        m_avail -= c;
     }
 
-    virtual void reset(void) { }
+    void add_icycles(Cycles cycles) {
+        if (__builtin_expect((m_avail < cycles), 0))
+            wait_icycles(cycles);
+        m_avail -= cycles;
+    }
 
 protected:
-    Machine *_machine;
-    std::string _name;
+    void wait_icycles(Cycles cycles);
+
+    EmuClock m_clock;
+    unsigned m_hertz;
+    Cycles m_avail;
+    Cycles m_icycles;
 };
 
-class GfxDevice: public Device {
+class GfxDevice: public ClockedDevice {
 public:
-    GfxDevice(Machine *machine, const std::string &name, unsigned hertz):
-        Device(machine, name), _scanline(0), _hertz(hertz), _avail(0) { }
-    virtual ~GfxDevice(void) { }
+    GfxDevice(Machine *machine, const std::string &name, unsigned hertz);
+    virtual ~GfxDevice(void);
 
-    virtual void execute(Time interval) {
-        _avail += interval.to_cycles(Cycles(_hertz/3));
-
-        static const Cycles _cycles_per_scanline(384);
-        while (_avail > _cycles_per_scanline) {
-            _scanline = (_scanline + 1) % 264;
-            _avail -= _cycles_per_scanline;
-            auto it = _callbacks.find(_scanline);
-            if (it != _callbacks.end())
-                it->second();
-        }
-    }
-
+    virtual void execute(void);
     typedef std::function<void (void)> scanline_fn;
 
-    void register_callback(unsigned scanline, scanline_fn fn) {
-        _callbacks.insert(make_pair(scanline, fn));
-    }
+    void register_callback(unsigned scanline, scanline_fn fn);
 
 protected:
-    unsigned _scanline;
-    unsigned _hertz;
-    Cycles _avail;
-    std::unordered_map<unsigned, scanline_fn> _callbacks;
+
+    unsigned m_scanline;
+    std::unordered_map<unsigned, scanline_fn> m_callbacks;
 };
 
 };

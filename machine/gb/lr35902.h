@@ -28,7 +28,7 @@
 
 using namespace EMU;
 
-namespace LR35902 {
+namespace GBMachine {
 
 enum class IME {
     Disabled = 0,
@@ -104,7 +104,7 @@ struct Registers {
 #define _rPCh  _R._PC.b.h
 #define _rPCl  _R._PC.b.l
 
-class LR35902Cpu: public CpuDevice {
+class LR35902Cpu: public ClockedDevice {
 public:
     LR35902Cpu(Machine *machine, const std::string &name, unsigned hertz,
                AddressBus16 *bus);
@@ -113,8 +113,7 @@ public:
 
     virtual void save(SaveState &state);
     virtual void load(LoadState &state);
-    // XXX: Do we need to do something here?
-    virtual void execute(Time interval);
+    virtual void execute(void);
     virtual void line(Line, LineState state);
 
     byte_t fetch(Register reg);

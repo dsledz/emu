@@ -45,6 +45,7 @@ void
 Emulator::start(void)
 {
     set_state(EmuState::Running);
+    _clock.resume();
 }
 
 void
@@ -52,12 +53,14 @@ Emulator::stop(void)
 {
     set_state(EmuState::Stopped);
     /* XXX: task? */
+    _clock.reset();
 }
 
 void
 Emulator::pause(void)
 {
     set_state(EmuState::Paused);
+    _clock.pause();
 }
 
 void
@@ -65,11 +68,7 @@ Emulator::reset(void)
 {
     set_state(EmuState::Paused);
     _machine->reset();
-    /* XXX: Delay? */
-    timespec t = { 1, 0 };
-    nanosleep(&t, NULL);
     set_state(EmuState::Running);
-
 }
 
 void
@@ -80,7 +79,8 @@ Emulator::render(void)
 void
 Emulator::do_execute(void)
 {
-    _machine->power();
+    _machine->poweron();
+
     do {
         {
             std::unique_lock<std::mutex> lock(mtx);
@@ -90,10 +90,15 @@ Emulator::do_execute(void)
                 break;
         }
 
-        _machine->add_time(_clock.get_delta());
-        struct timespec t = { 0, 10000000 };
+        _machine->set_time(_clock.runtime());
+        /* Advance the clock by 200usec each time. */
+        struct timespec t = { 0, 100000 };
         nanosleep(&t, NULL);
     } while (true);
+
+    /* XXX: workaround */
+    exit(0);
+    _machine->poweroff();
 }
 
 Emulator::EmuState

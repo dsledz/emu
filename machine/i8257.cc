@@ -30,7 +30,7 @@
 using namespace EMU;
 
 I8257::I8257(Machine *machine, const std::string &name, unsigned hertz, AddressBus16 *bus):
-    CpuDevice(machine, name, hertz),
+    ClockedDevice(machine, name, hertz),
     _flip_flop(0),
     _bus(bus)
 {
@@ -41,9 +41,11 @@ I8257::~I8257(void)
 }
 
 void
-I8257::execute(Time interval)
+I8257::execute(void)
 {
-    return;
+    while (true) {
+        add_icycles(100);
+    }
 }
 
 void

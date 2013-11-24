@@ -27,6 +27,8 @@
 #include <mach/mach.h>
 #include <mach/mach_time.h>
 
+#include "emu/task.h"
+
 namespace EMU {
 
 struct Cycles {
@@ -77,7 +79,7 @@ struct Cycles {
     bool operator ==(const struct Cycles &rhs) const {
         return v == rhs.v;
     }
-    int64_t v;
+    int64_t v = 0;
 };
 
 struct nsec {
@@ -161,8 +163,10 @@ struct Time {
         return ns >= rhs.ns;
     }
 
-    uint64_t ns;
+    uint64_t ns = 0;
 };
+
+typedef Time EmuTime;
 
 extern const Time time_zero;
 
@@ -172,14 +176,31 @@ extern const Time time_zero;
 class RealTimeClock {
     public:
         RealTimeClock(void) {
-            _clock = mach_absolute_time();
+            _start = mach_absolute_time();
+            _clock = _start;
             mach_timebase_info_data_t timebase;
             mach_timebase_info(&timebase);
         }
         ~RealTimeClock(void) { }
 
         void reset(void) {
-            _clock = mach_absolute_time();
+            _start = mach_absolute_time();
+            _clock = _start;
+        }
+
+        void pause(void) {
+            _pause = mach_absolute_time();
+        }
+
+        void resume(void) {
+            uint64_t now = mach_absolute_time();
+            _start -= (now - _pause);
+        }
+
+        Time runtime(void) {
+            uint64_t now = mach_absolute_time();
+
+            return Time(nsec(now - _start));
         }
 
         /* Return the number of ticks since last call */
@@ -197,6 +218,8 @@ class RealTimeClock {
 
     private:
         uint64_t _clock;
+        uint64_t _start;
+        uint64_t _pause;
 };
 
 struct WorkItem {
@@ -239,22 +262,6 @@ private:
     Time _deadline;
 };
 
-template<typename mtx_type>
-class unlock_guard {
-public:
-    unlock_guard(mtx_type & m): _mtx(m) {
-        _mtx.unlock();
-    }
-    ~unlock_guard(void) {
-        _mtx.lock();
-    }
-
-private:
-    mtx_type & _mtx;
-};
-typedef std::lock_guard<std::mutex> lock_mtx;
-typedef unlock_guard<std::mutex> unlock_mtx;
-
 typedef std::shared_ptr<TimerItem> TimerItem_ptr;
 
 class TimerQueue {
@@ -286,78 +293,156 @@ private:
     bool _quit;
 };
 
-/**
- * Create a clockable device.
- * Each device operates on a notion of virtual time, this is usually translated
- * to hertz befor being used.
- */
-class Clockable {
-public:
-    enum class State {
-        Running, /* Executing */
-        Waiting, /* Waiting for an event */
-        Paused,  /* Paused, events won't wake us. */
-        Stopped, /* Dead */
-    };
-
-    Clockable(const std::string &name);
-    virtual ~Clockable(void);
-
-    virtual void power(void);
-    virtual void execute(void) = 0;
-
-    const std::string &name(void) {
-        return _name;
-    }
-
-    const Time now(void) {
-        return _current_time;
-    }
-
-    const Time left(void) {
-        return _avail_time;
-    }
-
-    Clockable::State state(void);
-
-    void add_time(Time interval);
-
-    void wait_state(State state);
-
-    void wait(void);
-
-protected:
-    void do_advance(Time interval) {
-        assert(_avail_time >= interval);
-        _current_time += interval;
-        _avail_time -= interval;
-    }
-
-    void do_run(void);
-
-    void do_set_state(State state);
-    Clockable::State do_get_state(void);
-
-    std::future<void> _task;
-private:
-    std::mutex _mtx;
-    std::condition_variable _cv;
-
-    State _state;
-    std::string _name;
-    Time _current_time;
-    Time _avail_time;
+struct EmuClockUpdate {
+    bool         stop;
+    EmuTime      now;
 };
 
-class Scheduler {
-public:
-    Scheduler(void);
-    ~Scheduler(void);
+typedef EmuChannel<EmuClockUpdate> EmuTimeChannel;
+typedef std::shared_ptr<EmuTimeChannel> EmuTimeChannel_ptr;
 
-    void add(Clockable *dev);
+/**
+ * Sleepable virtual clock for a single simulated device
+ */
+class EmuClock
+{
+public:
+    EmuClock(void):m_stopped(false) { }
+    ~EmuClock(void) { }
+    EmuClock(const EmuClock &clock) = delete;
+
+    /**
+     * Wait until we have at least enough time requested.
+     */
+    EmuTime wait(EmuTime interval) {
+        EmuTime avail = m_now - m_current;
+        while (!m_stopped && (avail == time_zero || avail < interval)) {
+            EmuClockUpdate update = m_channel.get();
+            if (update.stop) {
+                LOG_DEBUG("Stopped!");
+                m_stopped = true;
+                break;
+            }
+            m_now = update.now;
+            avail = m_now - m_current;
+        }
+        if (m_stopped)
+            throw EmuTaskCanceled("Off");
+        return avail;
+    }
+
+#if 1
+    void advance(void) {
+        m_current = m_now;
+    }
+#else
+    /**
+     * Advance our clock by the specified time.
+     */
+    void advance(interval) {
+        m_current += interval;
+        assert(m_current <= m_now);
+    }
+#endif
+
+    /* XXX: locking? */
+    const EmuTime now(void) const {
+        return m_current;
+    }
+
+    void set(EmuTime now) {
+        EmuClockUpdate update {
+            .stop = false,
+            .now = now
+        };
+        m_channel.put(update);
+    }
+
+    void stop(void) {
+        EmuClockUpdate update {
+            .stop = false,
+            .now = time_zero
+        };
+        m_channel.put(update);
+    }
 
 private:
-    std::list<Clockable *> _devices;
+
+    bool    m_stopped;
+    EmuTime m_now;
+    EmuTime m_current;
+    EmuTimeChannel m_channel;
+};
+
+/**
+ * Global clock.
+ */
+class EmuSimClock
+{
+public:
+    EmuSimClock(void) { }
+    ~EmuSimClock(void) { }
+    EmuSimClock(const EmuSimClock &sim_clock) = delete;
+
+    void add_clock(EmuClock *clock) {
+        m_clocks.push_back(clock);
+    }
+
+    void remove_clock(EmuClock *clock) {
+        m_clocks.remove(clock);
+    }
+
+    const EmuTime now(void) const {
+        return m_now;
+    }
+
+    /**
+     * The newest device clock.
+     */
+    const EmuTime current(void) const {
+        return m_current;
+    }
+
+    /**
+     * The oldest device clock.
+     */
+    const EmuTime oldest(void) const {
+        return m_oldest;
+    }
+
+    void set(EmuTime now) {
+        m_now = now;
+        update_stats();
+        //m_current = std::max(m_oldest + interval, m_newest);
+        m_current = m_now;
+        m_current = std::min(m_current, m_now);
+        for (auto it = m_clocks.begin(); it != m_clocks.end(); it++)
+            (*it)->set(m_current);
+    }
+
+private:
+
+    void update_stats(void) {
+        EmuTime oldest = time_zero;
+        EmuTime newest = time_zero;
+        for (auto it = m_clocks.begin(); it != m_clocks.end(); it++) {
+            EmuTime fb = (*it)->now();
+            if (oldest == time_zero || fb < oldest)
+                oldest = fb;
+            if (newest == time_zero || fb > newest)
+                newest = fb;
+        }
+        m_oldest = oldest;
+        m_newest = newest;
+    }
+
+    EmuTime m_now;        /**< Wall time */
+    EmuTime m_current;    /**< Simulation target time */
+
+    EmuTime m_newest;
+    EmuTime m_oldest;
+
+    std::list<EmuClock *> m_clocks;
 };
 
 };

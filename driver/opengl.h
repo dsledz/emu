@@ -43,14 +43,14 @@ struct Vec3 {
     Vec3(void) = default;
     ~Vec3(void) = default;
     Vec3(float x, float y, float z): x(x), y(y), z(z) { }
-    float x, y, z;
+    float x=0.0, y=0.0, z=0.0;
 };
 
 struct Vec2 {
     Vec2(void) = default;
     ~Vec2(void) = default;
     Vec2(float x, float y): x(x), y(y) { }
-    float x, y;
+    float x=0.0, y=0.0;
 };
 
 struct TextureVertex {

@@ -27,7 +27,7 @@
 
 
 using namespace EMU;
-#if 0
+#if 1
 #include "cpu/m6502/m6502.h"
 using namespace M6502v2;
 #else
@@ -35,7 +35,7 @@ using namespace M6502v2;
 using namespace M6502;
 #endif
 
-namespace NESDriver {
+namespace NESMachine {
 
 enum NameTableMirroring {
     SingleScreenBLK0 = 0,
@@ -87,11 +87,11 @@ public:
     virtual void chr_write(offset_t offset, byte_t value) { }
 
     virtual byte_t sram_read(offset_t offset) {
-        throw DeviceFault(_name, "sram read");
+        throw DeviceFault(name(), "sram read");
     }
 
     virtual void sram_write(offset_t offset, byte_t value) {
-        throw DeviceFault(_name, "sram write");
+        throw DeviceFault(name(), "sram write");
     }
 
     /* Convert a prg bank into an offset */
@@ -115,13 +115,13 @@ public:
     NESPPU(NES *machine, const std::string &name, unsigned hertz);
     virtual ~NESPPU(void);
 
-    virtual void execute(Time interval);
+    virtual void execute(void);
     virtual void reset(void);
 
     int draw_bg(void);
     int draw_sprite(int color, int x, int y);
 
-    void step(void);
+    Cycles step(void);
 private:
 
     void init_palette(void);
@@ -263,7 +263,7 @@ private:
     std::unique_ptr<M6502Cpu> _cpu;
     std::unique_ptr<NESPPU> _ppu;
     mapper_ptr _mapper;
-    Ram _ram;
+    RamDevice _ram;
 
     AddressBus16 _cpu_bus;
     AddressBus16 _ppu_bus;

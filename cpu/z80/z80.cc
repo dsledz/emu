@@ -51,7 +51,7 @@ Registers::~Registers(void)
 
 Z80Cpu::Z80Cpu(Machine *machine, const std::string &name, unsigned hertz,
                AddressBus16 *bus):
-    CpuDevice(machine, name, hertz),
+    ClockedDevice(machine, name, hertz),
     _prefix(NoPrefix),
     _icycles(0),
     _op(),
@@ -59,7 +59,6 @@ Z80Cpu::Z80Cpu(Machine *machine, const std::string &name, unsigned hertz,
     _iff1(false),
     _iff2(false),
     _iwait(false),
-    _state(DeviceState::Running),
     _nmi_line(LineState::Clear),
     _int0_line(LineState::Clear),
     _reset_line(LineState::Clear),
@@ -74,15 +73,12 @@ Z80Cpu::~Z80Cpu(void)
 }
 
 void
-Z80Cpu::execute(Time interval)
+Z80Cpu::execute(void)
 {
-    _avail += interval.to_cycles(Cycles(_hertz));
     /* XXX: Handle fault states. */
 
-    /* Execute as much as possible. We'll save the left over cycles for the
-     * next call. Hopefully this is okay. */
-    while (_avail > 0) {
-        _avail -= step();
+    while (true) {
+        add_icycles(step());
     }
 }
 
@@ -103,7 +99,7 @@ Z80Cpu::step(void)
     } else if (_int0_line == LineState::Assert && _iff1 && !_iwait) {
         switch (_imode) {
         case 0:
-            throw CpuFault(_name, "Unsupported Interrupt mode 0");
+            throw CpuFault(name(), "Unsupported Interrupt mode 0");
             break;
         case 1:
             interrupt(0x0038);
@@ -132,7 +128,7 @@ Z80Cpu::step(void)
 void
 Z80Cpu::_reset(void)
 {
-    DBG("Z80 reset");
+    DEVICE_DEBUG("Z80 reset");
     _R = Registers();
     _iff1 = false;
     _iff2 = false;
@@ -159,6 +155,7 @@ Z80Cpu::line(Line line, LineState state)
     default:
         break;
     }
+    // XXX: Halt set_status(DeviceStatus::Running);
 }
 
 /*
@@ -181,7 +178,7 @@ Z80Cpu::fetch(Reg reg)
         case Reg::E: return _rE;
         case Reg::H: return _rH;
         case Reg::L: return _rL;
-        default: throw CpuFault(_name, "Unknown register read");
+        default: throw CpuFault(name(), "Unknown register read");
     }
 }
 
@@ -196,7 +193,7 @@ Z80Cpu::store(Reg reg, byte_t value)
         case Reg::E: _rE = value; break;
         case Reg::H: _rH = value; break;
         case Reg::L: _rL = value; break;
-        default: throw CpuFault(_name, "Unknown register write");
+        default: throw CpuFault(name(), "Unknown register write");
     }
 }
 
@@ -907,8 +904,10 @@ Z80Cpu::_lddr(void)
 void
 Z80Cpu::_halt()
 {
+    /* XXX: Is there a race here? */
     // Cpu is halted until the next interrupt
-    _state = DeviceState::Halted;
+    set_status(DeviceStatus::Halted);
+    wait_status(DeviceStatus::Running);
 }
 
 void
@@ -1069,7 +1068,7 @@ void
 Z80Cpu::op_log(void)
 {
     std::stringstream os;
-    os << std::setw(8) << _name << ":"
+    os << std::setw(8) << name() << ":"
        << Hex(_op.pc) << ":" << Hex(_op.opcode) << ":"
        << _op.name << " =>";
     const std::string &str = _op.name;
@@ -1133,7 +1132,7 @@ Z80Cpu::op_log(void)
         lastPos = str.find_first_not_of(delimiters, pos);
         pos = str.find_first_of(delimiters, lastPos);
     }
-    TRACE(os.str());
+    DEVICE_TRACE(os.str());
 }
 
 #define OPCODE(op, cycles, bytes, name, func) \
@@ -1151,11 +1150,6 @@ Z80Cpu::dispatch(void)
 {
     _op.pc = _rPC;
     _op.opcode = pc_read();
-
-    if (_state == DeviceState::Halted) {
-        _rPC--;
-        _op.opcode = 0x00; /* NOP */
-    }
 
     byte_t *vrH = &_rH;
     byte_t *vrL = &_rL;
@@ -1443,7 +1437,6 @@ Z80Cpu::dispatch(void)
         OPCODE(0xFE,  7, 2, "CP d8", _cp(_rA, _d8()));
         OPCODE(0xFF, 11, 1, "RST 38H", _rst(0x38));
     default:
-        _state = DeviceState::Fault;
         throw CpuOpcodeFault("z80", _op.opcode, _op.pc);
     }
 
@@ -1603,7 +1596,6 @@ Z80Cpu::dispatch_ed(void)
         OPCODE(0xB8, 16, 2, "LDIR", _lddr());
         OPCODE(0xB9, 16, 2, "CPDR", _cpdr());
     default:
-        _state = DeviceState::Fault;
         throw CpuOpcodeFault("z80", op, pc);
     }
 }
@@ -1616,7 +1608,5 @@ Z80Cpu::interrupt(addr_t addr)
     _iff2 = _iff1;
     _iff1 = false;
     _add_icycles(20);
-    if (_state == DeviceState::Halted)
-        _state = DeviceState::Running;
 }
 

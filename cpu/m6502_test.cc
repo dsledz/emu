@@ -37,11 +37,15 @@ public:
         Machine(),
         bus(),
         cpu(this, "cpu", 1000000, &bus),
-        ram(0x2000),
-        irq_vec(0x0008)
+        ram(this, "ram", 0x2000),
+        irq_vec(this, "irq", 0x0008)
     {
-        bus.add(0x0000, 0x1FFF, &ram);
-        bus.add(0xFFF8, 0xFFFF, &irq_vec);
+        bus.add(0x0000, 0x1FFF,
+            READ_CB(RamDevice::read8, &ram),
+            WRITE_CB(RamDevice::write8, &ram));
+        bus.add(0xFFF8, 0xFFFF,
+            READ_CB(RamDevice::read8, &irq_vec),
+            WRITE_CB(RamDevice::write8, &irq_vec));
 
         irq_vec.write8(0x0006, 0x0000);
         irq_vec.write8(0x0007, 0x0010);
@@ -57,8 +61,8 @@ public:
 
     AddressBus16 bus;
     M6502Cpu cpu;
-    Ram ram;
-    Ram irq_vec;
+    RamDevice ram;
+    RamDevice irq_vec;
 };
 
 TEST(M6502Test, constructor)
@@ -84,7 +88,7 @@ TEST(M6502Test, opcode_ea)
     /* NOP */
     LOAD1(0xea);
 
-    machine.cpu.execute(Time(usec(10)));
+    machine.cpu.execute();
 }
 
 
@@ -106,7 +110,7 @@ TEST(M6502Test, immediate)
     /* STA x,ind (0x005F,0x0060) -> 0x1100*/
     LOAD2(0x81, 0x0F)
 
-    machine.cpu.execute(Time(usec(30)));
+    machine.cpu.execute();
 
     EXPECT_EQ(0x11, machine.bus.read(0x0010));
     EXPECT_EQ(0x11, machine.bus.read(0x0060));

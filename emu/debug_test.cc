@@ -29,8 +29,9 @@
 
 TEST(DebugTest, trace)
 {
-    TRACE("foo");
-    INFO("foo");
-    ERROR("foo");
+    LOG_TRACE("foo");
+    LOG_DEBUG("foo");
+    LOG_INFO("foo");
+    LOG_ERROR("foo");
 }
 

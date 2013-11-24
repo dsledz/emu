@@ -27,13 +27,16 @@
 #include "machine/namco06.h"
 
 using namespace EMU;
+using namespace Device;
 
 Namco06::Namco06(Machine *machine, Device *parent):
-    Device(machine, "06xx"),
-    _parent(parent),
-    _children(),
-    _control(0x00)
+    ClockedDevice(machine, "06xx", 1000000),
+    m_reset_line(LineState::Clear),
+    m_parent(parent),
+    m_children(),
+    m_control(0x00)
 {
+    reset();
 }
 
 Namco06::~Namco06(void)
@@ -41,53 +44,64 @@ Namco06::~Namco06(void)
 }
 
 void
+Namco06::reset(void)
+{
+    m_control = 0x00;
+}
+
+void
 Namco06::add_child(int pos, IODevice *child)
 {
-    _children[pos] = child;
+    m_children[pos] = child;
 }
 
 byte_t
 Namco06::read_child(addr_t addr)
 {
     byte_t result = 0xff;
-    if ((_control & 0x10) != 0x10)
+    byte_t control = m_control;
+    if ((control & 0x10) != 0x10)
         return 0;
     for (int dev = 0; dev < 4; dev++)
-        if (bit_isset(_control, dev) && _children[dev] != NULL)
-            result &= _children[dev]->read8(0);
+        if (bit_isset(control, dev) && m_children[dev] != NULL)
+            result &= m_children[dev]->read8(0);
     return result;
 }
 
 void
 Namco06::write_child(addr_t addr, byte_t value)
 {
-    if ((_control & 0x10) != 0x00)
+    if ((m_control & 0x10) != 0x00)
         return;
     for (int dev = 0; dev < 4; dev++)
-        if (bit_isset(_control, dev) && _children[dev] != NULL)
-            _children[dev]->write8(0, value);
+        if (bit_isset(m_control, dev) && m_children[dev] != NULL)
+            m_children[dev]->write8(0, value);
 }
 
 byte_t
 Namco06::read_control(addr_t addr)
 {
-    return _control;
+    return m_control;
 }
 
 void
 Namco06::write_control(addr_t addr, byte_t value)
 {
-    _control = value;
-    _timers.remove(_timer);
-    if ((_control & 0x0F) != 0)
-        _timer = _timers.add_periodic(Time(usec(200)),
-               std::bind(&Namco06::timer_func, this));
+    m_control = value;
 }
 
 void
-Namco06::execute(Time interval)
+Namco06::execute(void)
 {
-    _timers.run(interval);
+    while (true) {
+        if (m_reset_line == LineState::Pulse) {
+            reset();
+            m_reset_line = LineState::Clear;
+        }
+        add_icycles(200);
+        if ((m_control & 0x0F) != 0)
+            machine()->set_line(m_parent, Line::NMI, LineState::Pulse);
+    }
 }
 
 void
@@ -95,17 +109,11 @@ Namco06::line(Line line, LineState state)
 {
     switch (line) {
     case Line::RESET:
-        DBG("06xx RESET");
+        m_reset_line = state;
         break;
     default:
-        DBG("Unrecognized signal");
+        DEVICE_DEBUG("Unrecognized signal");
         break;
     }
-}
-
-void
-Namco06::timer_func(void)
-{
-    _machine->set_line(_parent, Line::NMI, LineState::Pulse);
 }
 

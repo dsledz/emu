@@ -29,7 +29,7 @@
 
 using namespace EMU;
 using namespace Z80;
-using namespace Driver;
+using namespace Arcade;
 
 RomDefinition mspacman_rom(void) {
     RomDefinition rom("mspacman");
@@ -61,7 +61,7 @@ RomDefinition pacman_rom(void) {
 Pacman::Pacman(const std::string &rom):
     Machine(),
     _hertz(18432000),
-    _ram(0x800)
+    _ram(this, "ram", 0x800)
 {
     add_screen(224, 288, RasterScreen::ROT90);
 
@@ -74,8 +74,7 @@ Pacman::Pacman(const std::string &rom):
     }
 
     _cpu = Z80Cpu_ptr(new Z80Cpu(this, "maincpu", _hertz/6, _bus.get()));
-
-    _rom = _roms->rom("maincpu");
+    _cpu->load_rom(_roms->rom("maincpu"), 0x0000);
 
     _gfx = PacmanGfx_ptr(new PacmanGfx(this, "gfx", _hertz, _bus.get()));
 
@@ -120,9 +119,6 @@ Pacman::io_write(offset_t offset, byte_t value)
 void
 Pacman::init_bus(void)
 {
-    _bus->add(0x0000, 0x3fff,
-        READ_CB(Pacman::rom_read, this),
-        WRITE_CB(Pacman::rom_write, this));
 
     _bus->add(0x4000, 0x43ff,
         READ_CB(PacmanGfx::vram_read, _gfx.get()),
@@ -169,9 +165,11 @@ Pacman::init_bus(void)
         WRITE_CB(Pacman::watchdog_write, this));
 
     // Ms. PACMAN
+#if 0
     _bus->add(0x8000, 0xbfff,
         READ_CB(Pacman::rom_read, this),
         WRITE_CB(Pacman::rom_write, this));
+#endif
 
     _bus->add(0xC000, 0xC3ff,
         READ_CB(PacmanGfx::vram_read, _gfx.get()),
@@ -270,7 +268,7 @@ MachineInformation pacman_info {
 static machine_ptr
 pacman_create(Options *opts)
 {
-    return machine_ptr(new Driver::Pacman(opts->rom));
+    return machine_ptr(new Arcade::Pacman(opts->rom));
 }
 
 MachineDefinition pacman(

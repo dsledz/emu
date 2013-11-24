@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include <sys/cdefs.h>
 #include <string.h>
 
 #include <string>
@@ -35,9 +36,11 @@
 #include <type_traits>
 #include <vector>
 #include <list>
+#include <queue>
 #include <memory>
 #include <cassert>
 #include <array>
+#include <map>
 
 #define a_unused __attribute((unused))
 
@@ -66,7 +69,7 @@ union reg16_t {
         reg8_t l;
         reg8_t h;
     } b;
-    uint16_t d;
+    uint16_t d = 0;
 };
 union reg32_t {
     reg32_t(void) = default;
@@ -76,7 +79,7 @@ union reg32_t {
         reg16_t l;
         reg16_t h;
     } b;
-    uint16_t d;
+    uint16_t d = 0;
 };
 
 /*  ____  _ _      ___

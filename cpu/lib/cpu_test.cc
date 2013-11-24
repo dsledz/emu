@@ -31,20 +31,20 @@ using namespace EMU;
 using namespace EMUTest;
 using namespace CPU;
 
-class TestCpu: public Cpu2<AddressBus16> {
+class TestCpu: public Cpu<AddressBus16> {
 public:
     TestCpu(Machine *machine, const std::string &name, unsigned hertz,
             AddressBus16 *bus):
-        Cpu2(machine, name, hertz, bus)
+        Cpu(machine, name, hertz, bus)
     {
     }
     virtual ~TestCpu(void)
     {
     }
 
-    virtual Cycles step(void)
+    virtual void step(void)
     {
-        return Cycles(1);
+        add_icycles(1);
     }
 
     virtual std::string dasm(addr_type addr)
@@ -56,11 +56,5 @@ public:
 TEST(CpuTest, constructor)
 {
     TestCpu cpu(NULL, "maincpu", 1000000, NULL);
-
-    cpu.power();
-
-    cpu.add_time(Time(sec(20)));
-
-    cpu.wait();
 }
 

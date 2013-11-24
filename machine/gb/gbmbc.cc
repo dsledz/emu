@@ -30,7 +30,7 @@
 #include "machine/gb/gbmbc.h"
 
 using namespace EMU;
-using namespace Driver;
+using namespace GBMachine;
 
 GBMBC::GBMBC(Gameboy *gameboy):
     Device(gameboy, "mbc"),

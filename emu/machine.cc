@@ -28,18 +28,23 @@
 using namespace EMU;
 
 Machine::Machine(void):
-    Clockable("machine"),
-    _screen(NULL),
-    _screen_width(0),
-    _screen_height(0),
-    _screen_rot(RasterScreen::ROT0)
+    m_scheduler(),
+    m_sim_clock(),
+    m_input(),
+    m_devs(),
+    m_switches(),
+    m_ports(),
+    m_screen(NULL),
+    m_screen_width(0),
+    m_screen_height(0),
+    m_screen_rot(RasterScreen::ROT0)
 {
 }
 
 Machine::~Machine(void)
 {
     /* Make sure all devices are disconnected */
-    assert(_devs.empty());
+    assert(m_devs.empty());
 }
 
 void
@@ -49,45 +54,41 @@ Machine::load_rom(const std::string &rom)
 }
 
 void
-Machine::execute(void)
+Machine::poweron(void)
 {
-    Time interval(usec(20));
-    while (left() >= interval) {
-        _timers.run(interval);
-
-        for (auto it = _devs.begin(); it != _devs.end(); it++)
-            (*it)->execute(interval);
-        do_advance(interval);
+    for (auto it = m_devs.begin(); it != m_devs.end(); it++) {
+        EmuClock *clock = (*it)->clock();
+        if (clock != NULL)
+            m_sim_clock.add_clock(clock);
+        m_scheduler.create(std::bind(&Device::task, *it));
+        (*it)->set_status(DeviceStatus::Running);
     }
+}
 
-    do_set_state(State::Waiting);
+void
+Machine::poweroff(void)
+{
+    for (auto it = m_devs.begin(); it != m_devs.end(); it++) {
+        (*it)->set_status(DeviceStatus::Off);
+    }
+    for (auto it = m_devs.begin(); it != m_devs.end(); it++) {
+        (*it)->wait_status(DeviceStatus::Off);
+    }
 }
 
 void
 Machine::add_device(Device *dev)
 {
-    _devs.push_back(dev);
+    m_devs.push_back(dev);
 }
 
 void
 Machine::remove_device(Device *dev)
 {
-    _devs.remove(dev);
-}
-
-TimerItem_ptr
-Machine::add_timer(Time timeout, callback_t callback, bool periodic)
-{
-    if (periodic)
-        return _timers.add_periodic(timeout, callback);
-    else
-        return _timers.add_timeout(timeout, callback);
-}
-
-void
-Machine::remove_timer(TimerItem_ptr timer)
-{
-    _timers.remove(timer);
+    EmuClock *clock = dev->clock();
+    m_devs.remove(dev);
+    if (clock != NULL)
+        m_sim_clock.remove_clock(clock);
 }
 
 void
@@ -98,7 +99,7 @@ Machine::run(void)
 Device *
 Machine::dev(const std::string &name)
 {
-    for (auto it = _devs.begin(); it != _devs.end(); it++) {
+    for (auto it = m_devs.begin(); it != m_devs.end(); it++) {
         if ((*it)->name() == name)
             return *it;
     }
@@ -108,20 +109,20 @@ Machine::dev(const std::string &name)
 RasterScreen *
 Machine::screen(void)
 {
-    return _screen;
+    return m_screen;
 }
 
 void
 Machine::add_ioport(const std::string &name)
 {
-    _ports.insert(make_pair(name, IOPort()));
+    m_ports.insert(make_pair(name, IOPort()));
 }
 
 IOPort *
 Machine::ioport(const std::string &name)
 {
-    auto it = _ports.find(name);
-    if (it == _ports.end())
+    auto it = m_ports.find(name);
+    if (it == m_ports.end())
         throw KeyError(name);
     return &it->second;
 }
@@ -155,16 +156,16 @@ Machine::write_ioport(IOPort *port, byte_t value)
 void
 Machine::add_input(const InputSignal &signal)
 {
-    _input.add(signal);
+    m_input.add(signal);
 }
 
 void
 Machine::send_input(InputKey key, bool pressed)
 {
     if (pressed)
-        _input.depress(key);
+        m_input.depress(key);
     else
-        _input.release(key);
+        m_input.release(key);
 }
 
 dipswitch_ptr
@@ -172,15 +173,15 @@ Machine::add_switch(const std::string &name, const std::string &port,
     byte_t mask, byte_t def)
 {
     auto ptr = dipswitch_ptr(new Dipswitch(name, port, mask, def));
-    _switches.insert(make_pair(name, ptr));
+    m_switches.insert(make_pair(name, ptr));
     return ptr;
 }
 
 void
 Machine::set_switch(const std::string &name, const std::string &value)
 {
-    auto sw = _switches.find(name);
-    if (sw == _switches.end())
+    auto sw = m_switches.find(name);
+    if (sw == m_switches.end())
         throw KeyError(name);
     sw->second->select(this, value);
 }
@@ -188,14 +189,14 @@ Machine::set_switch(const std::string &name, const std::string &value)
 void
 Machine::reset_switches(void)
 {
-    for (auto it = _switches.begin(); it != _switches.end(); it++)
+    for (auto it = m_switches.begin(); it != m_switches.end(); it++)
         it->second->set_default(this);
 }
 
 void
 Machine::reset(void)
 {
-    for (auto it = _devs.begin(); it != _devs.end(); it++)
+    for (auto it = m_devs.begin(); it != m_devs.end(); it++)
         set_line(*it, Line::RESET, LineState::Pulse);
 }
 
@@ -215,12 +216,12 @@ Machine::set_line(Device *dev, Line line, LineState state)
 void
 Machine::add_screen(short width, short height, RasterScreen::Rotation rotation)
 {
-    _screen_width = width;
-    _screen_height = height;
-    _screen_rot = rotation;
-    if (_screen != NULL) {
-        _screen->set_rotation(_screen_rot);
-        _screen->resize(_screen_width, _screen_height);
+    m_screen_width = width;
+    m_screen_height = height;
+    m_screen_rot = rotation;
+    if (m_screen != NULL) {
+        m_screen->set_rotation(m_screen_rot);
+        m_screen->resize(m_screen_width, m_screen_height);
     }
 }
 
@@ -228,9 +229,18 @@ void
 Machine::set_screen(RasterScreen *screen)
 {
     /* XXX: Not exception safe */
-    _screen = screen;
-    _screen->set_rotation(_screen_rot);
-    _screen->resize(_screen_width, _screen_height);
+    m_screen = screen;
+    m_screen->set_rotation(m_screen_rot);
+    m_screen->resize(m_screen_width, m_screen_height);
+}
+
+void
+Machine::log(LogLevel level, const std::string &fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    EMU::log.log(level, fmt, args);
+    va_end(args);
 }
 
 MachineLoader *
@@ -273,14 +283,14 @@ MachineLoader::~MachineLoader(void)
 void
 MachineLoader::add_machine(struct MachineDefinition *definition)
 {
-    _machines.push_back(definition);
+    m_machines.push_back(definition);
 }
 
 machine_ptr
 MachineLoader::load(Options *opts)
 {
     machine_ptr machine;
-    for (auto it = _machines.begin(); it != _machines.end(); it++) {
+    for (auto it = m_machines.begin(); it != m_machines.end(); it++) {
         if ((*it)->name == opts->driver)
             return (*it)->fn(opts);
     }
@@ -290,7 +300,7 @@ MachineLoader::load(Options *opts)
 const struct MachineDefinition *
 MachineLoader::find(const std::string &name)
 {
-    for (auto it = _machines.begin(); it != _machines.end(); it++) {
+    for (auto it = m_machines.begin(); it != m_machines.end(); it++) {
         if ((*it)->name == name)
             return *it;
     }
@@ -300,11 +310,11 @@ MachineLoader::find(const std::string &name)
 std::list<MachineDefinition *>::const_iterator
 MachineLoader::start(void)
 {
-    return _machines.begin();
+    return m_machines.begin();
 }
 
 std::list<MachineDefinition *>::const_iterator
 MachineLoader::end(void)
 {
-    return _machines.end();
+    return m_machines.end();
 }

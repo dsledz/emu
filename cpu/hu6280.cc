@@ -101,13 +101,11 @@ hu6280Cpu::mmu_write(offset_t offset, byte_t value)
 }
 
 void
-hu6280Cpu::execute(Time period)
+hu6280Cpu::execute(void)
 {
-    _avail += period.to_cycles(Cycles(_hertz/_clock_div));
-
-    while (_avail > 0) {
+    while (true) {
         Cycles used = dispatch();
-        _avail -= used;
+        add_icycles(used);
         _timer_value -= used.v;
     }
 }
@@ -145,7 +143,7 @@ bool
 hu6280Cpu::interrupt(void)
 {
     if (_nmi_line == LineState::Pulse) {
-        DBG("NMI triggered");
+        DEVICE_DEBUG("NMI triggered");
         op_irq(0xFFFC);
         _nmi_line = LineState::Clear;
         return true;
@@ -158,7 +156,7 @@ hu6280Cpu::interrupt(void)
         else if (bit_isset(_irq_status, 2) && !bit_isset(_irq_disable, 2))
             addr = 0xFFFA;
         if (addr != 0x0000) {
-            DBG("Interrupt");
+            DEVICE_DEBUG("Interrupt");
             op_irq(addr);
             return true;
         }
@@ -172,7 +170,7 @@ hu6280Cpu::dispatch(void)
     _icycles = Cycles(0);
 
     if (_timer_status && _timer_value < 0) {
-        INFO("Timer Triggered");
+        DEVICE_INFO("Timer Triggered");
         bit_set(_irq_status, 2, true);
         while (_timer_value <= 0)
             _timer_value += _timer_load;
@@ -419,7 +417,7 @@ hu6280Cpu::dispatch(void)
         OPCODE(0xFE, "INC abs,X", Abs(_rX); op_inc());
         OPCODE(0xFF, "BBS7", op_bbs(7));
     default:
-        throw CpuOpcodeFault(_name, op, _op_pc);
+        throw CpuOpcodeFault(name(), op, _op_pc);
         if ((op & 0x03) == 0x02) {
             /* 1 cycle(s), 2 byte(s) */
         } else if ((op & 0x03) == 0x03) {
@@ -439,7 +437,7 @@ hu6280Cpu::dispatch(void)
             _add_icycles(3);
         } else {
             std::cout << "Unknown opcode: " << Hex(op) << std::endl;
-            throw CpuOpcodeFault(_name, op, _op_pc);
+            throw CpuOpcodeFault(name(), op, _op_pc);
         }
     }
 
@@ -452,7 +450,7 @@ hu6280Cpu::dispatch(void)
 byte_t
 hu6280Cpu::irq_read(offset_t offset)
 {
-    DBG("IRQ status");
+    DEVICE_DEBUG("IRQ status");
     switch (offset & 0x03) {
     case 2:
         return _irq_disable;
@@ -465,7 +463,7 @@ hu6280Cpu::irq_read(offset_t offset)
 void
 hu6280Cpu::irq_write(offset_t offset, byte_t value)
 {
-    DBG("Updating IRQ status");
+    DEVICE_DEBUG("Updating IRQ status");
     switch (offset & 0x03) {
     case 2:
         _irq_disable = value;

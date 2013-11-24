@@ -28,6 +28,7 @@
 
 #include "emu/bits.h"
 #include "emu/mem.h"
+#include "emu/bus.h"
 #include "emu/cpu.h"
 
 using namespace EMU;

@@ -29,12 +29,12 @@
 
 using namespace EMU;
 using namespace Z80;
-using namespace Driver;
+using namespace Arcade;
 
 PacmanGfx::PacmanGfx(Machine *machine, const std::string &name, unsigned _hertz, AddressBus16 * bus):
     GfxDevice(machine, name, _hertz),
-    _vram(0x400),
-    _cram(0x400)
+    _vram(machine, "vram", 0x400),
+    _cram(machine, "cram", 0x400)
 {
 
 }

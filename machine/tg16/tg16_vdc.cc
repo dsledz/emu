@@ -25,10 +25,10 @@
 
 #include "tg16.h"
 
-using namespace TG16Driver;
+using namespace TG16Machine;
 
 VDC::VDC(TG16 *tg16, unsigned hertz):
-    CpuDevice(tg16, "vdc", hertz),
+    ClockedDevice(tg16, "vdc", hertz),
     _sprites(0),
     _hpos(0),
     _vpos(0),
@@ -60,7 +60,7 @@ VDC::status_read(offset_t offset)
     byte_t result = _status;
     _status = 0;
     /* XXX: How often should be clear this? */
-    _machine->set_line("cpu", Line::INT1, LineState::Clear);
+    machine()->set_line("cpu", Line::INT1, LineState::Clear);
 
     return result;
 }
@@ -89,7 +89,7 @@ VDC::data_read(offset_t offset)
         break;
     }
     default:
-        throw DeviceFault(_name, "data_read");
+        throw DeviceFault(name(), "data_read");
         break;
     }
     return result;
@@ -127,7 +127,7 @@ VDC::data_write(offset_t offset, byte_t value)
         _satb_write = true;
         break;
     case LENR:
-        INFO("DMA");
+        DEVICE_INFO("DMA");
         if (b == 1) {
             /* XXX: Cycles are wrong */
             for (uint16_t i = 0; i < _reg[LENR].d; i++)
@@ -207,15 +207,13 @@ VDC::bg_pixel(void)
 }
 
 void
-VDC::execute(Time interval)
+VDC::execute(void)
 {
-    _avail += interval.to_cycles(Cycles(_hertz));
-
     const Cycles used(1);
 
-    while (_avail > 0) {
+    while (m_avail > 0) {
         step();
-        _avail -= used;
+        m_avail -= used;
     }
 }
 
@@ -236,16 +234,16 @@ VDC::step(void)
         if (_vpos == VBSTART) {
             _flags.vblank = 1;
             if (bit_isset(_reg[CR].d, 3))
-                _machine->set_line("cpu", Line::INT1, LineState::Assert);
-            DBG("vblank start");
+                machine()->set_line("cpu", Line::INT1, LineState::Assert);
+            DEVICE_DEBUG("vblank start");
             if (_satb_write || bit_isset(_reg[DCR].d, 4)) {
                 for (int i = 0; i < 256; i++)
                     _sat[i] = _vram[_reg[SATB].d + i];
                 _satb_write = 0;
             }
         } else if (_vpos == VBEND) {
-            _machine->screen()->flip();
-            _machine->screen()->clear();
+            machine()->screen()->flip();
+            machine()->screen()->clear();
             _flags.vblank = 0;
             _flags.scanline_irq = 0;
             _flags.sprite_overflow = 0;
@@ -264,7 +262,7 @@ VDC::step(void)
             /* XXX: Scanline interrupt */
             if ((_vpos - VBEND + 63 == _reg[RCR].d) && bit_isset(_reg[CR].d, 2)) {
                 _flags.scanline_irq = 1;
-                _machine->set_line("cpu", Line::INT1, LineState::Assert);
+                machine()->set_line("cpu", Line::INT1, LineState::Assert);
             } else {
                 _flags.scanline_irq = 0;
             }
@@ -283,7 +281,7 @@ VDC::step(void)
     } else if (_hpos == HBSTART) {
         /* XXX: DMA? */
     } else if (_hpos > HBEND &&  _hpos < HBSTART) {
-        RasterScreen *screen = _machine->screen();
+        RasterScreen *screen = machine()->screen();
         uint8_t bg = 0;
         if (bit_isset(_reg[CR].d, 7))
             bg = bg_pixel();

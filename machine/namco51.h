@@ -28,8 +28,7 @@
 
 using namespace EMU;
 
-/* XXX: This seems wrong */
-namespace EMU {
+namespace Device {
 
 /**
  * Namco 51xx device. Used as an IO board.
@@ -40,19 +39,12 @@ public:
     Namco51(Machine *machine);
     virtual ~Namco51(void);
 
-    virtual void write8(offset_t offset, byte_t value);
-    virtual byte_t read8(offset_t offset);
-    virtual size_t size(void) {
-        return 0x4;
-    }
-    virtual byte_t *direct(offset_t offset) {
-        throw DeviceFault("namco51");
-    }
+    virtual void write8(offset_t offset, uint8_t value);
+    virtual uint8_t read8(offset_t offset);
+    virtual uint8_t *direct(offset_t offset);
 
 private:
-    byte_t read_port(const std::string &port) {
-        return _machine->read_ioport(port);
-    }
+    uint8_t read_port(const std::string &port);
 
     enum class Command {
         Nop0 = 0,
@@ -71,15 +63,13 @@ private:
         Credit = 2,
     };
 
-    Mode _mode;
-    bool _remap;
-    int _credits;
-    int _coinage_bytes;
-    int _read_count;
-    int _last_coin;
-    int _last_joy;
-
-    Machine *_machine;
+    Mode m_mode;
+    bool m_remap;
+    int m_credits;
+    int m_coinage_bytes;
+    int m_read_count;
+    int m_last_coin;
+    int m_last_joy;
 };
 
 typedef std::unique_ptr<Namco51> Namco51_ptr;

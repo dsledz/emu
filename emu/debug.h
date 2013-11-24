@@ -51,50 +51,66 @@ struct DebugException: public EmuException {
  */
 class Debug {
 public:
-    Debug(std::ostream &os): _os(os), _level(LogLevel::Info) {
+    Debug(std::ostream &os): m_os(os), m_level(LogLevel::Info) {
     }
     ~Debug(void) { }
 
     void set_level(LogLevel level) {
-        _level = level;
+        m_level = level;
     }
     void set_level(const std::string &level) {
         if (level == "trace") {
-            _level = LogLevel::Trace;
+            m_level = LogLevel::Trace;
         } else if (level == "debug") {
-            _level = LogLevel::Debug;
+            m_level = LogLevel::Debug;
         } else if (level == "info") {
-            _level = LogLevel::Info;
+            m_level = LogLevel::Info;
         } else if (level == "error") {
-            _level = LogLevel::Error;
+            m_level = LogLevel::Error;
         } else {
             throw DebugException("Unknown level " + level);
         }
     }
     inline bool enabled(LogLevel level) {
-        return (_level <= level);
+        return (m_level <= level);
     }
 
     void trace(const std::string &fmt) {
-        if (_level <= LogLevel::Trace)
-            _os << fmt << "\n";
+        if (m_level <= LogLevel::Trace) {
+            std::lock_guard<std::mutex> lock(m_mtx);
+            m_os << fmt << "\n";
+        }
     }
     void debug(const std::string &fmt) {
-        if (_level <= LogLevel::Debug)
-            _os << fmt << "\n";
+        if (m_level <= LogLevel::Debug) {
+            std::lock_guard<std::mutex> lock(m_mtx);
+            m_os << fmt << "\n";
+        }
     }
     void info(const std::string &fmt) {
-        if (_level <= LogLevel::Info)
-            _os << fmt << "\n";
+        if (m_level <= LogLevel::Info) {
+            std::lock_guard<std::mutex> lock(m_mtx);
+            m_os << fmt << "\n";
+        }
     }
     void error(const std::string &fmt) {
-        if (_level <= LogLevel::Error)
-            _os << fmt << "\n";
+        if (m_level <= LogLevel::Error) {
+            std::lock_guard<std::mutex> lock(m_mtx);
+            m_os << fmt << "\n";
+        }
+    }
+    void log(LogLevel level, const std::string &fmt, va_list args)
+    {
+        if (m_level <= level) {
+            std::lock_guard<std::mutex> lock(m_mtx);
+            m_os << fmt << "\n";
+        }
     }
 
 private:
-    std::ostream &_os;
-    LogLevel _level;
+    std::mutex m_mtx;
+    std::ostream &m_os;
+    LogLevel m_level;
 };
 
 extern Debug log;
@@ -102,16 +118,52 @@ extern Debug log;
 #define IF_LOG(lvl) \
     for (bool once=true; once && EMU::log.enabled(LogLevel::lvl); once=false)
 
-#define TRACE(fmt, args...) \
-    EMU::log.trace(fmt);
+#define LOG_TRACE(fmt, args...) \
+    for (bool once=true; once && EMU::log.enabled(EMU::LogLevel::Trace); once=false) \
+        EMU::log.trace(fmt);
 
-#define DBG(fmt, args...) \
-    EMU::log.debug(fmt);
+#define LOG_DEBUG(fmt, args...) \
+    for (bool once=true; once && EMU::log.enabled(EMU::LogLevel::Debug); once=false) \
+        EMU::log.debug(fmt);
 
-#define INFO(fmt, args...) \
-    EMU::log.info(fmt);
+#define LOG_INFO(fmt, args...) \
+    for (bool once=true; once && EMU::log.enabled(EMU::LogLevel::Info); once=false) \
+        EMU::log.info(fmt);
 
-#define ERROR(fmt, args...) \
-    EMU::log.error(fmt);
+#define LOG_ERROR(fmt, args...) \
+    for (bool once=true; once && EMU::log.enabled(EMU::LogLevel::Error); once=false) \
+        EMU::log.error(fmt);
+
+#define DEVICE_TRACE(fmt, ...) \
+    for (bool once=true; once && EMU::log.enabled(EMU::LogLevel::Trace); once=false) \
+        EMU::Device::log(EMU::LogLevel::Trace, fmt, ##__VA_ARGS__)
+
+#define DEVICE_DEBUG(fmt, ...) \
+    for (bool once=true; once && EMU::log.enabled(EMU::LogLevel::Debug); once=false) \
+        EMU::Device::log(EMU::LogLevel::Debug, fmt, ##__VA_ARGS__)
+
+#define DEVICE_INFO(fmt, ...) \
+    for (bool once=true; once && EMU::log.enabled(EMU::LogLevel::Info); once=false) \
+        EMU::Device::log(EMU::LogLevel::Info, fmt, ##__VA_ARGS__)
+
+#define DEVICE_ERROR(fmt, ...) \
+    for (bool once=true; once && EMU::log.enabled(EMU::LogLevel::Error); once=false) \
+        EMU::Device::log(EMU::LogLevel::Error, fmt, ##__VA_ARGS__)
+
+#define MACHINE_TRACE(fmt, ...) \
+    for (bool once=true; once && EMU::log.enabled(EMU::LogLevel::Trace); once=false) \
+        EMU::Machine::log(EMU::LogLevel::Trace, fmt, ##__VA_ARGS__)
+
+#define MACHINE_DEBUG(fmt, ...) \
+    for (bool once=true; once && EMU::log.enabled(EMU::LogLevel::Debug); once=false) \
+        EMU::Machine::log(EMU::LogLevel::Debug, fmt, ##__VA_ARGS__)
+
+#define MACHINE_INFO(fmt, ...) \
+    for (bool once=true; once && EMU::log.enabled(EMU::LogLevel::Info); once=false) \
+        EMU::Machine::log(EMU::LogLevel::Info, fmt, ##__VA_ARGS__)
+
+#define MACHINE_ERROR(fmt, ...) \
+    for (bool once=true; once && EMU::log.enabled(EMU::LogLevel::Error); once=false) \
+        EMU::Machine::log(EMU::LogLevel::Error, fmt, ##__VA_ARGS__)
 
 };

@@ -33,7 +33,7 @@
 
 using namespace EMU;
 
-namespace Driver {
+namespace GBMachine {
 
 enum Cartridge {
     RomOnly = 0x00,
@@ -50,7 +50,6 @@ class GBMBC: public Device {
 
         virtual void save(SaveState &state);
         virtual void load(LoadState &state);
-        virtual void execute(Time interval) { }
         virtual void line(Line line, LineState state) { }
 
         void load_rom(const std::string &name);

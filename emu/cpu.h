@@ -31,7 +31,7 @@
 namespace EMU {
 
 template<class _bus_type>
-class Cpu: public Device {
+class Cpu: public ClockedDevice {
 public:
     typedef _bus_type bus_type;
     typedef typename bus_type::addr_type addr_type;
@@ -39,9 +39,7 @@ public:
 
     Cpu(Machine *machine, const std::string &name, unsigned hertz,
         bus_type *bus):
-        Device(machine, name),
-        _hertz(hertz),
-        _avail(0),
+        ClockedDevice(machine, name, hertz),
         _icycles(0),
         _bus(bus)
     {
@@ -51,12 +49,10 @@ public:
     }
     Cpu(const Cpu &cpu) = delete;
 
-    virtual void execute(Time interval)
+    virtual void execute(void)
     {
-        _avail += interval.to_cycles(Cycles(_hertz));
-
-        while (_avail > 0) {
-            _avail -= step();
+        while (true) {
+            step();
         }
     }
 
@@ -86,22 +82,10 @@ public:
     }
 
     /* Process a single clock cycle */
-    virtual Cycles step(void) = 0;
+    virtual void step(void) = 0;
     virtual std::string dasm(addr_type addr) = 0;
 
-    void add_icycles(unsigned cycles) {
-        _icycles += cycles;
-    }
-    void set_icycles(unsigned cycles) {
-        _icycles = Cycles(cycles);
-    }
-    Cycles get_icycles(void) {
-        return _icycles;
-    }
-
 private:
-    unsigned _hertz;
-    Cycles _avail;
     Cycles _icycles;
     bus_type *_bus;
 };

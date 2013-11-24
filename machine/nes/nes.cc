@@ -28,7 +28,7 @@
 #define MASTER_CLOCK 21477270
 
 using namespace EMU;
-using namespace NESDriver;
+using namespace NESMachine;
 
 enum NESKey {
     A = 0,
@@ -50,7 +50,7 @@ const std::vector<std::string> NES::ports = {
 
 NES::NES(void):
     Machine(),
-    _ram(0x0800),
+    _ram(this, "ram", 0x0800),
     _joy1_shift(0),
     _joy2_shift(0)
 {
@@ -121,10 +121,18 @@ NES::NES(void):
     add_input(InputSignal(InputKey::Joy2Right, port, NESKey::Right, true));
 
     /* 2K ram mirrored 4x */
-    _cpu_bus.add(0x0000, 0x07FF, &_ram);
-    _cpu_bus.add(0x0800, 0x0FFF, &_ram);
-    _cpu_bus.add(0x1000, 0x17FF, &_ram);
-    _cpu_bus.add(0x1800, 0x1FFF, &_ram);
+    _cpu_bus.add(0x0000, 0x07FF,
+        READ_CB(RamDevice::read8, &_ram),
+        WRITE_CB(RamDevice::write8, &_ram));
+    _cpu_bus.add(0x0800, 0x0FFF,
+        READ_CB(RamDevice::read8, &_ram),
+        WRITE_CB(RamDevice::write8, &_ram));
+    _cpu_bus.add(0x1000, 0x17FF,
+        READ_CB(RamDevice::read8, &_ram),
+        WRITE_CB(RamDevice::write8, &_ram));
+    _cpu_bus.add(0x1800, 0x1FFF,
+        READ_CB(RamDevice::read8, &_ram),
+        WRITE_CB(RamDevice::write8, &_ram));
 
     /* XXX: Cartridge Expansion 0x4018 - 0x5FFF */
 }
@@ -194,5 +202,5 @@ MachineDefinition nes(
     "nes",
     nes_info,
     [=](Options *opts) -> machine_ptr {
-        return machine_ptr(new NESDriver::NES());
+        return machine_ptr(new NESMachine::NES());
     });

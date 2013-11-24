@@ -32,7 +32,7 @@
 using namespace EMU;
 using namespace Z80;
 
-namespace Driver {
+namespace Arcade {
 
 class PacmanGfx: public GfxDevice
 {
@@ -87,8 +87,8 @@ public:
 
 private:
 
-    Ram _vram;
-    Ram _cram;
+    RamDevice _vram;
+    RamDevice _cram;
     AddressBus16 *_bus;
 
     void init_sprite(GfxObject<16, 16> *obj, byte_t *b);
@@ -129,12 +129,6 @@ public:
     virtual ~Pacman(void);
 
 private:
-
-    byte_t rom_read(offset_t offset) {
-        return _rom->read8(offset);
-    }
-    void rom_write(offset_t offset, byte_t value) {
-    }
 
     byte_t ram_read(offset_t offset) {
         return _ram.read8(offset);
@@ -181,9 +175,8 @@ private:
 
     Z80Cpu_ptr _cpu;
     AddressBus16_ptr _bus;
-    Ram _ram;
+    RamDevice _ram;
     std::unique_ptr<RomSet> _roms;
-    Rom *_rom;
     PacmanGfx_ptr _gfx;
 
     /* latches */

@@ -74,12 +74,12 @@ TEST_F(hu6280Test, Constructor)
 TEST_F(hu6280Test, opcode_EA)
 {
     LOAD1(0xEA);
-    cpu.execute(Time(usec(1)));
+    cpu.execute();
 }
 
 TEST_F(hu6280Test, opcode_A0)
 {
     LOAD2(0xA9, 0x10);
-    cpu.execute(Time(usec(2)));
+    cpu.execute();
 }
 
