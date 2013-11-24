@@ -61,12 +61,9 @@ RomDefinition galagao_rom(void) {
 
 Galaga::Galaga(const std::string &rom):
     Machine(),
-    vram(0x0800),
     ram1(0x0400),
     ram2(0x0400),
     ram3(0x0400),
-    _scanline(0),
-    _avail(Cycles(0)),
     _hertz(18432000),
     _main_irq(false),
     _sub_irq(false),
@@ -104,9 +101,31 @@ Galaga::Galaga(const std::string &rom):
     _namco51 = Namco51_ptr(new Namco51(this));
     _namco06->add_child(0, _namco51.get());
 
-    init_bus();
+    _gfx = GalagaGfx_ptr(new GalagaGfx(this, "gfx", _hertz, _bus.get()));
+    _gfx->init(&romset);
 
-    init_gfx(&romset);
+    _gfx->register_callback(16, [&](void) {
+        _gfx->draw_screen(screen());
+    });
+
+    _gfx->register_callback(64, [&](void) {
+        if (_snd_nmi)
+            set_line("sndcpu", Line::NMI, LineState::Pulse);
+    });
+
+    _gfx->register_callback(196, [&](void) {
+        if (_snd_nmi)
+            set_line("sndcpu", Line::NMI, LineState::Pulse);
+    });
+
+    _gfx->register_callback(240, [&](void) {
+        if (_main_irq)
+            set_line("maincpu", Line::INT0, LineState::Assert);
+        if (_sub_irq)
+            set_line("subcpu", Line::INT0, LineState::Assert);
+    });
+
+    init_bus();
 }
 
 Galaga::~Galaga(void)
@@ -173,47 +192,16 @@ Galaga::init_bus(void)
         );
 
     /* Various ram */
-    _bus->add(0x8000, 0x87FF, &vram);
+    _bus->add(0x8000, 0x87FF,
+        READ_CB(GalagaGfx::vmem_read, _gfx.get()),
+        WRITE_CB(GalagaGfx::vmem_write, _gfx.get()));
+
     _bus->add(0x8800, 0x8FFF, &ram1);
     _bus->add(0x9000, 0x97FF, &ram2);
     _bus->add(0x9800, 0x9FFF, &ram3);
 
     /* XXX: Star control */
     _bus->add(0xA000, 0xA007);
-}
-
-void
-Galaga::execute(Time interval)
-{
-    _avail += interval.to_cycles(Cycles(_hertz/3));
-
-    /* Each scanline is 384 cycles */
-    static const Cycles _cycles_per_scanline(384);
-
-    while (_avail > _cycles_per_scanline) {
-        _scanline = (_scanline + 1) % 264;
-        _avail -= _cycles_per_scanline;
-        switch (_scanline) {
-        case 16:
-            draw_screen();
-            break;
-        case 64:
-            if (_snd_nmi)
-                set_line("sndcpu", Line::NMI, LineState::Pulse);
-            break;
-        case 196:
-            if (_snd_nmi)
-                set_line("sndcpu", Line::NMI, LineState::Pulse);
-            break;
-        case 240:
-            /* Vblank start */
-            if (_main_irq)
-                set_line("maincpu", Line::INT0, LineState::Assert);
-            if (_sub_irq)
-                set_line("subcpu", Line::INT0, LineState::Assert);
-            break;
-        }
-    }
 }
 
 void
@@ -310,189 +298,6 @@ Galaga::init_controls(void)
     add_input(InputSignal(InputKey::Joy2Left, port, 3, false));
 }
 
-void
-Galaga::init_tile(GfxObject<8, 8> *t, byte_t *b)
-{
-    int p = 0;
-    for (int h = 0; h < t->h; h++) {
-        t->data[p++] = (bit_isset(b[8+h], 3)  | (bit_isset(b[8+h], 7)) << 1);
-        t->data[p++] = (bit_isset(b[8+h], 2)  | (bit_isset(b[8+h], 6)) << 1);
-        t->data[p++] = (bit_isset(b[8+h], 1)  | (bit_isset(b[8+h], 5)) << 1);
-        t->data[p++] = (bit_isset(b[8+h], 0)  | (bit_isset(b[8+h], 4)) << 1);
-        t->data[p++] = (bit_isset(b[h], 3)    | (bit_isset(b[h], 7)) << 1);
-        t->data[p++] = (bit_isset(b[h], 2)    | (bit_isset(b[h], 6)) << 1);
-        t->data[p++] = (bit_isset(b[h], 1)    | (bit_isset(b[h], 5)) << 1);
-        t->data[p++] = (bit_isset(b[h], 0)    | (bit_isset(b[h], 4)) << 1);
-    }
-}
-
-void
-Galaga::init_sprite(GfxObject<16, 16> *s, byte_t *b)
-{
-    int p = 0;
-    for (unsigned y = 0; y < 16; y++) {
-        int h = (y >= 8) ? y + 24 : y;
-        s->data[p++] = (bit_isset(b[h], 3)    | (bit_isset(b[h], 7)) << 1);
-        s->data[p++] = (bit_isset(b[h], 2)    | (bit_isset(b[h], 6)) << 1);
-        s->data[p++] = (bit_isset(b[h], 1)    | (bit_isset(b[h], 5)) << 1);
-        s->data[p++] = (bit_isset(b[h], 0)    | (bit_isset(b[h], 4)) << 1);
-        s->data[p++] = (bit_isset(b[8+h], 3)  | (bit_isset(b[8+h], 7)) << 1);
-        s->data[p++] = (bit_isset(b[8+h], 2)  | (bit_isset(b[8+h], 6)) << 1);
-        s->data[p++] = (bit_isset(b[8+h], 1)  | (bit_isset(b[8+h], 5)) << 1);
-        s->data[p++] = (bit_isset(b[8+h], 0)  | (bit_isset(b[8+h], 4)) << 1);
-        s->data[p++] = (bit_isset(b[16+h], 3) | (bit_isset(b[16+h], 7)) << 1);
-        s->data[p++] = (bit_isset(b[16+h], 2) | (bit_isset(b[16+h], 6)) << 1);
-        s->data[p++] = (bit_isset(b[16+h], 1) | (bit_isset(b[16+h], 5)) << 1);
-        s->data[p++] = (bit_isset(b[16+h], 0) | (bit_isset(b[16+h], 4)) << 1);
-        s->data[p++] = (bit_isset(b[24+h], 3) | (bit_isset(b[24+h], 7)) << 1);
-        s->data[p++] = (bit_isset(b[24+h], 2) | (bit_isset(b[24+h], 6)) << 1);
-        s->data[p++] = (bit_isset(b[24+h], 1) | (bit_isset(b[24+h], 5)) << 1);
-        s->data[p++] = (bit_isset(b[24+h], 0) | (bit_isset(b[24+h], 4)) << 1);
-    }
-}
-
-/**
- * Color Palette is defined as:
- * RRRGGGBB
- */
-static RGBColor
-convert(uint8_t *b_ptr)
-{
-    uint8_t b = *b_ptr;
-    return RGBColor(
-            0x21 * bit_isset(b, 0) +
-            0x47 * bit_isset(b, 1) +
-            0x97 * bit_isset(b, 2),
-            0x21 * bit_isset(b, 3) +
-            0x47 * bit_isset(b, 4) +
-            0x97 * bit_isset(b, 5),
-            0x21 * 0 +
-            0x47 * bit_isset(b, 6) +
-            0x97 * bit_isset(b, 7));
-}
-
-
-void
-Galaga::init_gfx(RomSet *romset)
-{
-    m_colors.init(romset->rom("prom1")->direct(0x00), convert);
-
-    /* XXX: Characters Palette */
-    byte_t * char_rom = romset->rom("prom2")->direct(0x00);
-    for (unsigned i = 0; i < 64*4; i+=4) {
-        auto *palette = &_tile_palette[i/4];
-        (*palette)[0] = m_colors[(char_rom[i+0] & 0x0f) + 0x10];
-        (*palette)[1] = m_colors[(char_rom[i+1] & 0x0f) + 0x10];
-        (*palette)[2] = m_colors[(char_rom[i+2] & 0x0f) + 0x10];
-        (*palette)[3] = m_colors[(char_rom[i+3] & 0x0f) + 0x10];
-    }
-
-    /* Decode characters */
-    Rom *gfx1_rom = romset->rom("tiles");
-    for (unsigned idx = 0; idx < 128; idx++) {
-        byte_t *b = gfx1_rom->direct(idx * 16);
-        auto &tile = _tiles[idx];
-        init_tile(&tile, b);
-    }
-
-    /* XXX: Sprites Palette */
-    byte_t * sprite_rom = romset->rom("prom2")->direct(0x0100);
-    for (unsigned i = 0; i < 64*4; i+=4) {
-        auto *palette = &_sprite_palette[i/4];
-        (*palette)[0] = m_colors[sprite_rom[i+0] & 0x0f];
-        (*palette)[1] = m_colors[sprite_rom[i+1] & 0x0f];
-        (*palette)[2] = m_colors[sprite_rom[i+2] & 0x0f];
-        (*palette)[3] = m_colors[sprite_rom[i+3] & 0x0f];
-    }
-
-    /* Decode sprites */
-    Rom *gfx2 = romset->rom("sprites");
-    for (unsigned idx = 0; idx < 128; idx++) {
-        byte_t *b = gfx2->direct(idx * 64);
-        auto &s = _sprites[idx];
-        init_sprite(&s, b);
-    }
-}
-
-void
-Galaga::draw_screen(void)
-{
-    screen()->clear();
-
-    draw_sprites();
-    draw_bg();
-    screen()->flip();
-}
-
-void
-Galaga::draw_sprites(void)
-{
-    byte_t *spriteram_1 = ram1.direct(0x380);
-    byte_t *spriteram_2 = ram2.direct(0x380);
-    byte_t *spriteram_3 = ram3.direct(0x380);
-
-    /**
-     * Each sprite is described by 6 bytes:
-     * 1 - index into sprite table
-     * 2 - palette
-     * 3 - y position
-     * 4 - x position
-     * 5 - flags
-     * 6 - Upper bits of x position.
-     */
-    for (unsigned off = 0; off < 0x80; off += 2) {
-        int idx = spriteram_1[off] & 0x7f;
-        int pen = spriteram_1[off+1] & 0x3f;
-        int sy = 256 - spriteram_2[off] + 1;
-        int sx = spriteram_2[off+1] - 40 + 0x100 * (spriteram_3[off+1] & 3);
-        bool flipx = bit_isset(spriteram_3[off], 0);
-        bool flipy = bit_isset(spriteram_3[off], 1);
-        int sizex = bit_isset(spriteram_3[off], 2);
-        int sizey = bit_isset(spriteram_3[off], 3);
-
-        /* Adjust the y position */
-        sy -= 16 * sizey;
-        sy = (sy & 0xff) - 32;
-
-        for (int y = 0; y <= sizey; y++) {
-            for (int x = 0; x <= sizex; x++) {
-                auto *sprite = &_sprites[idx];
-                auto *palette = &_sprite_palette[pen];
-                draw_gfx(screen(), palette,
-                    sprite + (y ^ (sizey & flipy)) * 2 + (x ^ (sizex & flipx)),
-                    sx + (x * 16), sy + (y * 16),
-                    flipx, flipy, m_colors[0xf]);
-            }
-        }
-    }
-}
-
-void
-Galaga::draw_bg(void)
-{
-    /* Render the tilemap */
-    byte_t *tile_map = vram.direct(0x000);
-    for (int tx = 0; tx < 36; tx++) {
-        for (int ty = 0; ty < 28; ty++) {
-            int index = 0;
-            {
-                int row = ty + 2;
-                int col = tx - 2;
-                if (col & 0x20)
-                    index = row + ((col & 0x1f) << 5);
-                else
-                    index = col + (row << 5);
-            }
-            /* XXX: Account for visible */
-            auto *tile = &_tiles[tile_map[index] & 0x7f];
-            auto *palette = &_tile_palette[tile_map[index + 0x400] & 0x3f];
-            int sx = tx * tile->w;
-            int sy = ty * tile->h;
-            draw_gfx(screen(), palette, tile, sx, sy,
-                     false, false, m_colors[0x1f]);
-        }
-    }
-}
 
 MachineInformation galaga_info {
     .name = "Galaga",

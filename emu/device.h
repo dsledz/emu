@@ -105,14 +105,33 @@ protected:
 class GfxDevice: public Device {
 public:
     GfxDevice(Machine *machine, const std::string &name, unsigned hertz):
-        Device(machine, name), _hertz(hertz), _avail(0) { }
+        Device(machine, name), _scanline(0), _hertz(hertz), _avail(0) { }
     virtual ~GfxDevice(void) { }
 
-    virtual void execute(Time period) = 0;
+    virtual void execute(Time interval) {
+        _avail += interval.to_cycles(Cycles(_hertz/3));
+
+        static const Cycles _cycles_per_scanline(384);
+        while (_avail > _cycles_per_scanline) {
+            _scanline = (_scanline + 1) % 264;
+            _avail -= _cycles_per_scanline;
+            auto it = _callbacks.find(_scanline);
+            if (it != _callbacks.end())
+                it->second();
+        }
+    }
+
+    typedef std::function<void (void)> scanline_fn;
+
+    void register_callback(unsigned scanline, scanline_fn fn) {
+        _callbacks.insert(make_pair(scanline, fn));
+    }
 
 protected:
+    unsigned _scanline;
     unsigned _hertz;
     Cycles _avail;
+    std::unordered_map<unsigned, scanline_fn> _callbacks;
 };
 
 };

@@ -55,20 +55,12 @@ Machine::execute(void)
     while (left() >= interval) {
         _timers.run(interval);
 
-        execute(interval);
-        for_each(_devs.begin(), _devs.end(), [=](Device *dev) {
-                 dev->execute(interval);
-                 });
+        for (auto it = _devs.begin(); it != _devs.end(); it++)
+            (*it)->execute(interval);
         do_advance(interval);
     }
 
     do_set_state(State::Waiting);
-}
-
-void
-Machine::execute(Time interval)
-{
-
 }
 
 void

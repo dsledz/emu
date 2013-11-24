@@ -36,10 +36,6 @@ DonkeyKongGfx::DonkeyKongGfx(Machine *machine, const std::string &name, unsigned
     GfxDevice(machine, name, hertz),
     vram(0x0800),
     _bus(bus),
-    _nmi_mask(false),
-    _scanline(0),
-    _avail(Cycles(0)),
-    _hertz(hertz),
     _palette_select(0)
 {
 }
@@ -55,12 +51,6 @@ DonkeyKongGfx::palette_write(offset_t offset, uint8_t value)
 }
 
 void
-DonkeyKongGfx::nmi_mask_write(uint8_t value)
-{
-    _nmi_mask = value;
-}
-
-void
 DonkeyKongGfx::vmem_write(offset_t offset_t, uint8_t value)
 {
     vram.write8(offset_t, value);
@@ -70,29 +60,6 @@ uint8_t
 DonkeyKongGfx::vmem_read(offset_t offset)
 {
     return vram.read8(offset);
-}
-
-
-void
-DonkeyKongGfx::execute(Time interval)
-{
-    _avail += interval.to_cycles(Cycles(_hertz/3));
-
-    static const Cycles _cycles_per_scanline(384);
-
-    while (_avail > _cycles_per_scanline) {
-        _scanline = (_scanline + 1) % 264;
-        _avail -= _cycles_per_scanline;
-        switch (_scanline) {
-        case 16:
-            draw_screen(machine()->screen());
-            break;
-        case 240:
-            if (_nmi_mask)
-                machine()->set_line("maincpu", Line::NMI, LineState::Pulse);
-            break;
-        }
-    }
 }
 
 void

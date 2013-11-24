@@ -6,9 +6,11 @@ add_library(machine
     dkong.cc
     dkonggfx.cc
     galaga.cc
+    galagagfx.cc
     namco51.cc
     namco06.cc
     pacman.cc
+    pacmangfx.cc
     i8257.cc)
 target_link_libraries(machine
     gb

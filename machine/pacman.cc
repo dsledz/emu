@@ -60,11 +60,7 @@ RomDefinition pacman_rom(void) {
 
 Pacman::Pacman(const std::string &rom):
     Machine(),
-    _scanline(0),
-    _avail(Cycles(0)),
     _hertz(18432000),
-    _vram(0x400),
-    _cram(0x400),
     _ram(0x800)
 {
     add_screen(224, 288, RasterScreen::ROT90);
@@ -81,7 +77,17 @@ Pacman::Pacman(const std::string &rom):
 
     _rom = _roms->rom("maincpu");
 
-    init_gfx();
+    _gfx = PacmanGfx_ptr(new PacmanGfx(this, "gfx", _hertz, _bus.get()));
+
+    _gfx->init(_roms.get());
+    _gfx->register_callback(240, [&](void) {
+        if (_irq_mask)
+            set_line("maincpu", Line::INT0, LineState::Assert);
+    });
+    _gfx->register_callback(16, [&](void) {
+        _gfx->draw_screen(screen());
+    });
+
     init_bus();
     init_switches();
     reset_switches();
@@ -112,27 +118,6 @@ Pacman::io_write(offset_t offset, byte_t value)
 }
 
 void
-Pacman::execute(Time interval)
-{
-    _avail += interval.to_cycles(Cycles(_hertz/3));
-
-    static const Cycles _cycles_per_scanline(384);
-    while (_avail > _cycles_per_scanline) {
-        _scanline = (_scanline + 1) % 264;
-        _avail -= _cycles_per_scanline;
-        switch (_scanline) {
-        case 16:
-            draw_screen();
-            break;
-        case 240:
-            if (_irq_mask)
-                set_line("maincpu", Line::INT0, LineState::Assert);
-            break;
-        }
-    }
-}
-
-void
 Pacman::init_bus(void)
 {
     _bus->add(0x0000, 0x3fff,
@@ -140,12 +125,12 @@ Pacman::init_bus(void)
         WRITE_CB(Pacman::rom_write, this));
 
     _bus->add(0x4000, 0x43ff,
-        READ_CB(Pacman::vram_read, this),
-        WRITE_CB(Pacman::vram_write, this));
+        READ_CB(PacmanGfx::vram_read, _gfx.get()),
+        WRITE_CB(PacmanGfx::vram_write, _gfx.get()));
 
     _bus->add(0x4400, 0x47ff,
-        READ_CB(Pacman::cram_read, this),
-        WRITE_CB(Pacman::cram_write, this));
+        READ_CB(PacmanGfx::cram_read, _gfx.get()),
+        WRITE_CB(PacmanGfx::cram_write, _gfx.get()));
 
     _bus->add(0x4800, 0x4bff,
         AddressBus16::DefaultRead(),
@@ -156,8 +141,8 @@ Pacman::init_bus(void)
         WRITE_CB(Pacman::ram_write, this));
 
     _bus->add(0x4ff0, 0x4fff,
-        READ_CB(Pacman::spr_read, this),
-        WRITE_CB(Pacman::spr_write, this));
+        READ_CB(PacmanGfx::spr_read, _gfx.get()),
+        WRITE_CB(PacmanGfx::spr_write, _gfx.get()));
 
     _bus->add(0x5000, 0x5007,
         READ_CB(Pacman::in0_read, this),
@@ -168,8 +153,8 @@ Pacman::init_bus(void)
         WRITE_CB(Pacman::sound_write, this));
 
     _bus->add(0x5060, 0x506f,
-        READ_CB(Pacman::spr_coord_read, this),
-        WRITE_CB(Pacman::spr_coord_write, this));
+        READ_CB(PacmanGfx::spr_coord_read, _gfx.get()),
+        WRITE_CB(PacmanGfx::spr_coord_write, _gfx.get()));
 
     _bus->add(0x5070, 0x507f,
         AddressBus16::DefaultRead(),
@@ -189,12 +174,12 @@ Pacman::init_bus(void)
         WRITE_CB(Pacman::rom_write, this));
 
     _bus->add(0xC000, 0xC3ff,
-        READ_CB(Pacman::vram_read, this),
-        WRITE_CB(Pacman::vram_write, this));
+        READ_CB(PacmanGfx::vram_read, _gfx.get()),
+        WRITE_CB(PacmanGfx::vram_write, _gfx.get()));
 
     _bus->add(0xC400, 0xC7ff,
-        READ_CB(Pacman::cram_read, this),
-        WRITE_CB(Pacman::cram_write, this));
+        READ_CB(PacmanGfx::cram_read, _gfx.get()),
+        WRITE_CB(PacmanGfx::cram_write, _gfx.get()));
 
     _bus->add(0xCC00, 0xCfef,
         READ_CB(Pacman::ram_read, this),
@@ -267,160 +252,6 @@ Pacman::init_switches(void)
 
     add_ioport("DSW2");
 }
-
-void
-Pacman::init_tile(GfxObject<8, 8> *t, byte_t *b)
-{
-    int p = 0;
-    for (int h = 0; h < t->h; h++) {
-        t->data[p++] = (bit_isset(b[8+h], 3)  | (bit_isset(b[8+h], 7)) << 1);
-        t->data[p++] = (bit_isset(b[8+h], 2)  | (bit_isset(b[8+h], 6)) << 1);
-        t->data[p++] = (bit_isset(b[8+h], 1)  | (bit_isset(b[8+h], 5)) << 1);
-        t->data[p++] = (bit_isset(b[8+h], 0)  | (bit_isset(b[8+h], 4)) << 1);
-        t->data[p++] = (bit_isset(b[h], 3)    | (bit_isset(b[h], 7)) << 1);
-        t->data[p++] = (bit_isset(b[h], 2)    | (bit_isset(b[h], 6)) << 1);
-        t->data[p++] = (bit_isset(b[h], 1)    | (bit_isset(b[h], 5)) << 1);
-        t->data[p++] = (bit_isset(b[h], 0)    | (bit_isset(b[h], 4)) << 1);
-    }
-}
-
-void
-Pacman::init_sprite(GfxObject<16, 16> *s, byte_t *b)
-{
-    int p = 0;
-    for (unsigned y = 0; y < 16; y++) {
-        int h = (y >= 8) ? y + 24 : y;
-        s->data[p++] = (bit_isset(b[8+h], 3)  | (bit_isset(b[8+h], 7)) << 1);
-        s->data[p++] = (bit_isset(b[8+h], 2)  | (bit_isset(b[8+h], 6)) << 1);
-        s->data[p++] = (bit_isset(b[8+h], 1)  | (bit_isset(b[8+h], 5)) << 1);
-        s->data[p++] = (bit_isset(b[8+h], 0)  | (bit_isset(b[8+h], 4)) << 1);
-        s->data[p++] = (bit_isset(b[16+h], 3) | (bit_isset(b[16+h], 7)) << 1);
-        s->data[p++] = (bit_isset(b[16+h], 2) | (bit_isset(b[16+h], 6)) << 1);
-        s->data[p++] = (bit_isset(b[16+h], 1) | (bit_isset(b[16+h], 5)) << 1);
-        s->data[p++] = (bit_isset(b[16+h], 0) | (bit_isset(b[16+h], 4)) << 1);
-        s->data[p++] = (bit_isset(b[24+h], 3) | (bit_isset(b[24+h], 7)) << 1);
-        s->data[p++] = (bit_isset(b[24+h], 2) | (bit_isset(b[24+h], 6)) << 1);
-        s->data[p++] = (bit_isset(b[24+h], 1) | (bit_isset(b[24+h], 5)) << 1);
-        s->data[p++] = (bit_isset(b[24+h], 0) | (bit_isset(b[24+h], 4)) << 1);
-        s->data[p++] = (bit_isset(b[h], 3)    | (bit_isset(b[h], 7)) << 1);
-        s->data[p++] = (bit_isset(b[h], 2)    | (bit_isset(b[h], 6)) << 1);
-        s->data[p++] = (bit_isset(b[h], 1)    | (bit_isset(b[h], 5)) << 1);
-        s->data[p++] = (bit_isset(b[h], 0)    | (bit_isset(b[h], 4)) << 1);
-    }
-}
-
-void
-Pacman::init_gfx(void)
-{
-    Rom *prom = _roms->rom("proms");
-
-    /* 32 bytes of RRRGGGBB (0-7) */
-    for (unsigned i = 0; i < _palette.size; i++) {
-        byte_t b = prom->read8(i);
-        _palette[i] = RGBColor(
-            0x21 * bit_isset(b, 0) +
-            0x47 * bit_isset(b, 1) +
-            0x97 * bit_isset(b, 2),
-            0x21 * bit_isset(b, 3) +
-            0x47 * bit_isset(b, 4) +
-            0x97 * bit_isset(b, 5),
-            0x21 * 0 +
-            0x47 * bit_isset(b, 6) +
-            0x97 * bit_isset(b, 7));
-    }
-
-    /* XXX: 256 bytes of color table */
-
-    byte_t *char_rom = _roms->rom("proms")->direct(0x20);
-
-    for (unsigned i = 0; i < 256; i+=4) {
-        auto *palette = &_palettes[i/4];
-        (*palette)[0] = _palette[(char_rom[i+0] & 0x0f)];
-        (*palette)[1] = _palette[(char_rom[i+1] & 0x0f)];
-        (*palette)[2] = _palette[(char_rom[i+2] & 0x0f)];
-        (*palette)[3] = _palette[(char_rom[i+3] & 0x0f)];
-    }
-
-    /* Gfx */
-    /* Decode characters */
-    Rom *gfx1 = _roms->rom("gfx1");
-    for (unsigned idx = 0; idx < 256; idx++) {
-        byte_t *b = gfx1->direct(idx * 16);
-        auto &tile = _tiles[idx];
-        init_tile(&tile, b);
-    }
-
-    /* Decode sprites */
-    for (unsigned idx = 0; idx < 64; idx++) {
-        byte_t *b = gfx1->direct(0x1000 + idx * 64);
-        auto &s = _sprites[idx];
-        init_sprite(&s, b);
-    }
-}
-
-void
-Pacman::draw_screen(void)
-{
-    screen()->clear();
-
-    draw_bg();
-    draw_sprites();
-    screen()->flip();
-}
-
-void
-Pacman::draw_sprites(void)
-{
-    for (int off = 0; off < 8; off++) {
-        int idx = _spr[off].idx;
-        int pen = _spr[off].color & 0x1f;
-        int sy = _spr[off].y - 31;
-        int sx = 272 - _spr[off].x;
-        bool flipx = _spr[off].xflip;
-        bool flipy = _spr[off].yflip;
-
-        auto *sprite = &_sprites[idx];
-        auto *palette = &_palettes[pen];
-        draw_gfx(screen(), palette, sprite, sx, sy, flipx, flipy,
-                 _palette[0x1f]);
-        IF_LOG(Info) {
-            std::cout << "Drawing sprite: " << Hex(off)
-                << "(" << Hex(sx) << "," << Hex(sy) << "): "
-                << "Sprite: " << Hex(idx) << " Color: " << Hex(pen)
-                << std::endl;
-        }
-    }
-}
-
-void
-Pacman::draw_bg(void)
-{
-    /* Render the tilemap */
-    byte_t *tile_map = _vram.direct(0x000);
-    byte_t *color_map = _cram.direct(0x000);
-    for (int tx = 0; tx < 36; tx++) {
-        for (int ty = 0; ty < 28; ty++) {
-            int index = 0;
-            {
-                int row = ty + 2;
-                int col = tx - 2;
-                if (col & 0x20)
-                    index = row + ((col & 0x1f) << 5);
-                else
-                    index = col + (row << 5);
-            }
-            /* XXX: Account for visible */
-            auto *tile = &_tiles[tile_map[index]];
-            auto *palette = &_palettes[color_map[index] & 0x1f];
-            int sx = tx * tile->w;
-            int sy = ty * tile->h;
-            draw_gfx(screen(), palette, tile, sx, sy,
-                     false, false, _palette[0x1f]);
-        }
-    }
-}
-
-
 void
 Pacman::latch_write(offset_t offset, byte_t value)
 {

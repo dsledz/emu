@@ -41,33 +41,23 @@ public:
 
     void init(RomSet *romset);
 
+    void draw_screen(RasterScreen *screen);
+
     void vmem_write(offset_t offset, uint8_t value);
     uint8_t vmem_read(offset_t offset);
     void palette_write(offset_t offset, uint8_t value);
-    void nmi_mask_write(uint8_t value);
-
-    virtual void execute(Time interval);
 
 private:
 
     void init_sprite(GfxObject<16, 16> *obj, byte_t *b);
     void init_tile(GfxObject<8, 8> *obj, byte_t *b);
 
-    void draw_screen(RasterScreen *screen);
     void draw_bg(RasterScreen *screen);
     void draw_sprites(RasterScreen *screen);
 
     Ram vram;
 
     AddressBus16 *_bus;
-
-    /* Lines */
-    bool _nmi_mask;
-
-    /* Graphics simulation */
-    int _scanline;
-    Cycles _avail;
-    unsigned _hertz;
 
     /* Graphic Data */
     byte_t _palette_select;
@@ -99,6 +89,9 @@ private:
     DonkeyKongGfx_ptr _gfx;
 
     AddressBus16_ptr _bus;
+
+    /* Lines */
+    bool _nmi_mask;
 
     unsigned _hertz;
 };

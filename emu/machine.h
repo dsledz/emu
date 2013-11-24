@@ -67,7 +67,6 @@ public:
     virtual void execute(void);
 
     virtual void load_rom(const std::string &rom);
-    virtual void execute(Time interval);
 
     /* Public functions */
     void set_switch(const std::string &name, const std::string &value);
@@ -128,7 +127,6 @@ private:
     void schedule_timer(TimerItem_ptr timer);
 
     InputMap _input;
-    render_cb _render_cb;
     std::list<Device *> _devs;
     TimerQueue _timers;
     std::map<std::string, dipswitch_ptr> _switches;

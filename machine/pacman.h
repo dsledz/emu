@@ -25,6 +25,7 @@
 #pragma once
 
 #include "emu/emu.h"
+#include "emu/gfx.h"
 
 #include "cpu/z80/z80.h"
 
@@ -33,21 +34,13 @@ using namespace Z80;
 
 namespace Driver {
 
-class Pacman: public Machine
+class PacmanGfx: public GfxDevice
 {
 public:
-    Pacman(const std::string &rom);
-    virtual ~Pacman(void);
+    PacmanGfx(Machine *machine, const std::string &name, unsigned hertz, AddressBus16 *bus);
+    ~PacmanGfx(void);
 
-    virtual void execute(Time interval);
-
-private:
-
-    byte_t rom_read(offset_t offset) {
-        return _rom->read8(offset);
-    }
-    void rom_write(offset_t offset, byte_t value) {
-    }
+    void draw_screen(RasterScreen *screen);
 
     byte_t vram_read(offset_t offset) {
         return _vram.read8(offset);
@@ -55,24 +48,12 @@ private:
     void vram_write(offset_t offset, byte_t value) {
         _vram.write8(offset, value);
     }
-
     byte_t cram_read(offset_t offset) {
         return _cram.read8(offset);
     }
     void cram_write(offset_t offset, byte_t value) {
         _cram.write8(offset, value);
     }
-
-    byte_t ram_read(offset_t offset) {
-        return _ram.read8(offset);
-    }
-    void ram_write(offset_t offset, byte_t value) {
-        if (offset == 0x2f7 && value == 0xff) {
-            std::cout << "Sound write " << Hex(value) << std::endl;
-        }
-        _ram.write8(offset, value);
-    }
-
     byte_t spr_read(offset_t offset) {
         if (offset & 0x01) {
             return _spr[offset >> 1].color;
@@ -87,19 +68,6 @@ private:
             _spr[offset >> 1].flags = value;
         }
     }
-
-    byte_t in0_read(offset_t offset) {
-        return read_ioport("IN0");
-    }
-    void latch_write(offset_t offset, byte_t value);
-
-    void sound_write(offset_t offset, byte_t value) {
-    }
-
-    byte_t in1_read(offset_t offset) {
-        return read_ioport("IN1");
-    }
-
     byte_t spr_coord_read(offset_t offset) {
         if (offset & 0x01) {
             return _spr[offset >> 1].x;
@@ -115,44 +83,19 @@ private:
         }
     }
 
-    byte_t dsw1_read(offset_t offset) {
-        return read_ioport("DSW1");
-    }
-    void dsw1_write(offset_t offset, byte_t value) {
-    }
+    void init(RomSet *romset);
 
-    byte_t dsw2_read(offset_t offset) {
-        return read_ioport("DSW2");
-    }
-    void watchdog_write(offset_t offset, byte_t value) {
-    }
+private:
 
-    byte_t io_read(offset_t offset);
-    void io_write(offset_t offset, byte_t value);
+    Ram _vram;
+    Ram _cram;
+    AddressBus16 *_bus;
 
-    void init_gfx(void);
     void init_sprite(GfxObject<16, 16> *obj, byte_t *b);
     void init_tile(GfxObject<8, 8> *obj, byte_t *b);
-    void init_bus(void);
-    void init_switches(void);
-    void init_controls(void);
 
-    void draw_bg(void);
-    void draw_sprites(void);
-    void draw_screen(void);
-
-    unsigned _scanline;
-    Cycles _avail;
-    unsigned _hertz;
-
-    Z80Cpu_ptr _cpu;
-    AddressBus16_ptr _bus;
-    Ram _vram, _cram, _ram;
-    std::unique_ptr<RomSet> _roms;
-    Rom *_rom;
-
-    /* latches */
-    bool _irq_mask;
+    void draw_bg(RasterScreen *screen);
+    void draw_sprites(RasterScreen *screen);
 
     /* Graphics */
     struct Sprite {
@@ -171,10 +114,81 @@ private:
 
     Sprite _spr[8];
 
-    ColorPalette<32>  _palette;
+    ColorMap<32, RGBColor> m_colors;
     GfxObject<8, 8>   _tiles[256];
     ColorPalette<4>   _palettes[128];
     GfxObject<16, 16> _sprites[64];
+};
+
+typedef std::unique_ptr<PacmanGfx> PacmanGfx_ptr;
+
+class Pacman: public Machine
+{
+public:
+    Pacman(const std::string &rom);
+    virtual ~Pacman(void);
+
+private:
+
+    byte_t rom_read(offset_t offset) {
+        return _rom->read8(offset);
+    }
+    void rom_write(offset_t offset, byte_t value) {
+    }
+
+    byte_t ram_read(offset_t offset) {
+        return _ram.read8(offset);
+    }
+    void ram_write(offset_t offset, byte_t value) {
+        if (offset == 0x2f7 && value == 0xff) {
+            std::cout << "Sound write " << Hex(value) << std::endl;
+        }
+        _ram.write8(offset, value);
+    }
+
+    byte_t in0_read(offset_t offset) {
+        return read_ioport("IN0");
+    }
+    void latch_write(offset_t offset, byte_t value);
+
+    void sound_write(offset_t offset, byte_t value) {
+    }
+
+    byte_t in1_read(offset_t offset) {
+        return read_ioport("IN1");
+    }
+
+    byte_t dsw1_read(offset_t offset) {
+        return read_ioport("DSW1");
+    }
+    void dsw1_write(offset_t offset, byte_t value) {
+    }
+
+    byte_t dsw2_read(offset_t offset) {
+        return read_ioport("DSW2");
+    }
+    void watchdog_write(offset_t offset, byte_t value) {
+    }
+
+    byte_t io_read(offset_t offset);
+    void io_write(offset_t offset, byte_t value);
+
+    void init_bus(void);
+    void init_switches(void);
+    void init_controls(void);
+
+    unsigned _hertz;
+
+    Z80Cpu_ptr _cpu;
+    AddressBus16_ptr _bus;
+    Ram _ram;
+    std::unique_ptr<RomSet> _roms;
+    Rom *_rom;
+    PacmanGfx_ptr _gfx;
+
+    /* latches */
+    bool _irq_mask;
+
 };
 
 };

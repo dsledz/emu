@@ -35,13 +35,46 @@ using namespace Z80;
 
 namespace Driver {
 
+class GalagaGfx: public GfxDevice
+{
+public:
+    GalagaGfx(Machine *machine, const std::string &name, unsigned hertz, AddressBus16 *bus);
+    ~GalagaGfx(void);
+
+    void draw_screen(RasterScreen *screen);
+
+    uint8_t vmem_read(offset_t offset);
+    void vmem_write(offset_t offset, uint8_t value);
+
+    void init(RomSet *romset);
+
+private:
+
+    Ram vram;
+
+    void init_sprite(GfxObject<16, 16> *obj, byte_t *b);
+    void init_tile(GfxObject<8, 8> *obj, byte_t *b);
+
+    void draw_bg(RasterScreen *screen);
+    void draw_sprites(RasterScreen *screen);
+
+    AddressBus16_ptr _bus;
+
+    /* Graphic Data */
+    ColorMap<32, RGBColor> m_colors;
+    GfxObject<8,8> _tiles[128];
+    ColorPalette<4> _tile_palette[64];
+    GfxObject<16,16> _sprites[128];
+    ColorPalette<4> _sprite_palette[64];
+};
+
+typedef std::unique_ptr<GalagaGfx> GalagaGfx_ptr;
+
 class Galaga: public Machine
 {
 public:
     Galaga(const std::string &rom);
     virtual ~Galaga(void);
-
-    virtual void execute(Time interval);
 
 private:
 
@@ -60,31 +93,22 @@ private:
     void draw_sprites(void);
     void draw_screen(void);
 
-    Ram vram, ram1, ram2, ram3;
+    Ram ram1, ram2, ram3;
     Z80Cpu_ptr _main_cpu;
     Z80Cpu_ptr _sub_cpu;
     Z80Cpu_ptr _snd_cpu;
     Namco51_ptr _namco51;
     Namco06_ptr _namco06;
+    GalagaGfx_ptr _gfx;
 
     AddressBus16_ptr _bus;
 
-    /* Graphics simulation */
-    int _scanline;
-    Cycles _avail;
     unsigned _hertz;
 
     /* Interrupt lines */
     bool _main_irq;
     bool _sub_irq;
     bool _snd_nmi;
-
-    /* Graphic Data */
-    ColorMap<32, RGBColor> m_colors;
-    GfxObject<8,8> _tiles[128];
-    ColorPalette<4> _tile_palette[64];
-    GfxObject<16,16> _sprites[128];
-    ColorPalette<4> _sprite_palette[64];
 };
 
 };
