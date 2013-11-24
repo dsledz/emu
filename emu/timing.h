@@ -344,7 +344,6 @@ private:
     std::condition_variable _cv;
 
     State _state;
-    TimerQueue _queue;
     std::string _name;
     Time _current_time;
     Time _avail_time;

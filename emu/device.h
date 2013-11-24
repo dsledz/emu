@@ -102,6 +102,53 @@ protected:
     Cycles _avail;
 };
 
+/**
+ * Emulation device. Specific chips implement the device class.
+ */
+class ClockedDevice: public Clockable {
+public:
+    ClockedDevice(Machine *machine, const std::string &name):
+        Clockable(name), _machine(machine), _name(name) { }
+    virtual ~ClockedDevice(void) { }
+
+    Machine *machine(void) {
+        return _machine;
+    }
+    const std::string &name(void) {
+        return _name;
+    }
+    /**
+     * Save the device state.
+     */
+    virtual void save(SaveState &state) { }
+    /**
+     * Restore the device state.
+     */
+    virtual void load(LoadState &state) { }
+    /**
+     * Simulate the device for the next interval.
+     */
+    virtual void execute(void) { }
+    /**
+     * Signal one of the external lines.
+     */
+    virtual void line(Line line, LineState state) {
+        switch (line) {
+        case Line::RESET:
+            reset();
+            break;
+        default:
+            break;
+        }
+    }
+
+    virtual void reset(void) { }
+
+protected:
+    Machine *_machine;
+    std::string _name;
+};
+
 class GfxDevice: public Device {
 public:
     GfxDevice(Machine *machine, const std::string &name, unsigned hertz):

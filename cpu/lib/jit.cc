@@ -25,7 +25,7 @@
  * x64 Jitter
  */
 
-#include "emu/jit.h"
+#include "cpu/lib/jit.h"
 
 using namespace JITx64;
 
@@ -45,7 +45,7 @@ JITEmitter::reset(void)
     _source.resize(0);
 }
 
-const jit_buf_t &
+const exec_buf_t &
 JITEmitter::code(void) const
 {
     return _code;

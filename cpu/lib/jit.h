@@ -27,7 +27,7 @@
 #pragma once
 
 #include "emu/bits.h"
-#include "emu/jitutil.h"
+#include "emu/mem.h"
 #include "emu/cpu.h"
 
 using namespace EMU;
@@ -182,7 +182,7 @@ private:
 class JITBlock
 {
 public:
-    JITBlock(jit_buf_t code, uint32_t pc, bvec source, int len, int cycles):
+    JITBlock(exec_buf_t code, uint32_t pc, bvec source, int len, int cycles):
         pc(pc), len(len), cycles(cycles), _code(code), _source(source)
     {
     }
@@ -212,7 +212,7 @@ public:
     Cycles cycles;
 
 private:
-    jit_buf_t _code;
+    exec_buf_t _code;
     bvec _source;
 };
 
@@ -229,7 +229,7 @@ public:
 
     void reset(void);
 
-    const jit_buf_t &code(void) const;
+    const exec_buf_t &code(void) const;
     const bvec &source(void) const;
 
     void xMOV8(RegIdx8 dst, RegIdx8 src);
@@ -380,7 +380,7 @@ private:
     }
 
 public:
-    std::vector<uint8_t, JITPolicy<uint8_t> > _code;
+    exec_buf_t _code;
     bvec _source;
 };
 

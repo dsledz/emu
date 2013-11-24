@@ -1,3 +1,4 @@
+add_subdirectory(lib)
 add_subdirectory(m6502)
 add_subdirectory(m6809)
 add_subdirectory(z80)

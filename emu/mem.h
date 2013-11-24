@@ -30,7 +30,7 @@
 #include <vector>
 
 template<typename T>
-class JITPolicy {
+class ExecPolicy {
 public:
     //    typedefs
     typedef T value_type;
@@ -44,7 +44,7 @@ public:
 public:
     template<typename U>
     struct rebind {
-        typedef JITPolicy<U> other;
+        typedef ExecPolicy<U> other;
     };
 
 public:
@@ -65,22 +65,22 @@ public:
     }
 
 private:
-};    //    end of class JITPolicy
+};    //    end of class ExecPolicy
 
 //    determines if memory from another allocator
 //    can be deallocated from this one
 template<typename T>
-inline bool operator==(JITPolicy<T> const&, JITPolicy<T> const&) {
+inline bool operator==(ExecPolicy<T> const&, ExecPolicy<T> const&) {
     return true;
 }
 template<typename T, typename T2>
-inline bool operator==(JITPolicy<T> const&, JITPolicy<T2> const&) {
+inline bool operator==(ExecPolicy<T> const&, ExecPolicy<T2> const&) {
     return false;
 }
 template<typename T, typename OtherAllocator>
-inline bool operator==(JITPolicy<T> const&, OtherAllocator const&) {
+inline bool operator==(ExecPolicy<T> const&, OtherAllocator const&) {
     return false;
 }
 
-typedef std::vector<uint8_t, JITPolicy<uint8_t> > jit_buf_t;
+typedef std::vector<uint8_t, ExecPolicy<uint8_t> > exec_buf_t;
 

@@ -240,6 +240,9 @@ public:
 
     virtual void load_rom(const std::string &rom);
 
+    uint8_t latch_read(offset_t offset);
+    void latch_write(offset_t offset, uint8_t value);
+
     AddressBus16 *cpu_bus(void) {
         return &_cpu_bus;
     }

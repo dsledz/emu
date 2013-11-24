@@ -94,42 +94,8 @@ NES::NES(void):
 
     /* XXX: APU registers 0x4000 - 0x4017 */
     _cpu_bus.add(0x4000, 0x5FFF,
-        [&](addr_t addr) -> byte_t {
-            byte_t result = 0;
-            switch (addr) {
-            case 0x0016: {
-                byte_t keys = read_ioport("JOYPAD1");
-                if (_joy1_shift < 8)
-                    result = bit_isset(keys, _joy1_shift);
-                _joy1_shift++;
-                break;
-            }
-            case 0x0017: {
-                byte_t keys = read_ioport("JOYPAD2");
-                if (_joy2_shift < 8)
-                    result = bit_isset(keys, _joy2_shift);
-                _joy2_shift++;
-                break;
-            }
-            }
-            return result;
-        },
-        [&](addr_t addr, byte_t value) {
-            switch (addr) {
-            case 0x0014: {
-                /* XXX: We need to charge the CPU somehow */
-                addr = value << 8;
-                byte_t sram = _cpu_bus.read(0x2003);
-                for (int i = 0; i < 256; i++)
-                    _sprite_bus.write((i + sram % 256), _cpu_bus.read(addr++));
-                break;
-            }
-            case 0x0016:
-                _joy1_shift = 0;
-                _joy2_shift = 0;
-                break;
-            }
-        });
+        READ_CB(NES::latch_read, this),
+        WRITE_CB(NES::latch_write, this));
 
     /* Controllers */
     IOPort *port = NULL;
@@ -172,6 +138,49 @@ NES::load_rom(const std::string &rom)
 {
     /* Cartridge */
     _mapper = load_cartridge(this, rom);
+}
+
+uint8_t
+NES::latch_read(offset_t offset)
+{
+    byte_t result = 0;
+    switch (offset) {
+    case 0x0016: {
+        byte_t keys = read_ioport("JOYPAD1");
+        if (_joy1_shift < 8)
+            result = bit_isset(keys, _joy1_shift);
+        _joy1_shift++;
+        break;
+    }
+    case 0x0017: {
+        byte_t keys = read_ioport("JOYPAD2");
+        if (_joy2_shift < 8)
+            result = bit_isset(keys, _joy2_shift);
+        _joy2_shift++;
+        break;
+    }
+    }
+    return result;
+
+}
+
+void
+NES::latch_write(offset_t offset, uint8_t value)
+{
+    switch (offset) {
+    case 0x0014: {
+        /* XXX: We need to charge the CPU somehow */
+        addr_t addr = value << 8;
+        byte_t sram = _cpu_bus.read(0x2003);
+        for (int i = 0; i < 256; i++)
+            _sprite_bus.write((i + sram % 256), _cpu_bus.read(addr++));
+        break;
+    }
+    case 0x0016:
+        _joy1_shift = 0;
+        _joy2_shift = 0;
+        break;
+    }
 }
 
 MachineInformation nes_info {

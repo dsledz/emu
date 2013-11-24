@@ -25,7 +25,7 @@
 #pragma once
 
 #include "emu/emu.h"
-#include "emu/jit.h"
+#include "cpu/lib/jit.h"
 
 using namespace EMU;
 using namespace JITx64;

@@ -1,6 +1,6 @@
 
 #include "emu/test.h"
-#include "emu/jit.h"
+#include "cpu/lib/jit.h"
 
 #include "cpu/m6502/m6502.h"
 

@@ -1,8 +1,7 @@
 add_library(emu
     emu.cc
-    task.cc
+    timing.cc
     input.cc
-    jit.cc
     machine.cc
     ram.cc
     rom.cc
