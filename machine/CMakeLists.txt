@@ -1,3 +1,5 @@
+add_subdirectory(gb)
+
 add_library(machine
     dkong.cc
     dkonggfx.cc
@@ -6,22 +8,19 @@ add_library(machine
     namco06.cc
     pacman.cc
     i8257.cc
-    gb.cc
-    gbgfx.cc
-    gbmbc.cc
     nes.cc
     nes_mapper.cc
     nes_ppu.cc
     tg16.cc
     tg16_vdc.cc)
 target_link_libraries(machine
+    gb
     emu
     cpu)
 
 if (BUILD_TESTING)
     add_executable(machine-check
         galaga_test.cc
-        gb_test.cc
         tg16_test.cc)
     target_link_libraries(machine-check
         machine

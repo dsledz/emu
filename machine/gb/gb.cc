@@ -25,9 +25,9 @@
 
 #include "emu/emu.h"
 
-#include "machine/gb.h"
-#include "machine/gbgfx.h"
-#include "machine/gbmbc.h"
+#include "machine/gb/gb.h"
+#include "machine/gb/gbgfx.h"
+#include "machine/gb/gbmbc.h"
 
 using namespace EMU;
 using namespace Driver;

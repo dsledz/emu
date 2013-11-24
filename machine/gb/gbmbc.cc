@@ -27,7 +27,7 @@
  */
 #include "emu/emu.h"
 
-#include "machine/gbmbc.h"
+#include "machine/gb/gbmbc.h"
 
 using namespace EMU;
 using namespace Driver;

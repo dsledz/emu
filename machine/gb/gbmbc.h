@@ -22,65 +22,50 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+/*
+ * Memory bank Controller
+ */
 #pragma once
 
 #include "emu/emu.h"
 
-#include "cpu/lr35902.h"
+#include "machine/gb/gb.h"
 
 using namespace EMU;
-using namespace LR35902;
 
 namespace Driver {
 
-class GBGraphics;
-class GBMBC;
-
-enum GBInterrupt {
-    VBlank = 0,
-    LCDStat = 1,
-    Timeout = 2,
-    Serial = 3,
-    Joypad = 4,
+enum Cartridge {
+    RomOnly = 0x00,
+    MBC1    = 0x01,
+    MBC1R   = 0x02,
+    MBC1RB  = 0x03,
+    MBC3RRB = 0x13
 };
 
-/* XXX: Should we split this up more? */
-enum GBReg {
-    KEYS = 0xFF00,
-    SB   = 0xFF01,
-    SC   = 0xFF02,
-    DIV  = 0xFF04,
-    TIMA = 0xFF05,
-    TMA  = 0xFF06,
-    TAC  = 0xFF07,
-    IF   = 0xFF0F,
-    DMA  = 0xFF46,
-    DMG_RESET = 0xFF50,
-    IE   = 0xFFFF,
-};
+class GBMBC: public Device {
+    public:
+        GBMBC(Gameboy *gameboy);
+        virtual ~GBMBC(void);
 
-class Gameboy: public Machine
-{
-public:
-    Gameboy(const std::string &name);
-    virtual ~Gameboy(void);
+        virtual void save(SaveState &state);
+        virtual void load(LoadState &state);
+        virtual void execute(Time interval) { }
+        virtual void line(Line line, LineState state) { }
 
-    AddressBus16 *bus(void) {
-        return _bus.get();
-    }
+        void load_rom(const std::string &name);
 
-private:
-    AddressBus16_ptr _bus;
+    private:
+        void _reset(void);
 
-    std::unique_ptr<LR35902::LR35902Cpu> _cpu;
-    std::unique_ptr<GBGraphics> _gfx;
-    std::unique_ptr<Ram> _ram;
-    std::unique_ptr<GBMBC> _mbc;
-    std::unique_ptr<Ram> _hiram;
-
-    device_ptr _timer;
-    device_ptr _serial;
-    device_ptr _joypad;
+        std::string _name;
+        Cartridge   _type;
+        unsigned    _rom_bank;
+        unsigned    _rom_size;
+        bvec        _rom;
+        unsigned    _ram_bank;
+        unsigned    _ram_size;
+        bvec        _ram;
 };
 
 };

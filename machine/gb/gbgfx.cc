@@ -23,7 +23,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "machine/gbgfx.h"
+#include "machine/gb/gbgfx.h"
 
 using namespace Driver;
 

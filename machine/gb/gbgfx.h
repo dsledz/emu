@@ -24,7 +24,7 @@
  */
 #pragma once
 
-#include "machine/gb.h"
+#include "machine/gb/gb.h"
 
 namespace Driver {
 
