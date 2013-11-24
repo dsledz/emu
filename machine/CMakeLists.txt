@@ -1,4 +1,5 @@
 add_subdirectory(gb)
+add_subdirectory(nes)
 
 add_library(machine
     dkong.cc
@@ -8,13 +9,11 @@ add_library(machine
     namco06.cc
     pacman.cc
     i8257.cc
-    nes.cc
-    nes_mapper.cc
-    nes_ppu.cc
     tg16.cc
     tg16_vdc.cc)
 target_link_libraries(machine
     gb
+    nes
     emu
     cpu)
 

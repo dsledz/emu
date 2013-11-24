@@ -23,7 +23,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "machine/nes.h"
+#include "machine/nes/nes.h"
 
 #include "cpu/m6502/m6502.h"
 

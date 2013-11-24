@@ -23,7 +23,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "machine/nes.h"
+#include "machine/nes/nes.h"
 
 using namespace EMU;
 using namespace NESDriver;
