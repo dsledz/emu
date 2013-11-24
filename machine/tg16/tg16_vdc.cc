@@ -115,11 +115,13 @@ VDC::data_write(offset_t offset, byte_t value)
         break;
     }
     case BYR:
+#if 0
         if (b == 1) {
             _bgvtile = _reg[BYR].d / 8;
             _bgvtile &= (bit_isset(_reg[MWR].d, 6) ? 0x3F : 0x1F);
             _bgvidx = _reg[BYR].d % 8;
         }
+#endif
         break;
     case SATB:
         _satb_write = true;
