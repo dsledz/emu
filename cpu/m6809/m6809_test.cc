@@ -25,7 +25,7 @@
 
 #include "emu/test.h"
 
-#include "cpu/m6809.h"
+#include "cpu/m6809/m6809.h"
 
 using namespace EMU;
 using namespace EMUTest;
