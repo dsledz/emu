@@ -25,10 +25,15 @@
 
 #include "emu/emu.h"
 
-#include "cpu/m6502/m6502.h"
 
 using namespace EMU;
+#if 0
+#include "cpu/m6502/m6502.h"
 using namespace M6502v2;
+#else
+#include "cpu/m6502.h"
+using namespace M6502;
+#endif
 
 namespace NESDriver {
 
@@ -104,7 +109,7 @@ protected:
     bvec _rom;
 };
 
-class NESPPU: public CpuDevice
+class NESPPU: public ClockedDevice
 {
 public:
     NESPPU(NES *machine, const std::string &name, unsigned hertz);

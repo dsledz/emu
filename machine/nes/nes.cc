@@ -25,8 +25,6 @@
 
 #include "machine/nes/nes.h"
 
-#include "cpu/m6502/m6502.h"
-
 #define MASTER_CLOCK 21477270
 
 using namespace EMU;

@@ -29,7 +29,7 @@ using namespace EMU;
 using namespace NESDriver;
 
 NESPPU::NESPPU(NES *machine, const std::string &name, unsigned hertz):
-    CpuDevice(machine, name, hertz),
+    ClockedDevice(machine, name, hertz),
     _color_table(0x40),
     _palette(0x20),
     _palette_bytes(0x20),
