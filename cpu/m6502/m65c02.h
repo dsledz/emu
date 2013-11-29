@@ -26,26 +26,28 @@
 
 #include "emu/emu.h"
 #include "cpu/m6502/m6502.h"
-#include "cpu/m6502/m65c02.h"
 
-using namespace M6502v2;
+namespace M6502v2 {
 
-class HuC6280Cpu: public M65c02Cpu
+struct M65c02State: public M6502State
 {
-public:
-    HuC6280Cpu(Machine *machine, const std::string &name, unsigned clock,
-              bus_type *bus);
-    virtual ~HuC6280Cpu(void);
 
-private:
-
-    uint8_t mmu_read(offset_t offset);
-    void mmu_write(offset_t offset, uint8_t value);
-
-    uint8_t m_irq_status;
-    uint8_t m_irq_disable;
-    bool m_timer_status;
-    int m_timer_load;
-    int m_timer_value;
 };
 
+class M65c02Cpu: public M6502Cpu
+{
+public:
+    M65c02Cpu(Machine *machine, const std::string &name, unsigned hertz, bus_type *bus);
+    ~M65c02Cpu(void);
+    M65c02Cpu(const M65c02Cpu &cpu) = delete;
+
+    M6502State *get_state(void) {
+        return &m_state;
+    }
+
+    virtual void test_step(void);
+    virtual void step(void);
+    virtual std::string dasm(addr_type addr);
+};
+
+};

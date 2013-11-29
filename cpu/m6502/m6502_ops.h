@@ -3,7 +3,7 @@
 #include "emu/emu.h"
 
 #define ADDR(addr) void addr(M6502State *state)
-#define OP(op) void op(M6502State *state)
+#define OP(op, ...) void op(M6502State *state, ##__VA_ARGS__)
 
 namespace M6502v2
 {
@@ -473,6 +473,15 @@ namespace M65C02v2
 {
     using namespace M6502v2;
 
+    ADDR(ZeroIndirect) {
+        reg16_t addr;
+        addr.b.l = pc_read(state);
+        addr.b.h = state->ZPG;
+        state->EA.b.l = state->bus_read(addr.d);
+        addr.b.l++;
+        state->EA.b.h = state->bus_read(addr.d);
+    }
+
     OP(TSB) {
         fetch(state);
         int result = state->A | state->ARG;
@@ -518,27 +527,21 @@ namespace M65C02v2
         state->Y = result;
     }
 
-    OP(SMB) {
-        Immediate(state);
-        int bit = fetch(state);
+    OP(SMB, uint8_t bit) {
         ZeroPage(state);
         fetch(state);
         int result = state->ARG | (1 << bit);
         store(state, result);
     }
 
-    OP(RMB) {
-        Immediate(state);
-        int bit = fetch(state);
+    OP(RMB, uint8_t bit) {
         ZeroPage(state);
         fetch(state);
         int result = state->ARG & ~(1 << bit);
         store(state, result);
     }
 
-    OP(BBR) {
-        Immediate(state);
-        int bit = fetch(state);
+    OP(BBR, uint8_t bit) {
         ZeroPage(state);
         fetch(state);
         Relative(state);
@@ -548,9 +551,7 @@ namespace M65C02v2
         }
     }
 
-    OP(BBS) {
-        Immediate(state);
-        int bit = fetch(state);
+    OP(BBS, uint8_t bit) {
         ZeroPage(state);
         fetch(state);
         Relative(state);
@@ -560,5 +561,13 @@ namespace M65C02v2
         }
     }
 
+    OP(STZ) {
+        store(state, 0);
+    }
+
+    OP(BRA) {
+        state->PC = state->EA;
+        state->icycles += 2;
+    }
 };
 

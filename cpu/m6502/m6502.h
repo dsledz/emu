@@ -91,14 +91,14 @@ class M6502Cpu: public Cpu<AddressBus16>
 public:
     M6502Cpu(Machine *machine, const std::string &name, unsigned hertz,
              bus_type *bus);
-    ~M6502Cpu(void);
+    virtual ~M6502Cpu(void);
     M6502Cpu(const M6502Cpu &cpu) = delete;
 
     virtual void line(Line line, LineState state);
     virtual void reset(void);
 
     M6502State *get_state(void) {
-        return &_state;
+        return &m_state;
     }
 
     void log_state(void);
@@ -113,30 +113,14 @@ protected:
     void jit_dispatch(uint16_t pc);
     jit_block_ptr jit_compile(uint16_t pc);
 
-    LineState _nmi_line;
-    LineState _irq_line;
-    LineState _reset_line;
-    M6502State _state;
-    JITEmitter _jit;
-    JITState   _jit_state;
-    std::unordered_map<uint32_t, jit_block_ptr> _jit_cache;
-    std::unordered_map<uint8_t, M6502Opcode> _opcodes;
-};
-
-class M65C02Cpu: public M6502Cpu
-{
-public:
-    M65C02Cpu(Machine *machine, const std::string &name, unsigned clock,
-              bus_type *bus):
-        M6502Cpu(machine, name, clock, bus)
-    {
-    }
-    virtual ~M65C02Cpu(void)
-    {
-    }
-
-protected:
-
+    LineState m_nmi_line;
+    LineState m_irq_line;
+    LineState m_reset_line;
+    M6502State m_state;
+    JITEmitter m_jit;
+    JITState   m_jit_state;
+    std::unordered_map<uint32_t, jit_block_ptr> m_jit_cache;
+    std::unordered_map<uint8_t, M6502Opcode> m_opcodes;
 };
 
 };

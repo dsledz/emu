@@ -1,5 +1,7 @@
 add_library(m6502
-    m6502.cc)
+    m6502.cc
+    m65c02.cc
+    HuC6280.cc)
 target_link_libraries(m6502
     cpu-lib)
 

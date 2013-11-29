@@ -1,12 +1,10 @@
 #pragma once
 
-#define JIT_OP(op) \
-    static bool op ##_jit( \
-        JITEmitter *_jit, \
-        uint16_t pc)
+#define JIT_OP(op, ...) \
+    static inline bool op ##_jit(JITEmitter *_jit, uint16_t pc, ##__VA_ARGS__)
 
 #define JIT_ADDR(addr) \
-    static void addr ##_jit( \
+    static inline void addr ##_jit( \
         JITEmitter *_jit, \
         std::function<uint8_t (uint16_t)> bus_read, \
         uint16_t pc)
@@ -174,6 +172,19 @@ namespace M6502v2
     JIT_ADDR(Indirect)
     {
         uint16_t tmp = bus_read(pc + 1) | (bus_read(pc + 2) << 8);
+        _jit->xPUSHF();
+        _jit->xMOV16(RegEA, tmp);
+        _jit->xLOAD(RegTMPl, RegEA);
+        _jit->xINC(RegEAl);
+        _jit->xLOAD(RegTMPh, RegEA);
+        _jit->xMOV16(RegEA, RegTMP);
+        _jit->xPOPF();
+    }
+
+    JIT_ADDR(ZeroIndirect)
+    {
+        uint8_t ZPG = 0;
+        uint16_t tmp = bus_read(pc + 1) | (ZPG << 8);
         _jit->xPUSHF();
         _jit->xMOV16(RegEA, tmp);
         _jit->xLOAD(RegTMPl, RegEA);
@@ -691,5 +702,85 @@ namespace M6502v2
     {
         _jit->xMOV8(RegSP, RegX);
         return true;
+    }
+};
+
+namespace M65C02v2
+{
+    using namespace M6502v2;
+
+    JIT_OP(TSB)
+    {
+        return true;
+    }
+
+    JIT_OP(TRB)
+    {
+        return true;
+    }
+
+    JIT_OP(BITIMM)
+    {
+        return true;
+    }
+
+    JIT_OP(INA)
+    {
+        return true;
+    }
+
+    JIT_OP(DEA)
+    {
+        return true;
+    }
+
+    JIT_OP(PHX)
+    {
+        return true;
+    }
+
+    JIT_OP(PHY)
+    {
+        return true;
+    }
+
+    JIT_OP(PLX)
+    {
+        return true;
+    }
+
+    JIT_OP(PLY)
+    {
+        return true;
+    }
+
+    JIT_OP(SMB, uint8_t bit)
+    {
+        return true;
+    }
+
+    JIT_OP(RMB, uint8_t bit)
+    {
+        return true;
+    }
+
+    JIT_OP(BBR, uint8_t bit)
+    {
+        return true;
+    }
+
+    JIT_OP(BBS, uint8_t bit)
+    {
+        return true;
+    }
+
+    JIT_OP(STZ)
+    {
+        return true;
+    }
+
+    JIT_OP(BRA)
+    {
+        return false;
     }
 };

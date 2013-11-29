@@ -33,6 +33,13 @@
 
 using namespace EMU;
 
+struct JITError: public EmuException {
+    JITError(const std::string &op): EmuException("JIT Error: ")
+    {
+        msg += op;
+    }
+};
+
 namespace JITx64 {
 
 enum RegIdx8 {
