@@ -126,32 +126,32 @@ private:
     GfxObject<8,8> *get_obj(int idx);
 
     typedef std::function<GfxObject<8,8> *(int idx)> obj_cb;
-    obj_cb _tilemap0;
-    obj_cb _tilemap1;
+    obj_cb m_tilemap0;
+    obj_cb m_tilemap1;
 
     void draw_scanline(int sy);
 
-    AddressBus16 *_bus;
+    AddressBus16 *m_bus;
 
-    RamDevice _vram;
-    RamDevice _oam;
+    RamDevice m_vram;
+    RamDevice m_oam;
 
-    byte_t _lcdc;
-    byte_t _stat;
-    byte_t _scy;
-    byte_t _scx;
-    byte_t _ly;
-    byte_t _lyc;
-    byte_t _bgp;
-    byte_t _obp0;
-    byte_t _obp1;
-    byte_t _wy;
-    byte_t _wx;
+    byte_t m_lcdc;
+    byte_t m_stat;
+    byte_t m_scy;
+    byte_t m_scx;
+    byte_t m_ly;
+    byte_t m_lyc;
+    byte_t m_bgp;
+    byte_t m_obp0;
+    byte_t m_obp1;
+    byte_t m_wy;
+    byte_t m_wx;
 
-    ColorPalette<4> _global_pal, _obj0_pal, _obj1_pal, _bg_pal;
-    GfxObject<8,8> _objs[384];
+    ColorPalette<4> m_global_pal, m_obj0_pal, m_obj1_pal, m_bg_pal;
+    GfxObject<8,8> m_objs[384];
 
-    unsigned _fcycles;
+    unsigned m_fcycles;
 };
 
 };

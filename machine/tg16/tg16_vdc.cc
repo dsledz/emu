@@ -29,25 +29,25 @@ using namespace TG16Machine;
 
 VDC::VDC(TG16 *tg16, unsigned hertz):
     ClockedDevice(tg16, "vdc", hertz),
-    _sprites(0),
-    _hpos(0),
-    _vpos(0),
-    _status(0),
-    _reg_idx(0),
-    _vram(0x8000),
-    _sat(0x100),
-    _palette(0x200),
-    _pal_bytes(0x200),
-    _pal_idx(0)
+    m_sprites(0),
+    m_hpos(0),
+    m_vpos(0),
+    m_status(0),
+    m_reg_idx(0),
+    m_vram(0x8000),
+    m_sat(0x100),
+    m_palette(0x200),
+    m_pal_bytes(0x200),
+    m_pal_idx(0)
 {
     for (int i = 0; i < 20; i++)
-        _reg[i].d = 0;
+        m_reg[i].d = 0;
     /* XXX: Set a few registers to sane values. */
-    _reg[HSR].d = 0x0202;
-    _reg[HDR].d = 0x041f;
-    _reg[VPR].d = 0x0f02;
-    _reg[VDW].d = 0x00ef;
-    _reg[VCR].d = 0x0004;
+    m_reg[HSR].d = 0x0202;
+    m_reg[HDR].d = 0x041f;
+    m_reg[VPR].d = 0x0f02;
+    m_reg[VDW].d = 0x00ef;
+    m_reg[VCR].d = 0x0004;
 }
 
 VDC::~VDC(void)
@@ -57,8 +57,8 @@ VDC::~VDC(void)
 byte_t
 VDC::status_read(offset_t offset)
 {
-    byte_t result = _status;
-    _status = 0;
+    byte_t result = m_status;
+    m_status = 0;
     /* XXX: How often should be clear this? */
     machine()->set_line("cpu", Line::INT1, LineState::Clear);
 
@@ -68,9 +68,9 @@ VDC::status_read(offset_t offset)
 void
 VDC::status_write(offset_t offset, byte_t value)
 {
-    _reg_idx = 0x1F & value;
-    if (_reg_idx & 0x10)
-        _reg_idx &= 0x13;
+    m_reg_idx = 0x1F & value;
+    if (m_reg_idx & 0x10)
+        m_reg_idx &= 0x13;
 }
 
 uint8_t vram_inc[] = { 1, 32, 64, 128 };
@@ -80,12 +80,12 @@ VDC::data_read(offset_t offset)
 {
     const int b = offset & 0x01;
     byte_t result = 0;
-    switch (_reg_idx) {
+    switch (m_reg_idx) {
     case VxR: {
-        result = get_byte(_vram.at(_reg[MARR].d % 0x7FFF), b);
-        int inc = vram_inc[(_reg[CR].d & 0x0C00) >> 11];
+        result = get_byte(m_vram.at(m_reg[MARR].d % 0x7FFF), b);
+        int inc = vram_inc[(m_reg[CR].d & 0x0C00) >> 11];
         if (b == 1)
-            _reg[MARR].d += inc;
+            m_reg[MARR].d += inc;
         break;
     }
     default:
@@ -100,38 +100,38 @@ VDC::data_write(offset_t offset, byte_t value)
 {
     const int b = offset & 0x01;
     /* XXX: Is this correct? */
-    set_byte(_reg[_reg_idx], b, value);
+    set_byte(m_reg[m_reg_idx], b, value);
 
-    switch (_reg_idx) {
+    switch (m_reg_idx) {
     default:
         IF_LOG(Trace)
-            std::cout << "VDC: " << Hex(_reg_idx) << " <- "
-                      << Hex(_reg[_reg_idx].d) << std::endl;
+            std::cout << "VDC: " << Hex(m_reg_idx) << " <- "
+                      << Hex(m_reg[m_reg_idx].d) << std::endl;
         break;
     case VxR: {
-        set_byte(_vram.at(_reg[MAWR].d & 0x7FFF), b, value);
+        set_byte(m_vram.at(m_reg[MAWR].d & 0x7FFF), b, value);
         if (b == 1)
-            _reg[MAWR].d += vram_inc[(_reg[CR].d & 0x0C00) >> 11];
+            m_reg[MAWR].d += vram_inc[(m_reg[CR].d & 0x0C00) >> 11];
         break;
     }
     case BYR:
 #if 0
         if (b == 1) {
-            _bgvtile = _reg[BYR].d / 8;
-            _bgvtile &= (bit_isset(_reg[MWR].d, 6) ? 0x3F : 0x1F);
-            _bgvidx = _reg[BYR].d % 8;
+            m_bgvtile = m_reg[BYR].d / 8;
+            m_bgvtile &= (bit_isset(m_reg[MWR].d, 6) ? 0x3F : 0x1F);
+            m_bgvidx = m_reg[BYR].d % 8;
         }
 #endif
         break;
     case SATB:
-        _satb_write = true;
+        m_satb_write = true;
         break;
     case LENR:
         DEVICE_INFO("DMA");
         if (b == 1) {
             /* XXX: Cycles are wrong */
-            for (uint16_t i = 0; i < _reg[LENR].d; i++)
-                _vram[_reg[DESR].d + i] = _vram[_reg[SOUR].d + i];
+            for (uint16_t i = 0; i < m_reg[LENR].d; i++)
+                m_vram[m_reg[DESR].d + i] = m_vram[m_reg[SOUR].d + i];
         }
         break;
     }
@@ -176,34 +176,34 @@ static uint8_t bg_width[] = { 32, 64, 128, 128 };
 void
 VDC::bg_cache(void)
 {
-    const int width = bg_width[(_reg[MWR].d >> 4) & 0x3];
-    assert(_bghtile < width);
-    _bgaddr = _bgvtile * width + _bghtile;
-    uint16_t bat = _vram.at(_bgaddr).d;
+    const int width = bg_width[(m_reg[MWR].d >> 4) & 0x3];
+    assert(m_bghtile < width);
+    m_bgaddr = m_bgvtile * width + m_bghtile;
+    uint16_t bat = m_vram.at(m_bgaddr).d;
 #if 0
     IF_LOG(Trace) {
-        std::cout << "BGTile: " << Hex(_bgvtile) << " : " << Hex(_bghtile)
-                  << " " << Hex(_bgaddr) << " : " << Hex(bat)<< std::endl;
+        std::cout << "BGTile: " << Hex(m_bgvtile) << " : " << Hex(m_bghtile)
+                  << " " << Hex(m_bgaddr) << " : " << Hex(bat)<< std::endl;
     }
 #endif
-    uint16_t address = ((bat & 0x0FFF) << 4) + _bgvidx;
+    uint16_t address = ((bat & 0x0FFF) << 4) + m_bgvidx;
 
-    _bgp0 = _vram.at(address & 0x7FFF );
-    _bgp1 = _vram.at((address + 8) & 0x7FFF);
-    _bgpal = (bat & 0xF000) >> 12;
+    m_bgp0 = m_vram.at(address & 0x7FFF );
+    m_bgp1 = m_vram.at((address + 8) & 0x7FFF);
+    m_bgpal = (bat & 0xF000) >> 12;
 }
 
 uint8_t
 VDC::bg_pixel(void)
 {
-    int idx = 7 - _bghidx;
+    int idx = 7 - m_bghidx;
 
     uint8_t color =
-        (bit_isset(_bgp0.b.l, idx) << 0) |
-        (bit_isset(_bgp0.b.h, idx) << 1) |
-        (bit_isset(_bgp1.b.l, idx) << 2) |
-        (bit_isset(_bgp1.b.h, idx) << 3);
-    return (color != 0) ? color | (_bgpal << 4) : color;
+        (bit_isset(m_bgp0.b.l, idx) << 0) |
+        (bit_isset(m_bgp0.b.h, idx) << 1) |
+        (bit_isset(m_bgp1.b.l, idx) << 2) |
+        (bit_isset(m_bgp1.b.h, idx) << 3);
+    return (color != 0) ? color | (m_bgpal << 4) : color;
 }
 
 void
@@ -227,86 +227,86 @@ static const int HBEND = 64;
 void
 VDC::step(void)
 {
-    _hpos++;
-    if (_hpos > HMAX) {
-        _hpos = 0;
-        _vpos = (_vpos + 1) % VMAX;
-        if (_vpos == VBSTART) {
-            _flags.vblank = 1;
-            if (bit_isset(_reg[CR].d, 3))
+    m_hpos++;
+    if (m_hpos > HMAX) {
+        m_hpos = 0;
+        m_vpos = (m_vpos + 1) % VMAX;
+        if (m_vpos == VBSTART) {
+            m_flags.vblank = 1;
+            if (bit_isset(m_reg[CR].d, 3))
                 machine()->set_line("cpu", Line::INT1, LineState::Assert);
             DEVICE_DEBUG("vblank start");
-            if (_satb_write || bit_isset(_reg[DCR].d, 4)) {
+            if (m_satb_write || bit_isset(m_reg[DCR].d, 4)) {
                 for (int i = 0; i < 256; i++)
-                    _sat[i] = _vram[_reg[SATB].d + i];
-                _satb_write = 0;
+                    m_sat[i] = m_vram[m_reg[SATB].d + i];
+                m_satb_write = 0;
             }
-        } else if (_vpos == VBEND) {
+        } else if (m_vpos == VBEND) {
             machine()->screen()->flip();
             machine()->screen()->clear();
-            _flags.vblank = 0;
-            _flags.scanline_irq = 0;
-            _flags.sprite_overflow = 0;
-            _flags.sprite_hit = 0;
-            _bgvtile = _reg[BYR].d / 8;
-            _bgvtile &= (bit_isset(_reg[MWR].d, 6) ? 0x3F : 0x1F);
-            _bgvidx = _reg[BYR].d % 8;
+            m_flags.vblank = 0;
+            m_flags.scanline_irq = 0;
+            m_flags.sprite_overflow = 0;
+            m_flags.sprite_hit = 0;
+            m_bgvtile = m_reg[BYR].d / 8;
+            m_bgvtile &= (bit_isset(m_reg[MWR].d, 6) ? 0x3F : 0x1F);
+            m_bgvidx = m_reg[BYR].d % 8;
 
             IF_LOG(Debug) {
                 std::cout << "Screen Start: ";
-                std::cout << " BYR: " << Hex(_reg[BYR]);
-                std::cout << " BXR: " << Hex(_reg[BXR]);
+                std::cout << " BYR: " << Hex(m_reg[BYR]);
+                std::cout << " BXR: " << Hex(m_reg[BXR]);
                 std::cout << std::endl;
             }
-        } else if (_vpos > VBEND && _vpos < VBSTART) {
+        } else if (m_vpos > VBEND && m_vpos < VBSTART) {
             /* XXX: Scanline interrupt */
-            if ((_vpos - VBEND + 63 == _reg[RCR].d) && bit_isset(_reg[CR].d, 2)) {
-                _flags.scanline_irq = 1;
+            if ((m_vpos - VBEND + 63 == m_reg[RCR].d) && bit_isset(m_reg[CR].d, 2)) {
+                m_flags.scanline_irq = 1;
                 machine()->set_line("cpu", Line::INT1, LineState::Assert);
             } else {
-                _flags.scanline_irq = 0;
+                m_flags.scanline_irq = 0;
             }
-            if (_bgvidx == 7) {
-                _bgvtile++;
-                _bgvtile &= (bit_isset(_reg[MWR].d, 6) ? 0x3F : 0x1F);
-                _bgvidx = 0;
+            if (m_bgvidx == 7) {
+                m_bgvtile++;
+                m_bgvtile &= (bit_isset(m_reg[MWR].d, 6) ? 0x3F : 0x1F);
+                m_bgvidx = 0;
             } else
-                _bgvidx++;
+                m_bgvidx++;
         }
     }
-    if (_vpos <= VBEND || _vpos >= VBSTART)
+    if (m_vpos <= VBEND || m_vpos >= VBSTART)
         return;
-    if (_hpos > HBSTART) {
+    if (m_hpos > HBSTART) {
 
-    } else if (_hpos == HBSTART) {
+    } else if (m_hpos == HBSTART) {
         /* XXX: DMA? */
-    } else if (_hpos > HBEND &&  _hpos < HBSTART) {
+    } else if (m_hpos > HBEND &&  m_hpos < HBSTART) {
         RasterScreen *screen = machine()->screen();
         uint8_t bg = 0;
-        if (bit_isset(_reg[CR].d, 7))
+        if (bit_isset(m_reg[CR].d, 7))
             bg = bg_pixel();
         uint8_t spr = 0;
-        if (bit_isset(_reg[CR].d, 6))
+        if (bit_isset(m_reg[CR].d, 6))
             spr = sprite_pixel(bg);
         if (spr != 0)
-            screen->set(_hpos - HBEND, _vpos - VBEND, vce(spr, true));
+            screen->set(m_hpos - HBEND, m_vpos - VBEND, vce(spr, true));
         else
-            screen->set(_hpos - HBEND, _vpos - VBEND, vce(bg, false));
-        if (_bghidx == 7) {
-            _bghidx = 0;
-            _bghtile++;
-            _bghtile &= bg_width[(_reg[MWR].d >> 4) & 0x3] - 1;
+            screen->set(m_hpos - HBEND, m_vpos - VBEND, vce(bg, false));
+        if (m_bghidx == 7) {
+            m_bghidx = 0;
+            m_bghtile++;
+            m_bghtile &= bg_width[(m_reg[MWR].d >> 4) & 0x3] - 1;
             bg_cache();
         } else
-            _bghidx++;
-    } else if (_hpos == HBEND) {
+            m_bghidx++;
+    } else if (m_hpos == HBEND) {
         /* Start drawing */
-        _bghtile = _reg[BXR].d / 8;
-        _bghtile &= bg_width[(_reg[MWR].d >> 4) & 0x3] - 1;
-        _bghidx = _reg[BXR].d % 8;
+        m_bghtile = m_reg[BXR].d / 8;
+        m_bghtile &= bg_width[(m_reg[MWR].d >> 4) & 0x3] - 1;
+        m_bghidx = m_reg[BXR].d % 8;
         bg_cache();
-        _sprites.clear();
-        if (bit_isset(_reg[CR].d, 6))
+        m_sprites.clear();
+        if (bit_isset(m_reg[CR].d, 6))
             sprite_cache();
     }
     /* Output a pixel to the VCE */
@@ -316,11 +316,11 @@ void
 VDC::sprite_cache(void)
 {
     /* 64 sprites? */
-    int sy = _vpos - VBEND;
+    int sy = m_vpos - VBEND;
     for (int i = 0; i < 64; i++) {
-        Sprite sprite(&_sat.at(i * 4));
+        Sprite sprite(&m_sat.at(i * 4));
         if (sprite.matchy(sy)) {
-            _sprites.push_back(sprite);
+            m_sprites.push_back(sprite);
         }
     }
 }
@@ -328,12 +328,12 @@ VDC::sprite_cache(void)
 uint8_t
 VDC::sprite_pixel(uint8_t bg)
 {
-    int sx = _hpos - HBEND;
-    int sy = _vpos - VBEND;
+    int sx = m_hpos - HBEND;
+    int sy = m_vpos - VBEND;
     uint8_t color = 0;
-    for (auto it = _sprites.begin(); it != _sprites.end() && color == 0; it++) {
+    for (auto it = m_sprites.begin(); it != m_sprites.end() && color == 0; it++) {
         if (it->matchx(sx)) {
-            color = it->pixel(_vram, sx, sy);
+            color = it->pixel(m_vram, sx, sy);
             if (it->spbg == 0 && bg != 0)
                 color = 0;
         }
@@ -345,7 +345,7 @@ RGBColor
 VDC::vce(uint8_t color, bool sprite)
 {
     uint16_t idx = color | (sprite << 8);
-    return _palette[idx];
+    return m_palette[idx];
 }
 
 byte_t
@@ -354,11 +354,11 @@ VDC::vce_read(offset_t offset)
     byte_t result = 0;
     switch (offset % 8) {
     case 4:
-        result = _pal_bytes[_pal_idx.d].b.l;
+        result = m_pal_bytes[m_pal_idx.d].b.l;
         break;
     case 5:
-        result = _pal_bytes[_pal_idx.d].b.h;
-        _pal_idx.d++;
+        result = m_pal_bytes[m_pal_idx.d].b.h;
+        m_pal_idx.d++;
     default:
         break;
     }
@@ -375,22 +375,22 @@ VDC::vce_write(offset_t offset, byte_t value)
     case 0:
         break;
     case 2:
-        _pal_idx.b.l = value;
+        m_pal_idx.b.l = value;
         break;
     case 3:
-        _pal_idx.b.h = value;
+        m_pal_idx.b.h = value;
         break;
     case 4:
-        _pal_bytes[_pal_idx.d].b.l = value;
+        m_pal_bytes[m_pal_idx.d].b.l = value;
         break;
     case 5:
-        _pal_bytes[_pal_idx.d].b.h = value;
+        m_pal_bytes[m_pal_idx.d].b.h = value;
         /* XXXXXXXGGGRRRBBB */
-        _palette[_pal_idx.d] = RGBColor(
-            ((_pal_bytes[_pal_idx.d].d & 0x038) >> 3) * 32,
-            ((_pal_bytes[_pal_idx.d].d & 0x1C0) >> 6) * 32,
-            ((_pal_bytes[_pal_idx.d].d & 0x007) >> 0) * 32);
-        _pal_idx.d++;
+        m_palette[m_pal_idx.d] = RGBColor(
+            ((m_pal_bytes[m_pal_idx.d].d & 0x038) >> 3) * 32,
+            ((m_pal_bytes[m_pal_idx.d].d & 0x1C0) >> 6) * 32,
+            ((m_pal_bytes[m_pal_idx.d].d & 0x007) >> 0) * 32);
+        m_pal_idx.d++;
         break;
     default:
         break;

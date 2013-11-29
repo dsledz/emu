@@ -50,50 +50,50 @@ const std::vector<std::string> NES::ports = {
 
 NES::NES(void):
     Machine(),
-    _ram(this, "ram", 0x0800),
-    _joy1_shift(0),
-    _joy2_shift(0)
+    m_ram(this, "ram", 0x0800),
+    m_joy1_shift(0),
+    m_joy2_shift(0)
 {
     add_screen(256, 240);
 
     for (auto it = ports.begin(); it != ports.end(); it++)
         add_ioport(*it);
 
-    _cpu = std::unique_ptr<M6502Cpu>(
+    m_cpu = std::unique_ptr<M6502Cpu>(
         new M6502Cpu(this, "cpu", MASTER_CLOCK/12, cpu_bus()));
 
-    _ppu = std::unique_ptr<NESPPU>(
+    m_ppu = std::unique_ptr<NESPPU>(
         new NESPPU(this, "ppu", MASTER_CLOCK/4));
 
     /* Program rom is on the CPU bus */
-    _cpu_bus.add(0x8000, 0xFFFF,
+    m_cpu_bus.add(0x8000, 0xFFFF,
         [&](addr_t addr) -> byte_t {
-            return _mapper->prg_read(addr);
+            return m_mapper->prg_read(addr);
         },
         [&](addr_t addr, byte_t value) {
-            _mapper->prg_write(addr, value);
+            m_mapper->prg_write(addr, value);
         });
 
     /* Chr rom is on the PPU bus */
-    _ppu_bus.add(0x0000, 0x1FFF,
+    m_ppu_bus.add(0x0000, 0x1FFF,
         [&](addr_t addr) -> byte_t {
-            return _mapper->chr_read(addr);
+            return m_mapper->chr_read(addr);
         },
         [&](addr_t addr, byte_t value) {
-            _mapper->chr_write(addr, value);
+            m_mapper->chr_write(addr, value);
         });
 
     /* SRAM is on the CPU bus */
-    _cpu_bus.add(0x6000, 0x7FFF,
+    m_cpu_bus.add(0x6000, 0x7FFF,
         [&](addr_t addr) -> byte_t {
-            return _mapper->sram_read(addr);
+            return m_mapper->sram_read(addr);
         },
         [&](addr_t addr, byte_t value) {
-            _mapper->sram_write(addr, value);
+            m_mapper->sram_write(addr, value);
         });
 
     /* XXX: APU registers 0x4000 - 0x4017 */
-    _cpu_bus.add(0x4000, 0x5FFF,
+    m_cpu_bus.add(0x4000, 0x5FFF,
         READ_CB(NES::latch_read, this),
         WRITE_CB(NES::latch_write, this));
 
@@ -121,18 +121,18 @@ NES::NES(void):
     add_input(InputSignal(InputKey::Joy2Right, port, NESKey::Right, true));
 
     /* 2K ram mirrored 4x */
-    _cpu_bus.add(0x0000, 0x07FF,
-        READ_CB(RamDevice::read8, &_ram),
-        WRITE_CB(RamDevice::write8, &_ram));
-    _cpu_bus.add(0x0800, 0x0FFF,
-        READ_CB(RamDevice::read8, &_ram),
-        WRITE_CB(RamDevice::write8, &_ram));
-    _cpu_bus.add(0x1000, 0x17FF,
-        READ_CB(RamDevice::read8, &_ram),
-        WRITE_CB(RamDevice::write8, &_ram));
-    _cpu_bus.add(0x1800, 0x1FFF,
-        READ_CB(RamDevice::read8, &_ram),
-        WRITE_CB(RamDevice::write8, &_ram));
+    m_cpu_bus.add(0x0000, 0x07FF,
+        READ_CB(RamDevice::read8, &m_ram),
+        WRITE_CB(RamDevice::write8, &m_ram));
+    m_cpu_bus.add(0x0800, 0x0FFF,
+        READ_CB(RamDevice::read8, &m_ram),
+        WRITE_CB(RamDevice::write8, &m_ram));
+    m_cpu_bus.add(0x1000, 0x17FF,
+        READ_CB(RamDevice::read8, &m_ram),
+        WRITE_CB(RamDevice::write8, &m_ram));
+    m_cpu_bus.add(0x1800, 0x1FFF,
+        READ_CB(RamDevice::read8, &m_ram),
+        WRITE_CB(RamDevice::write8, &m_ram));
 
     /* XXX: Cartridge Expansion 0x4018 - 0x5FFF */
 }
@@ -145,7 +145,7 @@ void
 NES::load_rom(const std::string &rom)
 {
     /* Cartridge */
-    _mapper = load_cartridge(this, rom);
+    m_mapper = load_cartridge(this, rom);
 }
 
 uint8_t
@@ -155,16 +155,16 @@ NES::latch_read(offset_t offset)
     switch (offset) {
     case 0x0016: {
         byte_t keys = read_ioport("JOYPAD1");
-        if (_joy1_shift < 8)
-            result = bit_isset(keys, _joy1_shift);
-        _joy1_shift++;
+        if (m_joy1_shift < 8)
+            result = bit_isset(keys, m_joy1_shift);
+        m_joy1_shift++;
         break;
     }
     case 0x0017: {
         byte_t keys = read_ioport("JOYPAD2");
-        if (_joy2_shift < 8)
-            result = bit_isset(keys, _joy2_shift);
-        _joy2_shift++;
+        if (m_joy2_shift < 8)
+            result = bit_isset(keys, m_joy2_shift);
+        m_joy2_shift++;
         break;
     }
     }
@@ -179,14 +179,14 @@ NES::latch_write(offset_t offset, uint8_t value)
     case 0x0014: {
         /* XXX: We need to charge the CPU somehow */
         addr_t addr = value << 8;
-        byte_t sram = _cpu_bus.read(0x2003);
+        byte_t sram = m_cpu_bus.read(0x2003);
         for (int i = 0; i < 256; i++)
-            _sprite_bus.write((i + sram % 256), _cpu_bus.read(addr++));
+            m_sprite_bus.write((i + sram % 256), m_cpu_bus.read(addr++));
         break;
     }
     case 0x0016:
-        _joy1_shift = 0;
-        _joy2_shift = 0;
+        m_joy1_shift = 0;
+        m_joy2_shift = 0;
         break;
     }
 }

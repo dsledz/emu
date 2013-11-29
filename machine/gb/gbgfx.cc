@@ -29,72 +29,72 @@ using namespace GBMachine;
 
 GBGraphics::GBGraphics(Gameboy *gameboy, unsigned hertz):
     ClockedDevice(gameboy, "gfx", hertz),
-    _vram(gameboy, "vram", 0x2000),
-    _oam(gameboy, "oam", 0x100),
-    _lcdc(0)
+    m_vram(gameboy, "vram", 0x2000),
+    m_oam(gameboy, "oam", 0x100),
+    m_lcdc(0)
 {
 
-    _bus = gameboy->bus();
+    m_bus = gameboy->bus();
 
-    _global_pal[0] = RGBColor(0xff, 0xff, 0xff);
-    _global_pal[1] = RGBColor(0xbb, 0xbb, 0xbb);
-    _global_pal[2] = RGBColor(0x66, 0x66, 0x66);
-    _global_pal[3] = RGBColor(0x00, 0x00, 0x00);
+    m_global_pal[0] = RGBColor(0xff, 0xff, 0xff);
+    m_global_pal[1] = RGBColor(0xbb, 0xbb, 0xbb);
+    m_global_pal[2] = RGBColor(0x66, 0x66, 0x66);
+    m_global_pal[3] = RGBColor(0x00, 0x00, 0x00);
 
-    _bus->add(0x8000, 0x9FFF,
+    m_bus->add(0x8000, 0x9FFF,
         [&] (offset_t offset) -> byte_t {
-            return _vram.read8(offset);
+            return m_vram.read8(offset);
         },
         [&] (offset_t offset, byte_t value) {
             if (offset < 0x1800) {
-                auto *o = &_objs[offset / 16];
+                auto *o = &m_objs[offset / 16];
                 o->dirty = true;
             }
-            _vram.write8(offset, value);
+            m_vram.write8(offset, value);
         });
-    _bus->add(0xFE00, 0xFEFF,
-        READ_CB(RamDevice::read8, &_oam),
-        WRITE_CB(RamDevice::write8, &_oam));
+    m_bus->add(0xFE00, 0xFEFF,
+        READ_CB(RamDevice::read8, &m_oam),
+        WRITE_CB(RamDevice::write8, &m_oam));
 
-    _bus->add(VideoReg::LCDC, &_lcdc);
-    _bus->add(VideoReg::STAT, &_stat);
-    _bus->add(VideoReg::SCY, &_scy);
-    _bus->add(VideoReg::SCX, &_scx);
-    _bus->add(VideoReg::LY, &_ly);
-    _bus->add(GBReg::DMA,
+    m_bus->add(VideoReg::LCDC, &m_lcdc);
+    m_bus->add(VideoReg::STAT, &m_stat);
+    m_bus->add(VideoReg::SCY, &m_scy);
+    m_bus->add(VideoReg::SCX, &m_scx);
+    m_bus->add(VideoReg::LY, &m_ly);
+    m_bus->add(GBReg::DMA,
         AddressBus16::DefaultRead(),
         [&] (offset_t offset, byte_t arg) {
             addr_t src_addr = (addr_t)arg << 8;
             for (unsigned i = 0; i < 160; i++)
-                _oam.write8(i, _bus->read(src_addr + i));
+                m_oam.write8(i, m_bus->read(src_addr + i));
         });
-    _bus->add(VideoReg::LYC, &_lyc);
-    _bus->add(VideoReg::BGP,
-        AddressBus16::DataRead(&_bgp),
-        WRITE_CB(GBGraphics::palette_write, this, &_bg_pal, &_bgp)
+    m_bus->add(VideoReg::LYC, &m_lyc);
+    m_bus->add(VideoReg::BGP,
+        AddressBus16::DataRead(&m_bgp),
+        WRITE_CB(GBGraphics::palette_write, this, &m_bg_pal, &m_bgp)
         );
-    _bus->add(VideoReg::OBP0,
-        AddressBus16::DataRead(&_obp0),
-        WRITE_CB(GBGraphics::palette_write, this, &_obj0_pal, &_obp0)
+    m_bus->add(VideoReg::OBP0,
+        AddressBus16::DataRead(&m_obp0),
+        WRITE_CB(GBGraphics::palette_write, this, &m_obj0_pal, &m_obp0)
         );
-    _bus->add(VideoReg::OBP1,
-        AddressBus16::DataRead(&_obp1),
-        WRITE_CB(GBGraphics::palette_write, this, &_obj1_pal, &_obp1)
+    m_bus->add(VideoReg::OBP1,
+        AddressBus16::DataRead(&m_obp1),
+        WRITE_CB(GBGraphics::palette_write, this, &m_obj1_pal, &m_obp1)
         );
-    _bus->add(VideoReg::WY, &_wy);
-    _bus->add(VideoReg::WX, &_wx);
+    m_bus->add(VideoReg::WY, &m_wy);
+    m_bus->add(VideoReg::WX, &m_wx);
 
-    _tilemap0 = [&](int idx) -> GfxObject<8,8> *{
-        char c = _vram.read8(VMem::TileMap0 + idx);
+    m_tilemap0 = [&](int idx) -> GfxObject<8,8> *{
+        char c = m_vram.read8(VMem::TileMap0 + idx);
         return get_obj(c + 256);
     };
-    _tilemap1 = [&](int idx) -> GfxObject<8,8> *{
-        char c = _vram.read8(VMem::TileMap1 + idx);
+    m_tilemap1 = [&](int idx) -> GfxObject<8,8> *{
+        char c = m_vram.read8(VMem::TileMap1 + idx);
         return get_obj(c + 256);
     };
 
     for (unsigned i = 0; i < 384; i++)
-        _objs[i].dirty = true;
+        m_objs[i].dirty = true;
 }
 
 GBGraphics::~GBGraphics(void)
@@ -106,18 +106,18 @@ GBGraphics::palette_write(ColorPalette<4> *pal, byte_t *pal_byte,
                           offset_t offset, byte_t value)
 {
     (*pal)[0] = trans;
-    (*pal)[1] = _global_pal[(value & 0x0C) >> 2];
-    (*pal)[2] = _global_pal[(value & 0x30) >> 4];
-    (*pal)[3] = _global_pal[(value & 0xC0) >> 6];
+    (*pal)[1] = m_global_pal[(value & 0x0C) >> 2];
+    (*pal)[2] = m_global_pal[(value & 0x30) >> 4];
+    (*pal)[3] = m_global_pal[(value & 0xC0) >> 6];
     *pal_byte = value;
 }
 
 GfxObject<8, 8> *
 GBGraphics::get_obj(int idx)
 {
-    auto *o = &_objs[idx];
+    auto *o = &m_objs[idx];
     if (o->dirty) {
-        byte_t *b = _vram.direct(VMem::ObjTiles + idx*16);
+        byte_t *b = m_vram.direct(VMem::ObjTiles + idx*16);
         int p = 0;
         for (int y = 0; y < o->h; y++) {
             o->data[p++] = (bit_isset(b[y*2], 7) | bit_isset(b[y*2+1], 7) << 1);
@@ -138,37 +138,37 @@ void
 GBGraphics::draw_scanline(int y)
 {
     RasterScreen *screen = machine()->screen();
-    if (bit_isset(_lcdc, LCDCBits::BGDisplay)) {
-        auto cb = bit_isset(_lcdc, LCDCBits::BGTileMap) ?
-                _tilemap1 : _tilemap0;
-        int iy = ((_scy + y) % 256);
+    if (bit_isset(m_lcdc, LCDCBits::BGDisplay)) {
+        auto cb = bit_isset(m_lcdc, LCDCBits::BGTileMap) ?
+                m_tilemap1 : m_tilemap0;
+        int iy = ((m_scy + y) % 256);
         for (int x = 0; x < 160; x++) {
-            int ix = ((_scx + x) % 256);
+            int ix = ((m_scx + x) % 256);
             int idx = (iy / 8) * 32 + ix/8;
             auto *obj = cb(idx);
-            RGBColor pen = _bg_pal[obj->at(ix % 8, iy % 8)];
+            RGBColor pen = m_bg_pal[obj->at(ix % 8, iy % 8)];
             screen->set(x, y, pen);
         }
     }
 
-    if (bit_isset(_lcdc, LCDCBits::WindowDisplay) && y >= _wy) {
-        auto cb = bit_isset(_lcdc, LCDCBits::WindowTileMap) ?
-                _tilemap1 : _tilemap0;
-        int iy = (y - _wy);
+    if (bit_isset(m_lcdc, LCDCBits::WindowDisplay) && y >= m_wy) {
+        auto cb = bit_isset(m_lcdc, LCDCBits::WindowTileMap) ?
+                m_tilemap1 : m_tilemap0;
+        int iy = (y - m_wy);
         for (int x = 0; x < 160; x++) {
             // Find the correct bg tile.
             int idx = (iy / 8) * 32 + x/8;
             auto *obj = cb(idx);
             // Find the correct pen.
-            RGBColor pen = _bg_pal[obj->at(x % 8, iy % 8)];
-            screen->set(_wx + x, y, pen);
+            RGBColor pen = m_bg_pal[obj->at(x % 8, iy % 8)];
+            screen->set(m_wx + x, y, pen);
         }
     }
 
     int sprites = 0;
-    int height = bit_isset(_lcdc, LCDCBits::OBJSize) ? 16 : 8;
+    int height = bit_isset(m_lcdc, LCDCBits::OBJSize) ? 16 : 8;
     for (unsigned i = 160; i >= 4 && sprites < 10; i -= 4) {
-        byte_t *b = _oam.direct(i-4);
+        byte_t *b = m_oam.direct(i-4);
         int iy = b[Oam::OamY] - 8;
         int ix = b[Oam::OamX] - 8;
         int idx = b[Oam::OamPattern];
@@ -189,9 +189,9 @@ GBGraphics::draw_scanline(int y)
         }
 
         auto *obj = get_obj(idx);
-        auto *pen = &_obj0_pal;
+        auto *pen = &m_obj0_pal;
         if (bit_isset(flags, OAMFlags::SpritePalette))
-            pen = &_obj1_pal;
+            pen = &m_obj1_pal;
 
         /* XXX: Handle SpritePriority */
         if (bit_isset(flags, OAMFlags::SpriteFlipX)) {
@@ -199,7 +199,7 @@ GBGraphics::draw_scanline(int y)
                 RGBColor color = (*pen)[obj->at(7 - x, iy)];
                 if (color != trans &&
                     (!bit_isset(flags, OAMFlags::SpritePriority) ||
-                     screen->get(ix + x, y) == _global_pal[0]))
+                     screen->get(ix + x, y) == m_global_pal[0]))
                     screen->set(ix + x, y, color);
             }
         } else {
@@ -207,7 +207,7 @@ GBGraphics::draw_scanline(int y)
                 RGBColor color = (*pen)[obj->at(x, iy)];
                 if (color != trans &&
                     (!bit_isset(flags, OAMFlags::SpritePriority) ||
-                     screen->get(ix + x, y) == _global_pal[0]))
+                     screen->get(ix + x, y) == m_global_pal[0]))
                     screen->set(ix + x, y, color);
             }
         }
@@ -217,69 +217,69 @@ GBGraphics::draw_scanline(int y)
 void
 GBGraphics::execute(void)
 {
-    _fcycles += m_avail.v;
+    m_fcycles += m_avail.v;
 
-    switch (_stat & 0x03) {
+    switch (m_stat & 0x03) {
     case LCDMode::HBlankMode:
-        if (_fcycles > H_BLANK_CYCLES) {
+        if (m_fcycles > H_BLANK_CYCLES) {
             // Transition to VBlank or OAM
-            _fcycles -= H_BLANK_CYCLES;
+            m_fcycles -= H_BLANK_CYCLES;
 
-            _ly = (_ly + 1) % SCANLINES;
-            if (_ly == DISPLAY_LINES) {
+            m_ly = (m_ly + 1) % SCANLINES;
+            if (m_ly == DISPLAY_LINES) {
                 // Wait until our frame is finished
                 machine()->screen()->flip();
                 machine()->set_line("cpu",
                     make_irq_line(GBInterrupt::VBlank),
                     LineState::Pulse);
-                _stat = (_stat & 0xfc) | LCDMode::VBlankMode;
-                if (bit_isset(_stat, STATBits::Mode01Int))
+                m_stat = (m_stat & 0xfc) | LCDMode::VBlankMode;
+                if (bit_isset(m_stat, STATBits::Mode01Int))
                     machine()->set_line("cpu",
                         make_irq_line(GBInterrupt::LCDStat),
                         LineState::Pulse);
             } else {
-                if (_ly == 0)
+                if (m_ly == 0)
                     machine()->screen()->clear();
-                if (_ly < DISPLAY_LINES)
-                    draw_scanline(_ly);
-                _stat = (_stat & 0xfc) | LCDMode::OAMMode;
-                if (bit_isset(_stat, STATBits::Mode10Int))
+                if (m_ly < DISPLAY_LINES)
+                    draw_scanline(m_ly);
+                m_stat = (m_stat & 0xfc) | LCDMode::OAMMode;
+                if (bit_isset(m_stat, STATBits::Mode10Int))
                     machine()->set_line("cpu",
                         make_irq_line(GBInterrupt::LCDStat),
                         LineState::Pulse);
             }
             // See if we need to trigger the lcd interrupt.
-            if (bit_isset(_stat, STATBits::LYCInterrupt) &&
-                !(bit_isset(_stat, STATBits::Coincidence) ^ (_lyc == _ly)))
+            if (bit_isset(m_stat, STATBits::LYCInterrupt) &&
+                !(bit_isset(m_stat, STATBits::Coincidence) ^ (m_lyc == m_ly)))
                 machine()->set_line("cpu",
                     make_irq_line(GBInterrupt::LCDStat),
                     LineState::Pulse);
         }
         break;
     case LCDMode::OAMMode:
-        if (_fcycles > OAM_CYCLES) {
+        if (m_fcycles > OAM_CYCLES) {
             // Transition to Active
-            _fcycles -= OAM_CYCLES;
-            _stat = (_stat & 0xfc) | LCDMode::ActiveMode;
+            m_fcycles -= OAM_CYCLES;
+            m_stat = (m_stat & 0xfc) | LCDMode::ActiveMode;
         }
         break;
     case LCDMode::ActiveMode:
-        if (_fcycles > ACTIVE_CYCLES) {
+        if (m_fcycles > ACTIVE_CYCLES) {
             // Transition to HBlank
-            _fcycles -= ACTIVE_CYCLES;
-            _stat = (_stat & 0xfc) | LCDMode::HBlankMode;
-            if (bit_isset(_stat, STATBits::Mode00Int))
+            m_fcycles -= ACTIVE_CYCLES;
+            m_stat = (m_stat & 0xfc) | LCDMode::HBlankMode;
+            if (bit_isset(m_stat, STATBits::Mode00Int))
                 machine()->set_line("cpu",
                     make_irq_line(GBInterrupt::LCDStat),
                     LineState::Pulse);
         }
         break;
     case LCDMode::VBlankMode:
-        if (_fcycles > V_BLANK_CYCLES) {
+        if (m_fcycles > V_BLANK_CYCLES) {
             // Transition to OAM
-            _fcycles -= V_BLANK_CYCLES;
-            _stat = (_stat & 0xfc) | LCDMode::OAMMode;
-            if (bit_isset(_stat, STATBits::Mode10Int))
+            m_fcycles -= V_BLANK_CYCLES;
+            m_stat = (m_stat & 0xfc) | LCDMode::OAMMode;
+            if (bit_isset(m_stat, STATBits::Mode10Int))
                 machine()->set_line("cpu",
                     make_irq_line(GBInterrupt::LCDStat),
                     LineState::Pulse);

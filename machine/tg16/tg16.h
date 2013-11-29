@@ -142,34 +142,34 @@ private:
         union {
             struct {
                 uint16_t pal:4;
-                uint16_t _u0:3;
+                uint16_t m_u0:3;
                 uint16_t spbg:1;
                 uint16_t cgx:1;
-                uint16_t _u1:2;
+                uint16_t m_u1:2;
                 uint16_t xflip:1;
                 uint16_t cgy:2;
-                uint16_t _u2:1;
+                uint16_t m_u2:1;
                 uint16_t yflip:1;
             };
             uint16_t attrs;
         };
     };
-    std::vector<Sprite> _sprites;
+    std::vector<Sprite> m_sprites;
 
     /* Internal State */
-    int _hpos;
-    int _vpos;
+    int m_hpos;
+    int m_vpos;
 
     /* Background Tiles */
-    uint16_t _bgaddr;
-    uint8_t _bgpal;
-    reg16_t _bgp0;
-    reg16_t _bgp1;
-    uint16_t _bgy;
-    uint8_t _bghtile;
-    uint8_t _bghidx;
-    uint8_t _bgvtile;
-    uint8_t _bgvidx;
+    uint16_t m_bgaddr;
+    uint8_t m_bgpal;
+    reg16_t m_bgp0;
+    reg16_t m_bgp1;
+    uint16_t m_bgy;
+    uint8_t m_bghtile;
+    uint8_t m_bghidx;
+    uint8_t m_bgvtile;
+    uint8_t m_bgvidx;
 
     /* External registers */
     union {
@@ -180,21 +180,21 @@ private:
             byte_t vram_satb_end:1;
             byte_t vram_dma_end:1;
             byte_t vblank:1;
-            byte_t _unused:2;
-        } _flags;
-        byte_t _status;
+            byte_t m_unused:2;
+        } m_flags;
+        byte_t m_status;
     };
-    int _reg_idx;
-    reg16_t _reg[20];
+    int m_reg_idx;
+    reg16_t m_reg[20];
 
-    bool _satb_write;
-    std::vector<reg16_t> _vram;
-    std::vector<reg16_t> _sat;
+    bool m_satb_write;
+    std::vector<reg16_t> m_vram;
+    std::vector<reg16_t> m_sat;
 
     /* XXX: Move to VCE */
-    std::vector<RGBColor> _palette;
-    std::vector<reg16_t> _pal_bytes;
-    reg16_t _pal_idx;
+    std::vector<RGBColor> m_palette;
+    std::vector<reg16_t> m_pal_bytes;
+    reg16_t m_pal_idx;
 };
 
 class PSG: public Device
@@ -226,16 +226,16 @@ private:
     byte_t ram_read(offset_t offset);
     void ram_write(offset_t offset, byte_t value);
 
-    std::unique_ptr<M6502::hu6280Cpu> _cpu;
-    AddressBus21 _cpu_bus;
-    RamDevice _ram;
-    VDC _vdc;
-    PSG _psg;
-    bvec _rom;
-    offset_t _rom_offset;
+    std::unique_ptr<M6502::hu6280Cpu> m_cpu;
+    AddressBus21 m_cpu_bus;
+    RamDevice m_ram;
+    VDC m_vdc;
+    PSG m_psg;
+    bvec m_rom;
+    offset_t m_rom_offset;
 
-    int _joypad;
-    int _joypad_data;
+    int m_joypad;
+    int m_joypad_data;
 };
 
 };

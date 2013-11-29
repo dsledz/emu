@@ -57,32 +57,32 @@ class GBJoypad: public Device {
 public:
     GBJoypad(Gameboy *gb):
         Device(gb, "joypad"),
-        _value(0x00)
+        m_value(0x00)
     {
         gb->add_ioport("IN0");
 
-        _port = gb->ioport("IN0");
-        gb->write_ioport(_port, 0xFF);
-        gb->add_input(InputSignal(InputKey::Joy1Left,_port, GBKey::Left,
+        m_port = gb->ioport("IN0");
+        gb->write_ioport(m_port, 0xFF);
+        gb->add_input(InputSignal(InputKey::Joy1Left, m_port, GBKey::Left,
                                   false));
-        gb->add_input(InputSignal(InputKey::Joy1Right, _port, GBKey::Right,
+        gb->add_input(InputSignal(InputKey::Joy1Right, m_port, GBKey::Right,
                                   false));
-        gb->add_input(InputSignal(InputKey::Joy1Up, _port, GBKey::Up,
+        gb->add_input(InputSignal(InputKey::Joy1Up, m_port, GBKey::Up,
                                   false));
-        gb->add_input(InputSignal(InputKey::Joy1Down,  _port, GBKey::Down,
+        gb->add_input(InputSignal(InputKey::Joy1Down,  m_port, GBKey::Down,
                                   false));
-        gb->add_input(InputSignal(InputKey::Joy1Btn1,  _port, GBKey::A,
+        gb->add_input(InputSignal(InputKey::Joy1Btn1,  m_port, GBKey::A,
                                   false));
-        gb->add_input(InputSignal(InputKey::Joy1Btn2,  _port, GBKey::B,
+        gb->add_input(InputSignal(InputKey::Joy1Btn2,  m_port, GBKey::B,
                                   false));
-        gb->add_input(InputSignal(InputKey::Select1, _port, GBKey::Select,
+        gb->add_input(InputSignal(InputKey::Select1, m_port, GBKey::Select,
                                   false));
-        gb->add_input(InputSignal(InputKey::Start1, _port, GBKey::Start,
+        gb->add_input(InputSignal(InputKey::Start1, m_port, GBKey::Start,
                                   false));
 
         gb->bus()->add(GBReg::KEYS,
             [&](offset_t offset) -> byte_t {
-                return _value;
+                return m_value;
             },
             [&](offset_t offset, byte_t arg) {
                 byte_t keys = machine()->read_ioport("IN0");
@@ -90,29 +90,29 @@ public:
                     arg = (arg & 0xF0) | ((keys & 0xF0) >> 4);
                 if (bit_isset(arg, ArrowSelect))
                     arg = (arg & 0xF0) | (keys & 0x0F);
-                _value = arg;
+                m_value = arg;
             });
     }
     virtual ~GBJoypad(void) {
     }
 
 private:
-    IOPort *_port;
-    byte_t _value;
+    IOPort *m_port;
+    byte_t m_value;
 };
 
 class GBSerialIO: public Device {
 public:
     GBSerialIO(Gameboy *gameboy):
         Device(gameboy, "serial") {
-        gameboy->bus()->add(GBReg::SB, &_sb);
-        gameboy->bus()->add(GBReg::SC, &_sc);
+        gameboy->bus()->add(GBReg::SB, &m_sb);
+        gameboy->bus()->add(GBReg::SC, &m_sc);
     }
     virtual ~GBSerialIO(void) {
     }
 private:
-    uint8_t _sb;
-    uint8_t _sc;
+    uint8_t m_sb;
+    uint8_t m_sc;
 };
 
 class GBTimer: public ClockedDevice {
@@ -120,42 +120,42 @@ public:
     GBTimer(Gameboy *gameboy, unsigned hertz):
         ClockedDevice(gameboy, "timer", hertz)
     {
-        gameboy->bus()->add(GBReg::TIMA, &_tima);
-        gameboy->bus()->add(GBReg::TMA, &_tma);
-        gameboy->bus()->add(GBReg::TAC, &_tac);
-        gameboy->bus()->add(GBReg::DIV, &_div);
+        gameboy->bus()->add(GBReg::TIMA, &m_tima);
+        gameboy->bus()->add(GBReg::TMA, &m_tma);
+        gameboy->bus()->add(GBReg::TAC, &m_tac);
+        gameboy->bus()->add(GBReg::DIV, &m_div);
     }
     virtual ~GBTimer(void) {
     }
 
     virtual void execute(void) {
-        _cycles += m_avail.v;
-        _dcycles += m_avail.v;
-        _tcycles += m_avail.v;
+        m_cycles += m_avail.v;
+        m_dcycles += m_avail.v;
+        m_tcycles += m_avail.v;
         m_avail = Cycles(0);
 
-        if (_dcycles > 256) {
-            _dcycles -= 256;
-            _div++;
+        if (m_dcycles > 256) {
+            m_dcycles -= 256;
+            m_div++;
             // Divider register triggered
         }
-        if (_tac & 0x04) {
+        if (m_tac & 0x04) {
             unsigned limit = 1024;
-            switch (_tac & 0x3) {
+            switch (m_tac & 0x3) {
             case 0: limit = 1024; break;
             case 1: limit = 16; break;
             case 2: limit = 64; break;
             case 3: limit = 256; break;
             }
-            if (_tcycles > limit) {
-                _tcycles -= limit;
-                if (_tima == 0xff) {
+            if (m_tcycles > limit) {
+                m_tcycles -= limit;
+                if (m_tima == 0xff) {
                     machine()->set_line("cpu",
                         make_irq_line(GBInterrupt::Timeout), LineState::Pulse);
                     // Reset the overflow
-                    _tima = _tma;
+                    m_tima = m_tma;
                 } else
-                    _tima++;
+                    m_tima++;
             }
         }
     }
@@ -170,24 +170,24 @@ public:
     }
 
     virtual void reset(void) {
-        _cycles = 0;
-        _dcycles = 0;
-        _tcycles = 0;
-        _tima = 0;
-        _tma = 0;
-        _tac = 0;
+        m_cycles = 0;
+        m_dcycles = 0;
+        m_tcycles = 0;
+        m_tima = 0;
+        m_tma = 0;
+        m_tac = 0;
     }
 
 private:
 
-    unsigned _hertz;
-    unsigned _cycles;
-    unsigned _dcycles;
-    unsigned _tcycles;
-    byte_t _div;
-    byte_t _tima;
-    byte_t _tma;
-    byte_t _tac;
+    unsigned m_hertz;
+    unsigned m_cycles;
+    unsigned m_dcycles;
+    unsigned m_tcycles;
+    byte_t m_div;
+    byte_t m_tima;
+    byte_t m_tma;
+    byte_t m_tac;
 };
 
 Gameboy::Gameboy(const std::string &rom_name):
@@ -195,38 +195,38 @@ Gameboy::Gameboy(const std::string &rom_name):
 {
     add_screen(160, 144);
 
-    _bus = AddressBus16_ptr(new AddressBus16());
+    m_bus = AddressBus16_ptr(new AddressBus16());
 
-    _cpu = std::unique_ptr<LR35902Cpu>(
-        new LR35902Cpu(this, "cpu", 4194304, _bus.get()));
+    m_cpu = std::unique_ptr<LR35902Cpu>(
+        new LR35902Cpu(this, "cpu", 4194304, m_bus.get()));
 
-    _timer = device_ptr(new GBTimer(this, 4194304));
-    _serial = device_ptr(new GBSerialIO(this));
-    _joypad = device_ptr(new GBJoypad(this));
-    _gfx = std::unique_ptr<GBGraphics>(new GBGraphics(this, 4194304));
+    m_timer = Device_ptr(new GBTimer(this, 4194304));
+    m_serial = Device_ptr(new GBSerialIO(this));
+    m_joypad = Device_ptr(new GBJoypad(this));
+    m_gfx = std::unique_ptr<GBGraphics>(new GBGraphics(this, 4194304));
 
-    _mbc = std::unique_ptr<GBMBC>(new GBMBC(this));
-    _mbc->load_rom(rom_name);
+    m_mbc = std::unique_ptr<GBMBC>(new GBMBC(this));
+    m_mbc->load_rom(rom_name);
 
-    _ram = std::unique_ptr<RamDevice>(new RamDevice(this, "ram", 0x2000));
+    m_ram = std::unique_ptr<RamDevice>(new RamDevice(this, "ram", 0x2000));
     /* XXX: Ram isn't mirrored */
-    _bus->add(0xC000, 0xDFFF,
-        READ_CB(RamDevice::read8, _ram.get()),
-        WRITE_CB(RamDevice::write8, _ram.get()));
-    _bus->add(0xE000, 0xFDFF,
-        READ_CB(RamDevice::read8, _ram.get()),
-        WRITE_CB(RamDevice::write8, _ram.get()));
+    m_bus->add(0xC000, 0xDFFF,
+        READ_CB(RamDevice::read8, m_ram.get()),
+        WRITE_CB(RamDevice::write8, m_ram.get()));
+    m_bus->add(0xE000, 0xFDFF,
+        READ_CB(RamDevice::read8, m_ram.get()),
+        WRITE_CB(RamDevice::write8, m_ram.get()));
 
-    _hiram = std::unique_ptr<RamDevice>(new RamDevice(this, "hiram", 0x80));
-    _bus->add(0xFF80, 0xFFFF,
-        READ_CB(RamDevice::read8, _hiram.get()),
-        WRITE_CB(RamDevice::write8, _hiram.get()));
+    m_hiram = std::unique_ptr<RamDevice>(new RamDevice(this, "hiram", 0x80));
+    m_bus->add(0xFF80, 0xFFFF,
+        READ_CB(RamDevice::read8, m_hiram.get()),
+        WRITE_CB(RamDevice::write8, m_hiram.get()));
 
     /* XXX: Some games need this. */
-    _bus->add(0xFF7F, 0xFF7F);
+    m_bus->add(0xFF7F, 0xFF7F);
 
     // XXX: Sound
-    _bus->add(0xFF10, 0xFF3F);
+    m_bus->add(0xFF10, 0xFF3F);
 }
 
 Gameboy::~Gameboy(void)

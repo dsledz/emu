@@ -31,16 +31,16 @@ using namespace TG16Machine;
 
 TG16::TG16(const std::string &rom):
     Machine(),
-    _cpu_bus(),
-    _ram(this, "ram", 0x2000),
-    _vdc(this, MASTER_CLOCK),
-    _psg(this)
+    m_cpu_bus(),
+    m_ram(this, "ram", 0x2000),
+    m_vdc(this, MASTER_CLOCK),
+    m_psg(this)
 {
     IF_LOG(Info)
         std::cout << "Loading: " << rom << std::endl;
 
-    EMU::read_rom(rom, _rom);
-    _rom_offset = _rom.size() % 8192;
+    EMU::read_rom(rom, m_rom);
+    m_rom_offset = m_rom.size() % 8192;
 
     if (bank_read(0x1FFF) < 0xe0)
         throw RomException("Encrypted Rom");
@@ -50,40 +50,40 @@ TG16::TG16(const std::string &rom):
     /* XXX: Is this screen correct? */
     add_screen(256, 240);
 
-    _cpu = std::unique_ptr<M6502::hu6280Cpu>(
-        new M6502::hu6280Cpu(this, "cpu", MASTER_CLOCK/3, &_cpu_bus));
+    m_cpu = std::unique_ptr<M6502::hu6280Cpu>(
+        new M6502::hu6280Cpu(this, "cpu", MASTER_CLOCK/3, &m_cpu_bus));
 
-    _cpu_bus.add(0x000000, 0x0FFFFF,
+    m_cpu_bus.add(0x000000, 0x0FFFFF,
         READ_CB(TG16::bank_read, this),
         WRITE_CB(TG16::bank_write, this));
 
-    _cpu_bus.add(0x1F0000, 0x1F1FFF,
+    m_cpu_bus.add(0x1F0000, 0x1F1FFF,
         READ_CB(TG16::ram_read, this),
         WRITE_CB(TG16::ram_write, this));
 
-    _cpu_bus.add(0x1FE000, 0x1FE3FF,
-        READ_CB(VDC::read, &_vdc),
-        WRITE_CB(VDC::write, &_vdc));
+    m_cpu_bus.add(0x1FE000, 0x1FE3FF,
+        READ_CB(VDC::read, &m_vdc),
+        WRITE_CB(VDC::write, &m_vdc));
 
-    _cpu_bus.add(0x1FE400, 0x1FE7FF,
-        READ_CB(VDC::vce_read, &_vdc),
-        WRITE_CB(VDC::vce_write, &_vdc));
+    m_cpu_bus.add(0x1FE400, 0x1FE7FF,
+        READ_CB(VDC::vce_read, &m_vdc),
+        WRITE_CB(VDC::vce_write, &m_vdc));
 
-    _cpu_bus.add(0x1FE800, 0x1FEBFF,
-        READ_CB(PSG::read, &_psg),
-        WRITE_CB(PSG::write, &_psg));
+    m_cpu_bus.add(0x1FE800, 0x1FEBFF,
+        READ_CB(PSG::read, &m_psg),
+        WRITE_CB(PSG::write, &m_psg));
 
-    _cpu_bus.add(0x1FEC00, 0x1FEFFF,
-        READ_CB(M6502::hu6280Cpu::timer_read, _cpu.get()),
-        WRITE_CB(M6502::hu6280Cpu::timer_write, _cpu.get()));
+    m_cpu_bus.add(0x1FEC00, 0x1FEFFF,
+        READ_CB(M6502::hu6280Cpu::timer_read, m_cpu.get()),
+        WRITE_CB(M6502::hu6280Cpu::timer_write, m_cpu.get()));
 
-    _cpu_bus.add(0x1FF000, 0x1FF3FF,
+    m_cpu_bus.add(0x1FF000, 0x1FF3FF,
         READ_CB(TG16::joypad_read, this),
         WRITE_CB(TG16::joypad_write, this));
 
-    _cpu_bus.add(0x1FF400, 0x1FF7FF,
-        READ_CB(M6502::hu6280Cpu::irq_read, _cpu.get()),
-        WRITE_CB(M6502::hu6280Cpu::irq_write, _cpu.get()));
+    m_cpu_bus.add(0x1FF400, 0x1FF7FF,
+        READ_CB(M6502::hu6280Cpu::irq_read, m_cpu.get()),
+        WRITE_CB(M6502::hu6280Cpu::irq_write, m_cpu.get()));
 }
 
 TG16::~TG16(void)
@@ -117,30 +117,30 @@ TG16::init_joypad(void)
     add_input(InputSignal(InputKey::Joy1Down,  port, TG16Key::Down, false));
     add_input(InputSignal(InputKey::Joy1Left,  port, TG16Key::Left, false));
     add_input(InputSignal(InputKey::Joy1Right, port, TG16Key::Right, false));
-    _joypad_data = 0;
-    _joypad = 0;
+    m_joypad_data = 0;
+    m_joypad = 0;
 }
 
 byte_t
 TG16::bank_read(offset_t offset)
 {
     /* XXX: Horrible hack */
-    if (_rom.size() - _rom_offset == 0x60000) {
+    if (m_rom.size() - m_rom_offset == 0x60000) {
         int bank = offset >> 17;
         offset &= 0x1FFFF;
         switch (bank) {
         case 0:
         case 2:
-            return _rom.at(offset + _rom_offset);
+            return m_rom.at(offset + m_rom_offset);
         case 1:
         case 3:
-            return _rom.at(0x20000 + offset + _rom_offset);
+            return m_rom.at(0x20000 + offset + m_rom_offset);
         default:
-            return _rom.at(0x40000 + offset + _rom_offset);
+            return m_rom.at(0x40000 + offset + m_rom_offset);
         }
     } else {
         /* XXX: Is this correct? */
-        return _rom.at((offset % _rom.size()) + _rom_offset);
+        return m_rom.at((offset % m_rom.size()) + m_rom_offset);
     }
 }
 
@@ -154,12 +154,12 @@ byte_t
 TG16::joypad_read(offset_t offset)
 {
     byte_t result = 0xFF;
-    if (_joypad == 0) {
+    if (m_joypad == 0) {
         result = read_ioport("JOYPAD1");
     }
 
     /* XXX: Is this correct? */
-    if (_joypad_data)
+    if (m_joypad_data)
         result >>= 4;
 
     result = (result & 0x0F) | 0x30;
@@ -170,25 +170,25 @@ TG16::joypad_read(offset_t offset)
 void
 TG16::joypad_write(offset_t offset, byte_t value)
 {
-    if (!_joypad_data && bit_isset(value, 0))
-        _joypad = (_joypad + 1) % 8;
+    if (!m_joypad_data && bit_isset(value, 0))
+        m_joypad = (m_joypad + 1) % 8;
 
-    _joypad_data = bit_isset(value, 0);
+    m_joypad_data = bit_isset(value, 0);
 
     if (bit_isset(value, 1))
-        _joypad = 0;
+        m_joypad = 0;
 }
 
 byte_t
 TG16::ram_read(offset_t offset)
 {
-    return _ram.read8(offset);
+    return m_ram.read8(offset);
 }
 
 void
 TG16::ram_write(offset_t offset, byte_t value)
 {
-    _ram.write8(offset, value);
+    m_ram.write8(offset, value);
 }
 
 PSG::PSG(TG16 *tg16):

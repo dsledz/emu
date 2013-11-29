@@ -30,40 +30,40 @@ using namespace NESMachine;
 
 NESPPU::NESPPU(NES *machine, const std::string &name, unsigned hertz):
     ClockedDevice(machine, name, hertz),
-    _color_table(0x40),
-    _palette(0x20),
-    _palette_bytes(0x20),
-    _reg1({}), _reg2({}), _status({}),
-    _sram_addr(0),
-    _v(),
-    _t(),
-    _x(),
-    _latch(0),
-    _flip_flop(false),
-    _vram_locked(false),
-    _hpos(0),
-    _vpos(0),
-    _sram(256),
-    _blk0(0x0400),
-    _blk1(0x0400)
+    m_color_table(0x40),
+    m_palette(0x20),
+    m_palette_bytes(0x20),
+    m_reg1({}), m_reg2({}), m_status({}),
+    m_sram_addr(0),
+    m_v(),
+    m_t(),
+    m_x(),
+    m_latch(0),
+    m_flip_flop(false),
+    m_vram_locked(false),
+    m_hpos(0),
+    m_vpos(0),
+    m_sram(256),
+    m_blk0(0x0400),
+    m_blk1(0x0400)
 {
-    _mirror = machine->ioport("MIRRORING");
+    m_mirror = machine->ioport("MIRRORING");
 
-    _cpu_bus = machine->cpu_bus();
-    _ppu_bus = machine->ppu_bus();
-    _sprite_bus = machine->sprite_bus();
+    m_cpu_bus = machine->cpu_bus();
+    m_ppu_bus = machine->ppu_bus();
+    m_sprite_bus = machine->sprite_bus();
 
-    _cpu_bus->add(0x2000, 0x3FFF,
+    m_cpu_bus->add(0x2000, 0x3FFF,
         READ_CB(NESPPU::ppu_read, this),
         WRITE_CB(NESPPU::ppu_write, this)
     );
 
-    _ppu_bus->add(0x2000, 0x3FFF,
+    m_ppu_bus->add(0x2000, 0x3FFF,
         READ_CB(NESPPU::ppu_bus_read, this),
         WRITE_CB(NESPPU::ppu_bus_write, this)
     );
 
-    machine->sprite_bus()->add(0x00, &_sram);
+    machine->sprite_bus()->add(0x00, &m_sram);
 
     reset();
 }
@@ -84,22 +84,22 @@ NESPPU::execute(void)
 void
 NESPPU::reset(void)
 {
-    _reg1.value = 0;
-    _reg2.value = 0;
-    _status.value = 0;
-    _v.d = 0;
-    _t.d = 0;
-    _x = 0;
-    _sram_addr = 0;
-    _latch = 0;
-    _flip_flop = false;
-    _vram_locked = false;
-    _hpos = 0;
-    _vpos = 0;
-    std::fill(_blk0.begin(), _blk0.end(), 0);
-    std::fill(_blk1.begin(), _blk1.end(), 0);
-    std::fill(_palette_bytes.begin(), _palette_bytes.end(), 0);
-    std::fill(_sram.begin(), _sram.end(), 0);
+    m_reg1.value = 0;
+    m_reg2.value = 0;
+    m_status.value = 0;
+    m_v.d = 0;
+    m_t.d = 0;
+    m_x = 0;
+    m_sram_addr = 0;
+    m_latch = 0;
+    m_flip_flop = false;
+    m_vram_locked = false;
+    m_hpos = 0;
+    m_vpos = 0;
+    std::fill(m_blk0.begin(), m_blk0.end(), 0);
+    std::fill(m_blk1.begin(), m_blk1.end(), 0);
+    std::fill(m_palette_bytes.begin(), m_palette_bytes.end(), 0);
+    std::fill(m_sram.begin(), m_sram.end(), 0);
 
     init_palette();
 }
@@ -108,47 +108,47 @@ NESPPU::reset(void)
 void
 NESPPU::cache_bg_tile(void)
 {
-    int obj = ppu_nt_read(0x2000 | (_v.d & 0xFFF)) + (_reg1.bg_table * 256);
-    byte_t b = ppu_nt_read(0x23C0 | (_v.d & 0x0C00) |
-                           ((_v.d >> 4) & 0x38) | ((_v.d >> 2) & 0x07));
+    int obj = ppu_nt_read(0x2000 | (m_v.d & 0xFFF)) + (m_reg1.bg_table * 256);
+    byte_t b = ppu_nt_read(0x23C0 | (m_v.d & 0x0C00) |
+                           ((m_v.d >> 4) & 0x38) | ((m_v.d >> 2) & 0x07));
     /* XXX: calculate */
     int bit = 0;
-    if (_v.coarse_x & 0x02)
+    if (m_v.coarse_x & 0x02)
         bit += 2;
-    if (_v.coarse_y & 0x02)
+    if (m_v.coarse_y & 0x02)
         bit += 4;
 
-    offset_t offset = obj * 16 + _v.fine_y;
-    _bgp0 = _ppu_bus->read(offset);
-    _bgp1 = _ppu_bus->read(offset+8);
-    _bgpal = (bit_isset(b, bit) << 2) | (bit_isset(b, bit + 1) << 3);
+    offset_t offset = obj * 16 + m_v.fine_y;
+    m_bgp0 = m_ppu_bus->read(offset);
+    m_bgp1 = m_ppu_bus->read(offset+8);
+    m_bgpal = (bit_isset(b, bit) << 2) | (bit_isset(b, bit + 1) << 3);
 }
 
 int
 NESPPU::draw_bg(void)
 {
-    int pen = bit_isset(_bgp0, 7 - _x) |
-        (bit_isset(_bgp1, 7 - _x) << 1);
+    int pen = bit_isset(m_bgp0, 7 - m_x) |
+        (bit_isset(m_bgp1, 7 - m_x) << 1);
     if (pen == 0)
         return 0;
     else
-        return pen | _bgpal;
+        return pen | m_bgpal;
 }
 
 int
 NESPPU::draw_sprite(int color, int x, int y)
 {
-    const int sprite_size = (_reg1.sprite_size ? 15 : 7);
-    for (auto it = _sprites.begin(); it != _sprites.end(); it++) {
+    const int sprite_size = (m_reg1.sprite_size ? 15 : 7);
+    for (auto it = m_sprites.begin(); it != m_sprites.end(); it++) {
         int idx = *it;
-        int iy = _sram[idx] + 1;
+        int iy = m_sram[idx] + 1;
         if (y < iy || y > iy + sprite_size)
             continue;
-        int ix = _sram[idx + 3];
+        int ix = m_sram[idx + 3];
         if (x < ix || x > ix + 7)
             continue;
-        int obj = _sram[idx + 1] + (_reg1.sprite_table * 256);
-        const int flags = _sram[idx + 2];
+        int obj = m_sram[idx + 1] + (m_reg1.sprite_table * 256);
+        const int flags = m_sram[idx + 2];
         iy = y - iy;
         ix = x - ix;
         if (sprite_size > 7)
@@ -167,8 +167,8 @@ NESPPU::draw_sprite(int color, int x, int y)
 
         const int pen = get_obj_pixel(obj, ix, iy);
         if (pen != 0) {
-            if (idx == _sram_addr && color != 0 && x != 255)
-                _status.sprite0_hit = 1;
+            if (idx == m_sram_addr && color != 0 && x != 255)
+                m_status.sprite0_hit = 1;
             if (!bit_isset(flags, 5) || color == 0)
                 color = 0x10 + ((flags & 0x03) << 2) + pen;
             return color;
@@ -180,87 +180,87 @@ NESPPU::draw_sprite(int color, int x, int y)
 Cycles
 NESPPU::step(void)
 {
-    _hpos++;
-    if (_hpos > 340) {
-        _hpos = 0;
-        _vpos = (_vpos + 1) % 261;
-        if (_vpos == 0) {
+    m_hpos++;
+    if (m_hpos > 340) {
+        m_hpos = 0;
+        m_vpos = (m_vpos + 1) % 261;
+        if (m_vpos == 0) {
             machine()->screen()->flip();
             machine()->screen()->clear();
-            _vram_locked = false;
-            _status.vblank = 1;
-            if (_reg1.nmi_enabled) {
+            m_vram_locked = false;
+            m_status.vblank = 1;
+            if (m_reg1.nmi_enabled) {
                 machine()->set_line("cpu", Line::NMI, LineState::Pulse);
             }
         }
     }
-    if (_vpos < 20 || (!_reg2.bg_visible && !_reg2.spr_visible))
+    if (m_vpos < 20 || (!m_reg2.bg_visible && !m_reg2.spr_visible))
         return Cycles(1);
-    if (_vpos >= 21 && _hpos == 0) {
-        int sy = _vpos - 21;
-        bool sprite0_hit = _status.sprite0_hit;
+    if (m_vpos >= 21 && m_hpos == 0) {
+        int sy = m_vpos - 21;
+        bool sprite0_hit = m_status.sprite0_hit;
         for (int sx = 0; sx < 256; sx++) {
             int color = 0;
-            if (_reg2.bg_visible && (_reg2.bg_clip || sx >= 8))
+            if (m_reg2.bg_visible && (m_reg2.bg_clip || sx >= 8))
                 color = draw_bg();
-            if (_reg2.spr_visible && (_reg2.spr_clip || sx >= 8))
+            if (m_reg2.spr_visible && (m_reg2.spr_clip || sx >= 8))
                 color = draw_sprite(color, sx, sy);
-            machine()->screen()->set(sx, sy, _palette[color]);
-            if (_x == 0x07) {
-                _x = 0;
-                if (_v.coarse_x == 0x1F) {
-                    _v.nt_hselect ^= 1;
-                    _v.coarse_x = 0;
+            machine()->screen()->set(sx, sy, m_palette[color]);
+            if (m_x == 0x07) {
+                m_x = 0;
+                if (m_v.coarse_x == 0x1F) {
+                    m_v.nt_hselect ^= 1;
+                    m_v.coarse_x = 0;
                 } else
-                    _v.coarse_x++;
+                    m_v.coarse_x++;
                 cache_bg_tile();
             } else
-                _x++;
+                m_x++;
         }
-        if (!sprite0_hit && _status.sprite0_hit) {
-            _hpos += 255;
+        if (!sprite0_hit && m_status.sprite0_hit) {
+            m_hpos += 255;
             return Cycles(256);
         }
-    } else if (_hpos == 256) {
+    } else if (m_hpos == 256) {
         DEVICE_DEBUG("Line Start");
-        if (_v.fine_y == 0x07) {
-            _v.fine_y = 0;
-            if (_v.coarse_y == 29) {
-                _v.coarse_y = 0;
-                _v.nt_vselect ^= 1;
-            } else if (_v.coarse_y == 31) {
-                _v.coarse_y = 0;
+        if (m_v.fine_y == 0x07) {
+            m_v.fine_y = 0;
+            if (m_v.coarse_y == 29) {
+                m_v.coarse_y = 0;
+                m_v.nt_vselect ^= 1;
+            } else if (m_v.coarse_y == 31) {
+                m_v.coarse_y = 0;
             } else
-                _v.coarse_y++;
+                m_v.coarse_y++;
         } else
-            _v.fine_y++;
-    } else if (_hpos == 257) {
-        _v.coarse_x = _t.coarse_x;
-        _v.nt_hselect = _t.nt_hselect;
+            m_v.fine_y++;
+    } else if (m_hpos == 257) {
+        m_v.coarse_x = m_t.coarse_x;
+        m_v.nt_hselect = m_t.nt_hselect;
         machine()->set_line("mapper", Line::INT0, LineState::Pulse);
-    } else if (_hpos == 280 && _vpos == 20) {
-        _vram_locked = true;
-        _v.fine_y = _t.fine_y;
-        _v.nt_vselect = _t.nt_vselect;
-        _v.coarse_y = _t.coarse_y;
-        _status.vblank = 0;
-        _status.sprite0_hit = 0;
-    } else if (_hpos == 320) {
+    } else if (m_hpos == 280 && m_vpos == 20) {
+        m_vram_locked = true;
+        m_v.fine_y = m_t.fine_y;
+        m_v.nt_vselect = m_t.nt_vselect;
+        m_v.coarse_y = m_t.coarse_y;
+        m_status.vblank = 0;
+        m_status.sprite0_hit = 0;
+    } else if (m_hpos == 320) {
         cache_bg_tile();
-    } else if (_hpos == 328) {
+    } else if (m_hpos == 328) {
         /* Calculate the available sprites (for the next line) */
-        _sprites.resize(0);
-        const int sy = _vpos - 20;
-        const int sprite_size = (_reg1.sprite_size ? 15 : 7);
+        m_sprites.resize(0);
+        const int sy = m_vpos - 20;
+        const int sprite_size = (m_reg1.sprite_size ? 15 : 7);
         for (int idx = 0; idx < 256; idx += 4) {
-            int iy = _sram[idx] + 1;
+            int iy = m_sram[idx] + 1;
             if (sy < iy || sy > iy + sprite_size)
                 continue;
-            if (_sprites.size() == 8) {
-                _status.lost_sprite = 1;
+            if (m_sprites.size() == 8) {
+                m_status.lost_sprite = 1;
                 break;
             }
-            _sprites.push_back(idx);
+            m_sprites.push_back(idx);
         }
     }
     return Cycles(1);
@@ -282,15 +282,15 @@ NESPPU::init_palette(void)
     };
 
     for (int i = 0; i < 64; i++) {
-        _color_table[i] = RGBColor(
+        m_color_table[i] = RGBColor(
             ((entry[i] & 0x1C0) >> 6) * 32,
             ((entry[i] & 0x038) >> 3) * 32,
             ((entry[i] & 0x007) >> 0) * 32);
     }
 
-    _palette[0] = _color_table[63];
+    m_palette[0] = m_color_table[63];
     for (int i = 1; i < 32; i++)
-        _palette[i] = _color_table[i % 4 + 4];
+        m_palette[i] = m_color_table[i % 4 + 4];
 
 }
 
@@ -298,8 +298,8 @@ int
 NESPPU::get_obj_pixel(int obj, int x, int y)
 {
     offset_t offset = obj * 16 + y;
-    byte_t l = _ppu_bus->read(offset);
-    byte_t h = _ppu_bus->read(offset+8);
+    byte_t l = m_ppu_bus->read(offset);
+    byte_t h = m_ppu_bus->read(offset+8);
 
     return bit_isset(l, 7 - x) | (bit_isset(h, 7 - x) << 1);
 }
@@ -307,26 +307,26 @@ NESPPU::get_obj_pixel(int obj, int x, int y)
 byte_t
 NESPPU::ppu_read(offset_t offset)
 {
-    byte_t result = _latch;
+    byte_t result = m_latch;
     switch (offset % 8) {
     case 0: /* 0x2000 PPU Control register 1 */
-        result = _reg1.value;
+        result = m_reg1.value;
         break;
     case 1: /* 0x2001 PPU Control register 2 */
-        result = _reg2.value;
+        result = m_reg2.value;
         break;
     case 2: /* 0x2002 PPU Status register */
-        result = _status.value;
+        result = m_status.value;
         /* flip_flop is cleared on read */
-        _flip_flop = 0;
-        _latch = 0;
-        _status.vblank = 0;
+        m_flip_flop = 0;
+        m_latch = 0;
+        m_status.vblank = 0;
         break;
     case 3: /* 0x2003 SPR-RAM Address */
-        result = _sram_addr;
+        result = m_sram_addr;
         break;
     case 4: /* 0x2004 SPR-RAM Data */
-        result = _sprite_bus->read(_sram_addr);
+        result = m_sprite_bus->read(m_sram_addr);
         break;
     case 5: /* 0x2005 BG Scroll */
         /* XXX: How do we return 16 bits in one byte? */
@@ -335,19 +335,19 @@ NESPPU::ppu_read(offset_t offset)
         /* XXX: How do we return 16bits in one byte? */
         break;
     case 7: /* 0x2006 VRAM Data */
-        result = _vram_read;
-        if (_v.d < 0x2000)
-            _vram_read = _ppu_bus->read(_v.d);
+        result = m_vram_read;
+        if (m_v.d < 0x2000)
+            m_vram_read = m_ppu_bus->read(m_v.d);
         else {
-            _vram_read = ppu_nt_read(_v.d);
-            if (_v.d >= 0x3f00)
-                result = ppu_pal_read(_v.d);
+            m_vram_read = ppu_nt_read(m_v.d);
+            if (m_v.d >= 0x3f00)
+                result = ppu_pal_read(m_v.d);
         }
-        if (_reg1.vram_step)
-            _v.d += 32;
+        if (m_reg1.vram_step)
+            m_v.d += 32;
         else
-            _v.d++;
-        _v.d %= 0x4000;
+            m_v.d++;
+        m_v.d %= 0x4000;
         break;
     }
     return result;
@@ -358,50 +358,50 @@ NESPPU::ppu_write(offset_t offset, byte_t value)
 {
     switch (offset % 8) {
     case 0:
-        _reg1.value = value;
-        _t.nt_hselect = bit_isset(value, 0);
-        _t.nt_vselect = bit_isset(value, 1);
+        m_reg1.value = value;
+        m_t.nt_hselect = bit_isset(value, 0);
+        m_t.nt_vselect = bit_isset(value, 1);
         break;
     case 1:
-        _reg2.value = value;
+        m_reg2.value = value;
         break;
     case 2:
         /* XXX: Don't write */
         break;
     case 3:
-        _sram_addr = value;
+        m_sram_addr = value;
         break;
     case 4:
-        _sprite_bus->write(_sram_addr, value);
-        _sram_addr = (_sram_addr + 1) % 256;
+        m_sprite_bus->write(m_sram_addr, value);
+        m_sram_addr = (m_sram_addr + 1) % 256;
         break;
     case 5:
-        _latch = value;
-        if (!_flip_flop) {
-            _t.coarse_x = value >> 3;
-            _x = value & 0x07;
+        m_latch = value;
+        if (!m_flip_flop) {
+            m_t.coarse_x = value >> 3;
+            m_x = value & 0x07;
         } else {
-            _t.fine_y = value & 0x07;
-            _t.coarse_y = value >> 3;
+            m_t.fine_y = value & 0x07;
+            m_t.coarse_y = value >> 3;
         }
-        _flip_flop = !_flip_flop;
+        m_flip_flop = !m_flip_flop;
         break;
     case 6:
-        if (!_flip_flop) {
-            _t.d = ((value & 0x00ff) << 8) | (_t.d & 0x00ff);
+        if (!m_flip_flop) {
+            m_t.d = ((value & 0x00ff) << 8) | (m_t.d & 0x00ff);
         } else {
-            _t.d = (_t.d & 0xff00) | value;
-            _v.d = _t.d;
+            m_t.d = (m_t.d & 0xff00) | value;
+            m_v.d = m_t.d;
         }
-        _flip_flop = !_flip_flop;
+        m_flip_flop = !m_flip_flop;
         break;
     case 7:
-        _ppu_bus->write(_v.d, value);
-        if (_reg1.vram_step)
-            _v.d += 32;
+        m_ppu_bus->write(m_v.d, value);
+        if (m_reg1.vram_step)
+            m_v.d += 32;
         else
-            _v.d++;
-        _v.d %= 0x4000;
+            m_v.d++;
+        m_v.d %= 0x4000;
         break;
     }
 }
@@ -410,7 +410,7 @@ byte_t
 NESPPU::ppu_nt_read(offset_t offset)
 {
     NameTableMirroring mirror = NameTableMirroring(
-        machine()->read_ioport(_mirror));
+        machine()->read_ioport(m_mirror));
     NameTable nt = NameTable((offset & 0x0C00) >> 10);
     offset &= 0x03ff;
     byte_t result = 0;
@@ -418,12 +418,12 @@ NESPPU::ppu_nt_read(offset_t offset)
     case NT0:
         switch (mirror) {
         case SingleScreenBLK1:
-            result = _blk1[offset];
+            result = m_blk1[offset];
             break;
         case SingleScreenBLK0:
         case TwoScreenVMirroring:
         case TwoScreenHMirroring:
-            result = _blk0[offset];
+            result = m_blk0[offset];
             break;
         }
         break;
@@ -431,11 +431,11 @@ NESPPU::ppu_nt_read(offset_t offset)
         switch (mirror) {
         case SingleScreenBLK1:
         case TwoScreenVMirroring:
-            result = _blk1[offset];
+            result = m_blk1[offset];
             break;
         case SingleScreenBLK0:
         case TwoScreenHMirroring:
-            result = _blk0[offset];
+            result = m_blk0[offset];
             break;
         }
         break;
@@ -443,22 +443,22 @@ NESPPU::ppu_nt_read(offset_t offset)
         switch (mirror) {
         case SingleScreenBLK1:
         case TwoScreenHMirroring:
-            result = _blk1[offset];
+            result = m_blk1[offset];
             break;
         case SingleScreenBLK0:
         case TwoScreenVMirroring:
-            result = _blk0[offset];
+            result = m_blk0[offset];
             break;
         }
     case NT3:
         switch (mirror) {
         case SingleScreenBLK0:
-            result = _blk0[offset];
+            result = m_blk0[offset];
             break;
         case SingleScreenBLK1:
         case TwoScreenVMirroring:
         case TwoScreenHMirroring:
-            result = _blk1[offset];
+            result = m_blk1[offset];
             break;
         }
         break;
@@ -470,22 +470,22 @@ void
 NESPPU::ppu_nt_write(offset_t offset, byte_t value)
 {
     NameTableMirroring mirror = NameTableMirroring(
-        machine()->read_ioport(_mirror));
+        machine()->read_ioport(m_mirror));
     NameTable nt = NameTable((offset & 0x0C00) >> 10);
     offset &= 0x03ff;
     switch (nt) {
     case NT0:
-        _blk0[offset] = value;
+        m_blk0[offset] = value;
         break;
     case NT1:
         switch (mirror) {
         case SingleScreenBLK1:
         case TwoScreenVMirroring:
-            _blk1[offset] = value;
+            m_blk1[offset] = value;
             break;
         case SingleScreenBLK0:
         case TwoScreenHMirroring:
-            _blk0[offset] = value;
+            m_blk0[offset] = value;
             break;
         }
         break;
@@ -493,15 +493,15 @@ NESPPU::ppu_nt_write(offset_t offset, byte_t value)
         switch (mirror) {
         case SingleScreenBLK1:
         case TwoScreenHMirroring:
-            _blk1[offset] = value;
+            m_blk1[offset] = value;
             break;
         case SingleScreenBLK0:
         case TwoScreenVMirroring:
-            _blk0[offset] = value;
+            m_blk0[offset] = value;
             break;
         }
     case NT3:
-        _blk1[offset] = value;
+        m_blk1[offset] = value;
         break;
     }
 }
@@ -510,7 +510,7 @@ byte_t
 NESPPU::ppu_pal_read(offset_t offset)
 {
     offset &= 0x001f;
-    return _palette_bytes[offset];
+    return m_palette_bytes[offset];
 }
 
 byte_t
@@ -536,11 +536,11 @@ NESPPU::ppu_pal_write(offset_t offset, byte_t value)
 {
     offset &= 0x001f;
     value &= 0x3f;
-    _palette_bytes[offset] = value;
-    _palette[offset] = _color_table[value];
+    m_palette_bytes[offset] = value;
+    m_palette[offset] = m_color_table[value];
     if ((offset & 0x03) == 0) {
-        _palette_bytes[offset ^ 0x10] = value;
-        _palette[offset ^ 0x10] = _color_table[value];
+        m_palette_bytes[offset ^ 0x10] = value;
+        m_palette[offset ^ 0x10] = m_color_table[value];
     }
 }
 

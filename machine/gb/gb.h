@@ -65,21 +65,21 @@ public:
     virtual ~Gameboy(void);
 
     AddressBus16 *bus(void) {
-        return _bus.get();
+        return m_bus.get();
     }
 
 private:
-    AddressBus16_ptr _bus;
+    AddressBus16_ptr m_bus;
 
-    std::unique_ptr<LR35902Cpu> _cpu;
-    std::unique_ptr<GBGraphics> _gfx;
-    std::unique_ptr<RamDevice> _ram;
-    std::unique_ptr<GBMBC> _mbc;
-    std::unique_ptr<RamDevice> _hiram;
+    std::unique_ptr<LR35902Cpu> m_cpu;
+    std::unique_ptr<GBGraphics> m_gfx;
+    std::unique_ptr<RamDevice> m_ram;
+    std::unique_ptr<GBMBC> m_mbc;
+    std::unique_ptr<RamDevice> m_hiram;
 
-    device_ptr _timer;
-    device_ptr _serial;
-    device_ptr _joypad;
+    Device_ptr m_timer;
+    Device_ptr m_serial;
+    Device_ptr m_joypad;
 };
 
 };
