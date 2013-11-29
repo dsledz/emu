@@ -31,7 +31,7 @@ using namespace EMU;
 using namespace M6502v2;
 using namespace std::placeholders;
 
-#define JIT 1
+#define JIT 0
 
 extern "C" uint8_t
 m6502_bus_read(void *ctx, uint16_t addr)
@@ -83,8 +83,8 @@ m6502_set_flags(void *ctx, uint16_t flags)
     name, \
     bytes, \
     cycles, \
-    std::bind(&addr, _1, _2), \
-    std::bind(&op, _1, _2), \
+    std::bind(&addr, _2), \
+    std::bind(&op, _2), \
     std::bind(&addr ## _jit, _1, _2, _3), \
     std::bind(&op ## _jit, _1, _2), \
 }
@@ -324,23 +324,12 @@ M6502Cpu::step(void)
         return;
     } else if (_nmi_line == LineState::Pulse) {
         DEVICE_DEBUG("NMI triggered");
-        _state.F.B = 0;
-        push(_state.PC.b.h);
-        push(_state.PC.b.l);
-        push(_state.SR);
-        _state.PC.b.l = bus_read(0xFFFA);
-        _state.PC.b.h = bus_read(0xFFFB);
+        NMI(&_state);
         _nmi_line = LineState::Clear;
         return;
     } else if (_state.F.I == 0 && _irq_line == LineState::Assert) {
         DEVICE_DEBUG("IRQ triggered");
-        _state.F.B = 0;
-        _state.F.I = 1;
-        push(_state.PC.b.h);
-        push(_state.PC.b.l);
-        push(_state.SR);
-        _state.PC.b.l = bus_read(0xFFFE);
-        _state.PC.b.h = bus_read(0xFFFF);
+        IRQ(&_state);
         return;
     }
 
@@ -468,7 +457,7 @@ void
 M6502Cpu::dispatch(uint16_t pc)
 {
     uint8_t buf[8] = {};
-    buf[0] = pc_read();
+    buf[0] = bus_read(_state.PC.d++);
 
     auto it = _opcodes.find(buf[0]);
     if (it == _opcodes.end()) {
@@ -478,8 +467,12 @@ M6502Cpu::dispatch(uint16_t pc)
 
     M6502Opcode *op = &it->second;
 
+    _state.cpu = this;
+    _state.icycles = 0;
+
     op->addr_mode(this, &_state);
     op->operation(this, &_state);
+    add_icycles(_state.icycles);
 
     IF_LOG(Trace) {
         log_op(op, pc, buf);

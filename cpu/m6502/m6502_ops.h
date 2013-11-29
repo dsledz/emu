@@ -2,8 +2,8 @@
 
 #include "emu/emu.h"
 
-#define ADDR(addr) void addr(M6502Cpu *cpu, M6502State *state)
-#define OP(op) void op(M6502Cpu *cpu, M6502State *state)
+#define ADDR(addr) void addr(M6502State *state)
+#define OP(op) void op(M6502State *state)
 
 namespace M6502v2
 {
@@ -14,88 +14,99 @@ namespace M6502v2
         state->F.Z = (result == 0);
     }
 
-    static inline uint8_t pc_read(M6502Cpu *cpu, M6502State *state)
+    static inline uint8_t pc_read(M6502State *state)
     {
-        return cpu->bus_read(state->PC.d++);
+        return state->bus_read(state->PC.d++);
     }
 
-    static inline void push(M6502Cpu *cpu, M6502State *state, uint8_t value)
+    static inline void push(M6502State *state, uint8_t value)
     {
-        cpu->bus_write((state->ZPG << 8) + 0x0100 + state->SP, value);
+        state->bus_write((state->ZPG << 8) + 0x0100 + state->SP, value);
         state->SP--;
     }
 
-    static inline uint8_t pop(M6502Cpu *cpu, M6502State *state)
+    static inline uint8_t pop(M6502State *state)
     {
         state->SP++;
-        return cpu->bus_read((state->ZPG << 8) + 0x0100 + state->SP);
+        return state->bus_read((state->ZPG << 8) + 0x0100 + state->SP);
+    }
+
+    static inline uint8_t fetch(M6502State *state)
+    {
+        state->ARG = state->bus_read(state->EA.d);
+        return state->ARG;
+    }
+
+    static inline void store(M6502State *state, byte_t value)
+    {
+        state->bus_write(state->EA.d, value);
     }
 
     ADDR(Inherent) {
     }
     ADDR(Absolute) {
-        state->EA.b.l = pc_read(cpu, state);
-        state->EA.b.h = pc_read(cpu, state);
+        state->EA.b.l = pc_read(state);
+        state->EA.b.h = pc_read(state);
     }
     ADDR(AbsoluteX) {
-        state->EA.b.l = pc_read(cpu, state);
-        state->EA.b.h = pc_read(cpu, state);
+        state->EA.b.l = pc_read(state);
+        state->EA.b.h = pc_read(state);
         state->EA.d += state->X;
         if (state->EA.b.l < state->X)
-            cpu->add_icycles(1);
+            state->icycles += 1;
     }
     ADDR(AbsoluteY) {
-        state->EA.b.l = pc_read(cpu, state);
-        state->EA.b.h = pc_read(cpu, state);
+        state->EA.b.l = pc_read(state);
+        state->EA.b.h = pc_read(state);
         state->EA.d += state->Y;
         if (state->EA.b.l < state->Y)
-            cpu->add_icycles(1);
+            state->icycles += 1;
     }
     ADDR(Indirect) {
         reg16_t addr;
-        addr.b.l = pc_read(cpu, state);
-        addr.b.h = pc_read(cpu, state);
-        state->EA.b.l = cpu->bus_read(addr.d);
+        addr.b.l = pc_read(state);
+        addr.b.h = pc_read(state);
+        state->EA.b.l = state->bus_read(addr.d);
         addr.b.l++;
-        state->EA.b.h = cpu->bus_read(addr.d);
+        state->EA.b.h = state->bus_read(addr.d);
     }
     ADDR(IndirectY) {
         reg16_t addr;
-        addr.b.l = pc_read(cpu, state);
+        addr.b.l = pc_read(state);
         addr.b.h = state->ZPG;
-        state->EA.b.l = cpu->bus_read(addr.d);
+        state->EA.b.l = state->bus_read(addr.d);
         addr.b.l++;
-        state->EA.b.h = cpu->bus_read(addr.d);
+        state->EA.b.h = state->bus_read(addr.d);
         state->EA.d += state->Y;
         if (state->EA.b.l < state->Y)
-            cpu->add_icycles(1);
+            state->icycles += 1;
     }
     ADDR(XIndirect) {
         reg16_t addr;
-        addr.b.l = pc_read(cpu, state) + state->X;
+        addr.b.l = pc_read(state) + state->X;
         addr.b.h = state->ZPG;
-        state->EA.b.l = cpu->bus_read(addr.d);
+        state->EA.b.l = state->bus_read(addr.d);
         addr.b.l++;
-        state->EA.b.h = cpu->bus_read(addr.d);
+        state->EA.b.h = state->bus_read(addr.d);
     }
     ADDR(ZeroPageIndirect) {
         reg16_t addr;
-        addr.b.l = pc_read(cpu, state);
+        addr.b.l = pc_read(state);
         addr.b.h = state->ZPG;
-        state->EA.b.l = cpu->bus_read(addr.d);
+        state->EA.b.l = state->bus_read(addr.d);
         addr.b.l++;
-        state->EA.b.h = cpu->bus_read(addr.d);
+        state->EA.b.h = state->bus_read(addr.d);
     }
     ADDR(ZeroPage) {
-        state->EA.b.l = pc_read(cpu, state);
+        state->EA.b.l = pc_read(state);
         state->EA.b.h = state->ZPG;
     }
     ADDR(ZeroPageX) {
-        state->EA.b.l = pc_read(cpu, state) + state->X;
+        state->EA.b.l = pc_read(state) + state->X;
         state->EA.b.h = state->ZPG;
     }
     ADDR(ZeroPageY) {
-        state->EA.b.l = pc_read(cpu, state) + state->Y;
+        state->EA.b.l = pc_read(state) + state->Y;
         state->EA.b.h = state->ZPG;
     }
     ADDR(Immediate) {
@@ -103,14 +114,14 @@ namespace M6502v2
         state->PC.d++;
     }
     ADDR(Relative) {
-        char tmp = pc_read(cpu, state);
+        char tmp = pc_read(state);
         state->EA = state->PC;
         state->EA.d += tmp;
     }
 
     OP(ADC) {
         int result;
-        cpu->fetch();
+        fetch(state);
         if (state->F.D) {
             uint8_t l = (state->A & 0x0F) + (state->ARG & 0x0F) + state->F.C;
             if (l > 9)
@@ -128,18 +139,18 @@ namespace M6502v2
     }
 
     OP(AND) {
-        cpu->fetch();
+        fetch(state);
         int result = state->A & state->ARG;
         set_sz(state, result);
         state->A = result;
     }
 
     OP(ASL) {
-        cpu->fetch();
+        fetch(state);
         int result = state->ARG << 1;
         state->F.C = bit_isset(state->ARG, 7);
         set_sz(state, result);
-        cpu->store(result);
+        store(state, result);
     }
 
     OP(ASLA) {
@@ -153,23 +164,23 @@ namespace M6502v2
     OP(BCC) {
         if (state->F.C == 0) {
             state->PC = state->EA;
-            cpu->add_icycles(2);
+            state->icycles += 2;
         }
     }
     OP(BCS) {
         if (state->F.C != 0) {
             state->PC = state->EA;
-            cpu->add_icycles(2);
+            state->icycles += 2;
         }
     }
     OP(BEQ) {
         if (state->F.Z != 0) {
             state->PC = state->EA;
-            cpu->add_icycles(2);
+            state->icycles += 2;
         }
     }
     OP(BIT) {
-        cpu->fetch();
+        fetch(state);
         int result = state->ARG;
         state->F.N = bit_isset(result, 7);
         state->F.V = bit_isset(result, 6);
@@ -178,40 +189,40 @@ namespace M6502v2
     OP(BMI) {
         if (state->F.N != 0) {
             state->PC = state->EA;
-            cpu->add_icycles(2);
+            state->icycles += 2;
         }
     }
     OP(BNE) {
         if (state->F.Z == 0) {
             state->PC = state->EA;
-            cpu->add_icycles(2);
+            state->icycles += 2;
         }
     }
     OP(BPL) {
         if (state->F.N == 0) {
             state->PC = state->EA;
-            cpu->add_icycles(2);
+            state->icycles += 2;
         }
     }
     OP(BRK) {
         state->F.B = 1;
         state->PC.d++;
-        push(cpu, state, state->PC.b.h);
-        push(cpu, state, state->PC.b.l);
-        push(cpu, state, state->SR);
-        state->PC.b.l = cpu->bus_read(0xFFFE);
-        state->PC.b.h = cpu->bus_read(0xFFFF);
+        push(state, state->PC.b.h);
+        push(state, state->PC.b.l);
+        push(state, state->SR);
+        state->PC.b.l = state->bus_read(0xFFFE);
+        state->PC.b.h = state->bus_read(0xFFFF);
     }
     OP(BVC) {
         if (state->F.V == 0) {
             state->PC = state->EA;
-            cpu->add_icycles(2);
+            state->icycles += 2;
         }
     }
     OP(BVS) {
         if (state->F.V != 0) {
             state->PC = state->EA;
-            cpu->add_icycles(2);
+            state->icycles += 2;
         }
     }
     OP(CLC) {
@@ -227,28 +238,28 @@ namespace M6502v2
         state->F.V = 0;
     }
     OP(CMP) {
-        cpu->fetch();
+        fetch(state);
         int result = state->A - state->ARG;
         set_sz(state, result);
         state->F.C = state->ARG <= state->A;
     }
     OP(CPX) {
-        cpu->fetch();
+        fetch(state);
         int result = state->X - state->ARG;
         set_sz(state, result);
         state->F.C = state->ARG <= state->X;
     }
     OP(CPY) {
-        cpu->fetch();
+        fetch(state);
         int result = state->Y - state->ARG;
         set_sz(state, result);
         state->F.C = state->ARG <= state->Y;
     }
     OP(DEC) {
-        cpu->fetch();
+        fetch(state);
         int result = state->ARG - 1;
         set_sz(state, result);
-        cpu->store(result);
+        store(state, result);
     }
     OP(DEA) {
         int result = state->A - 1;
@@ -266,16 +277,16 @@ namespace M6502v2
         state->Y = result;
     }
     OP(EOR) {
-        cpu->fetch();
+        fetch(state);
         int result = state->A ^ state->ARG;
         set_sz(state, result);
         state->A = result;
     }
     OP(INC) {
-        cpu->fetch();
+        fetch(state);
         int result = state->ARG + 1;
         set_sz(state, result);
-        cpu->store(result);
+        store(state, result);
     }
     OP(INX) {
         byte_t result = state->X + 1;
@@ -292,31 +303,31 @@ namespace M6502v2
     }
     OP(JSR) {
         state->PC.d--;
-        push(cpu, state, state->PC.b.h);
-        push(cpu, state, state->PC.b.l);
+        push(state, state->PC.b.h);
+        push(state, state->PC.b.l);
         state->PC = state->EA;
     }
     OP(LDA) {
-        int result = cpu->fetch();
+        int result = fetch(state);
         set_sz(state, result);
         state->A = result;
     }
     OP(LDX) {
-        int result = cpu->fetch();
+        int result = fetch(state);
         set_sz(state, result);
         state->X = result;
     }
     OP(LDY) {
-        int result = cpu->fetch();
+        int result = fetch(state);
         set_sz(state, result);
         state->Y = result;
     }
     OP(LSR) {
-        cpu->fetch();
+        fetch(state);
         int result = state->ARG >> 1;
         state->F.C = bit_isset(state->ARG, 0);
         set_sz(state, result);
-        cpu->store(result);
+        store(state, result);
     }
     OP(LSRA) {
         state->ARG = state->A;
@@ -328,32 +339,32 @@ namespace M6502v2
     OP(NOP) {
     }
     OP(ORA) {
-        cpu->fetch();
+        fetch(state);
         int result = state->A | state->ARG;
         set_sz(state, result);
         state->A = result;
     }
     OP(PHA) {
-        push(cpu, state, state->A);
+        push(state, state->A);
     }
     OP(PHP) {
-        push(cpu, state, state->SR);
+        push(state, state->SR);
     }
     OP(PLA) {
-        state->A = pop(cpu, state);
+        state->A = pop(state);
         set_sz(state, state->A);
     }
     OP(PLP) {
-        state->SR = pop(cpu, state);
+        state->SR = pop(state);
         state->F.B = 1;
         state->F.E = 1;
     }
     OP(ROL) {
-        cpu->fetch();
+        fetch(state);
         int result = state->ARG << 1 | state->F.C;
         state->F.C = bit_isset(state->ARG, 7);
         set_sz(state, result);
-        cpu->store(result);
+        store(state, result);
     }
     OP(ROLA) {
         state->ARG = state->A;
@@ -363,11 +374,11 @@ namespace M6502v2
         state->A = result;
     }
     OP(ROR) {
-        cpu->fetch();
+        fetch(state);
         int result = state->ARG >> 1 | (state->F.C << 7);
         state->F.C = bit_isset(state->ARG, 0);
         set_sz(state, result);
-        cpu->store(result);
+        store(state, result);
     }
     OP(RORA) {
         state->ARG = state->A;
@@ -377,18 +388,18 @@ namespace M6502v2
         state->A = result;
     }
     OP(RTI) {
-        state->SR = pop(cpu, state);
+        state->SR = pop(state);
         state->F.E = 1;
-        state->PC.b.l = pop(cpu, state);
-        state->PC.b.h = pop(cpu, state);
+        state->PC.b.l = pop(state);
+        state->PC.b.h = pop(state);
     }
     OP(RTS) {
-        state->PC.b.l = pop(cpu, state);
-        state->PC.b.h = pop(cpu, state);
+        state->PC.b.l = pop(state);
+        state->PC.b.h = pop(state);
         state->PC.d++;
     }
     OP(SBC) {
-        cpu->fetch();
+        fetch(state);
         uint32_t result = state->A + (~state->ARG) + state->F.C;
         set_sz(state, result);
         state->F.C = result < 0x100;
@@ -405,13 +416,13 @@ namespace M6502v2
         state->F.I = 1;
     }
     OP(STA) {
-        cpu->store(state->A);
+        store(state, state->A);
     }
     OP(STX) {
-        cpu->store(state->X);
+        store(state, state->X);
     }
     OP(STY) {
-        cpu->store(state->Y);
+        store(state, state->Y);
     }
     OP(TAX) {
         state->X = state->A;
@@ -437,6 +448,24 @@ namespace M6502v2
         state->SP = state->X;
     }
 
+    OP(NMI) {
+        state->F.B = 0;
+        push(state, state->PC.b.h);
+        push(state, state->PC.b.l);
+        push(state, state->SR);
+        state->PC.b.l = state->bus_read(0xFFFA);
+        state->PC.b.h = state->bus_read(0xFFFB);
+    }
+
+    OP(IRQ) {
+        state->F.B = 0;
+        state->F.I = 1;
+        push(state, state->PC.b.h);
+        push(state, state->PC.b.l);
+        push(state, state->SR);
+        state->PC.b.l = state->bus_read(0xFFFE);
+        state->PC.b.h = state->bus_read(0xFFFF);
+    }
 };
 
 /* 65C02 Ops */
@@ -445,21 +474,21 @@ namespace M65C02v2
     using namespace M6502v2;
 
     OP(TSB) {
-        cpu->fetch();
+        fetch(state);
         int result = state->A | state->ARG;
         state->F.Z = (state->A & state->ARG) == 0;
-        cpu->store(result);
+        store(state, result);
     }
 
     OP(TRB) {
-        cpu->fetch();
+        fetch(state);
         int result = ~state->A & state->ARG;
         state->F.Z = (state->A & state->ARG) == 0;
-        cpu->store(result);
+        store(state, result);
     }
 
     OP(BITIMM) {
-        cpu->fetch();
+        fetch(state);
         state->F.Z = (state->A & state->ARG) == 0;
     }
 
@@ -470,64 +499,64 @@ namespace M65C02v2
     }
 
     OP(PHX) {
-        push(cpu, state, state->X);
+        push(state, state->X);
     }
 
     OP(PLX) {
-        int result = pop(cpu, state);
+        int result = pop(state);
         set_sz(state, result);
         state->X = result;
     }
 
     OP(PHY) {
-        push(cpu, state, state->Y);
+        push(state, state->Y);
     }
 
     OP(PLY) {
-        int result = pop(cpu, state);
+        int result = pop(state);
         set_sz(state, result);
         state->Y = result;
     }
 
     OP(SMB) {
-        Immediate(cpu, state);
-        int bit = cpu->fetch();
-        ZeroPage(cpu, state);
-        cpu->fetch();
+        Immediate(state);
+        int bit = fetch(state);
+        ZeroPage(state);
+        fetch(state);
         int result = state->ARG | (1 << bit);
-        cpu->store(result);
+        store(state, result);
     }
 
     OP(RMB) {
-        Immediate(cpu, state);
-        int bit = cpu->fetch();
-        ZeroPage(cpu, state);
-        cpu->fetch();
+        Immediate(state);
+        int bit = fetch(state);
+        ZeroPage(state);
+        fetch(state);
         int result = state->ARG & ~(1 << bit);
-        cpu->store(result);
+        store(state, result);
     }
 
     OP(BBR) {
-        Immediate(cpu, state);
-        int bit = cpu->fetch();
-        ZeroPage(cpu, state);
-        cpu->fetch();
-        Relative(cpu, state);
+        Immediate(state);
+        int bit = fetch(state);
+        ZeroPage(state);
+        fetch(state);
+        Relative(state);
         if (!bit_isset(state->ARG, bit)) {
             state->PC = state->EA;
-            cpu->add_icycles(2);
+            state->icycles += 2;
         }
     }
 
     OP(BBS) {
-        Immediate(cpu, state);
-        int bit = cpu->fetch();
-        ZeroPage(cpu, state);
-        cpu->fetch();
-        Relative(cpu, state);
+        Immediate(state);
+        int bit = fetch(state);
+        ZeroPage(state);
+        fetch(state);
+        Relative(state);
         if (bit_isset(state->ARG, bit)) {
             state->PC = state->EA;
-            cpu->add_icycles(2);
+            state->icycles += 2;
         }
     }
 

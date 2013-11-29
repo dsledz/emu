@@ -36,6 +36,13 @@ struct M6502State
 {
     M6502State(void) = default;
 
+    uint8_t bus_read(uint16_t addr) {
+        return cpu->bus_read(addr);
+    }
+    void bus_write(uint16_t addr, uint8_t value) {
+        cpu->bus_write(addr, value);
+    }
+
     reg8_t A;
     reg8_t SP;
     reg8_t X;
@@ -60,6 +67,9 @@ struct M6502State
 
     reg16_t EA;  /* %r8 */
     reg8_t  ARG; /* %rdx */
+
+    Cpu<AddressBus16> *cpu;
+    uint8_t icycles;
 } __attribute__((packed));
 
 class M6502Cpu;
@@ -97,29 +107,6 @@ public:
     virtual void test_step(void);
     virtual void step(void);
     virtual std::string dasm(addr_type addr);
-
-    byte_t fetch(void) {
-        _state.ARG = bus_read(_state.EA.d);
-        return _state.ARG;
-    }
-
-    void store(byte_t value) {
-        bus_write(_state.EA.d, value);
-    }
-
-    byte_t pc_read(void) {
-        return bus_read(_state.PC.d++);
-    }
-
-    void push(byte_t value) {
-        bus_write((_state.ZPG << 8) + 0x0100 + _state.SP, value);
-        _state.SP--;
-    }
-
-    byte_t pop(void) {
-        _state.SP++;
-        return bus_read((_state.ZPG << 8) + 0x0100 + _state.SP);
-    }
 
 protected:
     void dispatch(uint16_t pc);
