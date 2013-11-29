@@ -28,10 +28,17 @@
 using namespace EMU;
 
 Device::Device(Machine *machine, const std::string &name):
+    Device(machine, name, DEFAULT_HERTZ)
+{
+}
+
+Device::Device(Machine *machine, const std::string &name, unsigned hertz):
     m_name(name),
     m_machine(machine),
     m_status(DeviceStatus::Off),
-    m_target_status(DeviceStatus::Off)
+    m_target_status(DeviceStatus::Off),
+    m_hertz(hertz),
+    m_avail(0)
 {
     m_machine->add_device(this);
 }
@@ -69,19 +76,15 @@ Device::task(void)
     } catch (EmuException &e) {
         new_status = DeviceStatus::Fault;
     }
-    set_status(DeviceStatus::Off);
+    {
+        lock_mtx lock(m_mtx);
+        m_status = DeviceStatus::Off;
+    }
 }
 
 void
 Device::line(Line line, LineState state)
 {
-    switch (line) {
-    case Line::RESET:
-        reset();
-        break;
-    default:
-        break;
-    }
 }
 
 void
@@ -92,17 +95,25 @@ Device::reset(void)
 void
 Device::task_loop(void)
 {
+    while (true)
+        execute();
     wait(DeviceStatus::Off);
+}
+
+void
+Device::execute(void)
+{
+    add_icycles(5000);
 }
 
 void
 Device::set_status(DeviceStatus status)
 {
-    lock_mtx lock(m_mtx);
-    m_target_status = status;
-    m_cv.notify_all();
-    if (status == DeviceStatus::Off)
-        m_clock.stop();
+    DeviceUpdate update = {
+        .type = DeviceUpdateType::Status,
+        .status = status
+    };
+    m_channel.put(update);
 }
 
 DeviceStatus
@@ -125,14 +136,17 @@ Device::wait_status(DeviceStatus status)
 void
 Device::wait(DeviceStatus status)
 {
-    lock_mtx lock(m_mtx);
-    if (m_status == status)
+    if (status == m_status)
         return;
     while (status != m_target_status)
     {
-        m_cv.wait(lock);
+        idle();
     }
-    m_status = status;
+    {
+        lock_mtx lock(m_mtx);
+        m_status = status;
+        m_cv.notify_all();
+    }
 }
 
 void
@@ -140,12 +154,38 @@ Device::log(LogLevel level, const std::string &fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    EMU::log.log(level, fmt, args);
+    std::stringstream os;
+    os << m_clock.now() << ":" << name() << ":" << fmt;
+    EMU::log.log(level, os.str(), args);
     va_end(args);
 }
 
+void
+Device::idle(void)
+{
+    DeviceUpdate update = m_channel.get();
+    switch (update.type) {
+        case DeviceUpdateType::Clock:
+            m_clock.update(update.clock);
+            break;
+        case DeviceUpdateType::Status:
+            m_target_status = update.status;
+            break;
+    }
+}
+
+void
+Device::wait_icycles(Cycles cycles)
+{
+    while (m_avail < cycles) {
+        clock()->advance();
+        EmuTime avail = clock()->wait(time_zero);
+        m_avail += avail.to_cycles(Cycles(m_hertz));
+    }
+}
+
 IODevice::IODevice(Machine *machine, const std::string &name, size_t size):
-    Device(machine, name),
+    Device(machine, name, DEFAULT_HERTZ),
     m_size(size)
 {
 }
@@ -161,30 +201,12 @@ IODevice::size(void)
 }
 
 ClockedDevice::ClockedDevice(Machine *machine, const std::string &name, unsigned hertz):
-    Device(machine, name), m_hertz(hertz), m_avail(0)
+    Device(machine, name, hertz)
 {
 }
 
 ClockedDevice::~ClockedDevice(void)
 {
-}
-
-void
-ClockedDevice::task_loop(void)
-{
-    while (true) {
-        execute();
-    }
-}
-
-void
-ClockedDevice::wait_icycles(Cycles cycles)
-{
-    while (m_avail < cycles) {
-        clock()->advance();
-        EmuTime avail = clock()->wait(time_zero);
-        m_avail += avail.to_cycles(Cycles(m_hertz));
-    }
 }
 
 GfxDevice::GfxDevice(Machine *machine, const std::string &name, unsigned hertz):

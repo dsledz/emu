@@ -88,6 +88,12 @@ Machine::remove_device(Device *dev)
 }
 
 void
+Machine::set_time(EmuTime now)
+{
+    m_sim_clock.set(now);
+}
+
+void
 Machine::run(void)
 {
 }

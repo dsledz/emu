@@ -994,12 +994,9 @@ LR35902Cpu::load(LoadState &state)
 
 void LR35902Cpu::execute(void)
 {
-    /* Execute as much as possible. We'll save the left over cycles for the
-     * next call. Hopefully this is okay. */
-    while (m_avail > 0) {
-        m_avail -= dispatch();
+    while (true) {
+        add_icycles(dispatch());
     }
-
 }
 
 addr_t InterruptVector[] = {

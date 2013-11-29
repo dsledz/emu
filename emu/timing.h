@@ -166,6 +166,12 @@ struct Time {
     uint64_t ns = 0;
 };
 
+static inline std::ostream & operator << (std::ostream &os, const Time &obj)
+{
+    os << obj.ns;
+    return os;
+}
+
 typedef Time EmuTime;
 
 extern const Time time_zero;
@@ -363,6 +369,10 @@ public:
             .stop = false,
             .now = time_zero
         };
+        m_channel.put(update);
+    }
+
+    void update(const EmuClockUpdate &update) {
         m_channel.put(update);
     }
 

@@ -209,11 +209,9 @@ VDC::bg_pixel(void)
 void
 VDC::execute(void)
 {
-    const Cycles used(1);
-
-    while (m_avail > 0) {
+    while (true) {
+        add_icycles(1);
         step();
-        m_avail -= used;
     }
 }
 

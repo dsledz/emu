@@ -217,7 +217,9 @@ GBGraphics::draw_scanline(int y)
 void
 GBGraphics::execute(void)
 {
-    m_fcycles += m_avail.v;
+    unsigned delta=64;
+    add_icycles(delta);
+    m_fcycles += delta;
 
     switch (m_stat & 0x03) {
     case LCDMode::HBlankMode:

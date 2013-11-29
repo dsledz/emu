@@ -109,12 +109,7 @@ public:
         RasterScreen::Rotation rotation = RasterScreen::ROT0);
     RasterScreen *screen(void);
 
-    /**
-     * Temp
-     */
-    void set_time(EmuTime now) {
-        m_sim_clock.set(now);
-    }
+    void set_time(EmuTime now);
 
 protected:
 

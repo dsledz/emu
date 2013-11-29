@@ -129,10 +129,11 @@ public:
     }
 
     virtual void execute(void) {
-        m_cycles += m_avail.v;
-        m_dcycles += m_avail.v;
-        m_tcycles += m_avail.v;
-        m_avail = Cycles(0);
+        unsigned delta = 64;
+        add_icycles(delta);
+        m_cycles += delta;
+        m_dcycles += delta;
+        m_tcycles += delta;
 
         if (m_dcycles > 256) {
             m_dcycles -= 256;
@@ -180,7 +181,6 @@ public:
 
 private:
 
-    unsigned m_hertz;
     unsigned m_cycles;
     unsigned m_dcycles;
     unsigned m_tcycles;

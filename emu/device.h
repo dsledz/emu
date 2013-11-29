@@ -41,19 +41,38 @@ enum class DeviceStatus {
 
 class Machine;
 
+enum class DeviceUpdateType {
+    Clock,
+    Status,
+};
+
+struct DeviceUpdate {
+    DeviceUpdateType type;
+    union {
+        EmuClockUpdate clock;
+        DeviceStatus   status;
+    };
+};
+
+typedef EmuChannel<DeviceUpdate> EmuDeviceChannel;
+typedef std::shared_ptr<EmuDeviceChannel> EmuDeviceChannel_ptr;
+
+#define DEFAULT_HERTZ (1000 * 1000)
+
 /**
  * Emulation device. Specific chips implement the device class.
  */
 class Device {
 public:
     Device(Machine *machine, const std::string &name);
+    Device(Machine *machine, const std::string &name, unsigned hertz);
     virtual ~Device(void);
 
     void task(void);
 
     virtual void line(Line line, LineState state);
     virtual void reset(void);
-    virtual void task_loop(void);
+    virtual void execute(void);
 
     void set_status(DeviceStatus status);
     void wait_status(DeviceStatus status);
@@ -62,24 +81,45 @@ public:
     /** XXX: These should be protected */
     EmuClock *clock(void);
     const std::string &name(void);
+    Machine *machine(void);
+
+    void add_icycles(unsigned cycles) {
+        const Cycles c(cycles);
+        if (__builtin_expect((m_avail < c), 0))
+            wait_icycles(c);
+        m_avail -= c;
+    }
+
+    void add_icycles(Cycles cycles) {
+        if (__builtin_expect((m_avail < cycles), 0))
+            wait_icycles(cycles);
+        m_avail -= cycles;
+    }
 
 protected:
 
-    Machine *machine(void);
     void log(LogLevel level, const std::string &fmt, ...);
     void wait(DeviceStatus status);
+    void idle(void);
 
 private:
-    std::string              m_name;
-    Machine                 *m_machine;
-    DeviceStatus             m_status;
-    DeviceStatus             m_target_status;
-    std::condition_variable  m_cv;
-    std::mutex               m_mtx;
-    EmuClock                 m_clock;
+
+    void task_loop(void);
+    void wait_icycles(Cycles cycles);
+
+    std::string              m_name;            /* ro */
+    Machine                 *m_machine;         /* ro */
+    DeviceStatus             m_status;          /* (m) */
+    DeviceStatus             m_target_status;   /* (p) */
+    unsigned                 m_hertz;
+    Cycles                   m_avail;
+    std::condition_variable  m_cv;              /* ? */
+    std::mutex               m_mtx;             /* ? */
+    EmuClock                 m_clock;           /* ? */
+    EmuDeviceChannel         m_channel;         /* ? */
 };
 
-typedef std::unique_ptr<Device> device_ptr;
+typedef std::unique_ptr<Device> Device_ptr;
 
 class IODevice: public Device {
 public:
@@ -101,30 +141,7 @@ public:
     ClockedDevice(Machine *machine, const std::string &name, unsigned hertz);
     virtual ~ClockedDevice(void);
 
-    virtual void execute(void) = 0;
-
-    virtual void task_loop(void);
-
-    void add_icycles(unsigned cycles) {
-        const Cycles c(cycles);
-        if (__builtin_expect((m_avail < c), 0))
-            wait_icycles(c);
-        m_avail -= c;
-    }
-
-    void add_icycles(Cycles cycles) {
-        if (__builtin_expect((m_avail < cycles), 0))
-            wait_icycles(cycles);
-        m_avail -= cycles;
-    }
-
 protected:
-
-    void wait_icycles(Cycles cycles);
-
-    unsigned m_hertz;
-    Cycles m_avail;
-    Cycles m_icycles;
 };
 
 class GfxDevice: public ClockedDevice {
