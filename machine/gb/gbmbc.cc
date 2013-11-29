@@ -197,7 +197,7 @@ GBMBC::load(LoadState &state)
 }
 
 void
-GBMBC::_reset(void)
+GBMBC::reset(void)
 {
     memset(&_ram[0], 0, _ram.size());
     _ram_bank = 0;

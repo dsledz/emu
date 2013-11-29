@@ -85,6 +85,7 @@ public:
     M6502Cpu(const M6502Cpu &cpu) = delete;
 
     virtual void line(Line line, LineState state);
+    virtual void reset(void);
 
     M6502State *get_state(void) {
         return &_state;
@@ -121,7 +122,6 @@ public:
     }
 
 protected:
-    void _reset(void);
     void dispatch(uint16_t pc);
     void jit_dispatch(uint16_t pc);
     jit_block_ptr jit_compile(uint16_t pc);

@@ -55,7 +55,7 @@ n2A03Cpu::line(Line line, LineState state)
     switch (line) {
     case Line::RESET:
         /* XXX: We should treat this as a line */
-        _reset();
+        reset();
         break;
     case Line::INT0:
         _irq_line = state;

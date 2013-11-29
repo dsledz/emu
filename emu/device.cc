@@ -53,6 +53,12 @@ Device::name(void)
     return m_name;
 }
 
+EmuClock *
+Device::clock(void)
+{
+    return &m_clock;
+}
+
 void
 Device::task(void)
 {
@@ -64,12 +70,6 @@ Device::task(void)
         new_status = DeviceStatus::Fault;
     }
     set_status(DeviceStatus::Off);
-}
-
-EmuClock *
-Device::clock(void)
-{
-    return NULL;
 }
 
 void
@@ -101,8 +101,8 @@ Device::set_status(DeviceStatus status)
     lock_mtx lock(m_mtx);
     m_target_status = status;
     m_cv.notify_all();
-    if (status == DeviceStatus::Off && clock())
-        clock()->stop();
+    if (status == DeviceStatus::Off)
+        m_clock.stop();
 }
 
 DeviceStatus
@@ -161,18 +161,12 @@ IODevice::size(void)
 }
 
 ClockedDevice::ClockedDevice(Machine *machine, const std::string &name, unsigned hertz):
-    Device(machine, name), m_clock(), m_hertz(hertz), m_avail(0)
+    Device(machine, name), m_hertz(hertz), m_avail(0)
 {
 }
 
 ClockedDevice::~ClockedDevice(void)
 {
-}
-
-EmuClock *
-ClockedDevice::clock(void)
-{
-    return &m_clock;
 }
 
 void
@@ -187,8 +181,8 @@ void
 ClockedDevice::wait_icycles(Cycles cycles)
 {
     while (m_avail < cycles) {
-        m_clock.advance();
-        EmuTime avail = m_clock.wait(time_zero);
+        clock()->advance();
+        EmuTime avail = clock()->wait(time_zero);
         m_avail += avail.to_cycles(Cycles(m_hertz));
     }
 }

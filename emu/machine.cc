@@ -57,10 +57,6 @@ void
 Machine::poweron(void)
 {
     for (auto it = m_devs.begin(); it != m_devs.end(); it++) {
-        EmuClock *clock = (*it)->clock();
-        if (clock != NULL)
-            m_sim_clock.add_clock(clock);
-        m_scheduler.create(std::bind(&Device::task, *it));
         (*it)->set_status(DeviceStatus::Running);
     }
 }
@@ -80,15 +76,15 @@ void
 Machine::add_device(Device *dev)
 {
     m_devs.push_back(dev);
+    m_sim_clock.add_clock(dev->clock());
+    m_scheduler.create(std::bind(&Device::task, dev));
 }
 
 void
 Machine::remove_device(Device *dev)
 {
-    EmuClock *clock = dev->clock();
     m_devs.remove(dev);
-    if (clock != NULL)
-        m_sim_clock.remove_clock(clock);
+    m_sim_clock.remove_clock(dev->clock());
 }
 
 void

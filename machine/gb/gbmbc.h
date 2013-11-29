@@ -51,11 +51,11 @@ class GBMBC: public Device {
         virtual void save(SaveState &state);
         virtual void load(LoadState &state);
         virtual void line(Line line, LineState state) { }
+        virtual void reset(void);
 
         void load_rom(const std::string &name);
 
     private:
-        void _reset(void);
 
         std::string _name;
         Cartridge   _type;

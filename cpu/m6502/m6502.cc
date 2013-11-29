@@ -283,7 +283,7 @@ M6502Cpu::line(Line line, LineState state)
 }
 
 void
-M6502Cpu::_reset(void)
+M6502Cpu::reset(void)
 {
     _state.PC.d = 0;
     _state.A = 0;
@@ -319,7 +319,7 @@ M6502Cpu::step(void)
     /* Interrupts */
     if (_reset_line == LineState::Pulse) {
         DEVICE_DEBUG("Reset triggered");
-        _reset();
+        reset();
         _reset_line = LineState::Clear;
         return;
     } else if (_nmi_line == LineState::Pulse) {

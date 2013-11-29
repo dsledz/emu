@@ -74,7 +74,7 @@ M6502Cpu::line(Line line, LineState state)
 }
 
 void
-M6502Cpu::_reset(void)
+M6502Cpu::reset(void)
 {
     _rPC = 0;
     _rA = 0;
@@ -148,7 +148,7 @@ M6502Cpu::dispatch(void)
     _icycles = Cycles(0);
     if (_reset_line == LineState::Pulse) {
         DEVICE_DEBUG("Reset triggered");
-        _reset();
+        reset();
         _reset_line = LineState::Clear;
         return _icycles;
     } else if (_nmi_line == LineState::Pulse) {

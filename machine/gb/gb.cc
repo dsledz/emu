@@ -163,16 +163,13 @@ public:
     virtual void set_line(Line line, LineState state) {
         switch (line) {
         case Line::RESET:
-            _reset();
+            reset();
         default:
             break;
         }
     }
 
-private:
-
-    void _reset(void)
-    {
+    virtual void reset(void) {
         _cycles = 0;
         _dcycles = 0;
         _tcycles = 0;
@@ -180,6 +177,8 @@ private:
         _tma = 0;
         _tac = 0;
     }
+
+private:
 
     unsigned _hertz;
     unsigned _cycles;

@@ -88,8 +88,7 @@ Z80Cpu::step(void)
     _icycles = Cycles(0);
 
     if (_reset_line == LineState::Pulse) {
-        /* XXX: No one seems to clear this line... */
-        _reset();
+        reset();
         _reset_line = LineState::Clear;
         return _icycles;
     } else if (_nmi_line == LineState::Pulse) {
@@ -126,9 +125,9 @@ Z80Cpu::step(void)
 }
 
 void
-Z80Cpu::_reset(void)
+Z80Cpu::reset(void)
 {
-    DEVICE_DEBUG("Z80 reset");
+    DEVICE_DEBUG("reset");
     _R = Registers();
     _iff1 = false;
     _iff2 = false;

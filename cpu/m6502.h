@@ -39,6 +39,7 @@ public:
 
     virtual void execute(void);
     virtual void line(Line line, LineState state);
+    virtual void reset(void);
 
 protected:
     /* Internal state */
@@ -72,8 +73,6 @@ protected:
 
     AddressBus16 *_bus;
 
-    /* Dispatch */
-    void _reset(void);
 
     Cycles _icycles;
     void _add_icycles(unsigned cycles) {

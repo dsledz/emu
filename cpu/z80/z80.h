@@ -164,6 +164,7 @@ public:
 
     virtual void execute(void);
     virtual void line(Line line, LineState state);
+    virtual void reset(void);
 
     /* Register accessors */
     void store(Reg r, byte_t arg);
@@ -209,7 +210,6 @@ private:
         std::string name;
     };
 
-    void _reset(void);
     Cycles step(void);
     Cycles dispatch(void);
     void dispatch_cb(void);

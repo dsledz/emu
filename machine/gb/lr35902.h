@@ -115,6 +115,7 @@ public:
     virtual void load(LoadState &state);
     virtual void execute(void);
     virtual void line(Line, LineState state);
+    virtual void reset(void);
 
     byte_t fetch(Register reg);
     void store(Register reg, byte_t value);
@@ -129,7 +130,6 @@ protected:
     Cycles dispatch(void);
     void prefix_cb(void);
     void interrupt(void);
-    void _reset(void);
 
     /* Addition */
     void _add(byte_t &orig, byte_t value);

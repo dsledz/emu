@@ -105,7 +105,7 @@ LR35902Cpu::LR35902Cpu(Machine *machine, const std::string &name,
 {
     _bus->add(0xFF0F, &_IF);
 
-    _reset();
+    reset();
 }
 
 LR35902Cpu::~LR35902Cpu(void)
@@ -141,7 +141,7 @@ LR35902Cpu::line(Line line, LineState state)
 }
 
 void
-LR35902Cpu::_reset(void)
+LR35902Cpu::reset(void)
 {
     _rA = 0x01;
     _rF = 0xB0;

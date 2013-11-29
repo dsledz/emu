@@ -49,41 +49,34 @@ public:
     Device(Machine *machine, const std::string &name);
     virtual ~Device(void);
 
-    Machine *machine(void);
-    const std::string &name(void);
-
     void task(void);
 
-    /**
-     * Return the local clock.
-     */
-    virtual EmuClock *clock(void);
-
-    /**
-     * Signal one of the external lines.
-     */
     virtual void line(Line line, LineState state);
-
     virtual void reset(void);
-
     virtual void task_loop(void);
 
-    virtual void set_status(DeviceStatus status);
-    virtual void wait_status(DeviceStatus status);
-    virtual DeviceStatus get_status(void);
+    void set_status(DeviceStatus status);
+    void wait_status(DeviceStatus status);
+    DeviceStatus get_status(void);
+
+    /** XXX: These should be protected */
+    EmuClock *clock(void);
+    const std::string &name(void);
 
 protected:
 
+    Machine *machine(void);
     void log(LogLevel level, const std::string &fmt, ...);
-
     void wait(DeviceStatus status);
 
+private:
     std::string              m_name;
     Machine                 *m_machine;
     DeviceStatus             m_status;
     DeviceStatus             m_target_status;
     std::condition_variable  m_cv;
     std::mutex               m_mtx;
+    EmuClock                 m_clock;
 };
 
 typedef std::unique_ptr<Device> device_ptr;
@@ -110,8 +103,6 @@ public:
 
     virtual void execute(void) = 0;
 
-    virtual EmuClock *clock(void);
-
     virtual void task_loop(void);
 
     void add_icycles(unsigned cycles) {
@@ -128,9 +119,9 @@ public:
     }
 
 protected:
+
     void wait_icycles(Cycles cycles);
 
-    EmuClock m_clock;
     unsigned m_hertz;
     Cycles m_avail;
     Cycles m_icycles;
