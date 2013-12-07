@@ -86,7 +86,7 @@ public:
     }
 
     /** Update the screen */
-    void update(RasterScreen *screen)
+    void update(FrameBuffer *screen)
     {
         screen->clear();
 
@@ -98,7 +98,7 @@ public:
 
 private:
 
-    void draw_tiles(RasterScreen *screen)
+    void draw_tiles(FrameBuffer *screen)
     {
         /**
          * for tx = 0 to 36:
@@ -109,7 +109,7 @@ private:
          */
     }
 
-    void draw_sprites(RasterScreen *screen)
+    void draw_sprites(FrameBuffer *screen)
     {
         /**
          * for each sprite

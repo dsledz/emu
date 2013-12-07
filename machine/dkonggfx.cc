@@ -193,7 +193,7 @@ DonkeyKongGfx::do_vblank(void)
 void
 DonkeyKongGfx::do_vdraw(void)
 {
-    RasterScreen *screen = machine()->screen();
+    FrameBuffer *screen = machine()->screen();
     if (!screen)
         return;
     screen->clear();
@@ -203,7 +203,7 @@ DonkeyKongGfx::do_vdraw(void)
 }
 
 void
-DonkeyKongGfx::draw_sprites(RasterScreen *screen)
+DonkeyKongGfx::draw_sprites(FrameBuffer *screen)
 {
     uint8_t *ram = vram.direct(0x000);
 
@@ -224,7 +224,7 @@ DonkeyKongGfx::draw_sprites(RasterScreen *screen)
 }
 
 void
-DonkeyKongGfx::draw_bg(RasterScreen *screen)
+DonkeyKongGfx::draw_bg(FrameBuffer *screen)
 {
     byte_t *tile_map = vram.direct(0x400);
     int index = 0;

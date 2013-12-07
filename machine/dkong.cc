@@ -57,7 +57,7 @@ DonkeyKong::DonkeyKong(const std::string &rom):
     m_nmi_mask(false)
 {
     unsigned hertz = 18432000;
-    add_screen(224, 256, RasterScreen::ROT90);
+    add_screen(224, 256, FrameBuffer::ROT90);
 
     m_bus = AddressBus16_ptr(new AddressBus16());
 

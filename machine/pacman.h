@@ -102,8 +102,8 @@ private:
     void init_sprite(GfxObject<16, 16> *obj, byte_t *b);
     void init_tile(GfxObject<8, 8> *obj, byte_t *b);
 
-    void draw_bg(RasterScreen *screen);
-    void draw_sprites(RasterScreen *screen);
+    void draw_bg(FrameBuffer *screen);
+    void draw_sprites(FrameBuffer *screen);
 
     /* Graphics */
     struct Sprite {

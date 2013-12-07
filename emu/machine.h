@@ -72,7 +72,7 @@ public:
     void send_input(InputKey key, bool pressed);
     void reset(void);
     void run(void);
-    void set_screen(RasterScreen *screen);
+    void set_screen(FrameBuffer *screen);
 
     void add_device(Device *dev);
     void remove_device(Device *dev);
@@ -106,8 +106,8 @@ public:
     void set_line(Device *dev, Line line, LineState state);
 
     void add_screen(short width, short height,
-        RasterScreen::Rotation rotation = RasterScreen::ROT0);
-    RasterScreen *screen(void);
+        FrameBuffer::Rotation rotation = FrameBuffer::ROT0);
+    FrameBuffer *screen(void);
 
     void set_time(EmuTime now);
 
@@ -125,10 +125,10 @@ private:
     std::map<std::string, dipswitch_ptr> m_switches;
     std::map<std::string, IOPort> m_ports;
 
-    RasterScreen *m_screen;
+    FrameBuffer *m_screen;
     short m_screen_width;
     short m_screen_height;
-    RasterScreen::Rotation m_screen_rot;
+    FrameBuffer::Rotation m_screen_rot;
 };
 
 typedef std::unique_ptr<Machine> machine_ptr;

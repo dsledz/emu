@@ -37,7 +37,7 @@ Machine::Machine(void):
     m_screen(NULL),
     m_screen_width(0),
     m_screen_height(0),
-    m_screen_rot(RasterScreen::ROT0)
+    m_screen_rot(FrameBuffer::ROT0)
 {
 }
 
@@ -108,7 +108,7 @@ Machine::dev(const std::string &name)
     throw KeyError(name);
 }
 
-RasterScreen *
+FrameBuffer *
 Machine::screen(void)
 {
     return m_screen;
@@ -216,7 +216,7 @@ Machine::set_line(Device *dev, Line line, LineState state)
 }
 
 void
-Machine::add_screen(short width, short height, RasterScreen::Rotation rotation)
+Machine::add_screen(short width, short height, FrameBuffer::Rotation rotation)
 {
     m_screen_width = width;
     m_screen_height = height;
@@ -228,7 +228,7 @@ Machine::add_screen(short width, short height, RasterScreen::Rotation rotation)
 }
 
 void
-Machine::set_screen(RasterScreen *screen)
+Machine::set_screen(FrameBuffer *screen)
 {
     /* XXX: Not exception safe */
     m_screen = screen;

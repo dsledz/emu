@@ -42,7 +42,7 @@ public:
     GalagaGfx(Machine *machine, const std::string &name, unsigned hertz, AddressBus16 *bus);
     ~GalagaGfx(void);
 
-    void draw_screen(RasterScreen *screen);
+    void draw_screen(FrameBuffer *screen);
 
     uint8_t vmem_read(offset_t offset);
     void vmem_write(offset_t offset, uint8_t value);
@@ -56,8 +56,8 @@ private:
     void init_sprite(GfxObject<16, 16> *obj, byte_t *b);
     void init_tile(GfxObject<8, 8> *obj, byte_t *b);
 
-    void draw_bg(RasterScreen *screen);
-    void draw_sprites(RasterScreen *screen);
+    void draw_bg(FrameBuffer *screen);
+    void draw_sprites(FrameBuffer *screen);
 
     AddressBus16 *m_bus;
 

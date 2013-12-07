@@ -106,7 +106,7 @@ public:
 
         SDL_WM_SetCaption("Emulator", "Emulator");
 
-        _screen = std::unique_ptr<GLRasterScreen>(new GLRasterScreen());
+        _screen = std::unique_ptr<GLFrameBuffer>(new GLFrameBuffer());
         machine()->set_screen(_screen.get());
 
         /* Resize our window to the correct size. */
@@ -173,7 +173,7 @@ public:
 
 private:
 
-    std::unique_ptr<GLRasterScreen> _screen;
+    std::unique_ptr<GLFrameBuffer> _screen;
 
     std::future<void> task;
 };

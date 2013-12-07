@@ -159,7 +159,7 @@ GalagaGfx::init(RomSet *romset)
 }
 
 void
-GalagaGfx::draw_screen(RasterScreen *screen)
+GalagaGfx::draw_screen(FrameBuffer *screen)
 {
     screen->clear();
 
@@ -170,7 +170,7 @@ GalagaGfx::draw_screen(RasterScreen *screen)
 }
 
 void
-GalagaGfx::draw_sprites(RasterScreen *screen)
+GalagaGfx::draw_sprites(FrameBuffer *screen)
 {
     /**
      * Each sprite is described by 6 bytes:
@@ -216,7 +216,7 @@ GalagaGfx::draw_sprites(RasterScreen *screen)
 }
 
 void
-GalagaGfx::draw_bg(RasterScreen *screen)
+GalagaGfx::draw_bg(FrameBuffer *screen)
 {
     /* Render the tilemap */
     byte_t *tile_map = vram.direct(0x000);

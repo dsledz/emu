@@ -279,7 +279,7 @@ VDC::step(void)
     } else if (m_hpos == HBSTART) {
         /* XXX: DMA? */
     } else if (m_hpos > HBEND &&  m_hpos < HBSTART) {
-        RasterScreen *screen = machine()->screen();
+        FrameBuffer *screen = machine()->screen();
         uint8_t bg = 0;
         if (bit_isset(m_reg[CR].d, 7))
             bg = bg_pixel();

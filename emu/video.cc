@@ -27,47 +27,47 @@
 
 using namespace EMU;
 
-RasterScreen::RasterScreen(Rotation rot):
+FrameBuffer::FrameBuffer(Rotation rot):
     _rot(rot)
 {
     resize(0, 0);
 }
 
-RasterScreen::RasterScreen(short width, short height, Rotation rot):
+FrameBuffer::FrameBuffer(short width, short height, Rotation rot):
     _rot(rot)
 {
     resize(width, height);
 }
 
-RasterScreen::~RasterScreen(void)
+FrameBuffer::~FrameBuffer(void)
 {
 
 }
 
 void
-RasterScreen::set_rotation(Rotation rot)
+FrameBuffer::set_rotation(Rotation rot)
 {
     _rot = rot;
 }
 
 void
-RasterScreen::resize(short width, short height)
+FrameBuffer::resize(short width, short height)
 {
     do_resize(width, height);
 }
 
 void
-RasterScreen::render(void)
+FrameBuffer::render(void)
 {
 }
 
 void
-RasterScreen::flip(void)
+FrameBuffer::flip(void)
 {
 }
 
 void
-RasterScreen::do_resize(short width, short height)
+FrameBuffer::do_resize(short width, short height)
 {
     _width = width;
     _height = height;
@@ -76,7 +76,7 @@ RasterScreen::do_resize(short width, short height)
 }
 
 void
-RasterScreen::set(int x, int y, RGBColor color)
+FrameBuffer::set(int x, int y, RGBColor color)
 {
     int sy, sx;
     switch (_rot) {
@@ -91,7 +91,7 @@ RasterScreen::set(int x, int y, RGBColor color)
 }
 
 const RGBColor
-RasterScreen::get(int x, int y) const
+FrameBuffer::get(int x, int y) const
 {
     int sy, sx;
     switch (_rot) {
@@ -108,7 +108,7 @@ RasterScreen::get(int x, int y) const
 }
 
 void
-RasterScreen::clear(void)
+FrameBuffer::clear(void)
 {
     std::fill(_data.begin(), _data.end(), _empty);
 }

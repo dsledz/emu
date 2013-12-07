@@ -127,7 +127,7 @@ public:
         init_fb(width, height);
     }
 
-    virtual void render(RasterScreen *screen) {
+    virtual void render(FrameBuffer *screen) {
         const byte_t *src = screen->fb();
         byte_t *dest = reinterpret_cast<byte_t *>(fb());
         const short dest_pitch = pitch();
@@ -149,7 +149,7 @@ public:
         init_fb(width * 2, height * 2);
     }
 
-    virtual void render(RasterScreen *screen) {
+    virtual void render(FrameBuffer *screen) {
         const byte_t *src = screen->fb();
         byte_t *dest = reinterpret_cast<byte_t *>(fb());
         const short dest_pitch = pitch();
@@ -180,7 +180,7 @@ public:
         init_fb(width * 2, height * 2);
     }
 
-    virtual void render(RasterScreen *screen) {
+    virtual void render(FrameBuffer *screen) {
         const byte_t *src = screen->fb();
         byte_t *dest = reinterpret_cast<byte_t *>(fb());
         const short dest_pitch = pitch();
@@ -213,7 +213,7 @@ public:
         init_fb(width * 2, height * 2);
     }
 
-    virtual void render(RasterScreen *screen) {
+    virtual void render(FrameBuffer *screen) {
         const byte_t *src = screen->fb();
         byte_t *dest = reinterpret_cast<byte_t *>(fb());
         const short dest_pitch = pitch();
@@ -281,27 +281,27 @@ get_transform(GfxScale scale)
     return transform;
 }
 
-GLSLRasterScreen::GLSLRasterScreen(void):
-    RasterScreen(),
+GLSLFrameBuffer::GLSLFrameBuffer(void):
+    FrameBuffer(),
     _scale(GfxScale::None)
 {
     _transform = get_transform(_scale);
 }
 
-GLSLRasterScreen::~GLSLRasterScreen(void)
+GLSLFrameBuffer::~GLSLFrameBuffer(void)
 {
 
 }
 
 void
-GLSLRasterScreen::resize(short width, short height)
+GLSLFrameBuffer::resize(short width, short height)
 {
     do_resize(width, height);
     _transform->resize(width, height);
 }
 
 void
-GLSLRasterScreen::init(void)
+GLSLFrameBuffer::init(void)
 {
     /* XXX: Our screen should be dynamic based on the game's screen. */
     TextureVertex gScreenData[] = {
@@ -342,13 +342,13 @@ GLSLRasterScreen::init(void)
 }
 
 void
-GLSLRasterScreen::flip(void)
+GLSLFrameBuffer::flip(void)
 {
     _transform->render(this);
 }
 
 void
-GLSLRasterScreen::render(void)
+GLSLFrameBuffer::render(void)
 {
     GLuint tmp;
     glGenTextures(1, &tmp);
@@ -397,26 +397,26 @@ GLSLRasterScreen::render(void)
 }
 
 #if OPENGL_LEGACY
-GLRasterScreen::GLRasterScreen(void):
-    RasterScreen(),
+GLFrameBuffer::GLFrameBuffer(void):
+    FrameBuffer(),
     _scale(GfxScale::Scale2x)
 {
     _transform = get_transform(_scale);
 }
 
-GLRasterScreen::~GLRasterScreen(void)
+GLFrameBuffer::~GLFrameBuffer(void)
 {
 }
 
 void
-GLRasterScreen::resize(short width, short height)
+GLFrameBuffer::resize(short width, short height)
 {
     do_resize(width, height);
     _transform->resize(width, height);
 }
 
 void
-GLRasterScreen::init(void)
+GLFrameBuffer::init(void)
 {
     /* XXX: Use new pipeline */
     glClearColor(0.0,0.0,0.0,0.0);
@@ -429,13 +429,13 @@ GLRasterScreen::init(void)
 }
 
 void
-GLRasterScreen::flip(void)
+GLFrameBuffer::flip(void)
 {
     _transform->render(this);
 }
 
 void
-GLRasterScreen::render(void)
+GLFrameBuffer::render(void)
 {
     /* XXX: Use new pipeline */
     GLuint tmp;

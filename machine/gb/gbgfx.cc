@@ -137,7 +137,7 @@ GBGraphics::get_obj(int idx)
 void
 GBGraphics::draw_scanline(int y)
 {
-    RasterScreen *screen = machine()->screen();
+    FrameBuffer *screen = machine()->screen();
     if (bit_isset(m_lcdc, LCDCBits::BGDisplay)) {
         auto cb = bit_isset(m_lcdc, LCDCBits::BGTileMap) ?
                 m_tilemap1 : m_tilemap0;

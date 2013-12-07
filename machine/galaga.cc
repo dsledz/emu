@@ -71,7 +71,7 @@ Galaga::Galaga(const std::string &rom):
 {
     unsigned hertz = 18432000;
 
-    add_screen(224, 288, RasterScreen::ROT90);
+    add_screen(224, 288, FrameBuffer::ROT90);
 
     m_bus = AddressBus16_ptr(new AddressBus16());
 

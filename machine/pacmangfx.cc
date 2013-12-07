@@ -143,7 +143,7 @@ PacmanGfx::init(RomSet *romset)
 void
 PacmanGfx::do_vdraw(void)
 {
-    RasterScreen *screen = machine()->screen();
+    FrameBuffer *screen = machine()->screen();
 
     screen->clear();
     draw_bg(screen);
@@ -158,7 +158,7 @@ PacmanGfx::do_vblank(void)
 }
 
 void
-PacmanGfx::draw_sprites(RasterScreen *screen)
+PacmanGfx::draw_sprites(FrameBuffer *screen)
 {
     for (int off = 0; off < 8; off++) {
         int idx = m_spr[off].idx;
@@ -182,7 +182,7 @@ PacmanGfx::draw_sprites(RasterScreen *screen)
 }
 
 void
-PacmanGfx::draw_bg(RasterScreen *screen)
+PacmanGfx::draw_bg(FrameBuffer *screen)
 {
     /* Render the tilemap */
     byte_t *tile_map = m_vram.direct(0x000);

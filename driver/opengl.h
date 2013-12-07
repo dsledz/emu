@@ -179,7 +179,7 @@ public:
     }
 
     virtual void resize(short width, short height) = 0;
-    virtual void render(RasterScreen *screen) = 0;
+    virtual void render(FrameBuffer *screen) = 0;
 
 protected:
     void init_fb(short width, short height) {
@@ -207,12 +207,12 @@ enum class GfxScale {
 typedef std::unique_ptr<GfxTransform> gfx_transform_ptr;
 gfx_transform_ptr get_transform(GfxScale scale);
 
-class GLSLRasterScreen: public RasterScreen
+class GLSLFrameBuffer: public FrameBuffer
 {
 public:
 
-    GLSLRasterScreen(void);
-    virtual ~GLSLRasterScreen(void);
+    GLSLFrameBuffer(void);
+    virtual ~GLSLFrameBuffer(void);
 
     virtual void resize(short width, short height);
     virtual void render(void);
@@ -240,12 +240,12 @@ typedef std::lock_guard<std::mutex> mtx_lock;
 
 #if OPENGL_LEGACY
 
-class GLRasterScreen: public RasterScreen
+class GLFrameBuffer: public FrameBuffer
 {
 public:
 
-    GLRasterScreen(void);
-    virtual ~GLRasterScreen(void);
+    GLFrameBuffer(void);
+    virtual ~GLFrameBuffer(void);
 
     virtual void resize(short width, short height);
     virtual void render(void);

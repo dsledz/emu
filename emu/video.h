@@ -91,7 +91,7 @@ struct GfxObject {
 /**
  * Emulated screen.
  */
-class RasterScreen
+class FrameBuffer
 {
 public:
     enum Rotation {
@@ -100,10 +100,10 @@ public:
         ROT180 = 2,
         ROT270 = 3
     };
-    RasterScreen(Rotation rot=ROT0);
+    FrameBuffer(Rotation rot=ROT0);
 
-    RasterScreen(short width, short height, Rotation rot=ROT0);
-    virtual ~RasterScreen(void);
+    FrameBuffer(short width, short height, Rotation rot=ROT0);
+    virtual ~FrameBuffer(void);
 
     void set_rotation(Rotation rot);
 
@@ -145,10 +145,10 @@ private:
     RGBColor _empty;
 };
 
-typedef std::function<void (RasterScreen *)> render_cb;
+typedef std::function<void (FrameBuffer *)> render_cb;
 
 template<class gfx, class palette> static inline void
-draw_gfx(RasterScreen *screen, palette *pal, gfx *obj, int sx, int sy,
+draw_gfx(FrameBuffer *screen, palette *pal, gfx *obj, int sx, int sy,
          bool flipx=false, bool flipy=false, RGBColor transparent=trans)
 {
     if (flipx) {
@@ -192,7 +192,7 @@ draw_gfx(RasterScreen *screen, palette *pal, gfx *obj, int sx, int sy,
 
 /* Draw the inverse */
 template<class gfx, class palette> static inline void
-draw_gfx_overlay(RasterScreen *screen, palette *pal, gfx *obj, int sx, int sy,
+draw_gfx_overlay(FrameBuffer *screen, palette *pal, gfx *obj, int sx, int sy,
                  RGBColor target, bool flipx=false, bool flipy=false,
                  RGBColor transparent=trans)
 {

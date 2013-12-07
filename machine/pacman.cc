@@ -63,7 +63,7 @@ Pacman::Pacman(const std::string &rom):
     m_hertz(18432000),
     m_ram(this, "ram", 0x800)
 {
-    add_screen(224, 288, RasterScreen::ROT90);
+    add_screen(224, 288, FrameBuffer::ROT90);
 
     m_bus = AddressBus16_ptr(new AddressBus16());
 

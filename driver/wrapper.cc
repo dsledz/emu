@@ -30,9 +30,9 @@
 using namespace EMU;
 
 #if OPENGL_LEGACY
-#define GL_SCREEN GLRasterScreen
+#define GL_SCREEN GLFrameBuffer
 #else
-#define GL_SCREEN GLSLRasterScreen
+#define GL_SCREEN GLSLFrameBuffer
 #endif
 
 class OSXEmulator: public Emulator
