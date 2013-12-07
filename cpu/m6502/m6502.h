@@ -25,9 +25,11 @@
 #pragma once
 
 #include "emu/emu.h"
+#include "cpu/lib/cpu.h"
 #include "cpu/lib/jit.h"
 
 using namespace EMU;
+using namespace CPU;
 using namespace JITx64;
 
 namespace M6502v2 {
@@ -37,10 +39,18 @@ struct M6502State
     M6502State(void) = default;
 
     uint8_t bus_read(uint16_t addr) {
-        return cpu->bus_read(addr);
+        return bus->read(addr);
     }
     void bus_write(uint16_t addr, uint8_t value) {
-        cpu->bus_write(addr, value);
+        bus->write(addr, value);
+    }
+    uint8_t get_flags(uint16_t flags) {
+        F.C = bit_isset(flags, Flags::CF);
+        F.Z = bit_isset(flags, Flags::ZF);
+        F.V = bit_isset(flags, Flags::OF);
+        F.N = bit_isset(flags, Flags::SF);
+
+        return SR;
     }
 
     reg8_t A;
@@ -68,25 +78,13 @@ struct M6502State
     reg16_t EA;  /* %r8 */
     reg8_t  ARG; /* %rdx */
 
-    Cpu<AddressBus16> *cpu;
+    AddressBus16 *bus;
     uint8_t icycles;
 } __attribute__((packed));
 
 class M6502Cpu;
 
-struct M6502Opcode
-{
-    uint8_t code;
-    const char *name;
-    int bytes;
-    int cycles;
-    std::function<void (M6502Cpu *, M6502State *)> addr_mode;
-    std::function<void (M6502Cpu *, M6502State *)> operation;
-    std::function<void (JITEmitter *, std::function<uint8_t (uint16_t)>, uint16_t)> jit_address;
-    std::function<bool (JITEmitter *, uint16_t)> jit_op;
-};
-
-class M6502Cpu: public Cpu<AddressBus16>
+class M6502Cpu: public Cpu<AddressBus16, M6502State, uint8_t>
 {
 public:
     M6502Cpu(Machine *machine, const std::string &name, unsigned hertz,
@@ -102,25 +100,16 @@ public:
     }
 
     void log_state(void);
-    void log_op(const M6502Opcode *op, uint16_t pc, const uint8_t *instr);
+    void log_op(const Opcode *op, uint16_t pc, const uint8_t *instr);
 
     virtual void test_step(void);
     virtual void step(void);
     virtual std::string dasm(addr_type addr);
 
 protected:
-    void dispatch(uint16_t pc);
-    void jit_dispatch(uint16_t pc);
-    jit_block_ptr jit_compile(uint16_t pc);
-
     LineState m_nmi_line;
     LineState m_irq_line;
     LineState m_reset_line;
-    M6502State m_state;
-    JITEmitter m_jit;
-    JITState   m_jit_state;
-    std::unordered_map<uint32_t, jit_block_ptr> m_jit_cache;
-    std::unordered_map<uint8_t, M6502Opcode> m_opcodes;
 };
 
 };

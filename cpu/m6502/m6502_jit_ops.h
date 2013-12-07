@@ -551,9 +551,49 @@ namespace M6502v2
 
     JIT_OP(PHP)
     {
+        _jit->xPUSHF();
+        _jit->xPUSH(RegEA);
+        _jit->xMOV16(RegEA, 0);
+        _jit->xPUSHF16();
+
+        _jit->xPOP(RegTMP);
+        _jit->xPUSH(RegTMP);
+        _jit->xAND(RegTMP, 1 << Flags::CF);
+        /* CF and C are both 0 */
+        _jit->xOR(RegEA, RegTMP);
+
+        _jit->xPOP(RegTMP);
+        _jit->xPUSH(RegTMP);
+        _jit->xAND(RegTMP, 1 << Flags::ZF);
+        _jit->xROR(RegTMP, Flags::ZF);
+        _jit->xROL(RegTMP, 1);
+        _jit->xOR(RegEA, RegTMP);
+
+        _jit->xPOP(RegTMP);
+        _jit->xPUSH(RegTMP);
+        _jit->xAND(RegTMP, 1 << Flags::OF);
+        _jit->xROR(RegTMP, Flags::OF);
+        _jit->xROL(RegTMP, 6);
+        _jit->xOR(RegEA, RegTMP);
+
+        _jit->xPOP(RegTMP);
+        _jit->xPUSH(RegTMP);
+        _jit->xAND(RegTMP, 1 << Flags::SF);
+        _jit->xROR(RegTMP, Flags::SF);
+        _jit->xROL(RegTMP, 7);
+        _jit->xOR(RegEA, RegTMP);
+
+        /* RegEAl contains the new 4 bits */
+        _jit->xMOV16(RegTMP, RegState, 4);
+        _jit->xAND(RegTMPl, 0x3C);
+        _jit->xOR(RegTMPl, RegEAl);
+        _jit->xMOV16(RegState, 4, RegTMP);
+
         /* XXX: zero page */
-        _jit->xFLAGS(RegTMPl);
         push(_jit, RegTMPl);
+        _jit->xPOPF16();
+        _jit->xPOP(RegEA);
+        _jit->xPOPF();
         return true;
     }
 

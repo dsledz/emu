@@ -37,8 +37,8 @@ using namespace std::placeholders;
     name, \
     bytes, \
     cycles, \
-    std::bind(&addr, _2), \
-    std::bind(&op, _2, ##__VA_ARGS__), \
+    std::bind(&addr, _1), \
+    std::bind(&op, _1, ##__VA_ARGS__), \
     std::bind(&addr ## _jit, _1, _2, _3), \
     std::bind(&op ## _jit, _1, _2, ##__VA_ARGS__), \
 }
@@ -47,7 +47,7 @@ M65c02Cpu::M65c02Cpu(Machine *machine, const std::string &name, unsigned hertz,
     AddressBus16 *bus):
     M6502Cpu(machine, name, hertz, bus)
 {
-    M6502Opcode opcodes[] = {
+    Opcode opcodes[] = {
         OPCODE(0x00, 1, 7, "BRK", Inherent, BRK),
         OPCODE(0x01, 2, 6, "ORA X,ind", XIndirect, ORA),
         OPCODE(0x04, 2, 2, "TSB #", Immediate, TSB),

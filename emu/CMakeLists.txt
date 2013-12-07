@@ -12,7 +12,6 @@ add_library(emu
 
 if (BUILD_TESTING)
     add_executable(emu-check
-        cpu_test.cc
         emu_test.cc
         task_test.cc
         time_test.cc

@@ -21,6 +21,10 @@ namespace HuC6280v2
     using namespace M6502v2;
     using namespace M65C02v2;
 
+    JIT_OP_NYI(CLA);
+
+    JIT_OP_NYI(CSH);
+
     JIT_OP_NYI(SXY);
 
     JIT_OP_NYI(SAX);

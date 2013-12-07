@@ -21,15 +21,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-/**
- * JIT Cpu
- */
 #pragma once
 
-#include "emu/bits.h"
-#include "emu/mem.h"
-#include "emu/bus.h"
-#include "emu/cpu.h"
+#include "emu/emu.h"
 
 using namespace EMU;
 
@@ -155,33 +149,27 @@ enum Flags {
     OF = 11,
 };
 
-typedef Cpu<AddressBus16> JITCpu;
-
 /**
  * Each JITTed CPU keeps track of it's private data here.
  */
 struct JITState
 {
 public:
-
     typedef uint8_t (*jit_bus_read_t)(void *, uint16_t addr);
     typedef void    (*jit_bus_write_t)(void *, uint16_t addr, uint8_t value);
-    typedef uint8_t (*jit_flags_t)(void *, uint16_t flags);
 
-    JITState(JITCpu *cpu, jit_bus_read_t read, jit_bus_write_t write,
-             jit_flags_t flags):
-        _ctx(reinterpret_cast<uintptr_t>(cpu)),
-        _bus_read(reinterpret_cast<uintptr_t>(read)),
-        _bus_write(reinterpret_cast<uintptr_t>(write)),
-        _flags(reinterpret_cast<uintptr_t>(flags))
+    JITState(uintptr_t ctx, jit_bus_read_t read, jit_bus_write_t write):
+        m_ctx(reinterpret_cast<uintptr_t>(ctx)),
+        m_bus_read(reinterpret_cast<uintptr_t>(read)),
+        m_bus_write(reinterpret_cast<uintptr_t>(write))
     {
     }
 
 private:
-    uintptr_t _ctx;
-    uintptr_t _bus_read;
-    uintptr_t _bus_write;
-    uintptr_t _flags;
+    uintptr_t m_ctx;
+    uintptr_t m_bus_read;
+    uintptr_t m_bus_write;
+
 } __attribute__((packed));
 
 /**
@@ -191,28 +179,51 @@ class JITBlock
 {
 public:
     JITBlock(exec_buf_t code, uint32_t pc, bvec source, int len, int cycles):
-        pc(pc), len(len), cycles(cycles), _code(code), _source(source)
+        pc(pc), len(len), cycles(cycles), m_code(code), m_source(source)
     {
     }
 
     const uint8_t *code(void) const
     {
-        return _code.data();
+        return m_code.data();
     }
 
     const bvec &source(void) const
     {
-        return _source;
+        return m_source;
     }
 
     bool valid(std::function<uint8_t (uint16_t)> read_cb) const
     {
-        for (unsigned i = 0; i < _source.size(); i++) {
+        for (unsigned i = 0; i < m_source.size(); i++) {
             uint8_t v = read_cb(pc + i);
-            if (v != _source[i])
+            if (v != m_source[i])
                 return false;
         }
         return true;
+    }
+
+    void execute(uintptr_t cpu_state, uintptr_t jit_state)
+    {
+        uintptr_t func = reinterpret_cast<uintptr_t>(m_code.data());
+
+        asm volatile(
+            "mov %0, %%r15;\n"
+            "mov %1, %%r14;\n"
+            "movw 0(%%r15), %%bx;\n"
+            "movw 2(%%r15), %%cx;\n"
+            "pushw 8(%%r15);\n" /* flags */
+            "popfw;\n"
+            "callq *%2;\n"
+            "pushfw;\n"
+            "popw 8(%%r15);\n"
+            "movw %%bx, 0(%%r15);\n"
+            "movw %%cx, 2(%%r15);\n"
+            :
+            : "r"(cpu_state), "r"(jit_state), "m"(func)
+            : "rax", "rbx", "rcx", "rdx", "rdi", "rsi", "r15", "r14", "rsp", "rbp"
+            );
+
     }
 
     uint32_t pc;
@@ -220,8 +231,8 @@ public:
     Cycles cycles;
 
 private:
-    exec_buf_t _code;
-    bvec _source;
+    exec_buf_t m_code;
+    bvec m_source;
 };
 
 typedef std::unique_ptr<JITBlock> jit_block_ptr;
@@ -282,6 +293,9 @@ public:
 
     void xAND(RegIdx8 dst, RegIdx8 src, RegIdx16 addr);
     void xAND(RegIdx8 dst, RegIdx8 src);
+    void xAND(RegIdx16 dst, RegIdx16 src);
+    void xAND(RegIdx16 dst, uint16_t imm);
+    void xAND(RegIdx8 dst, uint8_t imm);
 
     void xCMP(RegIdx8 dst, RegIdx8 src, RegIdx16 addr);
     void xCMP(RegIdx8 dst, RegIdx8 src);
@@ -298,7 +312,7 @@ public:
 
     void xOR(RegIdx8 dst, RegIdx8 src, RegIdx16 addr);
     void xOR(RegIdx8 dst, RegIdx8 src);
-    void xOR(RegIdx16 dst, RegIdx16 addr);
+    void xOR(RegIdx16 dst, RegIdx16 src);
 
     void xRCL(RegIdx8 dst, RegIdx16 addr);
     void xRCL(RegIdx8 dst);
@@ -336,6 +350,7 @@ public:
     void xBR(enum Condition cc, RegIdx16 pc);
 
     void xSETPC(RegIdx16 dst);
+    void xSETPC(uint16_t pc);
 
     void xRETQ(void);
 

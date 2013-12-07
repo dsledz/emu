@@ -28,6 +28,7 @@
 #pragma once
 
 #include "emu/emu.h"
+#include "cpu/lib/cpu.h"
 
 namespace M6809 {
 
@@ -133,31 +134,31 @@ struct M6809State
     LineState Irq[M6809Irq::Size];
 };
 
-#define _rA    _state.D.b.l
-#define _rB    _state.D.b.h
-#define _rD    _state.D.d
-#define _rX    _state.X.d
-#define _rXl   _state.X.b.l
-#define _rXh   _state.X.b.h
-#define _rY    _state.Y.d
-#define _rYl   _state.Y.b.l
-#define _rYh   _state.Y.b.h
-#define _rU    _state.U.d
-#define _rUl   _state.U.b.l
-#define _rUh   _state.U.b.h
-#define _rS    _state.S.d
-#define _rSl   _state.S.b.l
-#define _rSh   _state.S.b.h
-#define _rPC   _state.PC.d
-#define _rPCl  _state.PC.b.l
-#define _rPCh  _state.PC.b.h
-#define _rDP   _state.DP
-#define _rCC   _state.CC
-#define _rF    _state.F
+#define _rA    m_state.D.b.l
+#define _rB    m_state.D.b.h
+#define _rD    m_state.D.d
+#define _rX    m_state.X.d
+#define _rXl   m_state.X.b.l
+#define _rXh   m_state.X.b.h
+#define _rY    m_state.Y.d
+#define _rYl   m_state.Y.b.l
+#define _rYh   m_state.Y.b.h
+#define _rU    m_state.U.d
+#define _rUl   m_state.U.b.l
+#define _rUh   m_state.U.b.h
+#define _rS    m_state.S.d
+#define _rSl   m_state.S.b.l
+#define _rSh   m_state.S.b.h
+#define _rPC   m_state.PC.d
+#define _rPCl  m_state.PC.b.l
+#define _rPCh  m_state.PC.b.h
+#define _rDP   m_state.DP
+#define _rCC   m_state.CC
+#define _rF    m_state.F
 
-#define _rEA   _state.EA.d
-#define _rRD   _state.RD
-#define _rWD   _state.WD
+#define _rEA   m_state.EA.d
+#define _rRD   m_state.RD
+#define _rWD   m_state.WD
 
 #define ADDR(addr) void addr(void)
 #define OP(name) void name(void)
@@ -169,7 +170,7 @@ struct M6809Opcode {
     std::function<void (void)> operation;
 };
 
-class M6809Cpu: public EMU::Cpu<AddressBus16>
+class M6809Cpu: public CPU::Cpu<AddressBus16, M6809State, uint16_t>
 {
 public:
     M6809Cpu(Machine *machine, const std::string &name, unsigned hertz,
@@ -179,20 +180,12 @@ public:
 
     virtual void line(Line line, LineState state);
 
-    M6809State *state(void) {
-        return &_state;
-    }
-
-    const M6809State *state(void) const {
-        return &_state;
-    }
-
     virtual void step(void);
     virtual std::string dasm(addr_type addr);
 
 private:
     byte_t pc_read(void) {
-        byte_t tmp = bus_read(_state.PC.d++);
+        byte_t tmp = bus_read(m_state.PC.d++);
         return tmp;
     }
 
@@ -202,13 +195,13 @@ private:
     }
 
     byte_t data_read(void) {
-        _state.RD = bus_read(_state.EA.d);
-        return _state.RD;
+        m_state.RD = bus_read(m_state.EA.d);
+        return m_state.RD;
     }
 
     void data_write(byte_t data) {
-        _state.WD = data;
-        bus_write(_state.EA.d, _state.WD);
+        m_state.WD = data;
+        bus_write(m_state.EA.d, m_state.WD);
     }
 
     void _reset(void);
@@ -225,8 +218,8 @@ private:
     }
 
     ADDR(Direct) {
-        _state.EA.b.l = pc_read();
-        _state.EA.b.h = _rDP;
+        m_state.EA.b.l = pc_read();
+        m_state.EA.b.h = _rDP;
     }
 
     ADDR(Extended) {
@@ -942,7 +935,6 @@ private:
     void check_interrupt(void);
     void take_interrupt(uint16_t addr);
 
-    M6809State _state;
     std::unordered_map<uint16_t, M6809Opcode> _opcodes;
 
     M6809Opcode _op;

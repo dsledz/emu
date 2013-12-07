@@ -31,60 +31,13 @@ using namespace EMU;
 using namespace M6502v2;
 using namespace std::placeholders;
 
-#define JIT 0
-
-extern "C" uint8_t
-m6502_bus_read(void *ctx, uint16_t addr)
-{
-    M6502Cpu *cpu = reinterpret_cast<M6502Cpu *>(ctx);
-
-    return cpu->bus_read(addr);
-}
-extern "C" void
-m6502_bus_write(void *ctx, uint16_t addr, uint8_t value)
-{
-    M6502Cpu *cpu = reinterpret_cast<M6502Cpu *>(ctx);
-
-    cpu->bus_write(addr, value);
-}
-
-extern "C" uint8_t
-m6502_get_flags(void *ctx, uint16_t flags)
-{
-    M6502Cpu *cpu = reinterpret_cast<M6502Cpu *>(ctx);
-
-    M6502State *state = cpu->get_state();
-
-    state->F.C = bit_isset(flags, Flags::CF);
-    state->F.Z = bit_isset(flags, Flags::ZF);
-    state->F.V = bit_isset(flags, Flags::OF);
-    state->F.N = bit_isset(flags, Flags::SF);
-
-    return state->SR;
-}
-
-extern "C" uint16_t
-m6502_set_flags(void *ctx, uint16_t flags)
-{
-    M6502Cpu *cpu = reinterpret_cast<M6502Cpu *>(ctx);
-
-    M6502State *state = cpu->get_state();
-
-    bit_set(flags, Flags::CF, state->F.C);
-    bit_set(flags, Flags::ZF, state->F.Z);
-    bit_set(flags, Flags::OF, state->F.V);
-    bit_set(flags, Flags::SF, state->F.N);
-
-    return flags;
-}
-
 #define OPCODE(code, bytes, cycles, name, addr, op) { \
     code, \
     name, \
     bytes, \
     cycles, \
-    std::bind(&addr, _2), \
-    std::bind(&op, _2), \
+    std::bind(&addr, _1), \
+    std::bind(&op, _1), \
     std::bind(&addr ## _jit, _1, _2, _3), \
     std::bind(&op ## _jit, _1, _2), \
 }
@@ -94,12 +47,9 @@ M6502Cpu::M6502Cpu(Machine *machine, const std::string &name,
     Cpu(machine, name, hertz, bus),
     m_nmi_line(LineState::Clear),
     m_irq_line(LineState::Clear),
-    m_reset_line(LineState::Clear),
-    m_state(),
-    m_jit(),
-    m_jit_state(this, m6502_bus_read, m6502_bus_write, m6502_get_flags)
+    m_reset_line(LineState::Clear)
 {
-    M6502Opcode opcodes[] = {
+    Opcode opcodes[] = {
         OPCODE(0x00, 1, 7, "BRK", Inherent, BRK),
         OPCODE(0x01, 2, 6, "ORA X,ind", XIndirect, ORA),
         OPCODE(0x05, 2, 3, "ORA zpg", ZeroPage, ORA),
@@ -341,43 +291,6 @@ M6502Cpu::step(void)
 #endif
 }
 
-jit_block_ptr
-M6502Cpu::jit_compile(uint16_t start_pc)
-{
-    m_jit.reset();
-    bool done = false;
-    uint32_t len = 0;
-    uint32_t cycles = 0;
-    auto br = std::bind(&M6502Cpu::bus_read, this, _1);
-    bvec source;
-
-    while (!done) {
-        uint16_t pc = start_pc + len;
-        uint8_t code = bus_read(pc);
-
-        auto it = m_opcodes.find(code);
-        if (it == m_opcodes.end()) {
-            std::cout << "Unknown opcode: " << Hex(code) << std::endl;
-            throw CpuOpcodeFault(name(), code, pc);
-        }
-        M6502Opcode *op = &it->second;
-
-        for (unsigned i = 0; i < op->bytes; i++) {
-            source.push_back(bus_read(pc + i));
-        }
-
-        len += op->bytes;
-        cycles += op->cycles;
-        op->jit_address(&m_jit, br, pc);
-        done = !op->jit_op(&m_jit, pc);
-    }
-
-    m_jit.xMOV16(RegEA, start_pc + len);
-    m_jit.xSETPC(RegEA);
-    m_jit.xRETQ();
-    return jit_block_ptr(new JITBlock(m_jit.code(), start_pc, source, len, cycles));
-}
-
 void
 M6502Cpu::log_state(void)
 {
@@ -393,7 +306,7 @@ M6502Cpu::log_state(void)
 }
 
 void
-M6502Cpu::log_op(const M6502Opcode *op, uint16_t pc, const uint8_t *instr)
+M6502Cpu::log_op(const Opcode *op, uint16_t pc, const uint8_t *instr)
 {
     std::stringstream os;
     os << std::setw(8) << name() << ":"
@@ -451,110 +364,5 @@ std::string
 M6502Cpu::dasm(addr_type addr)
 {
     return "";
-}
-
-void
-M6502Cpu::dispatch(uint16_t pc)
-{
-    uint8_t buf[8] = {};
-    buf[0] = bus_read(m_state.PC.d++);
-
-    auto it = m_opcodes.find(buf[0]);
-    if (it == m_opcodes.end()) {
-        std::cout << "Unknown opcode: " << Hex(buf[0]) << std::endl;
-        throw CpuOpcodeFault(name(), buf[0], pc);
-    }
-
-    M6502Opcode *op = &it->second;
-
-    m_state.cpu = this;
-    m_state.icycles = 0;
-
-    op->addr_mode(this, &m_state);
-    op->operation(this, &m_state);
-    add_icycles(m_state.icycles);
-
-    IF_LOG(Trace) {
-        log_op(op, pc, buf);
-        log_state();
-    }
-
-    return;
-}
-
-void
-M6502Cpu::jit_dispatch(uint16_t pc)
-{
-    JITBlock *block = NULL;
-
-    auto it = m_jit_cache.find(pc);
-    if (it == m_jit_cache.end()) {
-        jit_block_ptr b = jit_compile(pc);
-        block = b.get();
-        m_jit_cache.insert(std::make_pair(pc, std::move(b)));
-    } else if (!it->second->valid(std::bind(&M6502Cpu::bus_read, this, _1))) {
-        m_jit_cache.erase(it);
-        jit_block_ptr b = jit_compile(pc);
-        block = b.get();
-        m_jit_cache.insert(std::make_pair(pc, std::move(b)));
-    } else {
-        block = it->second.get();
-    }
-
-    IF_LOG(Trace) {
-        log_state();
-        assert(block->pc != 0);
-        std::cout << "Executing block at " << Hex(block->pc)
-                  << " (" << block->len << " bytes, "
-                  << block->cycles.v << " cycles)" << std::endl;
-        int off = 0;
-        const bvec & source = block->source();
-        while (off < source.size()) {
-            uint8_t code = source.at(off);
-            auto it = m_opcodes.find(code);
-            if (it == m_opcodes.end()) {
-                std::cout << "Unknown opcode: " << Hex(code) << std::endl;
-                throw CpuOpcodeFault(name(), code, pc + off);
-            }
-            M6502Opcode *op = &it->second;
-            log_op(op, pc + off, source.data() + off);
-            off += op->bytes;
-        }
-    }
-
-    uintptr_t func = reinterpret_cast<uintptr_t>(block->code());
-
-    bit_set(m_state.NativeFlags.d, Flags::CF, m_state.F.C);
-    bit_set(m_state.NativeFlags.d, Flags::ZF, m_state.F.Z);
-    bit_set(m_state.NativeFlags.d, Flags::OF, m_state.F.V);
-    bit_set(m_state.NativeFlags.d, Flags::SF, m_state.F.N);
-
-    asm volatile(
-        "mov %0, %%r15;\n"
-        "mov %1, %%r14;\n"
-        "movw 0(%%r15), %%bx;\n"
-        "movw 2(%%r15), %%cx;\n"
-        "pushw 8(%%r15);\n" /* flags */
-        "popfw;\n"
-        "callq *%2;\n"
-        "pushfw;\n"
-        "popw 8(%%r15);\n"
-        "movw %%bx, 0(%%r15);\n"
-        "movw %%cx, 2(%%r15);\n"
-        :
-        : "r"(&m_state), "r"(&m_jit_state), "m"(func)
-        : "rax", "rbx", "rcx", "rdx", "rdi", "rsi", "r15", "r14", "rsp", "rbp"
-    );
-
-    // Update our flags
-    m_state.F.C = bit_isset(m_state.NativeFlags.d, Flags::CF);
-    m_state.F.Z = bit_isset(m_state.NativeFlags.d, Flags::ZF);
-    m_state.F.V = bit_isset(m_state.NativeFlags.d, Flags::OF);
-    m_state.F.N = bit_isset(m_state.NativeFlags.d, Flags::SF);
-
-    // Account for the extra cycles if we branched
-    add_icycles(block->cycles);
-    if (m_state.PC.d != (block->pc + block->len))
-        add_icycles(2);
 }
 

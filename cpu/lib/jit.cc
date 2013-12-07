@@ -253,43 +253,6 @@ JITEmitter::xCALL(RegIdx64L base, uint8_t offset)
 }
 
 void
-JITEmitter::xFLAGS(RegIdx8 dst)
-{
-    assert(dst != RegIdx8::RegDH);
-
-    /* pushf */
-    xPUSHF();
-
-    xPUSH(RegIdx16::RegBX);
-    xPUSH(RegIdx16::RegCX);
-    xPUSH(RegIdx16::RegDX);
-
-    /* Arg 2 */
-    xPUSH(RegIdx16::RegSI);
-    xPUSHF16();
-    xPOP(RegIdx16::RegSI);
-
-    /* Arg 1 */
-    xPUSH(RegIdx16::RegDI);
-    xMOV64(RegIdx64::RegRDI, RegIdx64L::RegR14, 0);
-
-    /* jit_flags_t */
-    xCALL(RegIdx64L::RegR14, 24);
-    xPOP(RegIdx16::RegDI);
-    xPOP(RegIdx16::RegSI);
-
-    xPOP(RegIdx16::RegDX);
-    xPOP(RegIdx16::RegCX);
-    xPOP(RegIdx16::RegBX);
-
-    /* Copy the result */
-    xMOV8(dst, RegIdx8::RegAL);
-
-    /* popf */
-    xPOPF();
-}
-
-void
 JITEmitter::xLOAD(RegIdx8 dst, RegIdx16 addr)
 {
     /* pushf */
@@ -393,6 +356,24 @@ JITEmitter::xAND(RegIdx8 dst, RegIdx8 src)
     w8(0x20); /* AND r/m8,r8 */
     wModRM(dst, src);
     xPOPF();
+}
+
+void
+JITEmitter::xAND(RegIdx16 dst, uint16_t immm)
+{
+    wOverride();
+    w8(0x81);
+    wModRM(4, 0, dst);
+    w16(immm);
+}
+
+void
+JITEmitter::xAND(RegIdx8 dst, uint8_t immm)
+{
+    wOverride();
+    w8(0x80);
+    wModRM(4, 0, dst);
+    w8(immm);
 }
 
 void

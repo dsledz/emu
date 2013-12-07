@@ -29,8 +29,7 @@ using namespace M6809;
 
 M6809Cpu::M6809Cpu(Machine *machine, const std::string &name, unsigned hertz,
     AddressBus16 *bus):
-    Cpu(machine, name, hertz, bus),
-    _state()
+    Cpu(machine, name, hertz, bus)
 {
     build_table();
 }
@@ -376,7 +375,7 @@ M6809Cpu::check_interrupt(void)
 {
     M6809Irq irq = M6809Irq::Reset;
     for (irq = M6809Irq::Reset; irq > 0; irq--) {
-        if (_state.Irq[irq] != LineState::Clear)
+        if (m_state.Irq[irq] != LineState::Clear)
             break;
     }
     switch (irq) {

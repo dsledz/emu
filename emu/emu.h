@@ -39,4 +39,3 @@
 #include "emu/video.h"
 #include "emu/machine.h"
 #include "emu/options.h"
-#include "emu/cpu.h"

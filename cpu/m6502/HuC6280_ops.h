@@ -2,7 +2,7 @@
 
 #include "cpu/m6502/m6502_ops.h"
 
-namespace HuC6280
+namespace HuC6280v2
 {
     using namespace M6502v2;
 

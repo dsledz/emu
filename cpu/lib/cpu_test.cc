@@ -24,14 +24,17 @@
  */
 
 #include "emu/test.h"
-
 #include "cpu/lib/cpu.h"
 
 using namespace EMU;
 using namespace EMUTest;
 using namespace CPU;
 
-class TestCpu: public Cpu<AddressBus16> {
+struct TestState {
+
+};
+
+class TestCpu: public Cpu<AddressBus16, TestState, uint8_t> {
 public:
     TestCpu(Machine *machine, const std::string &name, unsigned hertz,
             AddressBus16 *bus):
@@ -55,6 +58,6 @@ public:
 
 TEST(CpuTest, constructor)
 {
-    TestCpu cpu(NULL, "maincpu", 1000000, NULL);
+    TestMachine<TestCpu> machine;
 }
 
