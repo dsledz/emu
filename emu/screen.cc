@@ -97,6 +97,7 @@ ScreenDevice::next_vstate(void)
         break;
     case VState::VEnd:
         m_vstate = VState::VStart;
+        m_vpos = 0;
         do_vstart();
         break;
     }
@@ -116,12 +117,15 @@ ScreenDevice::set_hstate(HState state)
         break;
     case HState::HDraw:
         m_hpos = m_hbend;
+        do_hdraw();
         break;
     case HState::HBlank:
         m_hpos = m_hbstart;
+        do_hblank();
         break;
     case HState::HEnd:
         m_hpos = 0;
+        do_hend();
         break;
     }
 }

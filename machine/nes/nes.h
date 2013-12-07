@@ -108,20 +108,24 @@ protected:
     bvec m_rom;
 };
 
-class NESPPU: public ClockedDevice
+class NESPPU: public ScreenDevice
 {
 public:
     NESPPU(NES *machine, const std::string &name, unsigned hertz);
     virtual ~NESPPU(void);
 
-    virtual void execute(void);
     virtual void reset(void);
 
     int draw_bg(void);
     int draw_sprite(int color, int x, int y);
 
     Cycles step(void);
+
 private:
+
+    virtual void do_hend(void);
+    virtual void do_hdraw(void);
+    virtual void do_vblank(void);
 
     void init_palette(void);
 
@@ -204,14 +208,12 @@ private:
         addr_t d;
     } m_t;
     byte_t m_x;
+    byte_t m_tx;
     byte_t m_latch;
     bool m_flip_flop;
     bool m_vram_locked;
 
     std::vector<int> m_sprites;
-
-    int m_hpos; /* Current pixel gun x position 0 - 340 */
-    int m_vpos; /* Current pixel gun y position 0 - 261 */
 
     byte_t m_bgp0; /* Plane 0 of background */
     byte_t m_bgp1; /* Plane 1 of background */

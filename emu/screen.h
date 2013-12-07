@@ -65,17 +65,17 @@ protected:
     virtual void do_vblank(void) { }
     virtual void do_vend(void) { }
 
+    HState m_hstate;
+    unsigned m_hpos;
+    VState m_vstate;
+    unsigned m_vpos;
+
 private:
 
     HState next_hstate(unsigned *cycles_out);
     VState next_vstate(void);
     void set_hstate(HState state);
     void set_vstate(VState state);
-
-    HState m_hstate;
-    unsigned m_hpos;
-    VState m_vstate;
-    unsigned m_vpos;
 
     unsigned m_width;
     unsigned m_height;

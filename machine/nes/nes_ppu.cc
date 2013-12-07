@@ -29,7 +29,7 @@ using namespace EMU;
 using namespace NESMachine;
 
 NESPPU::NESPPU(NES *machine, const std::string &name, unsigned hertz):
-    ClockedDevice(machine, name, hertz),
+    ScreenDevice(machine, name, hertz, 340, 261, 256, 0, 260, 20),
     m_color_table(0x40),
     m_palette(0x20),
     m_palette_bytes(0x20),
@@ -38,11 +38,10 @@ NESPPU::NESPPU(NES *machine, const std::string &name, unsigned hertz):
     m_v(),
     m_t(),
     m_x(),
+    m_tx(),
     m_latch(0),
     m_flip_flop(false),
     m_vram_locked(false),
-    m_hpos(0),
-    m_vpos(0),
     m_sram(256),
     m_blk0(0x0400),
     m_blk1(0x0400)
@@ -74,14 +73,6 @@ NESPPU::~NESPPU(void)
 }
 
 void
-NESPPU::execute(void)
-{
-    while (true) {
-        add_icycles(step());
-    }
-}
-
-void
 NESPPU::reset(void)
 {
     m_reg1.value = 0;
@@ -90,6 +81,7 @@ NESPPU::reset(void)
     m_v.d = 0;
     m_t.d = 0;
     m_x = 0;
+    m_tx = 0;
     m_sram_addr = 0;
     m_latch = 0;
     m_flip_flop = false;
@@ -177,93 +169,99 @@ NESPPU::draw_sprite(int color, int x, int y)
     return color;
 }
 
-Cycles
-NESPPU::step(void)
+void
+NESPPU::do_vblank(void)
 {
-    m_hpos++;
-    if (m_hpos > 340) {
-        m_hpos = 0;
-        m_vpos = (m_vpos + 1) % 261;
-        if (m_vpos == 0) {
-            machine()->screen()->flip();
-            machine()->screen()->clear();
-            m_vram_locked = false;
-            m_status.vblank = 1;
-            if (m_reg1.nmi_enabled) {
-                machine()->set_line("cpu", Line::NMI, LineState::Pulse);
-            }
-        }
+    FrameBuffer *screen = machine()->screen();
+    screen->flip();
+    screen->clear();
+    m_vram_locked = false;
+    m_status.vblank = 1;
+    if (m_reg1.nmi_enabled) {
+        machine()->set_line("cpu", Line::NMI, LineState::Pulse);
     }
-    if (m_vpos < 20 || (!m_reg2.bg_visible && !m_reg2.spr_visible))
-        return Cycles(1);
-    if (m_vpos >= 21 && m_hpos == 0) {
-        int sy = m_vpos - 21;
-        bool sprite0_hit = m_status.sprite0_hit;
-        for (int sx = 0; sx < 256; sx++) {
-            int color = 0;
-            if (m_reg2.bg_visible && (m_reg2.bg_clip || sx >= 8))
-                color = draw_bg();
-            if (m_reg2.spr_visible && (m_reg2.spr_clip || sx >= 8))
-                color = draw_sprite(color, sx, sy);
-            machine()->screen()->set(sx, sy, m_palette[color]);
-            if (m_x == 0x07) {
-                m_x = 0;
-                if (m_v.coarse_x == 0x1F) {
-                    m_v.nt_hselect ^= 1;
-                    m_v.coarse_x = 0;
-                } else
-                    m_v.coarse_x++;
-                cache_bg_tile();
+}
+
+void
+NESPPU::do_hdraw(void)
+{
+    if (m_vpos <= 20 || (!m_reg2.bg_visible && !m_reg2.spr_visible))
+        return;
+
+    int sy = m_vpos - 21;
+    FrameBuffer *screen = machine()->screen();
+    for (int sx = 0; sx < 256; sx++) {
+        int color = 0;
+        if (m_reg2.bg_visible && (m_reg2.bg_clip || sx >= 8))
+            color = draw_bg();
+        if (m_reg2.spr_visible && (m_reg2.spr_clip || sx >= 8))
+            color = draw_sprite(color, sx, sy);
+        screen->set(sx, sy, m_palette[color]);
+        if (m_x == 0x07) {
+            m_x = 0;
+            if (m_v.coarse_x == 0x1F) {
+                m_v.nt_hselect ^= 1;
+                m_v.coarse_x = 0;
             } else
-                m_x++;
-        }
-        if (!sprite0_hit && m_status.sprite0_hit) {
-            m_hpos += 255;
-            return Cycles(256);
-        }
-    } else if (m_hpos == 256) {
-        DEVICE_DEBUG("Line Start");
-        if (m_v.fine_y == 0x07) {
-            m_v.fine_y = 0;
-            if (m_v.coarse_y == 29) {
-                m_v.coarse_y = 0;
-                m_v.nt_vselect ^= 1;
-            } else if (m_v.coarse_y == 31) {
-                m_v.coarse_y = 0;
-            } else
-                m_v.coarse_y++;
+                m_v.coarse_x++;
+            cache_bg_tile();
         } else
-            m_v.fine_y++;
-    } else if (m_hpos == 257) {
-        m_v.coarse_x = m_t.coarse_x;
-        m_v.nt_hselect = m_t.nt_hselect;
-        machine()->set_line("mapper", Line::INT0, LineState::Pulse);
-    } else if (m_hpos == 280 && m_vpos == 20) {
+            m_x++;
+    }
+}
+
+void
+NESPPU::do_hend(void)
+{
+    if (m_vpos < 20 || (!m_reg2.bg_visible && !m_reg2.spr_visible))
+        return;
+
+    /* 256 */
+    if (m_v.fine_y == 0x07) {
+        m_v.fine_y = 0;
+        if (m_v.coarse_y == 29) {
+            m_v.coarse_y = 0;
+            m_v.nt_vselect ^= 1;
+        } else if (m_v.coarse_y == 31) {
+            m_v.coarse_y = 0;
+        } else
+            m_v.coarse_y++;
+    } else
+        m_v.fine_y++;
+
+    /* 257 */
+    m_v.coarse_x = m_t.coarse_x;
+    m_x = m_tx;
+    m_v.nt_hselect = m_t.nt_hselect;
+    machine()->set_line("mapper", Line::INT0, LineState::Pulse);
+
+    /* 280 */
+    if (m_vpos == 20) {
         m_vram_locked = true;
         m_v.fine_y = m_t.fine_y;
         m_v.nt_vselect = m_t.nt_vselect;
         m_v.coarse_y = m_t.coarse_y;
         m_status.vblank = 0;
         m_status.sprite0_hit = 0;
-    } else if (m_hpos == 320) {
-        cache_bg_tile();
-    } else if (m_hpos == 328) {
-        /* Calculate the available sprites (for the next line) */
-        m_sprites.resize(0);
-        const int sy = m_vpos - 20;
-        const int sprite_size = (m_reg1.sprite_size ? 15 : 7);
-        for (int idx = 0; idx < 256; idx += 4) {
-            int iy = m_sram[idx] + 1;
-            if (sy < iy || sy > iy + sprite_size)
-                continue;
-            if (m_sprites.size() == 8) {
-                m_status.lost_sprite = 1;
-                break;
-            }
-            m_sprites.push_back(idx);
-        }
     }
-    return Cycles(1);
+
+    /* 320 */
+    cache_bg_tile();
+
+    /* 328 */
+    m_sprites.resize(0);
+    const int sy = m_vpos - 20;
+    const int sprite_size = (m_reg1.sprite_size ? 15 : 7);
+    for (int idx = 0; idx < 256; idx += 4) {
+        int iy = m_sram[idx] + 1;
+        if (sy < iy || sy > iy + sprite_size)
+            continue;
+        if (m_sprites.size() == 8) {
+            m_status.lost_sprite = 1;
+            break;
+        }
+        m_sprites.push_back(idx);
+    }
 }
 
 void
@@ -379,7 +377,7 @@ NESPPU::ppu_write(offset_t offset, byte_t value)
         m_latch = value;
         if (!m_flip_flop) {
             m_t.coarse_x = value >> 3;
-            m_x = value & 0x07;
+            m_tx = value & 0x07;
         } else {
             m_t.fine_y = value & 0x07;
             m_t.coarse_y = value >> 3;
