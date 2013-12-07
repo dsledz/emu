@@ -41,6 +41,9 @@ public:
     unsigned visible_width(void) const;
     unsigned visible_height(void) const;
 
+    typedef std::function<void (void)> scanline_fn;
+    void register_callback(unsigned scanline, scanline_fn fn);
+
 protected:
     enum class HState {
         HStart,
@@ -85,6 +88,8 @@ private:
     unsigned m_vbend;
     unsigned m_hvisible;
     unsigned m_vvisible;
+
+    std::unordered_map<unsigned, scanline_fn> m_callbacks;
 };
 
 };

@@ -76,6 +76,11 @@ ScreenDevice::VState
 ScreenDevice::next_vstate(void)
 {
     m_vpos++;
+
+    auto it = m_callbacks.find(m_vpos);
+    if (it != m_callbacks.end())
+        it->second();
+
     switch (m_vstate) {
     case VState::VStart:
         if (m_vpos >= m_vbend) {
@@ -140,4 +145,10 @@ ScreenDevice::execute(void)
         add_icycles(cycles);
         set_hstate(next);
     }
+}
+
+void
+ScreenDevice::register_callback(unsigned scanline, scanline_fn fn)
+{
+    m_callbacks.insert(make_pair(scanline, fn));
 }

@@ -106,10 +106,6 @@ Galaga::Galaga(const std::string &rom):
     m_gfx = GalagaGfx_ptr(new GalagaGfx(this, "gfx", hertz, m_bus.get()));
     m_gfx->init(&romset);
 
-    m_gfx->register_callback(16, [&](void) {
-        m_gfx->draw_screen(screen());
-    });
-
     m_gfx->register_callback(64, [&](void) {
         if (m_snd_nmi)
             set_line("sndcpu", Line::NMI, LineState::Pulse);

@@ -36,18 +36,19 @@ using namespace Device;
 
 namespace Arcade {
 
-class GalagaGfx: public GfxDevice
+class GalagaGfx: public ScreenDevice
 {
 public:
     GalagaGfx(Machine *machine, const std::string &name, unsigned hertz, AddressBus16 *bus);
     ~GalagaGfx(void);
 
-    void draw_screen(FrameBuffer *screen);
-
     uint8_t vmem_read(offset_t offset);
     void vmem_write(offset_t offset, uint8_t value);
 
     void init(RomSet *romset);
+
+protected:
+    virtual void do_vdraw(void);
 
 private:
 
