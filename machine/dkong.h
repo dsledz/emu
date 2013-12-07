@@ -24,6 +24,7 @@
  */
 
 #include "emu/emu.h"
+#include "emu/screen.h"
 
 #include "cpu/z80/z80.h"
 #include "machine/i8257.h"
@@ -33,7 +34,7 @@ using namespace Z80;
 
 namespace Arcade {
 
-class DonkeyKongGfx: public GfxDevice
+class DonkeyKongGfx: public ScreenDevice
 {
 public:
     DonkeyKongGfx(Machine *machine, const std::string &name, unsigned hertz, AddressBus16 *bus);
@@ -41,13 +42,18 @@ public:
 
     void init(RomSet *romset);
 
-    void draw_screen(RasterScreen *screen);
+    void set_vblank_cb(std::function<void (void)> func) {
+        m_vblank_cb = func;
+    }
 
     void vmem_write(offset_t offset, uint8_t value);
     uint8_t vmem_read(offset_t offset);
     void palette_write(offset_t offset, uint8_t value);
 
 private:
+
+    virtual void do_vblank(void);
+    virtual void do_vdraw(void);
 
     void init_sprite(GfxObject<16, 16> *obj, byte_t *b);
     void init_tile(GfxObject<8, 8> *obj, byte_t *b);
@@ -58,6 +64,8 @@ private:
     RamDevice vram;
 
     AddressBus16 *_bus;
+
+    std::function<void (void)> m_vblank_cb;
 
     /* Graphic Data */
     byte_t _palette_select;

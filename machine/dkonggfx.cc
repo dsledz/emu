@@ -32,8 +32,8 @@ using namespace Z80;
 using namespace Arcade;
 
 DonkeyKongGfx::DonkeyKongGfx(Machine *machine, const std::string &name, unsigned hertz,
-                             AddressBus16 *bus):
-    GfxDevice(machine, name, hertz),
+        AddressBus16 *bus):
+    ScreenDevice(machine, name, hertz, 384, 264, 256, 0, 240, 16),
     vram(machine, "vram", 0x0800),
     _bus(bus),
     _palette_select(0)
@@ -186,8 +186,15 @@ DonkeyKongGfx::init(RomSet *romset)
 }
 
 void
-DonkeyKongGfx::draw_screen(RasterScreen *screen)
+DonkeyKongGfx::do_vblank(void)
 {
+    m_vblank_cb();
+}
+
+void
+DonkeyKongGfx::do_vdraw(void)
+{
+    RasterScreen *screen = machine()->screen();
     if (!screen)
         return;
     screen->clear();

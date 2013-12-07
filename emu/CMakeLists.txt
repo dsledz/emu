@@ -7,6 +7,7 @@ add_library(emu
     ram.cc
     rom.cc
     task.cc
+    screen.cc
     video.cc
     dipswitch.cc)
 

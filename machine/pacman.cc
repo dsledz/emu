@@ -79,12 +79,9 @@ Pacman::Pacman(const std::string &rom):
     _gfx = PacmanGfx_ptr(new PacmanGfx(this, "gfx", _hertz, _bus.get()));
 
     _gfx->init(_roms.get());
-    _gfx->register_callback(240, [&](void) {
+    _gfx->set_vblank_cb([&](void) {
         if (_irq_mask)
             set_line("maincpu", Line::INT0, LineState::Assert);
-    });
-    _gfx->register_callback(16, [&](void) {
-        _gfx->draw_screen(screen());
     });
 
     init_bus();

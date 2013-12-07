@@ -79,11 +79,7 @@ DonkeyKong::DonkeyKong(const std::string &rom):
     _gfx = DonkeyKongGfx_ptr(new DonkeyKongGfx(this, "gfx", hertz, _bus.get()));
     _gfx->init(&romset);
 
-    _gfx->register_callback(16, [&](void) {
-        _gfx->draw_screen(screen());
-    });
-
-    _gfx->register_callback(240, [&](void) {
+    _gfx->set_vblank_cb([&](void) {
         if (_nmi_mask)
             set_line("maincpu", Line::NMI, LineState::Pulse);
     });

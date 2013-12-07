@@ -31,8 +31,9 @@ using namespace EMU;
 using namespace Z80;
 using namespace Arcade;
 
-PacmanGfx::PacmanGfx(Machine *machine, const std::string &name, unsigned _hertz, AddressBus16 * bus):
-    GfxDevice(machine, name, _hertz),
+PacmanGfx::PacmanGfx(Machine *machine, const std::string &name, unsigned hertz,
+                     AddressBus16 * bus):
+    ScreenDevice(machine, name, hertz, 384, 264, 256, 0, 240, 16),
     _vram(machine, "vram", 0x400),
     _cram(machine, "cram", 0x400)
 {
@@ -43,7 +44,6 @@ PacmanGfx::~PacmanGfx(void)
 {
 
 }
-
 
 void
 PacmanGfx::init_tile(GfxObject<8, 8> *t, byte_t *b)
@@ -141,13 +141,20 @@ PacmanGfx::init(RomSet *romset)
 }
 
 void
-PacmanGfx::draw_screen(RasterScreen *screen)
+PacmanGfx::do_vdraw(void)
 {
-    screen->clear();
+    RasterScreen *screen = machine()->screen();
 
+    screen->clear();
     draw_bg(screen);
     draw_sprites(screen);
     screen->flip();
+}
+
+void
+PacmanGfx::do_vblank(void)
+{
+    m_vblank_cb();
 }
 
 void

@@ -25,6 +25,7 @@
 #pragma once
 
 #include "emu/emu.h"
+#include "emu/screen.h"
 #include "emu/gfx.h"
 
 #include "cpu/z80/z80.h"
@@ -34,13 +35,11 @@ using namespace Z80;
 
 namespace Arcade {
 
-class PacmanGfx: public GfxDevice
+class PacmanGfx: public ScreenDevice
 {
 public:
     PacmanGfx(Machine *machine, const std::string &name, unsigned hertz, AddressBus16 *bus);
     ~PacmanGfx(void);
-
-    void draw_screen(RasterScreen *screen);
 
     byte_t vram_read(offset_t offset) {
         return _vram.read8(offset);
@@ -85,7 +84,16 @@ public:
 
     void init(RomSet *romset);
 
+    void set_vblank_cb(std::function<void (void)> func) {
+        m_vblank_cb = func;
+    }
+
 private:
+
+    virtual void do_vdraw(void);
+    virtual void do_vblank(void);
+
+    std::function<void (void)> m_vblank_cb;
 
     RamDevice _vram;
     RamDevice _cram;
