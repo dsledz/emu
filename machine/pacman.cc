@@ -60,27 +60,27 @@ RomDefinition pacman_rom(void) {
 
 Pacman::Pacman(const std::string &rom):
     Machine(),
-    _hertz(18432000),
-    _ram(this, "ram", 0x800)
+    m_hertz(18432000),
+    m_ram(this, "ram", 0x800)
 {
     add_screen(224, 288, RasterScreen::ROT90);
 
-    _bus = AddressBus16_ptr(new AddressBus16());
+    m_bus = AddressBus16_ptr(new AddressBus16());
 
     if (rom == "pacman") {
-        _roms = std::unique_ptr<RomSet>(new RomSet(pacman_rom()));
+        m_roms = std::unique_ptr<RomSet>(new RomSet(pacman_rom()));
     } else {
         throw KeyError(rom);
     }
 
-    _cpu = Z80Cpu_ptr(new Z80Cpu(this, "maincpu", _hertz/6, _bus.get()));
-    _cpu->load_rom(_roms->rom("maincpu"), 0x0000);
+    m_cpu = Z80Cpu_ptr(new Z80Cpu(this, "maincpu", m_hertz/6, m_bus.get()));
+    m_cpu->load_rom(m_roms->rom("maincpu"), 0x0000);
 
-    _gfx = PacmanGfx_ptr(new PacmanGfx(this, "gfx", _hertz, _bus.get()));
+    m_gfx = PacmanGfx_ptr(new PacmanGfx(this, "gfx", m_hertz, m_bus.get()));
 
-    _gfx->init(_roms.get());
-    _gfx->set_vblank_cb([&](void) {
-        if (_irq_mask)
+    m_gfx->init(m_roms.get());
+    m_gfx->set_vblank_cb([&](void) {
+        if (m_irq_mask)
             set_line("maincpu", Line::INT0, LineState::Assert);
     });
 
@@ -91,7 +91,7 @@ Pacman::Pacman(const std::string &rom):
     init_controls();
 
     /* Add IO ports */
-    _cpu->io()->add(0x00, 0x0,
+    m_cpu->io()->add(0x00, 0x0,
         READ_CB(Pacman::io_read, this),
         WRITE_CB(Pacman::io_write, this));
 }
@@ -109,7 +109,7 @@ Pacman::io_read(offset_t offset)
 void
 Pacman::io_write(offset_t offset, byte_t value)
 {
-    _cpu->set_data(value);
+    m_cpu->set_data(value);
     set_line("maincpu", Line::INT0, LineState::Clear);
 }
 
@@ -117,71 +117,71 @@ void
 Pacman::init_bus(void)
 {
 
-    _bus->add(0x4000, 0x43ff,
-        READ_CB(PacmanGfx::vram_read, _gfx.get()),
-        WRITE_CB(PacmanGfx::vram_write, _gfx.get()));
+    m_bus->add(0x4000, 0x43ff,
+        READ_CB(PacmanGfx::vram_read, m_gfx.get()),
+        WRITE_CB(PacmanGfx::vram_write, m_gfx.get()));
 
-    _bus->add(0x4400, 0x47ff,
-        READ_CB(PacmanGfx::cram_read, _gfx.get()),
-        WRITE_CB(PacmanGfx::cram_write, _gfx.get()));
+    m_bus->add(0x4400, 0x47ff,
+        READ_CB(PacmanGfx::cram_read, m_gfx.get()),
+        WRITE_CB(PacmanGfx::cram_write, m_gfx.get()));
 
-    _bus->add(0x4800, 0x4bff,
+    m_bus->add(0x4800, 0x4bff,
         AddressBus16::DefaultRead(),
         AddressBus16::DefaultWrite());
 
-    _bus->add(0x4C00, 0x4fef,
+    m_bus->add(0x4C00, 0x4fef,
         READ_CB(Pacman::ram_read, this),
         WRITE_CB(Pacman::ram_write, this));
 
-    _bus->add(0x4ff0, 0x4fff,
-        READ_CB(PacmanGfx::spr_read, _gfx.get()),
-        WRITE_CB(PacmanGfx::spr_write, _gfx.get()));
+    m_bus->add(0x4ff0, 0x4fff,
+        READ_CB(PacmanGfx::spr_read, m_gfx.get()),
+        WRITE_CB(PacmanGfx::spr_write, m_gfx.get()));
 
-    _bus->add(0x5000, 0x5007,
+    m_bus->add(0x5000, 0x5007,
         READ_CB(Pacman::in0_read, this),
         WRITE_CB(Pacman::latch_write, this));
 
-    _bus->add(0x5040, 0x505f,
+    m_bus->add(0x5040, 0x505f,
         READ_CB(Pacman::in1_read, this),
         WRITE_CB(Pacman::sound_write, this));
 
-    _bus->add(0x5060, 0x506f,
-        READ_CB(PacmanGfx::spr_coord_read, _gfx.get()),
-        WRITE_CB(PacmanGfx::spr_coord_write, _gfx.get()));
+    m_bus->add(0x5060, 0x506f,
+        READ_CB(PacmanGfx::spr_coord_read, m_gfx.get()),
+        WRITE_CB(PacmanGfx::spr_coord_write, m_gfx.get()));
 
-    _bus->add(0x5070, 0x507f,
+    m_bus->add(0x5070, 0x507f,
         AddressBus16::DefaultRead(),
         AddressBus16::DefaultWrite());
 
-    _bus->add(0x5080, 0x5080,
+    m_bus->add(0x5080, 0x5080,
         READ_CB(Pacman::dsw1_read, this),
         WRITE_CB(Pacman::dsw1_write, this));
 
-    _bus->add(0x50c0, 0x50c0,
+    m_bus->add(0x50c0, 0x50c0,
         READ_CB(Pacman::dsw2_read, this),
         WRITE_CB(Pacman::watchdog_write, this));
 
     // Ms. PACMAN
 #if 0
-    _bus->add(0x8000, 0xbfff,
+    m_bus->add(0x8000, 0xbfff,
         READ_CB(Pacman::rom_read, this),
         WRITE_CB(Pacman::rom_write, this));
 #endif
 
-    _bus->add(0xC000, 0xC3ff,
-        READ_CB(PacmanGfx::vram_read, _gfx.get()),
-        WRITE_CB(PacmanGfx::vram_write, _gfx.get()));
+    m_bus->add(0xC000, 0xC3ff,
+        READ_CB(PacmanGfx::vram_read, m_gfx.get()),
+        WRITE_CB(PacmanGfx::vram_write, m_gfx.get()));
 
-    _bus->add(0xC400, 0xC7ff,
-        READ_CB(PacmanGfx::cram_read, _gfx.get()),
-        WRITE_CB(PacmanGfx::cram_write, _gfx.get()));
+    m_bus->add(0xC400, 0xC7ff,
+        READ_CB(PacmanGfx::cram_read, m_gfx.get()),
+        WRITE_CB(PacmanGfx::cram_write, m_gfx.get()));
 
-    _bus->add(0xCC00, 0xCfef,
+    m_bus->add(0xCC00, 0xCfef,
         READ_CB(Pacman::ram_read, this),
         WRITE_CB(Pacman::ram_write, this));
 
     // Pacman waits for an interrupt before setting the stack pointer
-    _bus->add(0xFFFD, 0xFFFF,
+    m_bus->add(0xFFFD, 0xFFFF,
         AddressBus16::DefaultRead(),
         AddressBus16::DefaultWrite());
 }
@@ -252,7 +252,7 @@ Pacman::latch_write(offset_t offset, byte_t value)
 {
     switch (offset % 0x08) {
     case 0:
-        _irq_mask = bit_isset(value, 0);
+        m_irq_mask = bit_isset(value, 0);
         break;
     }
 }

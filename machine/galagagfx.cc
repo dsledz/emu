@@ -34,7 +34,7 @@ using namespace Arcade;
 GalagaGfx::GalagaGfx(Machine *machine, const std::string &name, unsigned hertz, AddressBus16 *bus):
     GfxDevice(machine, name, hertz),
     vram(machine, "vram", 0x0800),
-    _bus(bus)
+    m_bus(bus)
 {
 
 }
@@ -124,7 +124,7 @@ GalagaGfx::init(RomSet *romset)
     /* XXX: Characters Palette */
     byte_t * char_rom = romset->rom("prom2")->direct(0x00);
     for (unsigned i = 0; i < 64*4; i+=4) {
-        auto *palette = &_tile_palette[i/4];
+        auto *palette = &m_tile_palette[i/4];
         (*palette)[0] = m_colors[(char_rom[i+0] & 0x0f) + 0x10];
         (*palette)[1] = m_colors[(char_rom[i+1] & 0x0f) + 0x10];
         (*palette)[2] = m_colors[(char_rom[i+2] & 0x0f) + 0x10];
@@ -135,14 +135,14 @@ GalagaGfx::init(RomSet *romset)
     Rom *gfx1_rom = romset->rom("tiles");
     for (unsigned idx = 0; idx < 128; idx++) {
         byte_t *b = gfx1_rom->direct(idx * 16);
-        auto &tile = _tiles[idx];
+        auto &tile = m_tiles[idx];
         init_tile(&tile, b);
     }
 
     /* XXX: Sprites Palette */
     byte_t * sprite_rom = romset->rom("prom2")->direct(0x0100);
     for (unsigned i = 0; i < 64*4; i+=4) {
-        auto *palette = &_sprite_palette[i/4];
+        auto *palette = &m_sprite_palette[i/4];
         (*palette)[0] = m_colors[sprite_rom[i+0] & 0x0f];
         (*palette)[1] = m_colors[sprite_rom[i+1] & 0x0f];
         (*palette)[2] = m_colors[sprite_rom[i+2] & 0x0f];
@@ -153,7 +153,7 @@ GalagaGfx::init(RomSet *romset)
     Rom *gfx2 = romset->rom("sprites");
     for (unsigned idx = 0; idx < 128; idx++) {
         byte_t *b = gfx2->direct(idx * 64);
-        auto &s = _sprites[idx];
+        auto &s = m_sprites[idx];
         init_sprite(&s, b);
     }
 }
@@ -183,12 +183,12 @@ GalagaGfx::draw_sprites(RasterScreen *screen)
      */
     for (unsigned off = 0; off < 0x80; off += 2) {
         uint8_t b[6];
-        b[0] = _bus->read(0x8B80+off);
-        b[1] = _bus->read(0x8B81+off);
-        b[2] = _bus->read(0x9380+off);
-        b[3] = _bus->read(0x9381+off);
-        b[4] = _bus->read(0x9B80+off);
-        b[5] = _bus->read(0x9B81+off);
+        b[0] = m_bus->read(0x8B80+off);
+        b[1] = m_bus->read(0x8B81+off);
+        b[2] = m_bus->read(0x9380+off);
+        b[3] = m_bus->read(0x9381+off);
+        b[4] = m_bus->read(0x9B80+off);
+        b[5] = m_bus->read(0x9B81+off);
         int idx = b[0] & 0x7f;
         int pen = b[1] & 0x3f;
         int sy = 256 - b[2] + 1;
@@ -204,8 +204,8 @@ GalagaGfx::draw_sprites(RasterScreen *screen)
 
         for (int y = 0; y <= sizey; y++) {
             for (int x = 0; x <= sizex; x++) {
-                auto *sprite = &_sprites[idx];
-                auto *palette = &_sprite_palette[pen];
+                auto *sprite = &m_sprites[idx];
+                auto *palette = &m_sprite_palette[pen];
                 draw_gfx(screen, palette,
                     sprite + (y ^ (sizey & flipy)) * 2 + (x ^ (sizex & flipx)),
                     sx + (x * 16), sy + (y * 16),
@@ -232,8 +232,8 @@ GalagaGfx::draw_bg(RasterScreen *screen)
                     index = col + (row << 5);
             }
             /* XXX: Account for visible */
-            auto *tile = &_tiles[tile_map[index] & 0x7f];
-            auto *palette = &_tile_palette[tile_map[index + 0x400] & 0x3f];
+            auto *tile = &m_tiles[tile_map[index] & 0x7f];
+            auto *palette = &m_tile_palette[tile_map[index + 0x400] & 0x3f];
             int sx = tx * tile->w;
             int sy = ty * tile->h;
             draw_gfx(screen, palette, tile, sx, sy,

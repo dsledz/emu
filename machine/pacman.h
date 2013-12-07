@@ -42,43 +42,43 @@ public:
     ~PacmanGfx(void);
 
     byte_t vram_read(offset_t offset) {
-        return _vram.read8(offset);
+        return m_vram.read8(offset);
     }
     void vram_write(offset_t offset, byte_t value) {
-        _vram.write8(offset, value);
+        m_vram.write8(offset, value);
     }
     byte_t cram_read(offset_t offset) {
-        return _cram.read8(offset);
+        return m_cram.read8(offset);
     }
     void cram_write(offset_t offset, byte_t value) {
-        _cram.write8(offset, value);
+        m_cram.write8(offset, value);
     }
     byte_t spr_read(offset_t offset) {
         if (offset & 0x01) {
-            return _spr[offset >> 1].color;
+            return m_spr[offset >> 1].color;
         } else {
-            return _spr[offset >> 1].flags;
+            return m_spr[offset >> 1].flags;
         }
     }
     void spr_write(offset_t offset, byte_t value) {
         if (offset & 0x01) {
-            _spr[offset >> 1].color = value;
+            m_spr[offset >> 1].color = value;
         } else {
-            _spr[offset >> 1].flags = value;
+            m_spr[offset >> 1].flags = value;
         }
     }
     byte_t spr_coord_read(offset_t offset) {
         if (offset & 0x01) {
-            return _spr[offset >> 1].x;
+            return m_spr[offset >> 1].x;
         } else {
-            return _spr[offset >> 1].y;
+            return m_spr[offset >> 1].y;
         }
     }
     void spr_coord_write(offset_t offset, byte_t value) {
         if (offset & 0x01) {
-            _spr[offset >> 1].x = value;
+            m_spr[offset >> 1].x = value;
         } else {
-            _spr[offset >> 1].y = value;
+            m_spr[offset >> 1].y = value;
         }
     }
 
@@ -95,8 +95,8 @@ private:
 
     std::function<void (void)> m_vblank_cb;
 
-    RamDevice _vram;
-    RamDevice _cram;
+    RamDevice m_vram;
+    RamDevice m_cram;
     AddressBus16 *_bus;
 
     void init_sprite(GfxObject<16, 16> *obj, byte_t *b);
@@ -120,12 +120,12 @@ private:
         byte_t y;
     };
 
-    Sprite _spr[8];
+    Sprite m_spr[8];
 
     ColorMap<32, RGBColor> m_colors;
-    GfxObject<8, 8>   _tiles[256];
-    ColorPalette<4>   _palettes[128];
-    GfxObject<16, 16> _sprites[64];
+    GfxObject<8, 8>   m_tiles[256];
+    ColorPalette<4>   m_palettes[128];
+    GfxObject<16, 16> m_sprites[64];
 };
 
 typedef std::unique_ptr<PacmanGfx> PacmanGfx_ptr;
@@ -139,13 +139,13 @@ public:
 private:
 
     byte_t ram_read(offset_t offset) {
-        return _ram.read8(offset);
+        return m_ram.read8(offset);
     }
     void ram_write(offset_t offset, byte_t value) {
         if (offset == 0x2f7 && value == 0xff) {
             std::cout << "Sound write " << Hex(value) << std::endl;
         }
-        _ram.write8(offset, value);
+        m_ram.write8(offset, value);
     }
 
     byte_t in0_read(offset_t offset) {
@@ -179,16 +179,16 @@ private:
     void init_switches(void);
     void init_controls(void);
 
-    unsigned _hertz;
+    unsigned m_hertz;
 
-    Z80Cpu_ptr _cpu;
-    AddressBus16_ptr _bus;
-    RamDevice _ram;
-    std::unique_ptr<RomSet> _roms;
-    PacmanGfx_ptr _gfx;
+    Z80Cpu_ptr m_cpu;
+    AddressBus16_ptr m_bus;
+    RamDevice m_ram;
+    std::unique_ptr<RomSet> m_roms;
+    PacmanGfx_ptr m_gfx;
 
     /* latches */
-    bool _irq_mask;
+    bool m_irq_mask;
 
 };
 

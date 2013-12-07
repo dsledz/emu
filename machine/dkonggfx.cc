@@ -35,8 +35,7 @@ DonkeyKongGfx::DonkeyKongGfx(Machine *machine, const std::string &name, unsigned
         AddressBus16 *bus):
     ScreenDevice(machine, name, hertz, 384, 264, 256, 0, 240, 16),
     vram(machine, "vram", 0x0800),
-    _bus(bus),
-    _palette_select(0)
+    m_palette_select(0)
 {
 }
 
@@ -47,7 +46,7 @@ DonkeyKongGfx::~DonkeyKongGfx(void)
 void
 DonkeyKongGfx::palette_write(offset_t offset, uint8_t value)
 {
-    bit_set(_palette_select, offset, value != 0);
+    bit_set(m_palette_select, offset, value != 0);
 }
 
 void
@@ -151,28 +150,28 @@ DonkeyKongGfx::init(RomSet *romset)
     Rom * palette_rom = romset->rom("palette");
     for (unsigned i = 0; i < 256; i++) {
         if (i % 4 == 0)
-            _palette[i/4][i%4] = RGBColor(0,0,0);
+            m_palette[i/4][i%4] = RGBColor(0,0,0);
         else {
             uint8_t idx = (palette_rom->read8(i+ 256) << 4) |
                 (palette_rom->read8(i) & 0x0F);
             idx ^= 0xFF;
 #if 1
-            _palette[i/4][i%4] = RGBColor(
+            m_palette[i/4][i%4] = RGBColor(
                 RGB_4B(bit_isset(idx, 5), 0, bit_isset(idx, 6), bit_isset(idx, 7)),
                 RGB_4B(bit_isset(idx, 2), 0, bit_isset(idx, 3), bit_isset(idx, 4)),
                 RGB_3B(bit_isset(idx, 0), bit_isset(idx, 1), 0));
 #else
-            _palette[i/4][i%4] = convert(&idx);
+            m_palette[i/4][i%4] = convert(&idx);
 #endif
         }
-        _palette_index[i] = palette_rom->read8(i+512) & 0x0f;
+        m_palette_index[i] = palette_rom->read8(i+512) & 0x0f;
     }
 
     /* Decode characters */
     Rom *gfx1_rom = romset->rom("tiles");
     for (unsigned idx = 0; idx < 256; idx++) {
         byte_t *b = gfx1_rom->direct(idx * 8);
-        auto &tile = _tiles[idx];
+        auto &tile = m_tiles[idx];
         init_tile(&tile, b);
     }
 
@@ -180,7 +179,7 @@ DonkeyKongGfx::init(RomSet *romset)
     Rom *gfx2 = romset->rom("sprites");
     for (unsigned idx = 0; idx < 128; idx++) {
         byte_t *b = gfx2->direct(idx * 16);
-        auto &s = _sprites[idx];
+        auto &s = m_sprites[idx];
         init_sprite(&s, b);
     }
 }
@@ -218,9 +217,9 @@ DonkeyKongGfx::draw_sprites(RasterScreen *screen)
 
         sy += 16;
         sy = 0x100 - sy;
-        auto *palette = &_palette[pen + (_palette_select << 4)];
+        auto *palette = &m_palette[pen + (m_palette_select << 4)];
 
-        draw_gfx(screen, palette, &_sprites[idx], sx, sy, flipx, flipy, (*palette)[0]);
+        draw_gfx(screen, palette, &m_sprites[idx], sx, sy, flipx, flipy, (*palette)[0]);
     }
 }
 
@@ -231,8 +230,8 @@ DonkeyKongGfx::draw_bg(RasterScreen *screen)
     int index = 0;
     for (int ty = 0; ty < 32; ty++) {
         for (int tx = 0; tx < 32; tx++, index++) {
-            auto *tile = &_tiles[tile_map[index]];
-            auto *palette = &_palette[_palette_index[tx + 32 * (ty / 4)] + (_palette_select << 4)];
+            auto *tile = &m_tiles[tile_map[index]];
+            auto *palette = &m_palette[m_palette_index[tx + 32 * (ty / 4)] + (m_palette_select << 4)];
             int sx = tx * tile->w;
             int sy = ty * tile->h - 16;
             draw_gfx(screen, palette, tile, sx, sy, false, false, trans);

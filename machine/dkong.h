@@ -63,16 +63,16 @@ private:
 
     RamDevice vram;
 
-    AddressBus16 *_bus;
+    AddressBus16 *m_bus;
 
     std::function<void (void)> m_vblank_cb;
 
     /* Graphic Data */
-    byte_t _palette_select;
-    std::array<uint8_t, 256> _palette_index;
-    std::array<ColorPalette<4>, 64> _palette;
-    GfxObject<8,8> _tiles[256];
-    GfxObject<16,16> _sprites[128];
+    byte_t m_palette_select;
+    std::array<uint8_t, 256> m_palette_index;
+    std::array<ColorPalette<4>, 64> m_palette;
+    GfxObject<8,8> m_tiles[256];
+    GfxObject<16,16> m_sprites[128];
 };
 
 typedef std::unique_ptr<DonkeyKongGfx> DonkeyKongGfx_ptr;
@@ -92,14 +92,14 @@ private:
     void init_controls(void);
 
     RamDevice m_ram;
-    Z80Cpu_ptr _main_cpu;
-    I8257_ptr _i8257;
-    DonkeyKongGfx_ptr _gfx;
+    Z80Cpu_ptr m_main_cpu;
+    I8257_ptr m_i8257;
+    DonkeyKongGfx_ptr m_gfx;
 
-    AddressBus16_ptr _bus;
+    AddressBus16_ptr m_bus;
 
     /* Lines */
-    bool _nmi_mask;
+    bool m_nmi_mask;
 };
 
 };

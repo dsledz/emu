@@ -34,8 +34,8 @@ using namespace Arcade;
 PacmanGfx::PacmanGfx(Machine *machine, const std::string &name, unsigned hertz,
                      AddressBus16 * bus):
     ScreenDevice(machine, name, hertz, 384, 264, 256, 0, 240, 16),
-    _vram(machine, "vram", 0x400),
-    _cram(machine, "cram", 0x400)
+    m_vram(machine, "vram", 0x400),
+    m_cram(machine, "cram", 0x400)
 {
 
 }
@@ -116,7 +116,7 @@ PacmanGfx::init(RomSet *romset)
     byte_t *char_rom = romset->rom("proms")->direct(0x20);
 
     for (unsigned i = 0; i < 256; i+=4) {
-        auto *palette = &_palettes[i/4];
+        auto *palette = &m_palettes[i/4];
         (*palette)[0] = m_colors[(char_rom[i+0] & 0x0f)];
         (*palette)[1] = m_colors[(char_rom[i+1] & 0x0f)];
         (*palette)[2] = m_colors[(char_rom[i+2] & 0x0f)];
@@ -128,14 +128,14 @@ PacmanGfx::init(RomSet *romset)
     Rom *gfx1 = romset->rom("gfx1");
     for (unsigned idx = 0; idx < 256; idx++) {
         byte_t *b = gfx1->direct(idx * 16);
-        auto &tile = _tiles[idx];
+        auto &tile = m_tiles[idx];
         init_tile(&tile, b);
     }
 
     /* Decode sprites */
     for (unsigned idx = 0; idx < 64; idx++) {
         byte_t *b = gfx1->direct(0x1000 + idx * 64);
-        auto &s = _sprites[idx];
+        auto &s = m_sprites[idx];
         init_sprite(&s, b);
     }
 }
@@ -161,15 +161,15 @@ void
 PacmanGfx::draw_sprites(RasterScreen *screen)
 {
     for (int off = 0; off < 8; off++) {
-        int idx = _spr[off].idx;
-        int pen = _spr[off].color & 0x1f;
-        int sy = _spr[off].y - 31;
-        int sx = 272 - _spr[off].x;
-        bool flipx = _spr[off].xflip;
-        bool flipy = _spr[off].yflip;
+        int idx = m_spr[off].idx;
+        int pen = m_spr[off].color & 0x1f;
+        int sy = m_spr[off].y - 31;
+        int sx = 272 - m_spr[off].x;
+        bool flipx = m_spr[off].xflip;
+        bool flipy = m_spr[off].yflip;
 
-        auto *sprite = &_sprites[idx];
-        auto *palette = &_palettes[pen];
+        auto *sprite = &m_sprites[idx];
+        auto *palette = &m_palettes[pen];
         draw_gfx(screen, palette, sprite, sx, sy, flipx, flipy,
                  m_colors[0x1f]);
         IF_LOG(Info) {
@@ -185,8 +185,8 @@ void
 PacmanGfx::draw_bg(RasterScreen *screen)
 {
     /* Render the tilemap */
-    byte_t *tile_map = _vram.direct(0x000);
-    byte_t *color_map = _cram.direct(0x000);
+    byte_t *tile_map = m_vram.direct(0x000);
+    byte_t *color_map = m_cram.direct(0x000);
     for (int tx = 0; tx < 36; tx++) {
         for (int ty = 0; ty < 28; ty++) {
             int index = 0;
@@ -199,8 +199,8 @@ PacmanGfx::draw_bg(RasterScreen *screen)
                     index = col + (row << 5);
             }
             /* XXX: Account for visible */
-            auto *tile = &_tiles[tile_map[index]];
-            auto *palette = &_palettes[color_map[index] & 0x1f];
+            auto *tile = &m_tiles[tile_map[index]];
+            auto *palette = &m_palettes[color_map[index] & 0x1f];
             int sx = tx * tile->w;
             int sy = ty * tile->h;
             draw_gfx(screen, palette, tile, sx, sy,

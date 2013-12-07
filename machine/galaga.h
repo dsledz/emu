@@ -59,14 +59,14 @@ private:
     void draw_bg(RasterScreen *screen);
     void draw_sprites(RasterScreen *screen);
 
-    AddressBus16 *_bus;
+    AddressBus16 *m_bus;
 
     /* Graphic Data */
     ColorMap<32, RGBColor> m_colors;
-    GfxObject<8,8> _tiles[128];
-    ColorPalette<4> _tile_palette[64];
-    GfxObject<16,16> _sprites[128];
-    ColorPalette<4> _sprite_palette[64];
+    GfxObject<8,8> m_tiles[128];
+    ColorPalette<4> m_tile_palette[64];
+    GfxObject<16,16> m_sprites[128];
+    ColorPalette<4> m_sprite_palette[64];
 };
 
 typedef std::unique_ptr<GalagaGfx> GalagaGfx_ptr;
@@ -95,19 +95,19 @@ private:
     void draw_screen(void);
 
     RamDevice ram1, ram2, ram3;
-    Z80Cpu_ptr _main_cpu;
-    Z80Cpu_ptr _sub_cpu;
-    Z80Cpu_ptr _snd_cpu;
-    Namco51_ptr _namco51;
-    Namco06_ptr _namco06;
-    GalagaGfx_ptr _gfx;
+    Z80Cpu_ptr m_main_cpu;
+    Z80Cpu_ptr m_sub_cpu;
+    Z80Cpu_ptr m_snd_cpu;
+    Namco51_ptr m_namco51;
+    Namco06_ptr m_namco06;
+    GalagaGfx_ptr m_gfx;
 
-    AddressBus16_ptr _bus;
+    AddressBus16_ptr m_bus;
 
     /* Interrupt lines */
-    bool _main_irq;
-    bool _sub_irq;
-    bool _snd_nmi;
+    bool m_main_irq;
+    bool m_sub_irq;
+    bool m_snd_nmi;
 };
 
 };

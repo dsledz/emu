@@ -54,12 +54,12 @@ RomDefinition dkong_rom(void) {
 DonkeyKong::DonkeyKong(const std::string &rom):
     Machine(),
     m_ram(this, "ram", 0x1000),
-    _nmi_mask(false)
+    m_nmi_mask(false)
 {
     unsigned hertz = 18432000;
     add_screen(224, 256, RasterScreen::ROT90);
 
-    _bus = AddressBus16_ptr(new AddressBus16());
+    m_bus = AddressBus16_ptr(new AddressBus16());
 
     init_switches();
     reset_switches();
@@ -71,16 +71,16 @@ DonkeyKong::DonkeyKong(const std::string &rom):
 
     RomSet romset(roms);
 
-    _main_cpu = Z80Cpu_ptr(new Z80Cpu(this, "maincpu", hertz/6, _bus.get()));
-    _main_cpu->load_rom(romset.rom("maincpu"), 0x0000);
+    m_main_cpu = Z80Cpu_ptr(new Z80Cpu(this, "maincpu", hertz/6, m_bus.get()));
+    m_main_cpu->load_rom(romset.rom("maincpu"), 0x0000);
 
-    _i8257 = I8257_ptr(new I8257(this, "i8257", hertz/6, _bus.get()));
+    m_i8257 = I8257_ptr(new I8257(this, "i8257", hertz/6, m_bus.get()));
 
-    _gfx = DonkeyKongGfx_ptr(new DonkeyKongGfx(this, "gfx", hertz, _bus.get()));
-    _gfx->init(&romset);
+    m_gfx = DonkeyKongGfx_ptr(new DonkeyKongGfx(this, "gfx", hertz, m_bus.get()));
+    m_gfx->init(&romset);
 
-    _gfx->set_vblank_cb([&](void) {
-        if (_nmi_mask)
+    m_gfx->set_vblank_cb([&](void) {
+        if (m_nmi_mask)
             set_line("maincpu", Line::NMI, LineState::Pulse);
     });
 
@@ -157,18 +157,18 @@ DonkeyKong::init_controls(void)
 void
 DonkeyKong::init_bus(void)
 {
-    _bus->add(0x6000, 0x6fff,
+    m_bus->add(0x6000, 0x6fff,
         READ_CB(RamDevice::read8, &m_ram),
         WRITE_CB(RamDevice::write8, &m_ram));
-    _bus->add(0x7000, 0x77ff,
-        READ_CB(DonkeyKongGfx::vmem_read, _gfx.get()),
-        WRITE_CB(DonkeyKongGfx::vmem_write, _gfx.get()));
-    _bus->add(0x7c00, 0x7fff,
+    m_bus->add(0x7000, 0x77ff,
+        READ_CB(DonkeyKongGfx::vmem_read, m_gfx.get()),
+        WRITE_CB(DonkeyKongGfx::vmem_write, m_gfx.get()));
+    m_bus->add(0x7c00, 0x7fff,
         READ_CB(DonkeyKong::latch_read, this),
         WRITE_CB(DonkeyKong::latch_write, this));
-    _bus->add(0x7800, 0x780f,
-        READ_CB(I8257::read_cb, _i8257.get()),
-        WRITE_CB(I8257::write_cb, _i8257.get()));
+    m_bus->add(0x7800, 0x780f,
+        READ_CB(I8257::read_cb, m_i8257.get()),
+        WRITE_CB(I8257::write_cb, m_i8257.get()));
 }
 
 void
@@ -185,17 +185,17 @@ DonkeyKong::latch_write(offset_t offset, byte_t value)
     case 0x105: /* Barrel */
         break;
     case 0x184: /* Interrupt */
-        _nmi_mask = bit_isset(value, 0);
+        m_nmi_mask = bit_isset(value, 0);
         break;
     case 0x185:
         if (bit_isset(value, 0))
-            _i8257->dma();
+            m_i8257->dma();
         break;
     case 0x186:
-        _gfx->palette_write(0, value);
+        m_gfx->palette_write(0, value);
         break;
     case 0x187:
-        _gfx->palette_write(1, value);
+        m_gfx->palette_write(1, value);
         break;
     default:
         break;
