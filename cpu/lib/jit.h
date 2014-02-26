@@ -206,8 +206,10 @@ public:
     void execute(uintptr_t cpu_state, uintptr_t jit_state)
     {
         uintptr_t func = reinterpret_cast<uintptr_t>(m_code.data());
+        uint64_t sp_before = 0, sp_after = 0;
 
         asm volatile(
+            "mov %%rsp, %3;\n"
             "mov %0, %%r15;\n"
             "mov %1, %%r14;\n"
             "movw 0(%%r15), %%bx;\n"
@@ -219,10 +221,14 @@ public:
             "popw 8(%%r15);\n"
             "movw %%bx, 0(%%r15);\n"
             "movw %%cx, 2(%%r15);\n"
+            "mov %%rsp, %4;\n"
             :
-            : "r"(cpu_state), "r"(jit_state), "m"(func)
+            : "r"(cpu_state), "r"(jit_state), "m"(func), "r"(sp_before), "r"(sp_after)
             : "rax", "rbx", "rcx", "rdx", "rdi", "rsi", "r15", "r14", "rsp", "rbp"
             );
+
+
+        assert(sp_before == sp_after);
 
     }
 

@@ -132,19 +132,14 @@ protected:
 
     static data_type jit_bus_read(void *ctx, addr_type addr)
     {
-            auto *cpu = static_cast<Cpu<bus_type, state_type, opcode_type> *>(ctx);
-            return cpu->bus_read(addr);
+        auto *cpu = static_cast<Cpu<bus_type, state_type, opcode_type> *>(ctx);
+        return cpu->bus_read(addr);
     }
 
     static void jit_bus_write(void *ctx, addr_type addr, data_type value)
     {
-            auto *cpu = static_cast<Cpu<bus_type, state_type, opcode_type> *>(ctx);
-            cpu->bus_write(addr, value);
-    }
-
-    static void jit_bus_get_flags(void *ctx, uint16_t flags)
-    {
-            auto *cpu = static_cast<Cpu<bus_type, state_type, opcode_type> *>(ctx);
+        auto *cpu = static_cast<Cpu<bus_type, state_type, opcode_type> *>(ctx);
+        cpu->bus_write(addr, value);
     }
 
     void jit_dispatch(pc_type pc)
@@ -152,18 +147,27 @@ protected:
         using namespace std::placeholders;
         JITBlock *block = NULL;
 
-        auto it = m_jit_cache.find(pc);
-        if (it == m_jit_cache.end()) {
-            jit_block_ptr b = jit_compile(pc);
-            block = b.get();
-            m_jit_cache.insert(std::make_pair(pc, std::move(b)));
-        } else if (!it->second->valid(std::bind(jit_bus_read, this, _1))) {
-            m_jit_cache.erase(it);
-            jit_block_ptr b = jit_compile(pc);
-            block = b.get();
-            m_jit_cache.insert(std::make_pair(pc, std::move(b)));
-        } else {
-            block = it->second.get();
+        try {
+            auto it = m_jit_cache.find(pc);
+            if (it == m_jit_cache.end()) {
+                jit_block_ptr b = jit_compile(pc);
+                block = b.get();
+                m_jit_cache.insert(std::make_pair(pc, std::move(b)));
+            } else if (!it->second->valid(std::bind(jit_bus_read, this, _1))) {
+                m_jit_cache.erase(it);
+                jit_block_ptr b = jit_compile(pc);
+                block = b.get();
+                m_jit_cache.insert(std::make_pair(pc, std::move(b)));
+            } else {
+                block = it->second.get();
+            }
+        } catch (JITError &e) {
+            block = NULL;
+        }
+
+        if (block == NULL) {
+            dispatch(pc);
+            return;
         }
 
         bit_set(m_state.NativeFlags.d, Flags::CF, m_state.F.C);

@@ -591,7 +591,7 @@ namespace M6502v2
 
         /* XXX: zero page */
         push(_jit, RegTMPl);
-        _jit->xPOP(RegEA);
+        _jit->xPOPF16();
         _jit->xPOP(RegEA);
         _jit->xPOPF();
         return true;
