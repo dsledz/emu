@@ -24,17 +24,19 @@
  */
 #pragma once
 
-#include "emu/bits.h"
+#include "core/bits.h"
+#include "core/exception.h"
 #include "emu/io.h"
-#include "emu/exception.h"
+
+using namespace Core;
 
 namespace EMU {
 
 class Machine;
 
-struct DipswitchValueException: public EmuException {
+struct DipswitchValueException: public CoreException {
     DipswitchValueException(const std::string &value= ""):
-        EmuException("Unknown dipswitch value"),
+        CoreException("Unknown dipswitch value"),
         value(value)
     {
         if (value != "")

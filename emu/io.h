@@ -25,7 +25,7 @@
 #pragma once
 
 #include <cassert>
-#include "bits.h"
+#include "core/bits.h"
 
 namespace EMU {
 

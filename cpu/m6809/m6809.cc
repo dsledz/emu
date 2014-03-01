@@ -23,8 +23,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "cpu/lib/cpu.h"
 #include "cpu/m6809/m6809.h"
 
+using namespace CPU;
 using namespace M6809;
 
 M6809Cpu::M6809Cpu(Machine *machine, const std::string &name, unsigned hertz,

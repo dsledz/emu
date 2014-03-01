@@ -23,12 +23,14 @@
  */
 #pragma once
 
+#include "core/mem.h"
 #include "emu/emu.h"
 
 using namespace EMU;
 
-struct JITError: public EmuException {
-    JITError(const std::string &op): EmuException("JIT Error: ")
+struct JITError: public CoreException {
+    JITError(const std::string &op):
+        CoreException("JIT Error: ")
     {
         msg += op;
     }

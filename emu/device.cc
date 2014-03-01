@@ -25,6 +25,7 @@
 
 #include "emu/emu.h"
 
+using namespace Core;
 using namespace EMU;
 
 Device::Device(Machine *machine, const std::string &name):
@@ -73,7 +74,7 @@ Device::task(void)
     DeviceStatus new_status = DeviceStatus::Running;
     try {
         task_loop();
-    } catch (EmuException &e) {
+    } catch (CoreException &e) {
         new_status = DeviceStatus::Fault;
     }
     {
@@ -156,7 +157,7 @@ Device::log(LogLevel level, const std::string &fmt, ...)
     va_start(args, fmt);
     std::stringstream os;
     os << m_clock.now() << ":" << name() << ":" << fmt;
-    EMU::log.log(level, os.str(), args);
+    Core::log.log(level, os.str(), args);
     va_end(args);
 }
 

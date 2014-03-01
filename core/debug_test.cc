@@ -22,41 +22,16 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#pragma once
 
-#include "core/bits.h"
+#include "gtest/gtest.h"
+
 #include "core/debug.h"
-#include "core/exception.h"
 
-using namespace Core;
+TEST(DebugTest, trace)
+{
+    LOG_TRACE("foo");
+    LOG_DEBUG("foo");
+    LOG_INFO("foo");
+    LOG_ERROR("foo");
+}
 
-namespace EMU {
-
-struct OptionException: public CoreException {
-    OptionException(const std::string &option, const std::string &value=""):
-        CoreException("Invalid Option: ")
-    {
-        msg += option;
-        if (value != "")
-            msg += " (value: " + value + ")";
-    }
-    std::string option;
-    std::string value;
-};
-
-class Options {
-public:
-    Options(void):
-        driver(""),
-        rom(""),
-        log_level("error")
-    {
-    }
-    ~Options(void) { }
-
-    std::string driver;     /**< Driver module */
-    std::string rom;        /**< Rom */
-    std::string log_level;  /**< Log level */
-};
-
-};

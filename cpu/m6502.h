@@ -25,7 +25,9 @@
 #pragma once
 
 #include "emu/emu.h"
+#include "cpu/lib/cpu.h"
 
+using namespace CPU;
 using namespace EMU;
 
 namespace M6502 {

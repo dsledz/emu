@@ -24,21 +24,21 @@
  */
 #pragma once
 
-#include "emu/bits.h"
+#include "core/bits.h"
+#include "core/exception.h"
 #include "emu/timing.h"
-#include "emu/exception.h"
 #include "emu/device.h"
 #include "emu/video.h"
 #include "emu/dipswitch.h"
 #include "emu/options.h"
 
-#include <map>
+using namespace Core;
 
 namespace EMU {
 
-struct KeyError: public EmuException {
+struct KeyError: public CoreException {
     KeyError(const std::string &key):
-        EmuException("Missing Key: "),
+        CoreException("Missing Key: "),
         key(key)
     {
         msg += key;
@@ -118,7 +118,7 @@ protected:
 private:
     Device *dev(const std::string &name);
 
-    EmuScheduler m_scheduler;
+    TaskScheduler m_scheduler;
     EmuSimClock m_sim_clock;
     InputMap m_input;
     std::list<Device *> m_devs;

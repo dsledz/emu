@@ -23,7 +23,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "emu/bits.h"
+#include "core/bits.h"
+
 #include "emu/dipswitch.h"
 #include "emu/machine.h"
 

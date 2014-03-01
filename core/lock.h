@@ -22,16 +22,30 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+/*
+ * Locking primatives
+ */
+#pragma once
 
-#include "gtest/gtest.h"
+#include "core/bits.h"
 
-#include "emu.h"
+namespace Core {
 
-TEST(DebugTest, trace)
-{
-    LOG_TRACE("foo");
-    LOG_DEBUG("foo");
-    LOG_INFO("foo");
-    LOG_ERROR("foo");
-}
+template<typename mtx_type>
+class unlock_guard {
+public:
+    unlock_guard(mtx_type & m): _mtx(m) {
+        _mtx.unlock();
+    }
+    ~unlock_guard(void) {
+        _mtx.lock();
+    }
 
+private:
+    mtx_type & _mtx;
+};
+
+typedef std::unique_lock<std::mutex> lock_mtx;
+typedef unlock_guard<std::mutex> unlock_mtx;
+
+};

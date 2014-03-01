@@ -27,9 +27,9 @@
  */
 #pragma once
 
-#include "emu/bits.h"
-#include "emu/exception.h"
-#include "emu/debug.h"
+#include "core/bits.h"
+#include "core/exception.h"
+#include "core/debug.h"
 #include "emu/state.h"
 #include "emu/device.h"
 #include "emu/io.h"

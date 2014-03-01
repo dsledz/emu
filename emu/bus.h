@@ -25,9 +25,9 @@
 #pragma once
 
 #include <cassert>
-#include "emu/bits.h"
+#include "core/bits.h"
 #include "emu/io.h"
-#include "emu/radix.h"
+#include "core/radix.h"
 
 namespace EMU {
 
@@ -74,7 +74,7 @@ public:
             /* Check for duplicates */
             for (auto it = list.begin(); it != list.end(); it++)
                 if (it->match(key))
-                    throw EMU::BusError(key);
+                    throw Core::BusError(key);
             list.push_back(entry);
         }
     }
@@ -86,7 +86,7 @@ public:
         for (auto it = list.begin(); it != list.end(); it++)
             if (it->match(key))
                 return it->value;
-        throw EMU::BusError(key);
+        throw Core::BusError(key);
     }
 
     const size_t bucket(addr_type key) {

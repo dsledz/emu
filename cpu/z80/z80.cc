@@ -23,10 +23,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "cpu/lib/cpu.h"
 #include "cpu/z80/z80.h"
 #include <sstream>
 
 using namespace EMU;
+using namespace CPU;
 using namespace Z80;
 
 Registers::Registers(void):

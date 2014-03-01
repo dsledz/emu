@@ -3,6 +3,7 @@
 
 #include "emu/emu.h"
 
+using namespace Core;
 using namespace EMU;
 
 static void
@@ -77,7 +78,7 @@ TEST(DipswitchTest, set)
 
     add_switches(&machine);
 
-    EXPECT_THROW(machine.set_switch("Random", "Value"), EmuException);
+    EXPECT_THROW(machine.set_switch("Random", "Value"), CoreException);
 
     machine.set_switch("Lives", "5");
 

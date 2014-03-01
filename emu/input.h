@@ -25,9 +25,12 @@
 #pragma once
 #include <unordered_map>
 
-#include "emu/bits.h"
-#include "emu/exception.h"
+#include "core/bits.h"
+#include "core/exception.h"
+
 #include "emu/io.h"
+
+using namespace Core;
 
 namespace EMU {
 /**
@@ -63,9 +66,9 @@ enum class InputKey {
     Joy2Btn6  = 29,
 };
 
-struct InputError: public EmuException {
+struct InputError: public CoreException {
     InputError(InputKey key):
-        EmuException("Input error"),
+        CoreException("Input error"),
         key(key)
     {
     }

@@ -114,9 +114,9 @@ struct texture_cleanup {
 typedef ScopedObject<texture_cleanup> scoped_texture;
 
 /* XXX: Grab GLError() */
-struct OpenGLError: public EmuException
+struct OpenGLError: public CoreException
 {
-    OpenGLError(void): EmuException("OpenGL Error") { }
+    OpenGLError(void): CoreException("OpenGL Error") { }
 };
 
 /**

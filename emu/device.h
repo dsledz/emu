@@ -23,11 +23,14 @@
  */
 #pragma once
 
-#include "emu/bits.h"
+#include "core/bits.h"
+#include "core/exception.h"
 #include "emu/state.h"
 #include "emu/io.h"
 #include "emu/input.h"
 #include "emu/timing.h"
+
+using namespace Core;
 
 namespace EMU {
 
@@ -54,7 +57,22 @@ struct DeviceUpdate {
     };
 };
 
-typedef EmuChannel<DeviceUpdate> EmuDeviceChannel;
+struct DeviceFault: public CoreException {
+    DeviceFault(const std::string &device, const std::string &details=""):
+        CoreException(""),
+        device(device)
+    {
+        std::stringstream ss;
+        ss << "(" << device << "): Fault";
+        if (details != "")
+            ss << " " << details;
+        msg += ss.str();
+    }
+
+    std::string device;
+};
+
+typedef Channel<DeviceUpdate> EmuDeviceChannel;
 typedef std::shared_ptr<EmuDeviceChannel> EmuDeviceChannel_ptr;
 
 #define DEFAULT_HERTZ (1000 * 1000)

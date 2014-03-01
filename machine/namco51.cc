@@ -24,10 +24,12 @@
  */
 
 #include "emu/emu.h"
+#include "cpu/lib/cpu.h"
 
 #include "machine/namco51.h"
 
 using namespace EMU;
+using namespace CPU;
 using namespace Device;
 
 Namco51::Namco51(Machine *machine):

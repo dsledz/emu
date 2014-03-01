@@ -28,8 +28,8 @@
  */
 #pragma once
 
-#include "emu/bits.h"
-#include "emu/exception.h"
+#include "core/bits.h"
+#include "core/exception.h"
 
 #define MASK(width) ((1 << width) - 1)
 
@@ -98,7 +98,7 @@ public:
         if (ele != NULL && ele->leaf != NULL && ele->leaf->match(key))
             return ele->leaf->value;
         else
-            throw EMU::BusError(key);
+            throw Core::BusError(key);
     }
 
     void add(addr_type key, addr_type keymask, const Val &val) {
@@ -109,7 +109,7 @@ public:
         // Make sure the prefix is correct
         for (int d = depth; d > 0; d--) {
             if (!set && bit_isset(keymask, d))
-                throw EMU::BusError(key);
+                throw Core::BusError(key);
             set = bit_isset(keymask, d);
         }
         // Locate the Correct inner object for the element
@@ -118,7 +118,7 @@ public:
             if (*ele == NULL)
                 *ele = new Inner(depth, mask);
             else if ((*ele)->leaf != NULL)
-                throw EMU::BusError(key);
+                throw Core::BusError(key);
             if (bit_isset(key, depth))
                 ele = &(*ele)->one;
             else

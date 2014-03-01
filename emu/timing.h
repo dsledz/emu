@@ -27,7 +27,10 @@
 #include <mach/mach.h>
 #include <mach/mach_time.h>
 
-#include "emu/task.h"
+#include "core/channel.h"
+#include "core/task.h"
+
+using namespace Core;
 
 namespace EMU {
 
@@ -304,7 +307,7 @@ struct EmuClockUpdate {
     EmuTime      now;
 };
 
-typedef EmuChannel<EmuClockUpdate> EmuTimeChannel;
+typedef Channel<EmuClockUpdate> EmuTimeChannel;
 typedef std::shared_ptr<EmuTimeChannel> EmuTimeChannel_ptr;
 
 /**
@@ -333,7 +336,7 @@ public:
             avail = m_now - m_current;
         }
         if (m_stopped)
-            throw EmuTaskCanceled("Off");
+            throw TaskCanceled("Off");
         return avail;
     }
 

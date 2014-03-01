@@ -24,7 +24,7 @@
  */
 #pragma once
 
-#include "emu/bits.h"
+#include "core/bits.h"
 #include "emu/device.h"
 
 namespace EMU {
@@ -144,8 +144,6 @@ private:
     std::vector<RGBColor> _data;
     RGBColor _empty;
 };
-
-typedef std::function<void (FrameBuffer *)> render_cb;
 
 template<class gfx, class palette> static inline void
 draw_gfx(FrameBuffer *screen, palette *pal, gfx *obj, int sx, int sy,

@@ -29,5 +29,3 @@ using namespace EMU;
 
 const Time EMU::time_zero = Time(sec(0));
 
-Debug EMU::log(std::cout);
-

@@ -32,7 +32,7 @@ Emulator::Emulator(const Options &options):
     _options(options),
     _machine()
 {
-    EMU::log.set_level(_options.log_level);
+    Core::log.set_level(_options.log_level);
     /* XXX: Fix constness */
     _machine = loader()->load(const_cast<Options *>(&_options));
 }

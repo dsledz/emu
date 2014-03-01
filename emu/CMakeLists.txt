@@ -6,17 +6,17 @@ add_library(emu
     machine.cc
     ram.cc
     rom.cc
-    task.cc
     screen.cc
     video.cc
     dipswitch.cc)
 
+target_link_libraries(emu
+    core)
+
 if (BUILD_TESTING)
     add_executable(emu-check
         emu_test.cc
-        task_test.cc
         time_test.cc
-        debug_test.cc
         dipswitch_test.cc
         io_test.cc)
     target_link_libraries(emu-check

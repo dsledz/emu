@@ -25,38 +25,61 @@
 #pragma once
 
 #include "core/bits.h"
-#include "core/debug.h"
 #include "core/exception.h"
+#include "core/debug.h"
+#include "core/task.h"
+#include "core/thread.h"
 
-using namespace Core;
+namespace Core {
 
-namespace EMU {
-
-struct OptionException: public CoreException {
-    OptionException(const std::string &option, const std::string &value=""):
-        CoreException("Invalid Option: ")
-    {
-        msg += option;
-        if (value != "")
-            msg += " (value: " + value + ")";
-    }
-    std::string option;
-    std::string value;
+struct ThreadRegisters {
+    uint64_t r8;
+    uint64_t r9;
+    uint64_t r10;
+    uint64_t r11;
+    uint64_t r12;
+    uint64_t r13;
+    uint64_t r14;
+    uint64_t r15;
+    uint64_t rsp;
+    uint64_t rbp;
 };
 
-class Options {
+class ThreadContext
+{
 public:
-    Options(void):
-        driver(""),
-        rom(""),
-        log_level("error")
-    {
-    }
-    ~Options(void) { }
+    ThreadContext(uint64_t rip);
+    ~ThreadContext(void);
 
-    std::string driver;     /**< Driver module */
-    std::string rom;        /**< Rom */
-    std::string log_level;  /**< Log level */
+    void switch_context(ThreadContext *new_context);
+
+private:
+    std::vector<uint8_t> m_stack;
+    ThreadRegisters m_registers;
+};
+
+class FiberTask: public Task
+{
+public:
+    FiberTask(task_fn fn);
+    virtual ~FiberTask(void);
+    FiberTask(const FiberTask &rhs) = delete;
+
+    virtual bool nonblocking(void);
+    virtual State run(void);
+    virtual void cancel(void);
+    virtual void suspend(void);
+    virtual void resume(Task_ptr task);
+    virtual State force(void);
+
+private:
+
+    void run_internal(void);
+    static void run_context(void);
+
+    Thread       *m_thread;
+    ThreadContext m_our_ctx;
+    ThreadContext m_thread_ctx;
 };
 
 };

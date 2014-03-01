@@ -34,6 +34,55 @@ using namespace JITx64;
 
 namespace CPU {
 
+/**
+ * CPU Fault
+ */
+struct CpuFault: public DeviceFault {
+    CpuFault(const std::string &cpu, const std::string &msg):
+        DeviceFault(cpu, msg) { }
+};
+
+/**
+ * CPU Opcode error
+ */
+struct CpuOpcodeFault: public CpuFault {
+    CpuOpcodeFault(const std::string &cpu, unsigned opcode, unsigned addr):
+        CpuFault(cpu, "invalid opcode"),
+        op(opcode),
+        pc(addr)
+    {
+        std::stringstream ss;
+        ss << " " << Hex(opcode);
+        if (addr != 0)
+            ss << " at address " << Hex(addr);
+        msg += ss.str();
+    }
+    unsigned op;
+    unsigned pc;
+};
+
+struct CpuRegisterFault: public CpuFault {
+    CpuRegisterFault(const std::string &cpu, unsigned index):
+        CpuFault(cpu, "invalid regsiter")
+    {
+        std::stringstream ss;
+        ss << " " << Hex(index);
+        msg += ss.str();
+    }
+};
+
+struct CpuFeatureFault: public CpuFault {
+    CpuFeatureFault(const std::string &cpu, const std::string &feature=""):
+        CpuFault(cpu, "unsupported feature")
+    {
+        std::stringstream ss;
+        if (feature != "") {
+            ss << " " << feature;
+            msg += ss.str();
+        }
+    }
+};
+
 template<class _bus_type, class _state_type, typename _opcode_type>
 class Cpu: public ClockedDevice {
 public:

@@ -33,10 +33,11 @@
 #include <SDL.h>
 
 using namespace EMU;
+using namespace Core;
 
-class SDLException: public EMU::EmuException {
+class SDLException: public Core::CoreException {
 public:
-    SDLException(): EmuException("SDL exception") { }
+    SDLException(): CoreException("SDL exception") { }
 };
 
 struct SDLKeyHash
@@ -156,7 +157,7 @@ public:
                 break;
             case SDLK_F1:
                 if (event->type == SDL_KEYDOWN)
-                    EMU::log.set_level(EMU::LogLevel::Trace);
+                    Core::log.set_level(Core::LogLevel::Trace);
                 break;
             default: {
                 auto it = key_map.find(event->key.keysym.sym);
@@ -189,7 +190,7 @@ extern "C" int main(int argc, char **argv)
         SDLEmulator emu(opts);
 
         emu.start();
-    } catch (EmuException &e) {
+    } catch (CoreException &e) {
         std::cout << "Exception: " << e.message() << std::endl;
     }
 

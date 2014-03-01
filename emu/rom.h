@@ -25,8 +25,8 @@
 
 #pragma once
 
-#include "emu/bits.h"
-#include "emu/exception.h"
+#include "core/bits.h"
+#include "core/exception.h"
 #include "emu/device.h"
 #include "emu/io.h"
 
@@ -37,9 +37,9 @@ namespace EMU {
 
 void read_rom(const std::string &name, bvec &rom);
 
-struct RomException: public EmuException {
+struct RomException: public CoreException {
     RomException(const std::string &path):
-        EmuException("Missing rom: "),
+        CoreException("Missing rom: "),
         path(path)
     {
         msg += path;

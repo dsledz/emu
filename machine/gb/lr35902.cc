@@ -28,9 +28,11 @@
 
 #include "emu/emu.h"
 
+#include "cpu/lib/cpu.h"
 #include "machine/gb/lr35902.h"
 
 using namespace EMU;
+using namespace CPU;
 using namespace GBMachine;
 
 Registers::Registers(void): _AF({}), _BC({}), _DE({}), _HL({}), _SP({}), _PC({})

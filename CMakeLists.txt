@@ -24,6 +24,7 @@ option(BUILD_IOS "Build iOS Support" OFF)
 option(BUILD_OSX "Build OSX" OFF)
 option(BUILD_SDL "Build SDL" ON)
 option(BUILD_TESTING "Enable testing" ON)
+option(BUILD_CORE_ONLY "Enable core only" OFF)
 
 if (BUILD_IOS)
     set(BUILD_TESTING 0)
@@ -44,10 +45,15 @@ if (BUILD_TESTING)
     enable_testing(true)
 endif (BUILD_TESTING)
 
-add_subdirectory(emu)
-add_subdirectory(cpu)
-add_subdirectory(machine)
-add_subdirectory(driver)
+if (BUILD_CORE_ONLY)
+    add_subdirectory(core)
+else (!BUILD_CORE_ONLY)
+    add_subdirectory(core)
+    add_subdirectory(emu)
+    add_subdirectory(cpu)
+    add_subdirectory(machine)
+    add_subdirectory(driver)
+endif (BUILD_CORE_ONLY)
 
 configure_file(
     "${PROJECT_SOURCE_DIR}/opts.h.in"

@@ -24,12 +24,13 @@
  */
 #pragma once
 
-#include "emu/bits.h"
+#include "core/bits.h"
+#include "core/exception.h"
 #include <iostream>
 #include <iomanip>
 #include <string>
 
-namespace EMU {
+namespace Core {
 
 enum class LogLevel {
     Trace,
@@ -40,9 +41,9 @@ enum class LogLevel {
     Fatal
 };
 
-struct DebugException: public EmuException {
+struct DebugException: public CoreException {
     DebugException(const std::string &msg):
-        EmuException(msg) { }
+        CoreException(msg) { }
 };
 
 /**
@@ -116,54 +117,54 @@ private:
 extern Debug log;
 
 #define IF_LOG(lvl) \
-    for (bool once=true; once && EMU::log.enabled(LogLevel::lvl); once=false)
+    for (bool once=true; once && Core::log.enabled(LogLevel::lvl); once=false)
 
 #define LOG_TRACE(fmt, args...) \
-    for (bool once=true; once && EMU::log.enabled(EMU::LogLevel::Trace); once=false) \
-        EMU::log.trace(fmt);
+    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Trace); once=false) \
+        Core::log.trace(fmt);
 
 #define LOG_DEBUG(fmt, args...) \
-    for (bool once=true; once && EMU::log.enabled(EMU::LogLevel::Debug); once=false) \
-        EMU::log.debug(fmt);
+    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Debug); once=false) \
+        Core::log.debug(fmt);
 
 #define LOG_INFO(fmt, args...) \
-    for (bool once=true; once && EMU::log.enabled(EMU::LogLevel::Info); once=false) \
-        EMU::log.info(fmt);
+    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Info); once=false) \
+        Core::log.info(fmt);
 
 #define LOG_ERROR(fmt, args...) \
-    for (bool once=true; once && EMU::log.enabled(EMU::LogLevel::Error); once=false) \
-        EMU::log.error(fmt);
+    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Error); once=false) \
+        Core::log.error(fmt);
 
 #define DEVICE_TRACE(fmt, ...) \
-    for (bool once=true; once && EMU::log.enabled(EMU::LogLevel::Trace); once=false) \
-        EMU::Device::log(EMU::LogLevel::Trace, fmt, ##__VA_ARGS__)
+    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Trace); once=false) \
+        EMU::Device::log(Core::LogLevel::Trace, fmt, ##__VA_ARGS__)
 
 #define DEVICE_DEBUG(fmt, ...) \
-    for (bool once=true; once && EMU::log.enabled(EMU::LogLevel::Debug); once=false) \
-        EMU::Device::log(EMU::LogLevel::Debug, fmt, ##__VA_ARGS__)
+    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Debug); once=false) \
+        EMU::Device::log(Core::LogLevel::Debug, fmt, ##__VA_ARGS__)
 
 #define DEVICE_INFO(fmt, ...) \
-    for (bool once=true; once && EMU::log.enabled(EMU::LogLevel::Info); once=false) \
-        EMU::Device::log(EMU::LogLevel::Info, fmt, ##__VA_ARGS__)
+    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Info); once=false) \
+        EMU::Device::log(Core::LogLevel::Info, fmt, ##__VA_ARGS__)
 
 #define DEVICE_ERROR(fmt, ...) \
-    for (bool once=true; once && EMU::log.enabled(EMU::LogLevel::Error); once=false) \
-        EMU::Device::log(EMU::LogLevel::Error, fmt, ##__VA_ARGS__)
+    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Error); once=false) \
+        EMU::Device::log(Core::LogLevel::Error, fmt, ##__VA_ARGS__)
 
 #define MACHINE_TRACE(fmt, ...) \
-    for (bool once=true; once && EMU::log.enabled(EMU::LogLevel::Trace); once=false) \
-        EMU::Machine::log(EMU::LogLevel::Trace, fmt, ##__VA_ARGS__)
+    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Trace); once=false) \
+        EMU::Machine::log(Core::LogLevel::Trace, fmt, ##__VA_ARGS__)
 
 #define MACHINE_DEBUG(fmt, ...) \
-    for (bool once=true; once && EMU::log.enabled(EMU::LogLevel::Debug); once=false) \
-        EMU::Machine::log(EMU::LogLevel::Debug, fmt, ##__VA_ARGS__)
+    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Debug); once=false) \
+        EMU::Machine::log(Core::LogLevel::Debug, fmt, ##__VA_ARGS__)
 
 #define MACHINE_INFO(fmt, ...) \
-    for (bool once=true; once && EMU::log.enabled(EMU::LogLevel::Info); once=false) \
-        EMU::Machine::log(EMU::LogLevel::Info, fmt, ##__VA_ARGS__)
+    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Info); once=false) \
+        EMU::Machine::log(Core::LogLevel::Info, fmt, ##__VA_ARGS__)
 
 #define MACHINE_ERROR(fmt, ...) \
-    for (bool once=true; once && EMU::log.enabled(EMU::LogLevel::Error); once=false) \
-        EMU::Machine::log(EMU::LogLevel::Error, fmt, ##__VA_ARGS__)
+    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Error); once=false) \
+        EMU::Machine::log(Core::LogLevel::Error, fmt, ##__VA_ARGS__)
 
 };

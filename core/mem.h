@@ -84,3 +84,4 @@ inline bool operator==(ExecPolicy<T> const&, OtherAllocator const&) {
 
 typedef std::vector<uint8_t, ExecPolicy<uint8_t> > exec_buf_t;
 
+
