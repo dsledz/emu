@@ -39,7 +39,11 @@ Device::Device(Machine *machine, const std::string &name, unsigned hertz):
     m_status(DeviceStatus::Off),
     m_target_status(DeviceStatus::Off),
     m_hertz(hertz),
-    m_avail(0)
+    m_avail(0),
+    m_cv(),
+    m_mtx(),
+    m_clock(),
+    m_channel()
 {
     m_machine->add_device(this);
 }

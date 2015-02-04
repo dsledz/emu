@@ -1,4 +1,5 @@
 #include "core/task.h"
+#include "core/channel.h"
 #include "core/debug.h"
 #include "core/fiber.h"
 
@@ -6,7 +7,15 @@ using namespace Core;
 
 static __thread Thread * curthread = NULL;
 
+uint64_t
+Task::next_id(void)
+{
+    static std::atomic<uint64_t> next_id= ATOMIC_VAR_INIT(1);
+    return std::atomic_fetch_add(&next_id, (uint64_t)1);
+}
+
 Task::Task(task_fn fn):
+    m_id(Task::next_id()),
     m_state(State::Created),
     m_mtx(),
     m_cv(),
@@ -80,6 +89,7 @@ Thread::cancel(void)
 void
 Thread::thread_main(void)
 {
+    curthread = this;
     try {
         m_task->run();
     } catch (CoreException &e) {
@@ -90,7 +100,6 @@ Thread::thread_main(void)
 void
 Thread::thread_task(void)
 {
-    curthread = this;
     std::unique_lock<std::mutex> lock(m_mtx);
     m_state = ThreadState::Idle;
     while (!m_canceled) {
@@ -196,7 +205,7 @@ void
 ThreadTask::suspend(void)
 {
     std::unique_lock<std::mutex> lock(m_mtx);
-    LOG_DEBUG("Suspending thread task.");
+    LOG_DEBUG("Suspending thread task: %llu", id());
     if (m_state == State::Running)
         m_state = State::Suspended;
     while (m_state != State::Queued && !finished(m_state))
@@ -210,7 +219,7 @@ void
 ThreadTask::resume(Task_ptr task)
 {
     lock_mtx lock(m_mtx);
-    LOG_DEBUG("Resuming thread task.");
+    LOG_DEBUG("Resuming thread task: %llu.", id());
     if (m_state == State::Suspended) {
         m_state = State::Queued;
         m_cv.notify_all();

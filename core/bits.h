@@ -41,6 +41,7 @@
 #include <cassert>
 #include <array>
 #include <map>
+#include <atomic>
 
 #define a_unused __attribute((unused))
 

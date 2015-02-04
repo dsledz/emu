@@ -72,6 +72,10 @@ public:
     virtual ~Task(void);
     Task(const Task &task) = delete;
 
+    uint64_t id(void) const {
+        return m_id;
+    }
+
     /**
      * Task is nonblocking
      */
@@ -117,10 +121,14 @@ public:
 
 protected:
 
-    State m_state;
-    std::mutex m_mtx;
-    std::condition_variable m_cv;
-    std::function<void (void)> m_func;
+    uint64_t                    m_id;
+    State                       m_state;
+    std::mutex                  m_mtx;
+    std::condition_variable     m_cv;
+    std::function<void (void)>  m_func;
+
+private:
+    static uint64_t next_id(void);
 };
 
 class ThreadTask: public Task

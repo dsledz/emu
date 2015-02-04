@@ -31,7 +31,7 @@ using namespace EMU;
 using namespace M6502v2;
 using namespace std::placeholders;
 
-#define JIT 1
+#define JIT 0
 
 #define OPCODE(code, bytes, cycles, name, addr, op) { \
     code, \
@@ -209,6 +209,8 @@ M6502Cpu::M6502Cpu(Machine *machine, const std::string &name,
     for (int i = 0; i < sizeof(opcodes)/sizeof(opcodes[0]); i++) {
         m_opcodes[opcodes[i].code] = opcodes[i];
     }
+
+    m_state.reset();
 }
 
 M6502Cpu::~M6502Cpu(void)

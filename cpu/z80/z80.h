@@ -29,9 +29,9 @@
 
 #include "emu/emu.h"
 
-namespace Z80 {
-
 using namespace EMU;
+
+namespace Z80 {
 
 enum class Reg {
     A = 0x07,
@@ -42,45 +42,6 @@ enum class Reg {
     H = 0x04,
     L = 0x05,
     HL = 0x06,
-};
-
-struct Z80State {
-    union {
-        struct {
-            union {
-                struct {
-                    byte_t C:1;   /**< carry flag */
-                    byte_t N:1;   /**< add/substract */
-                    byte_t V:1;  /**< parity/overflow */
-                    byte_t X:1;
-                    byte_t H:1;   /**< half carry */
-                    byte_t Y:1;
-                    byte_t Z:1;   /**< zero flag */
-                    byte_t S:1;   /**< sign flag */
-                } f;
-                reg8_t l;
-            };
-            reg8_t h;
-        } b;
-        uint16_t d;
-    } AF;
-    reg16_t BC;
-    reg16_t DE;
-    reg16_t HL;
-    reg16_t IX;
-    reg16_t IY;
-    reg16_t SP;
-    reg16_t PC;
-
-    reg8_t I;
-    reg8_t R;
-
-    reg16_t AF2;
-    reg16_t BC2;
-    reg16_t DE2;
-    reg16_t HL2;
-
-    reg16_t EA;
 };
 
 struct Registers {

@@ -110,11 +110,9 @@ FiberTask::run(void)
         lock_mtx lock(m_mtx);
         switch (m_state) {
         case State::Created:
-            LOG_DEBUG("Fiber state: Created");
             m_thread = Thread::cur_thread();
             break;
         case State::Queued:
-            LOG_DEBUG("Fiber state: Suspended");
             break;
         default:
             assert(false);
@@ -122,7 +120,7 @@ FiberTask::run(void)
             return m_state;
         }
     }
-    LOG_DEBUG("Restoring fiber state.");
+    LOG_DEBUG("Running fiber task: %llu", id());
     // Switch to our context and run.
     m_our_ctx.switch_context(&m_thread_ctx);
     // We've returned from our context.
@@ -136,7 +134,7 @@ void
 FiberTask::cancel(void)
 {
     std::unique_lock<std::mutex> lock(m_mtx);
-    LOG_DEBUG("Canceling fiber task.");
+    LOG_DEBUG("Canceling fiber task: %llu", id());
     if (m_state == State::Suspended) {
         m_state = State::Canceled;
         /* XXX: How do we trigger ourselves? */
@@ -149,7 +147,7 @@ void
 FiberTask::suspend(void)
 {
     std::unique_lock<std::mutex> lock(m_mtx);
-    LOG_DEBUG("Suspending fiber task.");
+    LOG_DEBUG("Suspending fiber task: %llu", id());
     if (m_state == State::Running)
         m_state = State::Suspended;
     while (m_state != State::Queued && !finished(m_state)) {
@@ -169,7 +167,7 @@ FiberTask::resume(Task_ptr task)
 {
     /* Put us on the runnable list */
     lock_mtx lock(m_mtx);
-    LOG_DEBUG("Resuming fiber task.");
+    LOG_DEBUG("Resuming fiber task: %llu", id());
     if (m_state == State::Suspended) {
         m_state = State::Queued;
         m_thread->schedule(task);

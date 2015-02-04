@@ -28,7 +28,6 @@
 #include "core/exception.h"
 #include "core/debug.h"
 #include "core/task.h"
-#include "core/thread.h"
 
 namespace Core {
 

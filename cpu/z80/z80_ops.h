@@ -2,9 +2,7 @@
 
 #include "emu/emu.h"
 
-#define OP(op)  void op(Z80Cpu *cpu, Z80State *state)
-#define OP1(op) void op(Z80Cpu *cpu, Z80State *state, Reg r1)
-#define OP2(op) void op(Z80Cpu *cpu, Z80State *state, Reg r1, Reg r2)
+#define OP(op, ...) void op(Z80State *state, ##__VA_ARGS__)
 
 namespace Z80
 {
@@ -43,7 +41,7 @@ namespace Z80
          */
         return ((result & 0xA8) |
                 ((arg1 ^ arg2 ^ result) & 0x10) |
-                (bit_isset(arg1 ^ arg2 ^ result) << 2) |
+                (bit_isset(arg1 ^ arg2 ^ result, 7) << 2) |
                 ((result & 0x100) >> 8));
     }
 

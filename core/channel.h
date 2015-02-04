@@ -54,12 +54,9 @@ public:
         lock_mtx lock(m_mtx);
         m_objects.push(obj);
         if (!m_waiting.empty()) {
-            LOG_DEBUG("Waking task.");
             Task_ptr task = m_waiting.front();
             m_waiting.pop();
             resume_task(task);
-        } else {
-            LOG_DEBUG("No waiters.");
         }
     }
 
@@ -70,7 +67,6 @@ public:
     object_t get(void) {
         std::unique_lock<std::mutex> lock(m_mtx);
         while (m_objects.empty()) {
-            LOG_DEBUG("Waiting in channel.");
             Task_ptr task = Task::cur_task();
             m_waiting.push(task);
             {
@@ -78,7 +74,6 @@ public:
                 suspend_task(task);
             }
         }
-        LOG_DEBUG("Got object.");
         object_t obj = m_objects.front();
         m_objects.pop();
         return obj;

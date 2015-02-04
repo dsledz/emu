@@ -107,14 +107,14 @@ public:
 
         SDL_WM_SetCaption("Emulator", "Emulator");
 
-        _screen = std::unique_ptr<GLFrameBuffer>(new GLFrameBuffer());
-        machine()->set_screen(_screen.get());
+        m_frame_buffer = std::unique_ptr<GLFrameBuffer>(new GLFrameBuffer());
+        machine()->set_frame_buffer(m_frame_buffer.get());
 
         /* Resize our window to the correct size. */
-        SDL_SetVideoMode(_screen->width() * 2, _screen->height() * 2, 32,
+        SDL_SetVideoMode(m_frame_buffer->width() * 2, m_frame_buffer->height() * 2, 32,
                          SDL_HWSURFACE | SDL_OPENGL);
         /* Reinit gl context */
-        _screen->init();
+        m_frame_buffer->init();
 
         SDL_Event event;
         while (SDL_PollEvent(&event))
@@ -133,7 +133,7 @@ public:
             while (SDL_PollEvent(&event))
                 on_event(&event);
 
-            _screen->render();
+            m_frame_buffer->render();
             SDL_GL_SwapBuffers();
         }
 
@@ -174,7 +174,7 @@ public:
 
 private:
 
-    std::unique_ptr<GLFrameBuffer> _screen;
+    std::unique_ptr<GLFrameBuffer> m_frame_buffer;
 
     std::future<void> task;
 };

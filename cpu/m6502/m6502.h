@@ -52,6 +52,10 @@ struct M6502State
 
         return SR;
     }
+    void reset(void) {
+        A = 0; SP = 0; X = 0; Y = 0; SR = 0; ZPG = 0;
+        PC = 0; NativeFlags = 0; EA = 0; ARG = 0;
+    }
 
     reg8_t A;
     reg8_t SP;

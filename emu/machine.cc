@@ -228,7 +228,7 @@ Machine::add_screen(short width, short height, FrameBuffer::Rotation rotation)
 }
 
 void
-Machine::set_screen(FrameBuffer *screen)
+Machine::set_frame_buffer(FrameBuffer *screen)
 {
     /* XXX: Not exception safe */
     m_screen = screen;

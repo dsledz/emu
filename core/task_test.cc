@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "core/task.h"
-#include "core/thread.h"
+#include "core/channel.h"
 
 using namespace Core;
 

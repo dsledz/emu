@@ -72,7 +72,7 @@ public:
     void send_input(InputKey key, bool pressed);
     void reset(void);
     void run(void);
-    void set_screen(FrameBuffer *screen);
+    void set_frame_buffer(FrameBuffer *screen);
 
     void add_device(Device *dev);
     void remove_device(Device *dev);

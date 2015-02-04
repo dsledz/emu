@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "core/task.h"
+#include "core/channel.h"
 #include "core/fiber.h"
 
 using namespace Core;

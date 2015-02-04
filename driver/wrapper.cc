@@ -42,7 +42,7 @@ public:
         Emulator(options)
     {
         _screen = std::unique_ptr<GL_SCREEN>(new GL_SCREEN());
-        machine()->set_screen(_screen.get());
+        machine()->set_frame_buffer(_screen.get());
 
         _screen->init();
     }
