@@ -36,7 +36,7 @@ endif (BUILD_IOS)
 # Gtest
 if (BUILD_TESTING)
     message("Building Testing")
-    set(GTEST_DIR ${PROJECT_SOURCE_DIR}/../gtest-1.6.0)
+    set(GTEST_DIR ${PROJECT_SOURCE_DIR}/gtest-1.7.0)
     set(GTEST_USE_OWN_TR1_TUPLE 1)
     set(GTEST_HAS_TR1_TUPLE 0)
     add_subdirectory(${GTEST_DIR} ${CMAKE_CURRENT_BINARY_DIR}/gtest)
