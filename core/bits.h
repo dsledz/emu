@@ -44,6 +44,8 @@
 #include <atomic>
 
 #define a_unused __attribute((unused))
+#define likely(x)      __builtin_expect(!!(x), 1)
+#define unlikely(x)    __builtin_expect(!!(x), 0)
 
 /*  _____                     _       __
  * |_   _|   _ _ __   ___  __| | ___ / _|___
@@ -163,6 +165,7 @@ public:
     Hex(unsigned arg): v(arg), w(4) {}
     Hex(size_t arg): v(arg), w(8) {}
     Hex(int arg): v(arg), w(2) {}
+    Hex(off_t arg): v(arg), w(8) {}
     Hex(reg16_t arg): v(arg.d), w(2) {}
     Hex(reg32_t arg): v(arg.d), w(2) {}
     unsigned v;

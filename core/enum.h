@@ -26,6 +26,13 @@
 
 namespace Core {
 
+template<typename T, typename I>
+static inline bool enum_isset(I arg, T bit)
+{
+    I n = static_cast<typename std::underlying_type<T>::type>(bit);
+    return (arg & (1 << n));
+}
+
 template< typename T >
 class Enum
 {
@@ -69,5 +76,37 @@ typename Enum<T>::Iterator end( Enum<T> )
 {
    return typename Enum<T>::Iterator( ((int)T::Last) + 1 );
 }
+
+template< typename T>
+class BitField
+{
+public:
+        BitField():m_value(0)
+        {
+        }
+
+        BitField(std::initializer_list<T> l) {
+            for (auto b : l)
+                m_value |= static_cast<typename std::underlying_type<T>::type>(b);
+
+        }
+
+        ~BitField()
+        {
+        }
+
+        bool is_set(T t)
+        {
+            return m_value & static_cast<typename std::underlying_type<T>::type>(t);
+        }
+
+        bool is_clear(T t)
+        {
+            return !is_set(t);
+        }
+
+private:
+        typename std::underlying_type<T>::type m_value;
+};
 
 }

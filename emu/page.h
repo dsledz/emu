@@ -26,12 +26,25 @@
 
 #include <cassert>
 #include "core/bits.h"
+#include "core/enum.h"
 
 namespace EMU {
 
-enum PageFlags  {
-    WR_ONLY = 0x1,
-    RD_ONLY = 0x2,
+enum class PageFlags  {
+    None = 0x00,
+    Write = 0x01,
+    Read = 0x02,
+};
+
+struct PageException: public CoreException {
+    PageException(off_t off ):
+        CoreException("Page Fault: "), offset(off)
+    {
+        std::stringstream ss;
+        ss << Hex(off);
+        msg += ss.str();
+    }
+    off_t offset;
 };
 
 template<typename _addr_type, typename _data_type>
@@ -48,15 +61,21 @@ _data_type ReadWrite(_addr_type offset)
 template<typename _addr_type, typename _data_type, unsigned _page_width>
 class Page {
 public:
-    Page(void):m_page()
+    Page(void):m_page(),m_flags({PageFlags::Write, PageFlags::Read})
     {
     }
+    Page(std::initializer_list<PageFlags> flags):m_page(), m_flags(flags)
+    {
+    }
+
     ~Page(void)
     {
     }
 
     void write(_addr_type offset, _data_type data)
     {
+        if (unlikely(m_flags.is_clear(PageFlags::Write)))
+            throw PageException(offset);
         m_page[offset] = data;
     }
 
@@ -66,6 +85,7 @@ public:
     }
 
     _data_type m_page[_page_width];
+    BitField<PageFlags> m_flags;
 };
 
 };
