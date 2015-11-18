@@ -418,6 +418,7 @@ hu6280Cpu::dispatch(void)
         OPCODE(0xFF, "BBS7", op_bbs(7));
     default:
         throw CpuOpcodeFault(name(), op, _op_pc);
+#if 0
         if ((op & 0x03) == 0x02) {
             /* 1 cycle(s), 2 byte(s) */
         } else if ((op & 0x03) == 0x03) {
@@ -439,6 +440,7 @@ hu6280Cpu::dispatch(void)
             std::cout << "Unknown opcode: " << Hex(op) << std::endl;
             throw CpuOpcodeFault(name(), op, _op_pc);
         }
+#endif
     }
 
     IF_LOG(Trace)

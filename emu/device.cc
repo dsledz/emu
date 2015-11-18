@@ -102,7 +102,7 @@ Device::task_loop(void)
 {
     while (true)
         execute();
-    wait(DeviceStatus::Off);
+    // wait(DeviceStatus::Off);
 }
 
 void

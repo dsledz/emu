@@ -98,7 +98,7 @@ Emulator::do_execute(void)
 
     /* XXX: workaround */
     exit(0);
-    _machine->poweroff();
+    //_machine->poweroff();
 }
 
 Emulator::EmuState

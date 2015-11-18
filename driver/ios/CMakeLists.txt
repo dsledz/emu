@@ -11,8 +11,13 @@ add_executable(${NAME}
     ${resources}
     )
 
+set(CMAKE_OSX_SYSROOT iphoneos4.3)
+
 set_target_properties(${NAME}
     PROPERTIES RESOURCE ${resources})
+
+set_target_properties(${NAME} PROPERTIES
+    XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET 3.0)
 
 set_target_properties(${NAME}
     PROPERTIES XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY

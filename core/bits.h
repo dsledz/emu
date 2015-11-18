@@ -163,9 +163,9 @@ public:
     Hex(char arg): v(arg), w(2) {}
     Hex(uint16_t arg): v(arg), w(4) {}
     Hex(unsigned arg): v(arg), w(4) {}
-    Hex(size_t arg): v(arg), w(8) {}
+    Hex(size_t arg): v((unsigned)arg), w(8) {}
     Hex(int arg): v(arg), w(2) {}
-    Hex(off_t arg): v(arg), w(8) {}
+    Hex(off_t arg): v((unsigned)arg), w(8) {}
     Hex(reg16_t arg): v(arg.d), w(2) {}
     Hex(reg32_t arg): v(arg.d), w(2) {}
     unsigned v;

@@ -63,7 +63,7 @@ SaveState & operator << (SaveState & state, const T & d)
 static inline
 SaveState & operator <<(SaveState &state, const bvec & d)
 {
-    unsigned size = d.size();
+    size_t size = d.size();
     state << size;
     state.data.resize(state.pos + d.size());
     memcpy(&state.data[state.pos], d.data(), d.size());
@@ -82,7 +82,7 @@ LoadState & operator >>(LoadState & state, T & d)
 static inline
 LoadState & operator >>(LoadState & state, bvec & d)
 {
-    unsigned size;
+    size_t size;
     state >> size;
     d.resize(size);
     memcpy(d.data(), &state.data[state.pos], size);

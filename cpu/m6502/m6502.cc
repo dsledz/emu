@@ -313,6 +313,7 @@ void
 M6502Cpu::log_op(const Opcode *op, uint16_t pc, const uint8_t *instr)
 {
     std::stringstream os;
+#if 1
     os << std::setw(8) << name() << ":"
        << Hex(pc) << ":" << Hex(op->code) << ":"
        << op->name << " ";
@@ -321,7 +322,7 @@ M6502Cpu::log_op(const Opcode *op, uint16_t pc, const uint8_t *instr)
     else if (op->bytes == 3)
         os << Hex(instr[1] | (instr[2] << 8));
     DEVICE_TRACE(os.str());
-    return;
+#else
     os << " = >";
     const std::string &str = op->name;
     const std::string &delimiters = " ";
@@ -362,6 +363,7 @@ M6502Cpu::log_op(const Opcode *op, uint16_t pc, const uint8_t *instr)
         pos = str.find_first_of(delimiters, lastPos);
     }
     DEVICE_TRACE(os.str());
+#endif
 }
 
 std::string

@@ -67,9 +67,9 @@ public:
         assert(_entries.size() == 16);
         Entry entry(key, keyend, val);
 
-        const int start = bucket(entry.start);
-        const int end = bucket(entry.end);
-        for (int i = start; i <= end; i++) {
+        auto start = bucket(entry.start);
+        auto end = bucket(entry.end);
+        for (auto i = start; i <= end; i++) {
             entry_list &list = _entries.at(i);
             /* Check for duplicates */
             for (auto it = list.begin(); it != list.end(); it++)
