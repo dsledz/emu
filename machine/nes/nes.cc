@@ -201,6 +201,6 @@ MachineInformation nes_info {
 MachineDefinition nes(
     "nes",
     nes_info,
-    [=](Options *opts) -> machine_ptr {
+    [](Options *opts) -> machine_ptr {
         return machine_ptr(new NESMachine::NES());
     });

@@ -226,7 +226,7 @@ MachineInformation donkeykong_info {
 MachineDefinition dkong(
     "dkong",
     donkeykong_info,
-    [=](Options *opts) -> machine_ptr {
+    [](Options *opts) -> machine_ptr {
         return machine_ptr(new Arcade::DonkeyKong(opts->rom));
     });
 

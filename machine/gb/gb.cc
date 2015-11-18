@@ -244,7 +244,7 @@ MachineInformation gb_info {
 MachineDefinition gb(
     "gb",
     gb_info,
-    [=](Options *opts) -> machine_ptr {
+    [](Options *opts) -> machine_ptr {
         return machine_ptr(new Gameboy(opts->rom));
     });
 

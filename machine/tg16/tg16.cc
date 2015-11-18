@@ -221,7 +221,7 @@ MachineInformation tg16_info {
 MachineDefinition tg16(
     "tg16",
     tg16_info,
-    [=](Options *opts) -> machine_ptr {
+    [](Options *opts) -> machine_ptr {
         return machine_ptr(new TG16Machine::TG16(opts->rom));
     });
 

@@ -313,6 +313,6 @@ MachineInformation galaga_info {
 MachineDefinition galaga(
     "galaga",
     galaga_info,
-    [=](Options *opts) -> machine_ptr {
+    [](Options *opts) -> machine_ptr {
         return machine_ptr(new Arcade::Galaga(opts->rom));
     });
