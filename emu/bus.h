@@ -106,7 +106,7 @@ private:
  * Data bus.
  *
  * Supports a configurable address and data size.
- * It's recommended to use on of the pre-defined typedefs
+ * It's recommended to use one of the pre-defined typedefs
  *
  */
 template<typename _addr_type, int addr_width, typename _data_type>
@@ -157,6 +157,14 @@ public:
         IOPort(addr_type base, addr_type end, read_fn read, write_fn write):
             base(base), end(end), read(read), write(write) { }
 
+        data_type io(offset_t offset, data_type data, bool wr) {
+            if (wr)
+                write(offset, data);
+            else
+                data = read(offset);
+            return data;
+        }
+
         addr_type base;
         addr_type end;
         read_fn read;
@@ -170,6 +178,12 @@ public:
     {
     }
 
+    data_type io(addr_type addr, data_type data, bool write)
+    {
+        IOPort & it = _map.find(addr);
+        addr -= it.base;
+        return it.io(addr, data, write);
+    }
     void write(addr_type addr, data_type data)
     {
         IOPort & it = _map.find(addr);

@@ -116,7 +116,7 @@ public:
 
 protected:
 
-    void log(LogLevel level, const std::string &fmt, ...);
+    void log(LogLevel level, const std::string fmt, ...);
     void wait(DeviceStatus status);
     void idle(void);
 

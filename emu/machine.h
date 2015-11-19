@@ -113,7 +113,7 @@ public:
 
 protected:
 
-    void log(LogLevel level, const std::string &fmt, ...);
+    void log(LogLevel level, const std::string fmt, ...);
 
 private:
     Device *dev(const std::string &name);

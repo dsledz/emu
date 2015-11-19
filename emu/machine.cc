@@ -237,7 +237,7 @@ Machine::set_frame_buffer(FrameBuffer *screen)
 }
 
 void
-Machine::log(LogLevel level, const std::string &fmt, ...)
+Machine::log(LogLevel level, const std::string fmt, ...)
 {
     va_list args;
     va_start(args, fmt);

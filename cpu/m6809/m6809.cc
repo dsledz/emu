@@ -25,6 +25,7 @@
 
 #include "cpu/lib/cpu.h"
 #include "cpu/m6809/m6809.h"
+#include "core/enum.h"
 
 using namespace CPU;
 using namespace M6809;
@@ -376,9 +377,11 @@ void
 M6809Cpu::check_interrupt(void)
 {
     M6809Irq irq = M6809Irq::Reset;
-    for (irq = M6809Irq::Reset; irq > 0; irq--) {
-        if (m_state.Irq[irq] != LineState::Clear)
+    for ( auto i: Core::Enum<M6809Irq>() ) {
+        if (m_state.Irq[i] != LineState::Clear) {
+            irq = i;
             break;
+        }
     }
     switch (irq) {
     case M6809Irq::Reset:

@@ -124,7 +124,7 @@ RGBColor rgb_palette[256] = {
  * Color Palette is defined as:
  * RRRGGGBB
  */
-static inline RGBColor
+static inline __used RGBColor
 convert(uint8_t *b_ptr)
 {
     uint8_t b = *b_ptr;

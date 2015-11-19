@@ -23,4 +23,10 @@ if (BUILD_TESTING)
         emu
         gtest gtest_main)
     add_test(emu-check emu-check)
+    add_executable(mem-check
+        page_test.cc)
+    target_link_libraries(mem-check
+        emu
+        gtest gtest_main)
+    add_test(mem-check mem-check)
 endif (BUILD_TESTING)

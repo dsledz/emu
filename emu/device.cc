@@ -155,7 +155,7 @@ Device::wait(DeviceStatus status)
 }
 
 void
-Device::log(LogLevel level, const std::string &fmt, ...)
+Device::log(LogLevel level, const std::string fmt, ...)
 {
     va_list args;
     va_start(args, fmt);

@@ -43,7 +43,9 @@ enum M6809Irq {
     SWI,
     NMI,
     Reset,
-    Size
+    Size,
+    First = SWI3,
+    Last = Reset
 };
 
 enum class M6809Reg {
