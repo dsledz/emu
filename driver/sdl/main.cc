@@ -30,7 +30,8 @@
 
 #include <getopt.h>
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_opengl.h>
 
 using namespace EMU;
 using namespace Core;
@@ -40,14 +41,14 @@ public:
     SDLException(): CoreException("SDL exception") { }
 };
 
-struct SDLKeyHash
+struct SDL_KeycodeHash
 {
-    size_t operator ()(const SDLKey &key) const {
+    size_t operator ()(const SDL_Keycode &key) const {
         return std::hash<int>()(static_cast<int>(key));
     }
 };
 
-std::unordered_map<SDLKey, InputKey, SDLKeyHash> key_map = {
+std::unordered_map<SDL_Keycode, InputKey, SDL_KeycodeHash> key_map = {
     std::make_tuple(SDLK_LEFT, InputKey::Joy1Left),
     std::make_tuple(SDLK_RIGHT, InputKey::Joy1Right),
     std::make_tuple(SDLK_UP, InputKey::Joy1Up),
@@ -100,20 +101,29 @@ public:
     SDLEmulator(const Options &options):
         Emulator(options)
     {
-        SDL_Surface * window = SDL_SetVideoMode(100, 100, 32,
-                SDL_HWSURFACE | SDL_OPENGL);
-        if (window == NULL)
+        SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
+        SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1 );
+
+        m_window = SDL_CreateWindow("Emulator",
+                        SDL_WINDOWPOS_CENTERED,
+                        SDL_WINDOWPOS_CENTERED,
+                        machine()->get_screen_width() * 2,
+                        machine()->get_screen_height() * 2,
+                        SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+        if (m_window == NULL)
             throw SDLException();
 
-        SDL_WM_SetCaption("Emulator", "Emulator");
+        /* Reinit gl context */
+        m_fbo = 0;
+
+        m_glcontext = SDL_GL_CreateContext(m_window);
+        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &m_fbo);
+        SDL_GL_MakeCurrent(m_window, m_glcontext);
+
+        SDL_GL_SetSwapInterval( 1 );
 
         m_frame_buffer = std::unique_ptr<GLFrameBuffer>(new GLFrameBuffer());
         machine()->set_frame_buffer(m_frame_buffer.get());
-
-        /* Resize our window to the correct size. */
-        SDL_SetVideoMode(m_frame_buffer->width() * 2, m_frame_buffer->height() * 2, 32,
-                         SDL_HWSURFACE | SDL_OPENGL);
-        /* Reinit gl context */
         m_frame_buffer->init();
 
         SDL_Event event;
@@ -129,12 +139,15 @@ public:
         task = std::async(std::launch::async, &Emulator::do_execute, this);
 
         while (get_state() == EmuState::Running) {
+
+            glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+            m_frame_buffer->render();
+            SDL_GL_SwapWindow(m_window);
+
             SDL_Event event;
             while (SDL_PollEvent(&event))
                 on_event(&event);
 
-            m_frame_buffer->render();
-            SDL_GL_SwapBuffers();
         }
 
     }
@@ -174,6 +187,9 @@ public:
 
 private:
 
+    SDL_Window *m_window;
+    SDL_GLContext m_glcontext;
+    GLint m_fbo;
     std::unique_ptr<GLFrameBuffer> m_frame_buffer;
 
     std::future<void> task;
@@ -197,4 +213,3 @@ extern "C" int main(int argc, char **argv)
     SDL_Quit();
     return 0;
 }
-

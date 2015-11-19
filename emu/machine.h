@@ -109,6 +109,14 @@ public:
         FrameBuffer::Rotation rotation = FrameBuffer::ROT0);
     FrameBuffer *screen(void);
 
+    short get_screen_width(void) {
+        return m_screen_width;
+    }
+
+    short get_screen_height(void) {
+        return m_screen_height;
+    }
+
     void set_time(EmuTime now);
 
 protected:

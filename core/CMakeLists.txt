@@ -1,14 +1,14 @@
 
-if (BUILD_JIT)
-    ENABLE_LANGUAGE(ASM-ATT)
-    set(JIT_HELPER x86_asm.s)
-endif (BUILD_JIT)
+ENABLE_LANGUAGE(ASM-ATT)
+
+set(SUPPORT_ASM ${TARGET_ARCH}_asm.s)
 
 add_library(core
     debug.cc
     fiber.cc
     task.cc
-    ${JIT_HELPER})
+    ${SUPPORT_ASM}
+    )
 
 if (BUILD_TESTING)
     add_executable(core-check

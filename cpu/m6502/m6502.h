@@ -36,7 +36,9 @@ namespace M6502v2 {
 
 struct M6502State
 {
-    M6502State(void) = default;
+    M6502State(void) {
+        reset();
+    }
 
     uint8_t bus_read(uint16_t addr) {
         return bus->read(addr);

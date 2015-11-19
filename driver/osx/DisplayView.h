@@ -3,7 +3,6 @@
 
 @interface DisplayView : NSOpenGLView {
     CVDisplayLinkRef displayLink;
-    struct emu *emu;
 }
 
 - (IBAction)doOpen:(id)pId;
@@ -11,5 +10,23 @@
 - (IBAction)doPause:(id)pId;
 - (IBAction)doStop:(id)pId;
 - (IBAction)doReset:(id)pId;
+
+@end
+
+@interface DebugView : NSView {
+
+}
+
+@end
+
+@interface CPUView : NSView {
+
+}
+
+@end
+
+@interface CPURegisterField: NSForm {
+
+}
 
 @end

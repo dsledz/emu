@@ -81,6 +81,8 @@ ShaderProgram::build(
  *                 |___/
  */
 
+#ifdef BUILD_IOS
+
 static std::string frag_source = R"(
 varying lowp vec4 colorVarying;
 varying lowp vec2 TexCoordOut;
@@ -90,6 +92,18 @@ void main(void)
 {
     gl_FragColor = texture2D(Texture, TexCoordOut);
 })";
+#else
+
+static std::string frag_source = R"(
+varying vec4 colorVarying;
+varying vec2 TexCoordOut;
+uniform sampler2D Texture;
+
+void main(void)
+{
+    gl_FragColor = texture2D(Texture, TexCoordOut);
+})";
+#endif
 
 
 /* __     __        _              ____  _               _
@@ -98,6 +112,8 @@ void main(void)
  *   \ V /  __/ |  | ||  __/>  <   ___) | | | | (_| | (_| |  __/ |
  *    \_/ \___|_|   \__\___/_/\_\ |____/|_| |_|\__,_|\__,_|\___|_|
  */
+
+#ifdef BUILD_IOS
 
 static std::string vert_source = R"(
 attribute vec4 Position;
@@ -116,6 +132,29 @@ void main()
     gl_Position = Modelview * Position;
     TexCoordOut = TexCoordIn;
 })";
+
+#else
+
+static std::string vert_source = R"(
+attribute vec4 Position;
+attribute vec2 TexCoordIn;
+
+uniform mat4 Projection;
+uniform mat4 Modelview;
+
+varying vec4 colorVarying;
+varying vec2 TexCoordOut;
+
+void main()
+{
+    colorVarying = vec4(1.0, 1.0, 1.0, 1.0);
+
+    gl_Position = Modelview * Position;
+    TexCoordOut = TexCoordIn;
+})";
+
+
+#endif
 
 class GfxTransformNone: public GfxTransform
 {
@@ -394,6 +433,9 @@ GLSLFrameBuffer::render(void)
     glUniform1i(_var_Texture, 0);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
+    glEnd();
+    glFlush();
+
 }
 
 #if OPENGL_LEGACY
@@ -426,6 +468,8 @@ GLFrameBuffer::init(void)
     glEnable(GL_BLEND);
     glEnable(GL_TEXTURE_2D);
     glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+    glMatrixMode( GL_MODELVIEW );
+    glLoadIdentity();
 }
 
 void

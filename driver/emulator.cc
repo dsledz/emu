@@ -91,8 +91,8 @@ Emulator::do_execute(void)
         }
 
         _machine->set_time(_clock.runtime());
-        /* Advance the clock by 200usec each time. */
-        struct timespec t = { 0, 100000 };
+        /* Advance the clock by 1 millsecond each time. */
+        struct timespec t = { 0, 1000000 };
         nanosleep(&t, NULL);
     } while (true);
 

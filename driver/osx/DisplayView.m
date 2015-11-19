@@ -8,6 +8,8 @@
 
 #define SUPPORT_RETINA_RESOLUTION 1
 
+struct emu *emu;
+
 @interface DisplayView (PrivateMethods)
 - (void) initGL;
 
@@ -349,6 +351,28 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
         .pressed = false,
     };
     emu_send_event(emu, &event);
+}
+
+@end
+
+@implementation DebugView
+
+@end
+
+@implementation CPUView
+
+- (void) awakeFromNib
+{
+    printf("boo\n");
+}
+
+@end
+
+@implementation CPURegisterField
+
+- (void) awakeFromNib
+{
+    printf("foo\n");
 }
 
 @end

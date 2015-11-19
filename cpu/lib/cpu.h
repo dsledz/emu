@@ -108,7 +108,8 @@ public:
         bus_type *bus):
         ClockedDevice(machine, name, hertz),
         m_icycles(0),
-        m_bus(bus)
+        m_bus(bus),
+        m_state()
     {
     }
     virtual ~Cpu(void)

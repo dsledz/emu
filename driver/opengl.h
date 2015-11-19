@@ -116,7 +116,12 @@ typedef ScopedObject<texture_cleanup> scoped_texture;
 /* XXX: Grab GLError() */
 struct OpenGLError: public CoreException
 {
-    OpenGLError(void): CoreException("OpenGL Error") { }
+    OpenGLError(void): CoreException("OpenGL Error: ")
+    {
+        std::stringstream ss;
+        ss << glGetError();
+        msg += ss.str();
+    }
 };
 
 /**

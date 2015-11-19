@@ -31,7 +31,7 @@ using namespace EMU;
 using namespace M6502v2;
 using namespace std::placeholders;
 
-#define JIT 0
+#define JIT 1
 
 #define OPCODE(code, bytes, cycles, name, addr, op) { \
     code, \
