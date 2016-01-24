@@ -310,20 +310,43 @@ struct EmuClockUpdate {
 typedef Channel<EmuClockUpdate> EmuTimeChannel;
 typedef std::shared_ptr<EmuTimeChannel> EmuTimeChannel_ptr;
 
+class EmuClockBase
+{
+public:
+    EmuClockBase(void):m_stopped(false), m_now(), m_current() { }
+    virtual ~EmuClockBase(void) { }
+    EmuClockBase(const EmuClockBase &clock) = delete;
+
+    virtual EmuTime time_wait(EmuTime interval) = 0;
+    virtual void time_advance(void) = 0;
+    virtual void time_set(EmuTime now) = 0;
+    virtual void time_stop(void) = 0;
+    virtual void time_update(const EmuClockUpdate &update) = 0;
+
+    inline const EmuTime time_now(void) const {
+        return m_current;
+    }
+
+protected:
+    bool       m_stopped;
+    EmuTime    m_now;
+    EmuTime    m_current;
+};
+
 /**
  * Sleepable virtual clock for a single simulated device
  */
-class EmuClock
+class EmuClock: public EmuClockBase
 {
 public:
-    EmuClock(void):m_stopped(false) { }
-    ~EmuClock(void) { }
+    EmuClock(void): EmuClockBase(), m_channel() { }
+    virtual ~EmuClock(void) { }
     EmuClock(const EmuClock &clock) = delete;
 
     /**
      * Wait until we have at least enough time requested.
      */
-    EmuTime wait(EmuTime interval) {
+    virtual EmuTime time_wait(EmuTime interval) {
         EmuTime avail = m_now - m_current;
         while (!m_stopped && (avail == time_zero || avail < interval)) {
             EmuClockUpdate update = m_channel.get();
@@ -340,26 +363,11 @@ public:
         return avail;
     }
 
-#if 1
-    void advance(void) {
+    virtual void time_advance(void) {
         m_current = m_now;
     }
-#else
-    /**
-     * Advance our clock by the specified time.
-     */
-    void advance(interval) {
-        m_current += interval;
-        assert(m_current <= m_now);
-    }
-#endif
 
-    /* XXX: locking? */
-    const EmuTime now(void) const {
-        return m_current;
-    }
-
-    void set(EmuTime now) {
+    virtual void time_set(EmuTime now) {
         EmuClockUpdate update {
             .stop = false,
             .now = now
@@ -367,7 +375,7 @@ public:
         m_channel.put(update);
     }
 
-    void stop(void) {
+    virtual void time_stop(void) {
         EmuClockUpdate update {
             .stop = false,
             .now = time_zero
@@ -375,15 +383,12 @@ public:
         m_channel.put(update);
     }
 
-    void update(const EmuClockUpdate &update) {
+    virtual void time_update(const EmuClockUpdate &update) {
         m_channel.put(update);
     }
 
 private:
 
-    bool    m_stopped;
-    EmuTime m_now;
-    EmuTime m_current;
     EmuTimeChannel m_channel;
 };
 
@@ -397,11 +402,11 @@ public:
     ~EmuSimClock(void) { }
     EmuSimClock(const EmuSimClock &sim_clock) = delete;
 
-    void add_clock(EmuClock *clock) {
+    void add_clock(EmuClockBase *clock) {
         m_clocks.push_back(clock);
     }
 
-    void remove_clock(EmuClock *clock) {
+    void remove_clock(EmuClockBase *clock) {
         m_clocks.remove(clock);
     }
 
@@ -430,7 +435,7 @@ public:
         m_current = m_now;
         m_current = std::min(m_current, m_now);
         for (auto it = m_clocks.begin(); it != m_clocks.end(); it++)
-            (*it)->set(m_current);
+            (*it)->time_set(m_current);
     }
 
 private:
@@ -439,7 +444,7 @@ private:
         EmuTime oldest = time_zero;
         EmuTime newest = time_zero;
         for (auto it = m_clocks.begin(); it != m_clocks.end(); it++) {
-            EmuTime fb = (*it)->now();
+            EmuTime fb = (*it)->time_now();
             if (oldest == time_zero || fb < oldest)
                 oldest = fb;
             if (newest == time_zero || fb > newest)
@@ -455,7 +460,7 @@ private:
     EmuTime m_newest;
     EmuTime m_oldest;
 
-    std::list<EmuClock *> m_clocks;
+    std::list<EmuClockBase *> m_clocks;
 };
 
 };

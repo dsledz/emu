@@ -25,6 +25,8 @@
 
 #include "core/bits.h"
 #include "core/exception.h"
+#include "core/task.h"
+#include "core/fiber.h"
 #include "emu/state.h"
 #include "emu/io.h"
 #include "emu/input.h"
@@ -80,13 +82,11 @@ typedef std::shared_ptr<EmuDeviceChannel> EmuDeviceChannel_ptr;
 /**
  * Emulation device. Specific chips implement the device class.
  */
-class Device {
+class Device: public EmuClockBase {
 public:
     Device(Machine *machine, const std::string &name);
     Device(Machine *machine, const std::string &name, unsigned hertz);
     virtual ~Device(void);
-
-    void task(void);
 
     virtual void line(Line line, LineState state);
     virtual void reset(void);
@@ -97,9 +97,18 @@ public:
     DeviceStatus get_status(void);
 
     /** XXX: These should be protected */
-    EmuClock *clock(void);
     const std::string &name(void);
     Machine *machine(void);
+
+    Task * task(void) {
+        return &m_task;
+    }
+
+    DeviceStatus handle_msg(void) {
+        if (__builtin_expect((m_channel.available() > 0), 0))
+            idle();
+        return m_target_status;
+    }
 
     void add_icycles(unsigned cycles) {
         const Cycles c(cycles);
@@ -114,6 +123,12 @@ public:
         m_avail -= cycles;
     }
 
+    virtual EmuTime time_wait(EmuTime interval);
+    virtual void time_advance(void);
+    virtual void time_set(EmuTime now);
+    virtual void time_stop(void);
+    virtual void time_update(const EmuClockUpdate &update);
+
 protected:
 
     void log(LogLevel level, const std::string fmt, ...);
@@ -122,6 +137,7 @@ protected:
 
 private:
 
+    void task_fn(void);
     void task_loop(void);
     void wait_icycles(Cycles cycles);
 
@@ -133,8 +149,8 @@ private:
     Cycles                   m_avail;
     std::condition_variable  m_cv;              /* ? */
     std::mutex               m_mtx;             /* ? */
-    EmuClock                 m_clock;           /* ? */
     EmuDeviceChannel         m_channel;         /* ? */
+    FiberTask                m_task;
 };
 
 typedef std::unique_ptr<Device> Device_ptr;

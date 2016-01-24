@@ -204,6 +204,8 @@ public:
      */
     void cancel_task(Task * task);
 
+    void shutdown(void);
+
     friend Task;
 
 private:

@@ -120,7 +120,7 @@ TimerQueue::pop(Time deadline)
 void
 TimerQueue::wait(void)
 {
-    std::unique_lock<std::mutex> lock(mtx);
-    cv.wait(lock);
+    lock_mtx lock(mtx);
+    lock.wait(cv);
 }
 

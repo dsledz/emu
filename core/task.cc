@@ -273,6 +273,17 @@ TaskScheduler::cancel_task(Task * task)
 }
 
 void
+TaskScheduler::shutdown(void)
+{
+    /* Cancel all outstanding tasks. */
+    m_event_channel->close();
+    for (auto it = m_tasks.begin(); it != m_tasks.end(); it++)
+        (*it)->cancel();
+    for (auto it = m_tasks.begin(); it != m_tasks.end(); it++)
+        (*it)->force();
+}
+
+void
 TaskScheduler::remove_task(Task *task)
 {
     m_tasks.remove(task);

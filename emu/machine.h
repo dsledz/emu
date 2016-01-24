@@ -119,6 +119,10 @@ public:
 
     void set_time(EmuTime now);
 
+    TaskScheduler *get_scheduler(void) {
+        return &m_scheduler;
+    }
+
 protected:
 
     void log(LogLevel level, const std::string fmt, ...);
