@@ -54,9 +54,9 @@ public:
         lock_mtx lock(m_mtx);
         m_objects.push(obj);
         if (!m_waiting.empty()) {
-            Task_ptr task = m_waiting.front();
+            Task * task = m_waiting.front();
             m_waiting.pop();
-            resume_task(task);
+            task->wake();
         }
     }
 
@@ -67,12 +67,11 @@ public:
     object_t get(void) {
         std::unique_lock<std::mutex> lock(m_mtx);
         while (m_objects.empty()) {
-            Task_ptr task = Task::cur_task();
+            Task * task = Thread::cur_task();
             m_waiting.push(task);
-            {
-                unlock_mtx unlock(m_mtx);
-                suspend_task(task);
-            }
+            lock.unlock();
+            task->suspend();
+            lock.lock();
         }
         object_t obj = m_objects.front();
         m_objects.pop();
@@ -95,8 +94,75 @@ public:
 
 private:
     std::mutex              m_mtx;
-    std::queue<Task_ptr>    m_waiting;
+    std::queue<Task *>      m_waiting;
     std::queue<object_t>    m_objects;
+};
+
+/**
+ * Type-safe object channel.
+ */
+template<class object_t>
+class WaitChannel
+{
+public:
+    WaitChannel(void): m_mtx(), m_cv(), m_objects(), m_closed(false)
+    {
+    }
+    ~WaitChannel(void)
+    {
+    }
+    WaitChannel(const WaitChannel &ch) = delete;
+
+    /**
+     * Place an object in the channel.
+     */
+    void put(object_t obj) {
+        lock_mtx lock(m_mtx);
+        m_objects.push(obj);
+        m_cv.notify_all();
+    }
+
+    void close(void) {
+        lock_mtx lock(m_mtx);
+        m_closed = true;
+        m_cv.notify_all();
+    }
+
+    /**
+     * Remove an object from the channel, blocking if no object
+     * exists.
+     */
+    object_t get(void) {
+        std::unique_lock<std::mutex> lock(m_mtx);
+        while (m_objects.empty()) {
+            if (m_closed)
+                throw TaskCanceled("Channel closed");
+            m_cv.wait(lock);
+        }
+        object_t obj = m_objects.front();
+        m_objects.pop();
+        return obj;
+    }
+
+    /**
+     * Remove an object from the channel, returning an empty object
+     * if none exist.
+     */
+    object_t try_get(void) {
+        object_t obj = object_t();
+        std::unique_lock<std::mutex> lock(m_mtx);
+        if (!m_objects.empty()) {
+            obj = m_objects.front();
+            m_objects.pop();
+        }
+        return obj;
+    }
+
+private:
+    std::mutex              m_mtx;
+    std::condition_variable m_cv;
+    std::queue<object_t>    m_objects;
+    bool                    m_closed;
 };
 
 };

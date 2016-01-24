@@ -10,9 +10,11 @@ TEST(TaskTest, simple)
     int count = 0;
     TaskScheduler sched;
 
-    Task_ptr task = sched.create_task([&](void) { count++; });
+    ThreadTask task(&sched, [&](void) { count++; });
 
-    task->force();
+    sched.run_task(&task);
+
+    task.force();
 
     EXPECT_EQ(1, count);
 }
@@ -20,8 +22,10 @@ TEST(TaskTest, simple)
 TEST(TaskTest, hang)
 {
     TaskScheduler sched;
+    ThreadTask task(&sched, [&](void) { sleep(1); });
 
-    Task_ptr task = sched.create_task([&](void) { sleep(1); });
+    sched.run_task(&task);
+    task.force();
 }
 
 static void
@@ -57,9 +61,11 @@ TEST(TaskTest, cancel)
     {
         TaskScheduler sched;
 
-        Task_ptr task = sched.create_task(std::bind(&consume, &channel));
+        ThreadTask task(&sched, std::bind(&consume, &channel));
 
-        /* Force the scheduler to cancel the task */
+        sched.run_task(&task);
+
+        task.force();
     }
 }
 
@@ -69,15 +75,15 @@ TEST(TaskTest, Producer)
     Channel<int> channel;
     int total = 0;
 
-    Task_ptr ctask = sched.create_task(
-        std::bind(&consume_n, &channel, 10, &total));
+    ThreadTask ctask(&sched, std::bind(&consume_n, &channel, 10, &total));
+    sched.run_task(&ctask);
 
     struct timespec t = { 0, 1000000 };
     nanosleep(&t, NULL);
-    Task_ptr ptask = sched.create_task(
-        std::bind(&produce_n, &channel, 10));
+    ThreadTask ptask(&sched, std::bind(&produce_n, &channel, 10));
+    sched.run_task(&ptask);
 
-    ptask->force();
-    ctask->force();
+    ptask.force();
+    ctask.force();
     EXPECT_EQ(45, total);
 }

@@ -10,6 +10,8 @@ void
 SwitchContext(ThreadRegisters *old_ctx, ThreadRegisters *new_ctx);
 };
 
+__thread int Core::held_locks = 0;
+
 ThreadContext::ThreadContext(uint64_t rip):
     m_stack(64*1024),
     m_registers()
@@ -41,9 +43,11 @@ void
 ThreadContext::switch_context(
     ThreadContext *saved_ctx)
 {
+    assert(held_locks == 0);
     // Swap our registers On return, we'll be in the other context
     // and our return stack will change.
     SwitchContext(&saved_ctx->m_registers, &m_registers);
+    assert(held_locks == 0);
 }
 
 /**
@@ -53,9 +57,7 @@ ThreadContext::switch_context(
 void
 FiberTask::run_context(void)
 {
-    Thread *thread = Thread::cur_thread();
-    FiberTask *task = reinterpret_cast<FiberTask *>(
-        thread->cur_task().get());
+    FiberTask *task = reinterpret_cast<FiberTask *>(Thread::cur_task());
 
     task->run_internal();
     /* Switch to the thread context. */
@@ -63,15 +65,16 @@ FiberTask::run_context(void)
     /* Return from the thread context. */
 }
 
-FiberTask::FiberTask(task_fn fn):
-    Task(fn),
+FiberTask::FiberTask(TaskScheduler *Scheduler, task_fn fn):
+    Task(Scheduler, fn),
     m_our_ctx(reinterpret_cast<uint64_t>(&FiberTask::run_context)),
     m_thread_ctx(0)
 {
 }
 
-FiberTask::FiberTask(task_fn fn, const std::string &name):
-    Task(fn, name),
+FiberTask::FiberTask(TaskScheduler *Scheduler, task_fn fn,
+                     const std::string &name):
+    Task(Scheduler, fn, name),
     m_our_ctx(reinterpret_cast<uint64_t>(&FiberTask::run_context)),
     m_thread_ctx(0)
 {
@@ -88,7 +91,7 @@ FiberTask::run_internal(void)
         lock_mtx lock(m_mtx);
         m_state = State::Running;
     }
-    LOG_DEBUG("Task started");
+    LOG_DEBUG("FiberTask execute: ", *this);
     State new_state = State::Finished;
     try {
         m_func();
@@ -100,7 +103,7 @@ FiberTask::run_internal(void)
         m_state = new_state;
         m_cv.notify_all();
     }
-    LOG_DEBUG("Task finished");
+    LOG_DEBUG("FiberTask : ", *this);
 }
 
 bool
@@ -127,9 +130,10 @@ FiberTask::run(void)
             return m_state;
         }
     }
-    LOG_DEBUG("Running fiber task: ", *this);
+    LOG_DEBUG("FiberTask switch: ", *this);
     // Switch to our context and run.
     m_our_ctx.switch_context(&m_thread_ctx);
+    LOG_DEBUG("FiberTask return: ", *this);
     // We've returned from our context.
     {
         lock_mtx lock(m_mtx);
@@ -140,11 +144,11 @@ FiberTask::run(void)
 void
 FiberTask::cancel(void)
 {
-    std::unique_lock<std::mutex> lock(m_mtx);
+    lock_mtx lock(m_mtx);
     LOG_DEBUG("Canceling fiber task: ", *this);
     if (m_state == State::Suspended) {
         m_state = State::Canceled;
-        /* XXX: How do we trigger ourselves? */
+        m_thread->schedule(this);
     } else {
         m_state = State::Canceled;
     }
@@ -153,8 +157,8 @@ FiberTask::cancel(void)
 void
 FiberTask::suspend(void)
 {
-    std::unique_lock<std::mutex> lock(m_mtx);
-    LOG_DEBUG("Suspending fiber task: ", *this);
+    lock_mtx lock(m_mtx);
+    LOG_DEBUG("FiberTask Suspend: ", *this);
     if (m_state == State::Running)
         m_state = State::Suspended;
     while (m_state != State::Queued && !finished(m_state)) {
@@ -163,6 +167,7 @@ FiberTask::suspend(void)
         m_thread_ctx.switch_context(&m_our_ctx);
         /* Return from the thread context. */
     }
+    LOG_DEBUG("FiberTask Resumed: ", *this);
     if (m_state == State::Queued)
         m_state = State::Running;
     if (finished(m_state))
@@ -170,23 +175,23 @@ FiberTask::suspend(void)
 }
 
 void
-FiberTask::resume(Task_ptr task)
+FiberTask::wake(void)
 {
     /* Put us on the runnable list */
     lock_mtx lock(m_mtx);
-    LOG_DEBUG("Resuming fiber task: ", *this);
+    LOG_DEBUG("FiberTask wake: ", *this);
     if (m_state == State::Suspended) {
         m_state = State::Queued;
-        m_thread->schedule(task);
+        m_thread->schedule(this);
     }
 }
 
 Task::State
 FiberTask::force(void)
 {
-    std::unique_lock<std::mutex> lock(m_mtx);
+    lock_mtx lock(m_mtx);
     while (!Task::finished(m_state))
-        m_cv.wait(lock);
+        lock.wait(m_cv);
     return m_state;
 }
 

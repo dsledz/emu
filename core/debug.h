@@ -131,19 +131,19 @@ extern Debug log;
 
 #define LOG_TRACE(fmt, args...) \
     for (bool once=true; once && Core::log.enabled(Core::LogLevel::Trace); once=false) \
-        Core::log.trace(stringfn(fmt, ##args));
+        Core::log.trace(Core::stringfn(pthread_self(), " ", fmt, ##args));
 
 #define LOG_DEBUG(fmt, args...) \
     for (bool once=true; once && Core::log.enabled(Core::LogLevel::Debug); once=false) \
-        Core::log.debug(stringfn(fmt, ##args));
+        Core::log.debug(Core::stringfn(pthread_self(), " ", fmt, ##args));
 
 #define LOG_INFO(fmt, args...) \
     for (bool once=true; once && Core::log.enabled(Core::LogLevel::Info); once=false) \
-        Core::log.info(stringfn(fmt, ##args));
+        Core::log.info(Core::stringfn(pthread_self(), " ", fmt, ##args));
 
 #define LOG_ERROR(fmt, args...) \
     for (bool once=true; once && Core::log.enabled(Core::LogLevel::Error); once=false) \
-        Core::log.error(stringfn(fmt, ##args));
+        Core::log.error(Core::stringfn(fmt, ##args));
 
 #define DEVICE_TRACE(fmt, ...) \
     for (bool once=true; once && Core::log.enabled(Core::LogLevel::Trace); once=false) \

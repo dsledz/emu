@@ -60,8 +60,8 @@ private:
 class FiberTask: public Task
 {
 public:
-    FiberTask(task_fn fn);
-    FiberTask(task_fn fn, const std::string &name);
+    FiberTask(TaskScheduler *Scheduler, task_fn fn);
+    FiberTask(TaskScheduler *Scheduler, task_fn fn, const std::string &name);
     virtual ~FiberTask(void);
     FiberTask(const FiberTask &rhs) = delete;
 
@@ -69,7 +69,7 @@ public:
     virtual State run(void);
     virtual void cancel(void);
     virtual void suspend(void);
-    virtual void resume(Task_ptr task);
+    virtual void wake(void);
     virtual State force(void);
 
 private:

@@ -14,60 +14,48 @@ Task::next_id(void)
     return std::atomic_fetch_add(&next_id, (uint64_t)1);
 }
 
-Task::Task(task_fn fn):
+Task::Task(TaskScheduler *Scheduler, task_fn fn):
     m_id(Task::next_id()),
     m_state(State::Created),
     m_mtx(),
     m_cv(),
     m_func(fn),
-    m_name("Unnamed")
+    m_name("(Null)"),
+    m_sched(Scheduler)
 {
 
 }
 
-Task::Task(task_fn fn, const std::string &name):
+Task::Task(TaskScheduler *Scheduler, task_fn fn, const std::string &name):
     m_id(Task::next_id()),
     m_state(State::Created),
     m_mtx(),
     m_cv(),
     m_func(fn),
-    m_name(name)
+    m_name(name),
+    m_sched(Scheduler)
 {
-
+    m_sched->add_task(this);
 }
+
 Task::~Task(void)
 {
-
-}
-
-Task_ptr
-Task::cur_task(void)
-{
-    if (curthread)
-        return curthread->cur_task();
-    else
-        throw TaskException("Invalid Task!");
+    assert(finished(m_state));
+    m_sched->remove_task(this);
 }
 
 Thread::Thread(TaskChannel_ptr channel):
     thread(std::bind(&Thread::thread_main, this)),
-    m_idle_task(),
-    m_task(),
+    m_task(NULL),
     m_mtx(),
     m_state(ThreadState::Dead),
     m_channel(channel)
 {
-    m_idle_task = Task_ptr(new ThreadTask(std::bind(&Thread::thread_task, this)));
-    m_task = m_idle_task;
 }
 
 Thread::~Thread(void)
 {
-    try {
-        cancel();
-    } catch (...) {
-    }
-    join();
+    assert(m_state == ThreadState::Dead);
 }
 
 std::ostream& Core::operator<< (std::ostream &os, const Task &t)
@@ -77,30 +65,9 @@ std::ostream& Core::operator<< (std::ostream &os, const Task &t)
 }
 
 void
-Core::suspend_task(Task_ptr task)
-{
-    task->suspend();
-}
-
-void
-Core::resume_task(Task_ptr task)
-{
-    task->resume(task);
-}
-
-void
-Thread::schedule(Task_ptr task)
+Thread::schedule(Task *task)
 {
     m_channel->put(task);
-}
-
-void
-Thread::cancel(void)
-{
-    lock_mtx lock(m_mtx);
-    if (m_task)
-        m_task->cancel();
-    m_canceled = true;
 }
 
 void
@@ -108,29 +75,28 @@ Thread::thread_main(void)
 {
     curthread = this;
     try {
-        m_task->run();
-    } catch (CoreException &e) {
-        LOG_DEBUG("Task Exception");
+        thread_task();
+    } catch (...) {
+        LOG_ERROR("Unclean thread exit");
+        m_state = ThreadState::Dead;
     }
 }
 
 void
 Thread::thread_task(void)
 {
-    std::unique_lock<std::mutex> lock(m_mtx);
+    lock_mtx lock(m_mtx);
     m_state = ThreadState::Idle;
-    while (!m_canceled) {
+    for (;;) {
         // Grab the first task off the runnable queue
         m_state = ThreadState::Idle;
-        m_task = m_idle_task;
-        Task_ptr task;
+        Task * task;
         try {
             unlock_mtx unlock(m_mtx);
             LOG_DEBUG("Getting next runnable task");
             task = m_channel->get();
         } catch (CanceledException &e) {
             LOG_DEBUG("Loop canceled");
-            m_canceled = true;
             break;
         }
         Task::State task_state;
@@ -145,7 +111,6 @@ Thread::thread_task(void)
         }
     }
     m_state = ThreadState::Dead;
-    m_task = m_idle_task;
     curthread = NULL;
 }
 
@@ -155,16 +120,10 @@ Thread::cur_thread(void)
     return curthread;
 }
 
-Task_ptr
+Task *
 Thread::cur_task(void)
 {
-    Task_ptr task;
-    {
-        lock_mtx lock(m_mtx);
-        task = m_task;
-    }
-    assert(m_task.get() != NULL);
-    return task;
+    return cur_thread()->m_task;
 }
 
 /*  _____                _____ _                        _ _____         _
@@ -174,13 +133,14 @@ Thread::cur_task(void)
  * |_____|_| |_| |_|\__,_||_| |_| |_|_|  \___|\__,_|\__,_| |_|\__,_|___/_|\_\
  */
 
-ThreadTask::ThreadTask(task_fn fn):
-    Task(fn)
+ThreadTask::ThreadTask(TaskScheduler *Scheduler, task_fn fn):
+    Task(Scheduler, fn)
 {
 }
 
-ThreadTask::ThreadTask(task_fn fn, const std::string &name):
-    Task(fn, name)
+ThreadTask::ThreadTask(TaskScheduler *Scheduler, task_fn fn,
+                       const std::string &name):
+    Task(Scheduler, fn, name)
 {
 }
 
@@ -226,22 +186,23 @@ ThreadTask::cancel(void)
 void
 ThreadTask::suspend(void)
 {
-    std::unique_lock<std::mutex> lock(m_mtx);
-    LOG_DEBUG("Suspending thread task: ", *this);
+    lock_mtx lock(m_mtx);
+    LOG_DEBUG("ThreadTask Suspend: ", *this);
     if (m_state == State::Running)
         m_state = State::Suspended;
     while (m_state != State::Queued && !finished(m_state))
-        m_cv.wait(lock);
+        lock.wait(m_cv);
+    LOG_DEBUG("ThreadTask Resumed: ", *this);
     if (m_state == State::Canceled)
         throw TaskCanceled("Canceled");
     m_state = State::Running;
 }
 
 void
-ThreadTask::resume(Task_ptr task)
+ThreadTask::wake(void)
 {
     lock_mtx lock(m_mtx);
-    LOG_DEBUG("Resuming thread task: ", *this);
+    LOG_DEBUG("ThreadTask wake: ", *this);
     if (m_state == State::Suspended) {
         m_state = State::Queued;
         m_cv.notify_all();
@@ -251,9 +212,9 @@ ThreadTask::resume(Task_ptr task)
 Task::State
 ThreadTask::force(void)
 {
-    std::unique_lock<std::mutex> lock(m_mtx);
+    lock_mtx lock(m_mtx);
     while (!Task::finished(m_state))
-        m_cv.wait(lock);
+        lock.wait(m_cv);
     return m_state;
 }
 
@@ -272,68 +233,47 @@ TaskScheduler::TaskScheduler(void):
 TaskScheduler::~TaskScheduler(void)
 {
     /* Cancel all outstanding tasks. */
+    m_event_channel->close();
     for (auto it = m_tasks.begin(); it != m_tasks.end(); it++)
         (*it)->cancel();
-
-    /* Now make sure they've had a chance to comeplete. */
     for (auto it = m_tasks.begin(); it != m_tasks.end(); it++)
         (*it)->force();
 
-    /* Cancel our threads. */
-    m_event_thread->cancel();
+    /* Now cancel the work threads */
+    m_work_channel->close();
     for (auto it = m_work_threads.begin(); it != m_work_threads.end(); it++) {
-        (*it)->cancel();
+        (*it)->join();
     }
+    m_event_thread->join();
 }
 
 void
-TaskScheduler::add_task(Task_ptr task)
+TaskScheduler::add_task(Task * task)
 {
     m_tasks.push_back(task);
+}
+
+void
+TaskScheduler::run_task(Task * task)
+{
     if (task->nonblocking()) {
+        LOG_DEBUG("RunTask nonblocking: ", *task);
         m_event_channel->put(task);
     } else {
+        LOG_DEBUG("RunTask blocking: ", *task);
         m_work_threads.push_back(Thread_ptr(new Thread(m_work_channel)));
         m_work_channel->put(task);
     }
 }
 
-Task_ptr
-TaskScheduler::create_task(Task::task_fn fn)
-{
-    return create_task(fn, "ThreadTask");
-}
-
-Task_ptr
-TaskScheduler::create_task(Task::task_fn fn, const std::string &name)
-{
-    Task_ptr ptr = Task_ptr(new ThreadTask(fn, name));
-    add_task(ptr);
-    return ptr;
-}
-
-Task_ptr
-TaskScheduler::create_fiber_task(Task::task_fn fn)
-{
-    return create_fiber_task(fn, "FiberTask");
-}
-
-Task_ptr
-TaskScheduler::create_fiber_task(Task::task_fn fn, const std::string &name)
-{
-    Task_ptr ptr = Task_ptr(new FiberTask(fn, name));
-    add_task(ptr);
-    return ptr;
-}
-
 void
-TaskScheduler::run_task(Task_ptr task)
+TaskScheduler::cancel_task(Task * task)
 {
 
 }
 
 void
-TaskScheduler::cancel_task(Task_ptr task)
+TaskScheduler::remove_task(Task *task)
 {
-
+    m_tasks.remove(task);
 }

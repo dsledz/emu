@@ -31,21 +31,52 @@
 
 namespace Core {
 
+extern __thread int held_locks;
+
 template<typename mtx_type>
 class unlock_guard {
 public:
-    unlock_guard(mtx_type & m): _mtx(m) {
-        _mtx.unlock();
+    unlock_guard(mtx_type & m): m_mtx(m) {
+        assert(held_locks > 0);
+        m_mtx.unlock();
+        held_locks--;
     }
     ~unlock_guard(void) {
-        _mtx.lock();
+        assert(held_locks == 0);
+        m_mtx.lock();
+        held_locks++;
     }
 
 private:
-    mtx_type & _mtx;
+    mtx_type & m_mtx;
 };
 
-typedef std::unique_lock<std::mutex> lock_mtx;
+template<typename mtx_type>
+class lock_guard {
+public:
+    lock_guard(mtx_type & m): m_mtx(m) {
+        m_mtx.lock();
+        held_locks++;
+    }
+
+    ~lock_guard(void) {
+        assert(held_locks > 0);
+        m_mtx.unlock();
+        held_locks--;
+    }
+
+    void wait(std::condition_variable & cv) {
+        assert(held_locks > 0);
+        std::unique_lock<mtx_type> lock(m_mtx, std::adopt_lock);
+        cv.wait(lock);
+        lock.release();
+    }
+
+private:
+    mtx_type & m_mtx;
+};
+
+typedef lock_guard<std::mutex> lock_mtx;
 typedef unlock_guard<std::mutex> unlock_mtx;
 
 };

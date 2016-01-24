@@ -11,11 +11,10 @@ TEST(FiberTest, simple)
     int count = 0;
     TaskScheduler sched;
 
-    Task_ptr task = sched.create_fiber_task([&](void) { count++; });
+    FiberTask task(&sched, [&](void) { count++; });
 
-    sched.run_task(task);
-
-    task->force();
+    sched.run_task(&task);
+    task.force();
 
     EXPECT_EQ(1, count);
 }
@@ -36,12 +35,12 @@ TEST(FiberTest, sleeping)
     Channel<int> channel;
     int total = 0;
 
-    Task_ptr ctask = sched.create_fiber_task(
-        std::bind(&consume, &channel, 1, &total));
+    FiberTask ctask(&sched, std::bind(&consume, &channel, 1, &total));
 
+    sched.run_task(&ctask);
     channel.put(1);
 
-    ctask->force();
+    ctask.force();
 
     EXPECT_EQ(1, total);
 }
@@ -60,12 +59,12 @@ TEST(FiberTest, Producer)
     Channel<int> channel;
     int total = 0;
 
-    Task_ptr ctask = sched.create_fiber_task(
-        std::bind(&consume, &channel, 10, &total));
-    Task_ptr ptask = sched.create_fiber_task(
-        std::bind(&produce, &channel, 10));
+    FiberTask ctask(&sched, std::bind(&consume, &channel, 10, &total));
+    sched.run_task(&ctask);
+    FiberTask ptask(&sched, std::bind(&produce, &channel, 10));
+    sched.run_task(&ptask);
 
-    ptask->force();
-    ctask->force();
+    ptask.force();
+    ctask.force();
     EXPECT_EQ(45, total);
 }

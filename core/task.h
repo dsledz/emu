@@ -49,10 +49,9 @@ struct TaskException: public CoreException {
 };
 
 class Task;
-typedef std::shared_ptr<Task> Task_ptr;
-typedef std::queue<Task_ptr> TaskQueue;
-template<class object_t> class Channel;
-typedef Channel<Task_ptr> TaskChannel;
+class TaskScheduler;
+template<class object_t> class WaitChannel;
+typedef WaitChannel<Task *> TaskChannel;
 typedef std::shared_ptr<TaskChannel> TaskChannel_ptr;
 
 class Task
@@ -68,8 +67,8 @@ public:
         Dead };
     typedef std::function<void (void)> task_fn;
 
-    Task(task_fn fn);
-    Task(task_fn fn, const std::string &name);
+    Task(TaskScheduler *Scheduler, task_fn fn);
+    Task(TaskScheduler *Scheduler, task_fn fn, const std::string &name);
     virtual ~Task(void);
     Task(const Task &task) = delete;
 
@@ -104,7 +103,7 @@ public:
     /**
      * Resume a suspended task.
      */
-    virtual void resume(Task_ptr task) = 0;
+    virtual void wake(void) = 0;
 
     /**
      * Force a task to execute.
@@ -122,8 +121,6 @@ public:
                 state == State::Queued);
     }
 
-    static Task_ptr cur_task(void);
-
     friend std::ostream & operator<<(std::ostream &os, const Task &t);
 protected:
 
@@ -133,6 +130,7 @@ protected:
     std::condition_variable     m_cv;
     std::function<void (void)>  m_func;
     std::string                 m_name;
+    TaskScheduler              *m_sched;
 
 private:
     static uint64_t next_id(void);
@@ -145,8 +143,8 @@ class ThreadTask: public Task
 public:
     typedef std::function<void (void)> task_fn;
 
-    ThreadTask(task_fn fn);
-    ThreadTask(task_fn fn, const std::string &name);
+    ThreadTask(TaskScheduler *Scheduler, task_fn fn);
+    ThreadTask(TaskScheduler *Scheduler, task_fn fn, const std::string &name);
     ~ThreadTask(void);
     ThreadTask(const ThreadTask &task) = delete;
 
@@ -154,12 +152,9 @@ public:
     virtual State run(void);
     virtual void cancel(void);
     virtual void suspend(void);
-    virtual void resume(Task_ptr task);
+    virtual void wake(void);
     virtual State force(void);
 };
-
-void resume_task(Task_ptr task);
-void suspend_task(Task_ptr task);
 
 class Thread: public std::thread
 {
@@ -175,21 +170,17 @@ public:
     virtual ~Thread(void);
     Thread(const Thread &thread) = delete;
 
-    void cancel(void);
+    void schedule(Task *);
 
-    Task_ptr cur_task(void);
-
-    void schedule(Task_ptr task);
-
+    static Task *cur_task(void);
     static Thread *cur_thread(void);
 
 private:
     void thread_main(void);
     void thread_task(void);
 
-    Task_ptr        m_idle_task;   /**< Idle task */
-    Task_ptr        m_task;        /**< Current task */
-    bool            m_canceled;    /**< Thread was canceled */
+    Task *          m_task;
+    Task *          m_idle_task;
     std::mutex      m_mtx;         /**< Mutex */
     ThreadState     m_state;       /**< Thread state */
     TaskChannel_ptr m_channel;     /**< Channel to receive new tasks */
@@ -204,35 +195,28 @@ public:
     ~TaskScheduler(void);
 
     /**
-     * Create a new task
-     */
-    Task_ptr create_task(Task::task_fn fn);
-    Task_ptr create_task(Task::task_fn fn, const std::string &name);
-    /**
-     * Create a co-routine task
-     */
-    Task_ptr create_fiber_task(Task::task_fn fn);
-    Task_ptr create_fiber_task(Task::task_fn fn, const std::string &name);
-    /**
-     * Add a new task to the scheduler.
-     */
-    void add_task(Task_ptr task);
-    /**
      * Start the execution of the task.
      */
-    void run_task(Task_ptr task);
+    void run_task(Task * task);
+
     /**
      * Cancel the task.
      */
-    void cancel_task(Task_ptr task);
+    void cancel_task(Task * task);
+
+    friend Task;
 
 private:
+
+    void add_task(Task *task);
+    void remove_task(Task *task);
+
     std::mutex            m_mtx;
     TaskChannel_ptr       m_event_channel;
     Thread_ptr            m_event_thread;
     TaskChannel_ptr       m_work_channel;
     std::list<Thread_ptr> m_work_threads;
-    std::list<Task_ptr>   m_tasks;
+    std::list<Task *>     m_tasks;
 };
 
 };
