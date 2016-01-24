@@ -19,11 +19,22 @@ Task::Task(task_fn fn):
     m_state(State::Created),
     m_mtx(),
     m_cv(),
-    m_func(fn)
+    m_func(fn),
+    m_name("Unnamed")
 {
 
 }
 
+Task::Task(task_fn fn, const std::string &name):
+    m_id(Task::next_id()),
+    m_state(State::Created),
+    m_mtx(),
+    m_cv(),
+    m_func(fn),
+    m_name(name)
+{
+
+}
 Task::~Task(void)
 {
 
@@ -57,6 +68,12 @@ Thread::~Thread(void)
     } catch (...) {
     }
     join();
+}
+
+std::ostream& Core::operator<< (std::ostream &os, const Task &t)
+{
+    os << t.name() << "(" << t.id() << ")";
+    return os;
 }
 
 void
@@ -162,6 +179,11 @@ ThreadTask::ThreadTask(task_fn fn):
 {
 }
 
+ThreadTask::ThreadTask(task_fn fn, const std::string &name):
+    Task(fn, name)
+{
+}
+
 ThreadTask::~ThreadTask(void)
 {
 }
@@ -205,7 +227,7 @@ void
 ThreadTask::suspend(void)
 {
     std::unique_lock<std::mutex> lock(m_mtx);
-    LOG_DEBUG("Suspending thread task: %llu", id());
+    LOG_DEBUG("Suspending thread task: ", *this);
     if (m_state == State::Running)
         m_state = State::Suspended;
     while (m_state != State::Queued && !finished(m_state))
@@ -219,7 +241,7 @@ void
 ThreadTask::resume(Task_ptr task)
 {
     lock_mtx lock(m_mtx);
-    LOG_DEBUG("Resuming thread task: %llu.", id());
+    LOG_DEBUG("Resuming thread task: ", *this);
     if (m_state == State::Suspended) {
         m_state = State::Queued;
         m_cv.notify_all();
@@ -279,7 +301,13 @@ TaskScheduler::add_task(Task_ptr task)
 Task_ptr
 TaskScheduler::create_task(Task::task_fn fn)
 {
-    Task_ptr ptr = Task_ptr(new ThreadTask(fn));
+    return create_task(fn, "ThreadTask");
+}
+
+Task_ptr
+TaskScheduler::create_task(Task::task_fn fn, const std::string &name)
+{
+    Task_ptr ptr = Task_ptr(new ThreadTask(fn, name));
     add_task(ptr);
     return ptr;
 }
@@ -287,7 +315,13 @@ TaskScheduler::create_task(Task::task_fn fn)
 Task_ptr
 TaskScheduler::create_fiber_task(Task::task_fn fn)
 {
-    Task_ptr ptr = Task_ptr(new FiberTask(fn));
+    return create_fiber_task(fn, "FiberTask");
+}
+
+Task_ptr
+TaskScheduler::create_fiber_task(Task::task_fn fn, const std::string &name)
+{
+    Task_ptr ptr = Task_ptr(new FiberTask(fn, name));
     add_task(ptr);
     return ptr;
 }

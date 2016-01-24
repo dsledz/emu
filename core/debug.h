@@ -46,6 +46,16 @@ struct DebugException: public CoreException {
         CoreException(msg) { }
 };
 
+static inline std::string stringfn() { return ""; }
+
+template <typename H, typename... T>
+std::string stringfn(const H & p, T const &... t)
+{
+    std::stringstream ss;
+    ss << p;
+    return ss.str() + stringfn(t...);
+}
+
 /**
  * XXX: I'd love to not have to write my own logging, but that
  * doesn't seem possible right now.
@@ -121,19 +131,19 @@ extern Debug log;
 
 #define LOG_TRACE(fmt, args...) \
     for (bool once=true; once && Core::log.enabled(Core::LogLevel::Trace); once=false) \
-        Core::log.trace(fmt);
+        Core::log.trace(stringfn(fmt, ##args));
 
 #define LOG_DEBUG(fmt, args...) \
     for (bool once=true; once && Core::log.enabled(Core::LogLevel::Debug); once=false) \
-        Core::log.debug(fmt);
+        Core::log.debug(stringfn(fmt, ##args));
 
 #define LOG_INFO(fmt, args...) \
     for (bool once=true; once && Core::log.enabled(Core::LogLevel::Info); once=false) \
-        Core::log.info(fmt);
+        Core::log.info(stringfn(fmt, ##args));
 
 #define LOG_ERROR(fmt, args...) \
     for (bool once=true; once && Core::log.enabled(Core::LogLevel::Error); once=false) \
-        Core::log.error(fmt);
+        Core::log.error(stringfn(fmt, ##args));
 
 #define DEVICE_TRACE(fmt, ...) \
     for (bool once=true; once && Core::log.enabled(Core::LogLevel::Trace); once=false) \

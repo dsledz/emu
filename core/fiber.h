@@ -61,6 +61,7 @@ class FiberTask: public Task
 {
 public:
     FiberTask(task_fn fn);
+    FiberTask(task_fn fn, const std::string &name);
     virtual ~FiberTask(void);
     FiberTask(const FiberTask &rhs) = delete;
 

@@ -69,11 +69,16 @@ public:
     typedef std::function<void (void)> task_fn;
 
     Task(task_fn fn);
+    Task(task_fn fn, const std::string &name);
     virtual ~Task(void);
     Task(const Task &task) = delete;
 
     uint64_t id(void) const {
         return m_id;
+    }
+
+    const std::string & name(void) const {
+        return m_name;
     }
 
     /**
@@ -119,6 +124,7 @@ public:
 
     static Task_ptr cur_task(void);
 
+    friend std::ostream & operator<<(std::ostream &os, const Task &t);
 protected:
 
     uint64_t                    m_id;
@@ -126,10 +132,13 @@ protected:
     std::mutex                  m_mtx;
     std::condition_variable     m_cv;
     std::function<void (void)>  m_func;
+    std::string                 m_name;
 
 private:
     static uint64_t next_id(void);
 };
+
+std::ostream & operator<<(std::ostream &os, const Task &t);
 
 class ThreadTask: public Task
 {
@@ -137,6 +146,7 @@ public:
     typedef std::function<void (void)> task_fn;
 
     ThreadTask(task_fn fn);
+    ThreadTask(task_fn fn, const std::string &name);
     ~ThreadTask(void);
     ThreadTask(const ThreadTask &task) = delete;
 
@@ -197,10 +207,12 @@ public:
      * Create a new task
      */
     Task_ptr create_task(Task::task_fn fn);
+    Task_ptr create_task(Task::task_fn fn, const std::string &name);
     /**
      * Create a co-routine task
      */
     Task_ptr create_fiber_task(Task::task_fn fn);
+    Task_ptr create_fiber_task(Task::task_fn fn, const std::string &name);
     /**
      * Add a new task to the scheduler.
      */
