@@ -845,12 +845,14 @@ void
 Z80Cpu::_in(byte_t &orig, byte_t port)
 {
     orig = _io.read(port);
+    task()->yield();
 }
 
 void
 Z80Cpu::_out(byte_t port, byte_t value)
 {
     _io.write(port, value);
+    task()->yield();
 }
 
 void

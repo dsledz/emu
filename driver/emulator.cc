@@ -83,9 +83,9 @@ Emulator::do_execute(void)
 
     do {
         {
-            std::unique_lock<std::mutex> lock(mtx);
+            lock_mtx lock(mtx);
             while (_state == EmuState::Paused)
-                cv.wait(lock);
+                lock.wait(cv);
             if (_state == EmuState::Stopped)
                 break;
         }

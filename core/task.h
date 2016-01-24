@@ -105,6 +105,8 @@ public:
      */
     virtual void wake(void) = 0;
 
+    virtual void yield(void) = 0;
+
     /**
      * Force a task to execute.
      */
@@ -153,6 +155,7 @@ public:
     virtual void cancel(void);
     virtual void suspend(void);
     virtual void wake(void);
+    virtual void yield(void);
     virtual State force(void);
 };
 

@@ -93,11 +93,7 @@ FiberTask::run_internal(void)
     }
     LOG_DEBUG("FiberTask execute: ", *this);
     State new_state = State::Finished;
-    try {
         m_func();
-    } catch (...) {
-        new_state = State::Dead;
-    }
     {
         lock_mtx lock(m_mtx);
         m_state = new_state;
@@ -172,6 +168,19 @@ FiberTask::suspend(void)
         m_state = State::Running;
     if (finished(m_state))
         throw TaskCanceled("Finished");
+}
+
+void
+FiberTask::yield(void)
+{
+    /* Put us on the runnable list */
+    {
+        lock_mtx lock(m_mtx);
+        LOG_DEBUG("FiberTask yield: ", *this);
+        m_state = State::Queued;
+        m_thread->schedule(this);
+    }
+    m_thread_ctx.switch_context(&m_our_ctx);
 }
 
 void

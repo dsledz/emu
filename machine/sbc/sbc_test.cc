@@ -10,20 +10,19 @@
 
 using namespace EMU;
 
-TEST(SBCTest, load)
-{
-    Arcade::SingleBoardZ80 machine("");
-}
-
 TEST(SBCTest, run100)
 {
+    Core::log.set_level(Core::LogLevel::Trace);
 
-                    Core::log.set_level(Core::LogLevel::Trace);
     Arcade::SingleBoardZ80 machine("");
 
-    unsigned steps = 5000;
-    for (unsigned i = 0; i < steps; i++) {
-        machine.run();
+    machine.poweron();
+
+    for (unsigned i = 0;; i++) {
+        machine.set_time(Time(usec(i*10)));
+        usleep(10);
     }
+
+    machine.poweroff();
 }
 

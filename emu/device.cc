@@ -71,12 +71,8 @@ void
 Device::task_fn(void)
 {
     wait(DeviceStatus::Running);
-    DeviceStatus new_status = DeviceStatus::Running;
-    try {
-        task_loop();
-    } catch (CoreException &e) {
-        new_status = DeviceStatus::Fault;
-    }
+    while (m_target_status != DeviceStatus::Off)
+        execute();
     {
         lock_mtx lock(m_mtx);
         m_status = DeviceStatus::Off;
@@ -92,13 +88,6 @@ Device::line(Line line, LineState state)
 void
 Device::reset(void)
 {
-}
-
-void
-Device::task_loop(void)
-{
-    while (m_target_status != DeviceStatus::Off)
-        execute();
 }
 
 void
@@ -172,6 +161,7 @@ Device::idle(void)
     DeviceUpdate update = m_channel.get();
     switch (update.type) {
         case DeviceUpdateType::Clock:
+            LOG_ERROR("Clock Update: ", name());
             if (update.clock.stop) {
                 m_stopped = true;
             } else {
@@ -179,6 +169,7 @@ Device::idle(void)
             }
             break;
         case DeviceUpdateType::Status:
+            LOG_ERROR("Status Update: ", name(), " ", (int)update.status);
             m_target_status = update.status;
             if (m_target_status == DeviceStatus::Off)
                 m_stopped = true;

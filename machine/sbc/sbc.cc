@@ -12,7 +12,7 @@ using namespace Device;
 
 RomDefinition sbc_rom(void) {
     RomDefinition rom("sbc");
-    rom.regions.push_back(RomRegion("cpu", { "INTMINI.HEX" }));
+    rom.regions.push_back(RomRegion("cpu", { "INTMINI.bin" }));
     return rom;
 }
 
@@ -25,6 +25,8 @@ SingleBoardZ80::SingleBoardZ80(const std::string &rom):
 
     m_bus = AddressBus16_ptr(new AddressBus16());
 
+    m_acia = M6850_ptr(new M6850(this, "m6850", hertz));
+
     RomDefinition roms("sbc");
     roms = sbc_rom();
     RomSet romset(roms);
@@ -32,6 +34,7 @@ SingleBoardZ80::SingleBoardZ80(const std::string &rom):
     m_cpu = Z80Cpu_ptr(new Z80Cpu(this, "cpu", hertz, m_bus.get()));
     m_cpu->load_rom(romset.rom("cpu"), 0x0000);
 
+    init_bus();
 }
 
 SingleBoardZ80::~SingleBoardZ80(void)
@@ -61,7 +64,7 @@ SingleBoardZ80::io_write(offset_t offset, byte_t value)
 void
 SingleBoardZ80::init_bus(void)
 {
-    m_bus->add(0x1000,  0x7000,
+    m_bus->add(0x2000,  0xFFFF,
         READ_CB(SingleBoardZ80::ram_read, this),
         WRITE_CB(SingleBoardZ80::ram_write, this));
 

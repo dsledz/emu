@@ -199,6 +199,12 @@ ThreadTask::suspend(void)
 }
 
 void
+ThreadTask::yield(void)
+{
+
+}
+
+void
 ThreadTask::wake(void)
 {
     lock_mtx lock(m_mtx);

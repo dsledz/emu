@@ -126,7 +126,7 @@ public:
      */
     void put(object_t obj) {
         lock_mtx lock(m_mtx);
-        m_objects.push(obj);
+        m_objects.push_back(obj);
         m_cv.notify_all();
     }
 
@@ -148,7 +148,7 @@ public:
             m_cv.wait(lock);
         }
         object_t obj = m_objects.front();
-        m_objects.pop();
+        m_objects.pop_front();
         return obj;
     }
 
@@ -161,7 +161,7 @@ public:
         std::unique_lock<std::mutex> lock(m_mtx);
         if (!m_objects.empty()) {
             obj = m_objects.front();
-            m_objects.pop();
+            m_objects.pop_front();
         }
         return obj;
     }
@@ -169,7 +169,7 @@ public:
 private:
     std::mutex              m_mtx;
     std::condition_variable m_cv;
-    std::queue<object_t>    m_objects;
+    std::deque<object_t>    m_objects;
     bool                    m_closed;
 };
 

@@ -16,6 +16,7 @@ M6850::M6850(Machine *machine, const std::string &name, unsigned hertz):
     m_in(),
     m_out()
 {
+    m_reg.SR = 0x02;
 }
 
 M6850::~M6850(void)
@@ -26,6 +27,7 @@ void
 M6850::reset(void)
 {
     memset(&m_reg, 0, sizeof(m_reg));
+    m_reg.SR = 0x02;
 }
 
 void
@@ -33,6 +35,9 @@ M6850::execute(void)
 {
     while (true) {
         bool interrupt = false;
+
+        if (handle_msg() == DeviceStatus::Off)
+            return;
 
         /* Update our clock */
         switch (m_reg.CR & 0x03) {
@@ -46,11 +51,9 @@ M6850::execute(void)
             /* Consume one of our bits */
             m_send--;
             if (m_send == 0) {
-                std::cout << (char)m_reg.TDR;
-                std::cout.flush();
+                LOG_DEBUG(m_reg.TDR);
                 m_reg.SR |= 0x02; /* Transmit Data Register Empty */
-                if ((m_reg.CR & 0x60) == 0x20)
-                    interrupt = true;
+
             }
         } else if (m_recv > 0) {
             m_recv--;
@@ -67,6 +70,7 @@ M6850::execute(void)
             machine()->set_line("cpu", Line::INT0, LineState::Pulse);
             /* XXX: Return from the context switch */
         }
+        task()->yield();
     }
 }
 

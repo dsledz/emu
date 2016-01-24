@@ -138,7 +138,6 @@ protected:
 private:
 
     void task_fn(void);
-    void task_loop(void);
     void wait_icycles(Cycles cycles);
 
     std::string              m_name;            /* ro */

@@ -59,6 +59,9 @@ Machine::poweron(void)
     for (auto it = m_devs.begin(); it != m_devs.end(); it++) {
         (*it)->set_status(DeviceStatus::Running);
     }
+    for (auto it = m_devs.begin(); it != m_devs.end(); it++) {
+        m_scheduler.run_task((*it)->task());
+    }
 }
 
 void
@@ -77,7 +80,6 @@ Machine::add_device(Device *dev)
 {
     m_devs.push_back(dev);
     m_sim_clock.add_clock(dev);
-    m_scheduler.run_task(dev->task());
 }
 
 void

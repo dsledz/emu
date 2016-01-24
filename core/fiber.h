@@ -70,6 +70,7 @@ public:
     virtual void cancel(void);
     virtual void suspend(void);
     virtual void wake(void);
+    virtual void yield(void);
     virtual State force(void);
 
 private:
