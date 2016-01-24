@@ -52,6 +52,9 @@ enum class Line {
     WAIT  = 10,
     NMI   = 11,
 
+    CTS   = 20,
+    RTS   = 21,
+
     /* Address lines */
     A00   = 100,
     A01   = 101,

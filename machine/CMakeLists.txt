@@ -1,6 +1,7 @@
 add_subdirectory(gb)
 add_subdirectory(nes)
 add_subdirectory(tg16)
+add_subdirectory(sbc)
 
 add_library(machine
     dkong.cc
@@ -16,6 +17,7 @@ target_link_libraries(machine
     gb
     nes
     tg16
+    sbc
     emu
     cpu)
 

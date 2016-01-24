@@ -77,7 +77,7 @@ Machine::add_device(Device *dev)
 {
     m_devs.push_back(dev);
     m_sim_clock.add_clock(dev->clock());
-    m_scheduler.create_fiber_task(std::bind(&Device::task, dev));
+    m_scheduler.create_fiber_task(std::bind(&Device::task, dev), dev->name());
 }
 
 void

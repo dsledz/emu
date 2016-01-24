@@ -156,7 +156,7 @@ Z80Cpu::line(Line line, LineState state)
     default:
         break;
     }
-    // XXX: Halt set_status(DeviceStatus::Running);
+    /* XXX: force a context switch */
 }
 
 /*
