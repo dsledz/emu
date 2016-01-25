@@ -67,7 +67,6 @@ M6850::execute(void)
             machine()->set_line("cpu", Line::INT0, LineState::Pulse);
             /* XXX: Return from the context switch */
         }
-        task()->yield();
     }
 }
 

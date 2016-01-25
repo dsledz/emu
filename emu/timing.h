@@ -171,7 +171,17 @@ struct Time {
 
 static inline std::ostream & operator << (std::ostream &os, const Time &obj)
 {
-    os << obj.ns;
+    if (obj.ns < NSEC_PER_USEC)
+        os << obj.ns << "ns";
+    else if (obj.ns < NSEC_PER_MSEC)
+        os << obj.ns / NSEC_PER_USEC << "."
+           << (obj.ns % NSEC_PER_USEC)/(NSEC_PER_USEC/10) << "us";
+    else if (obj.ns < NSEC_PER_SEC)
+        os << obj.ns / NSEC_PER_MSEC << "."
+           << (obj.ns % NSEC_PER_MSEC)/(NSEC_PER_MSEC/10) << "ms";
+    else
+        os << obj.ns / NSEC_PER_SEC << "."
+           << (obj.ns % NSEC_PER_SEC)/(NSEC_PER_SEC/10) << "s";
     return os;
 }
 
@@ -428,16 +438,24 @@ public:
         return m_oldest;
     }
 
-    void set(EmuTime now) {
+    void set(EmuTime now, EmuTime interval) {
+        EmuTime skew(usec(10));
         m_now = now;
         update_stats();
-        //m_current = std::max(m_oldest + interval, m_newest);
-        m_current = m_now;
+        if (m_oldest + skew < m_newest) {
+            m_current = std::max(m_oldest + skew, m_newest);
+            LOG_DEBUG("Time skew Oldest: ", m_oldest, " Newest: ", m_newest);
+        } else {
+            m_current = m_now;
+        }
         m_current = std::min(m_current, m_now);
         for (auto it = m_clocks.begin(); it != m_clocks.end(); it++)
             (*it)->time_set(m_current);
     }
 
+    void set(EmuTime now) {
+        set(now, Time(usec(100)));
+    }
 private:
 
     void update_stats(void) {

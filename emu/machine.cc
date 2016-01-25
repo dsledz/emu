@@ -213,6 +213,7 @@ Machine::set_line(Device *dev, Line line, LineState state)
 {
     /* XXX: Handle pulse */
     dev->line(line, state);
+    Task::yield();
 }
 
 void

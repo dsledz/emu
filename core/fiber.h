@@ -70,8 +70,10 @@ public:
     virtual void cancel(void);
     virtual void suspend(void);
     virtual void wake(void);
-    virtual void yield(void);
     virtual State force(void);
+
+protected:
+    virtual void yield_internal(void);
 
 private:
 

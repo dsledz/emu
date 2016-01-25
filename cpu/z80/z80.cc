@@ -845,14 +845,14 @@ void
 Z80Cpu::_in(byte_t &orig, byte_t port)
 {
     orig = _io.read(port);
-    task()->yield();
+    _op.yield = 1;
 }
 
 void
 Z80Cpu::_out(byte_t port, byte_t value)
 {
     _io.write(port, value);
-    task()->yield();
+    _op.yield = 1;
 }
 
 void
@@ -1445,6 +1445,8 @@ Z80Cpu::dispatch(void)
 
     IF_LOG(Trace)
         op_log();
+    if (_op.yield)
+        Task::yield();
     _op.reset();
 
     return _icycles;

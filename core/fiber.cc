@@ -129,7 +129,7 @@ FiberTask::run(void)
     LOG_DEBUG("FiberTask switch: ", *this);
     // Switch to our context and run.
     m_our_ctx.switch_context(&m_thread_ctx);
-    LOG_DEBUG("FiberTask return: ", *this);
+    LOG_DEBUG("FiberTask swapped: ", *this);
     // We've returned from our context.
     {
         lock_mtx lock(m_mtx);
@@ -154,7 +154,7 @@ void
 FiberTask::suspend(void)
 {
     lock_mtx lock(m_mtx);
-    LOG_DEBUG("FiberTask Suspend: ", *this);
+    LOG_DEBUG("FiberTask waiting: ", *this);
     if (m_state == State::Running)
         m_state = State::Suspended;
     while (m_state != State::Queued && !finished(m_state)) {
@@ -163,7 +163,7 @@ FiberTask::suspend(void)
         m_thread_ctx.switch_context(&m_our_ctx);
         /* Return from the thread context. */
     }
-    LOG_DEBUG("FiberTask Resumed: ", *this);
+    LOG_DEBUG("FiberTask resumed: ", *this);
     if (m_state == State::Queued)
         m_state = State::Running;
     if (finished(m_state))
@@ -171,7 +171,7 @@ FiberTask::suspend(void)
 }
 
 void
-FiberTask::yield(void)
+FiberTask::yield_internal(void)
 {
     /* Put us on the runnable list */
     {

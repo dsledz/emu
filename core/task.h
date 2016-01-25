@@ -105,8 +105,6 @@ public:
      */
     virtual void wake(void) = 0;
 
-    virtual void yield(void) = 0;
-
     /**
      * Force a task to execute.
      */
@@ -123,8 +121,16 @@ public:
                 state == State::Queued);
     }
 
+    static void yield();
+
     friend std::ostream & operator<<(std::ostream &os, const Task &t);
+
 protected:
+
+    /**
+     * Yield a task.
+     */
+    virtual void yield_internal(void) = 0;
 
     uint64_t                    m_id;
     State                       m_state;
@@ -155,8 +161,10 @@ public:
     virtual void cancel(void);
     virtual void suspend(void);
     virtual void wake(void);
-    virtual void yield(void);
     virtual State force(void);
+
+protected:
+    virtual void yield_internal(void);
 };
 
 class Thread: public std::thread

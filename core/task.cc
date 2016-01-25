@@ -44,6 +44,14 @@ Task::~Task(void)
     m_sched->remove_task(this);
 }
 
+void
+Task::yield(void)
+{
+    Task *cur = Thread::cur_task();
+    assert(cur != NULL);
+    cur->yield_internal();
+}
+
 Thread::Thread(TaskChannel_ptr channel):
     thread(std::bind(&Thread::thread_main, this)),
     m_task(NULL),
@@ -93,7 +101,7 @@ Thread::thread_task(void)
         Task * task;
         try {
             unlock_mtx unlock(m_mtx);
-            LOG_DEBUG("Getting next runnable task");
+            LOG_DEBUG("ThreadTask waiting");
             task = m_channel->get();
         } catch (CanceledException &e) {
             LOG_DEBUG("Loop canceled");
@@ -199,7 +207,7 @@ ThreadTask::suspend(void)
 }
 
 void
-ThreadTask::yield(void)
+ThreadTask::yield_internal(void)
 {
 
 }

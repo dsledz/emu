@@ -158,7 +158,7 @@ private:
         Z80Op(void): name("NONE") { }
 
         void reset(void) {
-            pc = opcode = d8 = i8 = d16 = i16 = 0;
+            pc = opcode = d8 = i8 = d16 = i16 = yield = 0;
         }
 
         addr_t pc;
@@ -167,6 +167,7 @@ private:
         byte_t i8;
         uint16_t d16;
         uint16_t i16;
+        int yield;
 
         std::string name;
     };
