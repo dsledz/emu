@@ -241,8 +241,9 @@ ClockedDevice::wait_icycles(Cycles cycles)
 {
     while (m_avail < cycles) {
         time_advance();
-        EmuTime avail = time_wait(time_zero);
-        m_avail += avail.to_cycles(Cycles(m_hertz));
+        idle();
+        EmuTime avail = m_target - m_current;
+        m_avail = avail.to_cycles(Cycles(m_hertz));
     }
 }
 
@@ -251,33 +252,12 @@ ClockedDevice::update(DeviceUpdate &update)
 {
     switch (update.type) {
         case DeviceUpdateType::Clock:
-            if (update.clock.stop) {
-                m_target_status = DeviceStatus::Halted;
-            } else {
-                m_now = update.clock.now;
-            }
+            m_target = update.clock.now;
             break;
         default:
             Device::update(update);
             break;
     }
-}
-
-EmuTime
-ClockedDevice::time_wait(EmuTime interval)
-{
-    EmuTime avail = m_now - m_current;
-    while (avail == time_zero || avail < interval) {
-        idle();
-        avail = m_now - m_current;
-    }
-    return avail;
-}
-
-void
-ClockedDevice::time_advance(void)
-{
-    m_current = m_now;
 }
 
 void
@@ -286,32 +266,8 @@ ClockedDevice::time_set(EmuTime now)
     DeviceUpdate update = {
         .type = DeviceUpdateType::Clock,
         .clock = {
-            .stop = false,
             .now = now
         }
-    };
-    m_channel.put(update);
-}
-
-void
-ClockedDevice::time_stop(void)
-{
-   DeviceUpdate update = {
-        .type = DeviceUpdateType::Clock,
-        .clock = {
-            .stop = false,
-            .now = time_zero
-        }
-    };
-    m_channel.put(update);
-}
-
-void
-ClockedDevice::time_update(const EmuClockUpdate &up)
-{
-    DeviceUpdate update = {
-        .type = DeviceUpdateType::Clock,
-        .clock = up
     };
     m_channel.put(update);
 }

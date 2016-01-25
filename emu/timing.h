@@ -44,6 +44,15 @@ struct Cycles {
         return res;
     }
 
+    const struct Cycles operator *(const struct Cycles &rhs) {
+        return Cycles(v * rhs.v);
+    }
+
+    struct Cycles &operator *=(const struct Cycles &rhs) {
+        v *= rhs.v;
+        return *this;
+    }
+
     struct Cycles & operator +=(const struct Cycles &rhs) {
         v += rhs.v;
         return *this;
@@ -166,22 +175,32 @@ struct Time {
         return ns >= rhs.ns;
     }
 
-    uint64_t ns = 0;
+    void add_cycles(Cycles used, Cycles hertz) {
+        /* XXX: Overflow */
+        ns += (used.v * NSEC_PER_SEC)/hertz.v;
+    }
+
+    int64_t ns = 0;
 };
 
 static inline std::ostream & operator << (std::ostream &os, const Time &obj)
 {
-    if (obj.ns < NSEC_PER_USEC)
-        os << obj.ns << "ns";
-    else if (obj.ns < NSEC_PER_MSEC)
-        os << obj.ns / NSEC_PER_USEC << "."
-           << (obj.ns % NSEC_PER_USEC)/(NSEC_PER_USEC/10) << "us";
-    else if (obj.ns < NSEC_PER_SEC)
-        os << obj.ns / NSEC_PER_MSEC << "."
-           << (obj.ns % NSEC_PER_MSEC)/(NSEC_PER_MSEC/10) << "ms";
+    int64_t ns = obj.ns;
+    if (obj.ns < 0) {
+        os << "-";
+        ns = -ns;
+    }
+    if (ns < NSEC_PER_USEC)
+        os << ns << "ns";
+    else if (ns < NSEC_PER_MSEC)
+        os << ns / NSEC_PER_USEC << "."
+           << (ns % NSEC_PER_USEC)/(NSEC_PER_USEC/10) << "us";
+    else if (ns < NSEC_PER_SEC)
+        os << ns / NSEC_PER_MSEC << "."
+           << (ns % NSEC_PER_MSEC)/(NSEC_PER_MSEC/10) << "ms";
     else
-        os << obj.ns / NSEC_PER_SEC << "."
-           << (obj.ns % NSEC_PER_SEC)/(NSEC_PER_SEC/10) << "s";
+        os << ns / NSEC_PER_SEC << "."
+           << (ns % NSEC_PER_SEC)/(NSEC_PER_SEC/10) << "s";
     return os;
 }
 
@@ -313,7 +332,6 @@ private:
 };
 
 struct EmuClockUpdate {
-    bool         stop;
     EmuTime      now;
 };
 
@@ -323,83 +341,19 @@ typedef std::shared_ptr<EmuTimeChannel> EmuTimeChannel_ptr;
 class EmuClockBase
 {
 public:
-    EmuClockBase(void):m_stopped(false), m_now(), m_current() { }
+    EmuClockBase(void):m_target(), m_current() { }
     virtual ~EmuClockBase(void) { }
     EmuClockBase(const EmuClockBase &clock) = delete;
 
-    virtual EmuTime time_wait(EmuTime interval) = 0;
-    virtual void time_advance(void) = 0;
     virtual void time_set(EmuTime now) = 0;
-    virtual void time_stop(void) = 0;
-    virtual void time_update(const EmuClockUpdate &update) = 0;
 
     inline const EmuTime time_now(void) const {
         return m_current;
     }
 
 protected:
-    bool       m_stopped;
-    EmuTime    m_now;
+    EmuTime    m_target;
     EmuTime    m_current;
-};
-
-/**
- * Sleepable virtual clock for a single simulated device
- */
-class EmuClock: public EmuClockBase
-{
-public:
-    EmuClock(void): EmuClockBase(), m_channel() { }
-    virtual ~EmuClock(void) { }
-    EmuClock(const EmuClock &clock) = delete;
-
-    /**
-     * Wait until we have at least enough time requested.
-     */
-    virtual EmuTime time_wait(EmuTime interval) {
-        EmuTime avail = m_now - m_current;
-        while (!m_stopped && (avail == time_zero || avail < interval)) {
-            EmuClockUpdate update = m_channel.get();
-            if (update.stop) {
-                LOG_DEBUG("Stopped!");
-                m_stopped = true;
-                break;
-            }
-            m_now = update.now;
-            avail = m_now - m_current;
-        }
-        if (m_stopped)
-            throw TaskCanceled("Off");
-        return avail;
-    }
-
-    virtual void time_advance(void) {
-        m_current = m_now;
-    }
-
-    virtual void time_set(EmuTime now) {
-        EmuClockUpdate update {
-            .stop = false,
-            .now = now
-        };
-        m_channel.put(update);
-    }
-
-    virtual void time_stop(void) {
-        EmuClockUpdate update {
-            .stop = false,
-            .now = time_zero
-        };
-        m_channel.put(update);
-    }
-
-    virtual void time_update(const EmuClockUpdate &update) {
-        m_channel.put(update);
-    }
-
-private:
-
-    EmuTimeChannel m_channel;
 };
 
 /**
@@ -408,7 +362,7 @@ private:
 class EmuSimClock
 {
 public:
-    EmuSimClock(void) { }
+    EmuSimClock(void):m_now(), m_current(), m_newest(), m_oldest() { }
     ~EmuSimClock(void) { }
     EmuSimClock(const EmuSimClock &sim_clock) = delete;
 
@@ -438,24 +392,21 @@ public:
         return m_oldest;
     }
 
-    void set(EmuTime now, EmuTime interval) {
+    void set(EmuTime now) {
+        /* Actual Time */
         EmuTime skew(usec(10));
         m_now = now;
         update_stats();
-        if (m_oldest + skew < m_newest) {
-            m_current = std::max(m_oldest + skew, m_newest);
-            LOG_DEBUG("Time skew Oldest: ", m_oldest, " Newest: ", m_newest);
-        } else {
+        if (m_oldest + skew > m_current) {
             m_current = m_now;
+            for (auto it = m_clocks.begin(); it != m_clocks.end(); it++)
+                (*it)->time_set(m_current);
+        } else {
+            EmuTime diff = m_current - m_oldest;
+            LOG_DEBUG("Running ", diff, " behind, ", m_oldest, " ", m_current);
         }
-        m_current = std::min(m_current, m_now);
-        for (auto it = m_clocks.begin(); it != m_clocks.end(); it++)
-            (*it)->time_set(m_current);
     }
 
-    void set(EmuTime now) {
-        set(now, Time(usec(100)));
-    }
 private:
 
     void update_stats(void) {
@@ -463,6 +414,7 @@ private:
         EmuTime newest = time_zero;
         for (auto it = m_clocks.begin(); it != m_clocks.end(); it++) {
             EmuTime fb = (*it)->time_now();
+            LOG_DEBUG("Found clock: ", fb);
             if (oldest == time_zero || fb < oldest)
                 oldest = fb;
             if (newest == time_zero || fb > newest)

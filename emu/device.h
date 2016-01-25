@@ -165,13 +165,15 @@ public:
         if (__builtin_expect((m_avail < cycles), 0))
             wait_icycles(cycles);
         m_avail -= cycles;
+        m_used += cycles;
     }
 
-    virtual EmuTime time_wait(EmuTime interval);
-    virtual void time_advance(void);
+    inline void yield(void) {
+        time_advance();
+        Task::yield();
+    }
+
     virtual void time_set(EmuTime now);
-    virtual void time_stop(void);
-    virtual void time_update(const EmuClockUpdate &update);
 
 protected:
     virtual void update(DeviceUpdate &update);
@@ -179,7 +181,12 @@ protected:
 private:
 
     void wait_icycles(Cycles cycles);
+    void time_advance(void) {
+        m_current.add_cycles(m_used, Cycles(m_hertz));
+        m_used = Cycles(0);
+    }
 
+    Cycles                   m_used;
     Cycles                   m_avail;
 };
 

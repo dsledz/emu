@@ -12,7 +12,8 @@ using namespace Device;
 
 RomDefinition sbc_rom(void) {
     RomDefinition rom("sbc");
-    rom.regions.push_back(RomRegion("cpu", { "INTMINI.bin" }));
+    rom.regions.push_back(RomRegion("cpu", { "INTMINI2.bin", "BASIC.BIN" }));
+    //rom.regions.push_back(RomRegion("cpu", { "INTMINI.bin" }));
     return rom;
 }
 

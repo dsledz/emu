@@ -54,10 +54,17 @@ public:
     }
 
     void debug_write(byte_t value) {
+        if (m_recv == 0 && m_in.empty())
+            m_recv = 10;
         m_in.push_back(value);
-        m_recv = 9;
     }
 
+    void debug_write(const std::string &cmd) {
+        if (m_recv == 0 && m_in.empty())
+            m_recv = 10;
+        for (auto it = cmd.begin(); it != cmd.end(); it++)
+            m_in.push_back(*it);
+    }
 };
 
 typedef std::unique_ptr<M6850> M6850_ptr;

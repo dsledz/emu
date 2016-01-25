@@ -64,9 +64,10 @@ M6850::execute(void)
         }
         if (interrupt) {
             /* XXX: Can yield */
-            machine()->set_line("cpu", Line::INT0, LineState::Pulse);
+            machine()->set_line("cpu", Line::INT0, LineState::Assert);
             /* XXX: Return from the context switch */
         }
+        Task::yield();
     }
 }
 
@@ -77,12 +78,15 @@ M6850::write(bool rs, byte_t value)
         /* Write */
         m_out.push_back(value);
         m_reg.TDR = value;
-        m_reg.SR &= ~0x02;
+        m_reg.SR &= ~0x82;
         /* XXX: Honor CR2-CR4 for number of bits */
         m_send = 10;
+        machine()->set_line("cpu", Line::INT0, LineState::Clear);
     } else {
         m_reg.CR = value;
         /* XXX: Honor CR2-CR4 */
+        if (m_reg.CR & 0x80 && !m_in.empty() && m_recv == 0)
+            m_recv = 10;
     }
 }
 
@@ -94,11 +98,12 @@ M6850::read(bool rs)
         /* Read */
         value = m_reg.RDR = m_in.front();
         m_in.pop_front();
-        m_reg.SR &= ~0x01;
+        m_reg.SR &= ~0x81;
         /* Restart send */
         if (!m_in.empty())
             /* XXX: Honor CR2-CR4 for number of bits */
             m_recv = 10;
+        machine()->set_line("cpu", Line::INT0, LineState::Clear);
     } else {
         /* Status */
         value = m_reg.SR;
