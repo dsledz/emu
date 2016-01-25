@@ -35,13 +35,11 @@ Device::Device(Machine *machine, const std::string &name):
 }
 
 Device::Device(Machine *machine, const std::string &name, unsigned hertz):
-    EmuClockBase(),
     m_name(name),
     m_machine(machine),
     m_status(DeviceStatus::Off),
     m_target_status(DeviceStatus::Off),
     m_hertz(hertz),
-    m_avail(0),
     m_cv(),
     m_mtx(),
     m_channel(),
@@ -150,41 +148,63 @@ Device::log(LogLevel level, const std::string fmt, ...)
     va_list args;
     va_start(args, fmt);
     std::stringstream os;
-    os << time_now() << ":" << name() << ":" << fmt;
+    os << name() << ":" << fmt;
     Core::log.log(level, os.str(), args);
     va_end(args);
+}
+
+std::ostream & EMU::operator<< (std::ostream &os,
+                                const DeviceStatus status)
+{
+    switch (status) {
+    case DeviceStatus::Off: os << "Off"; break;
+    case DeviceStatus::Halted: os << "Halted"; break;
+    case DeviceStatus::Running: os << "Running"; break;
+    case DeviceStatus::Stopped: os << "Stopped"; break;
+    case DeviceStatus::Fault: os << "Fault"; break;
+    }
+    return os;
+}
+
+std::ostream & EMU::operator<< (std::ostream &os,
+                                         const DeviceUpdate &update)
+{
+    switch (update.type) {
+        case DeviceUpdateType::Status:
+            os << "Status: " << update.status;
+            break;
+        case DeviceUpdateType::Clock:
+            os << "Clock";
+            break;
+        default:
+            os << "Unknown";
+            break;
+    }
+    return os;
+}
+
+void
+Device::update(DeviceUpdate &update)
+{
+    switch (update.type) {
+        case DeviceUpdateType::Status:
+            m_target_status = update.status;
+            if (m_target_status == DeviceStatus::Off)
+                throw TaskCanceled("Device Off");
+            break;
+        default:
+            std::stringstream os;
+            os << update;
+            LOG_ERROR("Unhanded device update: ", update);
+            break;
+    }
 }
 
 void
 Device::idle(void)
 {
-    DeviceUpdate update = m_channel.get();
-    switch (update.type) {
-        case DeviceUpdateType::Clock:
-            LOG_ERROR("Clock Update: ", name());
-            if (update.clock.stop) {
-                m_stopped = true;
-            } else {
-                m_now = update.clock.now;
-            }
-            break;
-        case DeviceUpdateType::Status:
-            LOG_ERROR("Status Update: ", name(), " ", (int)update.status);
-            m_target_status = update.status;
-            if (m_target_status == DeviceStatus::Off)
-                m_stopped = true;
-            break;
-    }
-}
-
-void
-Device::wait_icycles(Cycles cycles)
-{
-    while (m_avail < cycles) {
-        time_advance();
-        EmuTime avail = time_wait(time_zero);
-        m_avail += avail.to_cycles(Cycles(m_hertz));
-    }
+    DeviceUpdate u = m_channel.get();
+    update(u);
 }
 
 IODevice::IODevice(Machine *machine, const std::string &name, size_t size):
@@ -204,39 +224,64 @@ IODevice::size(void)
 }
 
 ClockedDevice::ClockedDevice(Machine *machine, const std::string &name, unsigned hertz):
-    Device(machine, name, hertz)
+    Device(machine, name, hertz),
+    EmuClockBase(),
+    m_avail(0)
 {
+    m_machine->add_clock(this);
 }
 
 ClockedDevice::~ClockedDevice(void)
 {
+    m_machine->remove_clock(this);
+}
+
+void
+ClockedDevice::wait_icycles(Cycles cycles)
+{
+    while (m_avail < cycles) {
+        time_advance();
+        EmuTime avail = time_wait(time_zero);
+        m_avail += avail.to_cycles(Cycles(m_hertz));
+    }
+}
+
+void
+ClockedDevice::update(DeviceUpdate &update)
+{
+    switch (update.type) {
+        case DeviceUpdateType::Clock:
+            if (update.clock.stop) {
+                m_target_status = DeviceStatus::Halted;
+            } else {
+                m_now = update.clock.now;
+            }
+            break;
+        default:
+            Device::update(update);
+            break;
+    }
 }
 
 EmuTime
-Device::time_wait(EmuTime interval)
+ClockedDevice::time_wait(EmuTime interval)
 {
     EmuTime avail = m_now - m_current;
-    while (!m_stopped && (avail == time_zero || avail < interval)) {
+    while (avail == time_zero || avail < interval) {
         idle();
-        if (m_stopped) {
-            LOG_DEBUG("Stopped!");
-            break;
-        }
         avail = m_now - m_current;
     }
-    if (m_stopped)
-        throw TaskCanceled("Device Off");
     return avail;
 }
 
 void
-Device::time_advance(void)
+ClockedDevice::time_advance(void)
 {
     m_current = m_now;
 }
 
 void
-Device::time_set(EmuTime now)
+ClockedDevice::time_set(EmuTime now)
 {
     DeviceUpdate update = {
         .type = DeviceUpdateType::Clock,
@@ -249,7 +294,7 @@ Device::time_set(EmuTime now)
 }
 
 void
-Device::time_stop(void)
+ClockedDevice::time_stop(void)
 {
    DeviceUpdate update = {
         .type = DeviceUpdateType::Clock,
@@ -262,7 +307,7 @@ Device::time_stop(void)
 }
 
 void
-Device::time_update(const EmuClockUpdate &up)
+ClockedDevice::time_update(const EmuClockUpdate &up)
 {
     DeviceUpdate update = {
         .type = DeviceUpdateType::Clock,

@@ -79,14 +79,12 @@ void
 Machine::add_device(Device *dev)
 {
     m_devs.push_back(dev);
-    m_sim_clock.add_clock(dev);
 }
 
 void
 Machine::remove_device(Device *dev)
 {
     m_devs.remove(dev);
-    m_sim_clock.remove_clock(dev);
 }
 
 void

@@ -40,7 +40,7 @@ Task::Task(TaskScheduler *Scheduler, task_fn fn, const std::string &name):
 
 Task::~Task(void)
 {
-    assert(finished(m_state));
+    //assert(finished(m_state));
     m_sched->remove_task(this);
 }
 

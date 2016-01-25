@@ -36,9 +36,6 @@ M6850::execute(void)
     while (true) {
         bool interrupt = false;
 
-        if (handle_msg() == DeviceStatus::Off)
-            return;
-
         /* Update our clock */
         switch (m_reg.CR & 0x03) {
         case 0x00: add_icycles(1); break;

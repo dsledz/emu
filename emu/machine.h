@@ -77,6 +77,13 @@ public:
     void add_device(Device *dev);
     void remove_device(Device *dev);
 
+    void add_clock(EmuClockBase *clock) {
+        m_sim_clock.add_clock(clock);
+    }
+    void remove_clock(EmuClockBase *clock) {
+        m_sim_clock.remove_clock(clock);
+    }
+
     /**
      * Declare an IO port with the name of @a name.
      * Ports 
