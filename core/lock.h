@@ -37,14 +37,14 @@ template<typename mtx_type>
 class unlock_guard {
 public:
     unlock_guard(mtx_type & m): m_mtx(m) {
-        assert(held_locks > 0);
+        //assert(held_locks > 0);
         m_mtx.unlock();
-        held_locks--;
+        //held_locks--;
     }
     ~unlock_guard(void) {
-        assert(held_locks == 0);
+        //assert(held_locks == 0);
         m_mtx.lock();
-        held_locks++;
+        //held_locks++;
     }
 
 private:
@@ -56,17 +56,17 @@ class lock_guard {
 public:
     lock_guard(mtx_type & m): m_mtx(m) {
         m_mtx.lock();
-        held_locks++;
+        //held_locks++;
     }
 
     ~lock_guard(void) {
-        assert(held_locks > 0);
+        //assert(held_locks > 0);
         m_mtx.unlock();
-        held_locks--;
+        //held_locks--;
     }
 
     void wait(std::condition_variable & cv) {
-        assert(held_locks > 0);
+        //assert(held_locks > 0);
         std::unique_lock<mtx_type> lock(m_mtx, std::adopt_lock);
         cv.wait(lock);
         lock.release();

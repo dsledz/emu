@@ -29,6 +29,7 @@
 #include "core/exception.h"
 #include "core/debug.h"
 #include "core/task.h"
+#include "core/ring.h"
 
 namespace Core {
 
@@ -39,7 +40,7 @@ template<class object_t>
 class Channel
 {
 public:
-    Channel(void): m_mtx(), m_waiting(), m_objects(), m_avail(0)
+    Channel(void): m_mtx(), m_waiting(), m_objects()
     {
     }
     ~Channel(void)
@@ -52,11 +53,10 @@ public:
      */
     void put(object_t obj) {
         lock_mtx lock(m_mtx);
-        m_objects.push(obj);
+        m_objects.push_back(obj);
         if (!m_waiting.empty()) {
             Task * task = m_waiting.front();
-            m_waiting.pop();
-            m_avail++;
+            m_waiting.pop_front();
             task->wake();
         }
     }
@@ -69,14 +69,13 @@ public:
         std::unique_lock<std::mutex> lock(m_mtx);
         while (m_objects.empty()) {
             Task * task = Thread::cur_task();
-            m_waiting.push(task);
+            m_waiting.push_back(task);
             lock.unlock();
             task->suspend();
             lock.lock();
         }
-        m_avail--;
         object_t obj = m_objects.front();
-        m_objects.pop();
+        m_objects.pop_front();
         return obj;
     }
 
@@ -88,7 +87,6 @@ public:
         object_t obj = object_t();
         std::unique_lock<std::mutex> lock(m_mtx);
         if (!m_objects.empty()) {
-            m_avail--;
             obj = m_objects.front();
             m_objects.pop();
         }
@@ -96,14 +94,13 @@ public:
     }
 
     int available(void) {
-        return std::atomic_load(&m_avail);
+        return m_objects.size();
     }
 
 private:
     std::mutex              m_mtx;
-    std::queue<Task *>      m_waiting;
-    std::queue<object_t>    m_objects;
-    std::atomic<int>        m_avail;
+    RingBuffer<Task *,8>    m_waiting;
+    RingBuffer<object_t, 64> m_objects;
 };
 
 /**

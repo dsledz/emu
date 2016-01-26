@@ -34,13 +34,13 @@ public:
     };
     struct BufferRead {
         BufferRead(bvec *d): data(d) { }
-        data_type operator ()(offset_t offset) { return (*data).at(offset); }
+        data_type operator ()(offset_t offset) { return (*data)[offset]; }
         bvec *data;
     };
     struct BufferWrite {
         BufferWrite(bvec *d): data(d) { }
         void operator ()(offset_t offset, data_type d) {
-            (*data).at(offset) = d; }
+            (*data)[offset] = d; }
         bvec *data;
     };
 

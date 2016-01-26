@@ -47,11 +47,16 @@ enum class DeviceStatus {
 class Machine;
 
 enum class DeviceUpdateType {
+    None,
     Clock,
     Status,
 };
 
 struct DeviceUpdate {
+    DeviceUpdate(void): type(DeviceUpdateType::None) {}
+    DeviceUpdate(const EmuClockUpdate &clock): clock(clock) {}
+    DeviceUpdate(const DeviceStatus status): status(status) {}
+
     DeviceUpdateType type;
     union {
         EmuClockUpdate clock;

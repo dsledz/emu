@@ -38,59 +38,64 @@ struct Cycles {
     Cycles(void) = default;
     explicit Cycles(int64_t v): v(v) { }
 
-    const struct Cycles operator +(const struct Cycles &rhs) const {
+    inline const struct Cycles operator +(const struct Cycles &rhs) const {
         Cycles res(*this);
         res += rhs;
         return res;
     }
 
-    const struct Cycles operator *(const struct Cycles &rhs) {
+    inline const struct Cycles operator *(const struct Cycles &rhs) {
         return Cycles(v * rhs.v);
     }
 
-    struct Cycles &operator *=(const struct Cycles &rhs) {
+    inline struct Cycles &operator *=(const struct Cycles &rhs) {
         v *= rhs.v;
         return *this;
     }
 
-    struct Cycles & operator +=(const struct Cycles &rhs) {
-        v += rhs.v;
+    inline struct Cycles & operator +=(const struct Cycles &rhs) {
+        v = v + rhs.v;
         return *this;
     }
 
-    struct Cycles & operator +=(unsigned rhs) {
+    inline struct Cycles & operator +=(unsigned rhs) {
         v += rhs;
         return *this;
     }
 
-    const struct Cycles operator -(const struct Cycles &rhs) const {
+    inline const struct Cycles operator -(const struct Cycles &rhs) const {
         return Cycles(v - rhs.v);
     }
 
-    struct Cycles & operator -=(const struct Cycles &rhs) {
+    inline struct Cycles & operator -=(const struct Cycles &rhs) {
         v -= rhs.v;
         return *this;
     }
 
-    const struct Cycles operator /(unsigned rhs) const {
+    inline const struct Cycles operator /(unsigned rhs) const {
         return Cycles(v / rhs);
     }
-    const struct Cycles operator *(unsigned rhs) const {
+
+    inline const struct Cycles operator *(unsigned rhs) const {
         return Cycles(v * rhs);
     }
 
-    bool operator >(int64_t rhs) const {
+    inline bool operator >(int64_t rhs) const {
         return v > rhs;
     }
-    bool operator >(const struct Cycles &rhs) const {
+
+    inline bool operator >(const struct Cycles &rhs) const {
         return v > rhs.v;
     }
-    bool operator <(const struct Cycles &rhs) const {
+
+    inline bool operator <(const struct Cycles &rhs) const {
         return v < rhs.v;
     }
-    bool operator ==(const struct Cycles &rhs) const {
+
+    inline bool operator ==(const struct Cycles &rhs) const {
         return v == rhs.v;
     }
+
     int64_t v = 0;
 };
 
@@ -332,6 +337,9 @@ private:
 };
 
 struct EmuClockUpdate {
+    EmuClockUpdate(void) = default;
+    EmuClockUpdate(EmuTime now): now(now) {}
+
     EmuTime      now;
 };
 
@@ -394,7 +402,7 @@ public:
 
     void set(EmuTime now) {
         /* Actual Time */
-        EmuTime skew(usec(10));
+        EmuTime skew(usec(100));
         m_now = now;
         update_stats();
         if (m_oldest + skew > m_current) {

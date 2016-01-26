@@ -31,7 +31,7 @@
 
 namespace EMU {
 
-template<class Val, typename addr_type, int addr_width>
+template<class Val, typename addr_type, int addr_width, int shift>
 class MemoryMap
 {
 private:
@@ -52,11 +52,8 @@ private:
 
 public:
     MemoryMap(void):
-        _shift(addr_width - 4),
-        _mask(0x0F),
-        _entries(16)
+        m_entries(1 << shift)
     {
-        assert(_entries.size() == 16);
     }
     ~MemoryMap(void)
     {
@@ -64,13 +61,12 @@ public:
 
     void add(addr_type key, addr_type keyend, const Val &val)
     {
-        assert(_entries.size() == 16);
         Entry entry(key, keyend, val);
 
         auto start = bucket(entry.start);
         auto end = bucket(entry.end);
         for (auto i = start; i <= end; i++) {
-            entry_list &list = _entries.at(i);
+            entry_list &list = m_entries[i];
             /* Check for duplicates */
             for (auto it = list.begin(); it != list.end(); it++)
                 if (it->match(key))
@@ -81,25 +77,21 @@ public:
 
     Val &find(addr_type key)
     {
-        assert(_entries.size() == 16);
-        entry_list &list = _entries.at(bucket(key));
+        entry_list &list = m_entries[bucket(key)];
         for (auto it = list.begin(); it != list.end(); it++)
             if (it->match(key))
                 return it->value;
-        throw Core::BusError(key);
+        assert(false);
     }
 
     const size_t bucket(addr_type key) {
-        size_t tmp = (key >> _shift) & _mask;
-        assert(tmp < _entries.size());
+        size_t tmp = (key >> (addr_width - shift)) & ((1 << shift) - 1);
         return tmp;
     }
 
 private:
 
-    int _shift;
-    int _mask;
-    std::vector<entry_list> _entries;
+    std::vector<entry_list> m_entries;
 };
 
 /**
@@ -136,13 +128,13 @@ public:
     };
     struct BufferRead {
         BufferRead(bvec *d): data(d) { }
-        data_type operator ()(offset_t offset) { return (*data).at(offset); }
+        data_type operator ()(offset_t offset) { return (*data)[offset]; }
         bvec *data;
     };
     struct BufferWrite {
         BufferWrite(bvec *d): data(d) { }
         void operator ()(offset_t offset, data_type d) {
-            (*data).at(offset) = d; }
+            (*data)[offset] = d; }
         bvec *data;
     };
 
@@ -232,7 +224,7 @@ public:
     }
 
 private:
-    MemoryMap<IOPort, addr_type, addr_width> _map;
+    MemoryMap<IOPort, addr_type, addr_width, 5> _map;
 
     /* XXX: The radix tree is slow */
     // RadixTree<IOPort, addr_type, addr_width> _map;

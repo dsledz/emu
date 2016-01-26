@@ -81,11 +81,11 @@ protected:
         _icycles += cycles;
     }
 
-    std::string _op_name;
+    const char *_op_name;
     addr_t _op_pc;
     addr_t _op_ind;
     void log_op(byte_t op);
-    void start_op(const std::string &name) {
+    void start_op(const char *name) {
         _op_name = name;
     }
 

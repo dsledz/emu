@@ -28,6 +28,7 @@
 using namespace EMU;
 
 Emulator::Emulator(const Options &options):
+    _clock(),
     _state(EmuState::Stopped),
     _options(options),
     _machine()
@@ -92,7 +93,7 @@ Emulator::do_execute(void)
 
         _machine->set_time(_clock.runtime());
         /* Advance the clock by 1 millsecond each time. */
-        struct timespec t = { 0, 1000000 };
+        struct timespec t = { 0, 50000 };
         nanosleep(&t, NULL);
     } while (true);
 

@@ -97,10 +97,7 @@ Device::execute(void)
 void
 Device::set_status(DeviceStatus status)
 {
-    DeviceUpdate update = {
-        .type = DeviceUpdateType::Status,
-        .status = status
-    };
+    DeviceUpdate update(status);
     m_channel.put(update);
 }
 
@@ -263,12 +260,7 @@ ClockedDevice::update(DeviceUpdate &update)
 void
 ClockedDevice::time_set(EmuTime now)
 {
-    DeviceUpdate update = {
-        .type = DeviceUpdateType::Clock,
-        .clock = {
-            .now = now
-        }
-    };
+    DeviceUpdate update((EmuClockUpdate(now)));
     m_channel.put(update);
 }
 
