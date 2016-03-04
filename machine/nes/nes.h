@@ -27,7 +27,7 @@
 
 
 using namespace EMU;
-#if 0
+#if 1
 #include "cpu/m6502/m6502.h"
 using namespace M6502v2;
 #else

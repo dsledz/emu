@@ -167,6 +167,9 @@ std::ostream & EMU::operator<< (std::ostream &os,
                                          const DeviceUpdate &update)
 {
     switch (update.type) {
+        case DeviceUpdateType::None:
+            os << "None";
+            break;
         case DeviceUpdateType::Status:
             os << "Status: " << update.status;
             break;
@@ -190,9 +193,8 @@ Device::update(DeviceUpdate &update)
                 throw TaskCanceled("Device Off");
             break;
         default:
-            std::stringstream os;
-            os << update;
             LOG_ERROR("Unhanded device update: ", update);
+            assert(false);
             break;
     }
 }
@@ -239,8 +241,6 @@ ClockedDevice::wait_icycles(Cycles cycles)
     while (m_avail < cycles) {
         time_advance();
         idle();
-        EmuTime avail = m_target - m_current;
-        m_avail = avail.to_cycles(Cycles(m_hertz));
     }
 }
 
@@ -248,9 +248,12 @@ void
 ClockedDevice::update(DeviceUpdate &update)
 {
     switch (update.type) {
-        case DeviceUpdateType::Clock:
+        case DeviceUpdateType::Clock: {
             m_target = update.clock.now;
+            EmuTime avail = m_target - m_current;
+            m_avail = avail.to_cycles(Cycles(m_hertz));
             break;
+        }
         default:
             Device::update(update);
             break;

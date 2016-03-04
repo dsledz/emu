@@ -4,7 +4,7 @@ project(SLEDEMU)
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_BINARY_DIR})
 
-set(CMAKE_CXX_FLAGS "-Wall -Werror -g -std=c++11 -stdlib=libc++ -Wno-unused-private-field -O2")
+set(CMAKE_CXX_FLAGS "-Wall -Werror -g -std=c++11 -stdlib=libc++ -Wno-unused-private-field -Wuninitialized -O0")
 set(CMAKE_CC "clang++")
 
 # XCode options

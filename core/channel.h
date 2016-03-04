@@ -54,10 +54,8 @@ public:
     void put(object_t obj) {
         lock_mtx lock(m_mtx);
         m_objects.push_back(obj);
-        if (!m_waiting.empty()) {
-            Task * task = m_waiting.front();
-            m_waiting.pop_front();
-            task->wake();
+        if (m_waiting) {
+            m_waiting->wake();
         }
     }
 
@@ -67,15 +65,17 @@ public:
      */
     object_t get(void) {
         std::unique_lock<std::mutex> lock(m_mtx);
+        assert(m_waiting == NULL);
+        Task * task = Thread::cur_task();
         while (m_objects.empty()) {
-            Task * task = Thread::cur_task();
-            m_waiting.push_back(task);
+            m_waiting = task;
             lock.unlock();
             task->suspend();
             lock.lock();
         }
         object_t obj = m_objects.front();
         m_objects.pop_front();
+        m_waiting = NULL;
         return obj;
     }
 
@@ -98,8 +98,8 @@ public:
     }
 
 private:
-    std::mutex              m_mtx;
-    RingBuffer<Task *,8>    m_waiting;
+    std::mutex               m_mtx;
+    Task *                   m_waiting;
     RingBuffer<object_t, 64> m_objects;
 };
 
