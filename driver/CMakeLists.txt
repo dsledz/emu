@@ -22,3 +22,8 @@ if (BUILD_SDL)
     message("Building SDL support.")
     add_subdirectory(sdl)
 endif (BUILD_SDL)
+
+if (BUILD_SFML)
+    message("Building SFML support.")
+    add_subdirectory(sfml)
+endif (BUILD_SFML)

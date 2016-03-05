@@ -22,11 +22,13 @@ endmacro(add_framework)
 
 option(BUILD_IOS "Build iOS Support" OFF)
 option(BUILD_OSX "Build OSX" ON)
-option(BUILD_SDL "Build SDL" OFF)
+option(BUILD_SDL "Build SDL" ON)
+option(BUILD_SFML "Build SFML" ON)
 option(BUILD_TESTING "Enable testing" ON)
 option(BUILD_CORE_ONLY "Enable core only" OFF)
 option(BUILD_JIT "Build JIT" OFF)
-option(TARGET_ARCH "Target Architecture" x64)
+
+set(TARGET_ARCH "x64" CACHE STRING "Target Architecture")
 
 set(OPENGL_LEGACY 1)
 if (BUILD_IOS)
