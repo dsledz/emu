@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
 project(SLEDEMU)
 
+include_directories("/opt/local/include")
+
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_BINARY_DIR})
 
@@ -49,8 +51,10 @@ endif (BUILD_TESTING)
 
 if (BUILD_CORE_ONLY)
     add_subdirectory(core)
+    add_subdirectory(lua)
 else (!BUILD_CORE_ONLY)
     add_subdirectory(core)
+    add_subdirectory(lua)
     add_subdirectory(emu)
     add_subdirectory(cpu)
     add_subdirectory(machine)
