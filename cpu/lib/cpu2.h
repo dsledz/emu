@@ -33,6 +33,12 @@ using namespace EMU;
 
 namespace CPU2 {
 
+enum class CpuPhase {
+    Interrupt,
+    Decode,
+    Dispatch
+};
+
 /**
  * CPU Fault
  */
@@ -82,48 +88,29 @@ struct CpuFeatureFault: public CpuFault {
     }
 };
 
-template<class _bus_type, class _state_type, typename _opcode_type>
+template<class _bus_type, class _state_type, class _opcode_type,
+    class _class_type>
 class Cpu: public ClockedDevice {
 public:
     typedef _bus_type bus_type;
     typedef _state_type state_type;
+    typedef _class_type class_type;
     typedef _opcode_type opcode_type;
-    typedef typename bus_type::addr_type pc_type;
     typedef typename bus_type::addr_type addr_type;
     typedef typename bus_type::data_type data_type;
-
-    struct Opcode {
-        opcode_type code;
-        const char *name;
-        int bytes;
-        int cycles;
-        std::function<void (state_type *)> addr_mode;
-        std::function<void (state_type *)> operation;
-    };
 
     Cpu(Machine *machine, const std::string &name, unsigned hertz,
         bus_type *bus):
         ClockedDevice(machine, name, hertz),
-        m_icycles(0),
-        m_bus(bus)
+        m_bus(bus),
+        m_state(),
+        m_class()
     {
     }
     virtual ~Cpu(void)
     {
     }
     Cpu(const Cpu &cpu) = delete;
-
-    virtual void execute(void)
-    {
-        while (true) {
-            step();
-        }
-    }
-
-    virtual void line(Line line, LineState state)
-    {
-        Device::line(line, state);
-    }
 
     bus_type *bus(void) {
         return m_bus;
@@ -133,55 +120,30 @@ public:
         return &m_state;
     }
 
-    data_type bus_read(addr_type addr) {
-        data_type tmp = m_bus->read(addr);
-        /* XXX: Should we always incur a cycle here? */
-        //add_icycles(1);
-        return tmp;
-    }
-
-    void bus_write(addr_type addr, data_type value) {
-        m_bus->write(addr, value);
-        //add_icycles(1);
-    }
-
-    virtual void test_step(void) {
-        step();
-    }
-
-    /* Process a single clock cycle */
-    virtual void step(void) = 0;
-    virtual std::string dasm(addr_type addr) = 0;
+    virtual std::string dasm(addr_type addr) { return ""; }
 
 protected:
 
-    void dispatch(pc_type pc)
+    virtual void execute(void)
     {
-        opcode_type opcode = bus_read(m_state.PC.d++);
-        auto it = m_opcodes.find(opcode);
-        if (it == m_opcodes.end()) {
-            DEVICE_ERROR("Unknown opcode");
-            throw CpuOpcodeFault(name(), opcode, pc);
+        while (true) {
+            switch (m_state.Phase) {
+            case CpuPhase::Interrupt:
+                m_class.Interrupt(&m_state, m_bus);
+                break;
+            case CpuPhase::Decode:
+                m_class.Decode(&m_state, m_bus);
+                break;
+            case CpuPhase::Dispatch:
+                m_class.Dispatch(&m_state, m_bus);
+                break;
+            }
         }
-
-        Opcode *op = &it->second;
-
-        m_state.bus = bus();
-        m_state.icycles = 0;
-
-        op->addr_mode(&m_state);
-        op->operation(&m_state);
-        add_icycles(op->cycles + m_state.icycles);
-
-        return;
     }
 
-    Cycles m_icycles;
     bus_type *m_bus;
-    addr_type m_address;
-    data_type m_data;
     state_type m_state;
-    std::unordered_map<opcode_type, Opcode> m_opcodes;
+    class_type m_class;
 };
 
 };

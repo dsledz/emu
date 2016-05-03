@@ -1,6 +1,7 @@
 
 add_library(z80
-    z80.cc)
+    z80.cc
+    z80v2.cc)
 
 target_link_libraries(z80
     emu)

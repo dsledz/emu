@@ -3,9 +3,14 @@
 #include <cassert>
 #include "core/bits.h"
 #include "emu/io.h"
-#include "core/radix.h"
+#include "emu/bus.h"
 
 namespace EMU {
+
+enum class bus_mode {
+    Read,
+    Write
+};
 
 template<typename _addr_type, int addr_width, typename _data_type>
 class ClockedBus
@@ -14,126 +19,103 @@ public:
     typedef _addr_type addr_type;
     typedef _data_type data_type;
 
-    typedef std::function<data_type (offset_t)> read_fn;
-    typedef std::function<void (offset_t, data_type)> write_fn;
-    struct DefaultRead {
-        data_type operator ()(offset_t offset) { return 0; }
-    };
-    struct DefaultWrite {
-        void operator ()(offset_t offset, data_type data) { return; }
-    };
-    struct DataRead {
-        DataRead(data_type *d): data(d) { }
-        data_type operator ()(offset_t offset) { return *data; }
-        data_type *data;
-    };
-    struct DataWrite {
-        DataWrite(data_type *d): data(d) { }
-        void operator ()(offset_t offset, data_type d) { *data = d; }
-        data_type *data;
-    };
-    struct BufferRead {
-        BufferRead(bvec *d): data(d) { }
-        data_type operator ()(offset_t offset) { return (*data)[offset]; }
-        bvec *data;
-    };
-    struct BufferWrite {
-        BufferWrite(bvec *d): data(d) { }
-        void operator ()(offset_t offset, data_type d) {
-            (*data)[offset] = d; }
-        bvec *data;
-    };
-
-    struct IOPort
-    {
-        IOPort(addr_type base, addr_type end):
-            base(base), end(end),
-            read(DefaultRead()), write(DefaultWrite()) { }
-        IOPort(addr_type base, addr_type end, data_type *data):
-            base(base), end(end),
-            read(DataRead(data)), write(DataWrite(data)) { }
-        IOPort(addr_type base, addr_type end, read_fn read, write_fn write):
-            base(base), end(end), read(read), write(write) { }
-
-        data_type io(offset_t offset, data_type data, bool wr) {
-            if (wr)
-                write(offset, data);
-            else
-                data = read(offset);
-            return data;
-        }
-
-        addr_type base;
-        addr_type end;
-        read_fn read;
-        write_fn write;
-    };
-
-    ClockedBus(void): _map()
+    ClockedBus(void)
     {
     }
+
     ~ClockedBus(void)
     {
     }
 
-    data_type io(addr_type addr, data_type data, bool write)
+    inline void schedule_write(addr_type addr, data_type data)
     {
-        IOPort & it = _map.find(addr);
-        addr -= it.base;
-        return it.io(addr, data, write);
+        m_addr = addr;
+        m_mode = bus_mode::Write;
+        m_data = data;
     }
-    void write(addr_type addr, data_type data)
+
+    inline void schedule_read(addr_type addr, data_type *data_ptr)
     {
-        IOPort & it = _map.find(addr);
-        addr -= it.base;
-        it.write(addr, data);
+        m_addr = addr;
+        m_mode = bus_mode::Read;
+        m_data_ptr = data_ptr;
     }
-    data_type read(addr_type addr)
+
+    typedef std::function<bool (bus_mode, offset_t, data_type *)> io_fn;
+
+    struct IOPort
     {
-        IOPort & it = _map.find(addr);
-        addr -= it.base;
-        return it.read(addr);
-    }
+        IOPort(addr_type base, addr_type end, io_fn io):
+            base(base), end(end), io(io), read_only(false), raw(nullptr) {}
+        IOPort(addr_type base, addr_type end, data_type *raw,
+               bool read_only):
+            base(base), end(end), io(), read_only(read_only), raw(raw) {}
+
+        addr_type base;
+        addr_type end;
+        io_fn     io;
+        bool      read_only;
+        data_type *raw;
+    };
 
     void add(const IOPort &dev)
     {
-        _map.add(dev.base, dev.end, dev);
+        m_map.add(dev.base, dev.end, dev);
     }
 
-    void add(addr_type base, addr_type end)
+    void add(addr_type base, RamDevice *dev)
     {
-        IOPort port(base, end);
-        add(port);
+        IOPort port(base, dev->size() - 1, dev->direct(0), false);
     }
 
-    void add(addr_type base, addr_type end, read_fn read, write_fn write)
+    bool io_read(addr_type addr, data_type *data)
     {
-        IOPort port(base, end, read, write);
-        add(port);
+        schedule_read(addr, data);
+        io_execute();
+        return false;
     }
 
-    void add(addr_type base, read_fn read, write_fn write)
+    bool io_write(addr_type addr, data_type data)
     {
-        IOPort port(base, base, read, write);
-        add(port);
+        schedule_write(addr, data);
+        io_execute();
+        return false;
     }
 
-    void add(addr_type base, bvec *buf)
+    bool io_execute(void)
     {
-        add(base, base + buf->size() - 1, BufferRead(buf), BufferWrite(buf));
-    }
-
-    void add(addr_type base, data_type *data)
-    {
-        IOPort port(base, base, DataRead(data), DataWrite(data));
-        add(port);
+        bool yield = false;
+        addr_type addr = m_addr;
+        IOPort &it = m_map.find(m_addr);
+        addr -= it.base;
+        assert(addr % sizeof(data_type) == 0);
+        addr /= sizeof(data_type);
+        if (it.raw != nullptr) {
+            switch (m_mode) {
+            case bus_mode::Write:
+                if (it.read_only)
+                    throw BusError(m_addr);
+                it.raw[addr] = m_data;
+                break;
+            case bus_mode::Read:
+                *m_data_ptr = it.raw[addr];
+                break;
+            }
+        } else {
+            yield = it.io(m_mode, addr, m_data_ptr);
+        }
+        return yield;
     }
 
 private:
-    MemoryMap<IOPort, addr_type, addr_width> _map;
 
-    /* XXX: The radix tree is slow */
-    // RadixTree<IOPort, addr_type, addr_width> _map;
+    MemoryMap<IOPort, addr_type, addr_width, 5> m_map;
+    addr_type m_addr;
+    data_type m_data;
+    data_type *m_data_ptr;
+    bus_mode m_mode;
 };
+
+typedef ClockedBus<uint16_t, 16, uint8_t> ClockedBus16;
 
 };

@@ -26,13 +26,11 @@
 
 #include "core/bits.h"
 #include "emu/emu.h"
-#include "cpu/lib/cpu.h"
-#include "cpu/lib/jit.h"
+#include "cpu/lib/cpu2.h"
 
 using namespace Core;
 using namespace EMU;
-using namespace CPU;
-using namespace JITx64;
+using namespace CPU2;
 
 namespace Z80v2 {
 
@@ -55,23 +53,19 @@ enum Z80Arg16 {
     RegIY = 4
 };
 
+typedef ClockedBus16 Z80Bus;
+
+struct Z80State;
+
+struct Z80Opcode
+{
+    uint8_t code;
+    const char *name;
+    void (*func)(Z80State *state);
+};
+
 struct Z80State {
     Z80State(void) = default;
-
-    uint8_t bus_read(uint16_t addr) {
-        return bus->read(addr);
-    }
-    void bus_write(uint16_t addr, uint8_t value) {
-        bus->write(addr, value);
-    }
-    uint8_t read_r8(Z80Arg r) {
-    }
-    uint16_t read_r16(Z80Arg16 r) {
-    }
-    void write_r8(Z80Arg r, uint8_t value) {
-    }
-    void write_r16(Z80Arg16 r, uint16_t value) {
-    }
 
     union {
         struct {
@@ -110,42 +104,24 @@ struct Z80State {
 
     reg16_t EA;
 
-    AddressBus16 *bus;
+    Z80Opcode *Op;
+
+    CpuPhase Phase;
     uint8_t icycles;
+    Z80Bus *bus;
 } __attribute__((packed));
 
-class Z80Cpu;
-
-struct Z80Opcode
-{
-    uint8_t code;
-    const char *name;
-    int bytes;
-    int cycles;
-    std::function<void (Z80Cpu *, Z80State *)> operation;
-};
-
-class Z80Cpu: public Cpu<AddressBus16, Z80State, uint8_t>
+class Z80Class
 {
 public:
-    Z80Cpu(Machine *machine, const std::string &name, unsigned hertz,
-           bus_type *bus);
-    ~Z80Cpu(void);
-    Z80Cpu(const Z80Cpu &cpu) = delete;
+    Z80Class();
+    ~Z80Class();
 
-    virtual void line(Line line, LineState state);
-    virtual void reset(void);
-
-    Z80State *get_state(void) {
-        return &m_state;
-    }
-
-    void log_state(void);
-    void log_op(const Opcode *op, uint16_t pc, const uint8_t *instr);
-
-    virtual void test_step(void);
-    virtual void step(void);
-    virtual std::string dasm(addr_type addr);
+    void Interrupt(Z80State *state, Z80Bus *bus);
+    void Decode(Z80State *state, Z80Bus *bus);
+    void Dispatch(Z80State *state, Z80Bus *bus);
 
 private:
+};
+
 };

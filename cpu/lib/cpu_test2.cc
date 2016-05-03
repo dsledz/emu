@@ -24,36 +24,79 @@
  */
 
 #include "emu/test.h"
-#include "cpu/lib/cpu.h"
+#include "emu/clock_bus.h"
+#include "emu/debugger.h"
+#include "cpu/lib/cpu2.h"
 
 using namespace EMU;
 using namespace EMUTest;
-using namespace CPU;
+using namespace CPU2;
 
-struct TestState {
-    reg16_t  EA;
-    reg8_t   ARG;
+class TestState: public Debuggable {
+public:
+    TestState(void): Debuggable("testcpu"),
+    Phase(CpuPhase::Interrupt),
+    PC(0x0000),
+    data(0),
+    opcode(0),
+    A(0),
+    B(0),
+    INT0(LineState::Clear)
+    {
+        add_debug_var("A", A);
+        add_debug_var("B", B);
+        //add_debug_var("PC", PC);
+    }
+
+public:
+    CpuPhase Phase;
+    uint16_t PC;
+    uint8_t  data;
+    uint8_t  opcode;
+    reg8_t   A;
+    reg8_t   B;
+    LineState INT0;
 };
 
-class TestCpu: public Cpu<AddressBus16, TestState, uint8_t> {
+struct TestClass {
+    void Interrupt(TestState *state, ClockedBus16 *bus) {
+        if (state->INT0 == LineState::Pulse) {
+            state->INT0 = LineState::Clear;
+            state->PC = 0x0000;
+        }
+        state->Phase = CpuPhase::Decode;
+    }
+
+    void Decode(TestState *state, ClockedBus16 *bus) {
+        bus->io_read(state->PC, &state->opcode);
+        state->Phase = CpuPhase::Dispatch;
+    }
+
+    void Dispatch(TestState *state, ClockedBus16 *bus) {
+        switch (state->opcode) {
+        case 0:
+            state->A++;
+            break;
+        case 1:
+            state->B++;
+            break;
+        }
+    }
+};
+
+struct TestOpcode
+{
+};
+
+class TestCpu: public Cpu<ClockedBus16, TestState, TestOpcode, TestClass> {
 public:
     TestCpu(Machine *machine, const std::string &name, unsigned hertz,
-            AddressBus16 *bus):
+            ClockedBus16 *bus):
         Cpu(machine, name, hertz, bus)
     {
     }
     virtual ~TestCpu(void)
     {
-    }
-
-    virtual void step(void)
-    {
-        add_icycles(1);
-    }
-
-    virtual std::string dasm(addr_type addr)
-    {
-        return "NOP";
     }
 };
 
@@ -62,3 +105,12 @@ TEST(CpuTest, constructor)
     TestMachine<TestCpu> machine;
 }
 
+TEST(CpuTest, debug_print)
+{
+    TestMachine<TestCpu> machine;
+    TestState *state = machine.cpu.state();
+
+    EXPECT_EQ("0", state->read_register("A"));
+    state->write_register("A", std::to_string(5));
+    EXPECT_EQ("5", state->read_register("A"));
+}

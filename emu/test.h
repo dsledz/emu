@@ -47,9 +47,7 @@ public:
         ram(this, "ram", 0x10000),
         pc(initial_pc)
     {
-        bus.add(0x0000, ram.size() - 1,
-            READ_CB(RamDevice::read8, &ram),
-            WRITE_CB(RamDevice::write8, &ram));
+        bus.add(0x0000, &ram);
 
         set_line("maincpu", Line::RESET, LineState::Pulse);
     }

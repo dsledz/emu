@@ -27,9 +27,14 @@
 #include <cassert>
 #include "core/bits.h"
 #include "emu/io.h"
+#include "emu/ram.h"
 #include "core/radix.h"
 
 namespace EMU {
+
+#define WRITE_CB(cb, ...) std::bind(&cb, __VA_ARGS__, std::placeholders::_1, \
+                               std::placeholders::_2)
+#define READ_CB(cb, ...) std::bind(&cb, __VA_ARGS__, std::placeholders::_1)
 
 template<class Val, typename addr_type, int addr_width, int shift>
 class MemoryMap
@@ -206,6 +211,13 @@ public:
         add(port);
     }
 
+    void add(addr_type base, RamDevice *ram)
+    {
+        IOPort port(base, ram->size()- 1,
+            READ_CB(RamDevice::read8, ram),
+            WRITE_CB(RamDevice::write8, ram));
+    }
+
     void add(addr_type base, read_fn read, write_fn write)
     {
         IOPort port(base, base, read, write);
@@ -236,10 +248,6 @@ typedef DataBus<uint16_t, 8, byte_t>  AddressBus8;
 typedef DataBus<uint16_t, 16, uint16_t> AddressBus16x16;
 typedef DataBus<uint8_t, 8, byte_t> DataBus8x8;
 typedef std::unique_ptr<AddressBus16> AddressBus16_ptr;
-
-#define WRITE_CB(cb, ...) std::bind(&cb, __VA_ARGS__, std::placeholders::_1, \
-                               std::placeholders::_2)
-#define READ_CB(cb, ...) std::bind(&cb, __VA_ARGS__, std::placeholders::_1)
 
 
 };
