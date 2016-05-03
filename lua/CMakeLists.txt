@@ -1,10 +1,13 @@
 add_library(lua_support
     lua_support.cc)
 
-link_directories("/opt/local/lib")
+link_libraries(${LUA_LIBRARIES})
+find_package(Lua REQUIRED)
+
+include_directories(${LUA_INCLUDE_DIR})
 
 target_link_libraries(lua_support
-    lua)
+    ${LUA_LIBRARIES})
 
 if (BUILD_TESTING)
     add_executable(lua-check

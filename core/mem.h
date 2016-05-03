@@ -26,6 +26,10 @@
  */
 #pragma once
 
+#ifndef WIN32
+#include <sys/mman.h>
+#endif
+
 #include <vector>
 
 template<typename T>

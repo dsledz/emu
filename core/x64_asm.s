@@ -1,6 +1,6 @@
-.globl _SwitchContext
+.globl SwitchContext
 
-_SwitchContext:
+SwitchContext:
     /* Store the old registers */
     mov %r8,   0(%rdi)
     mov %r9,   8(%rdi)

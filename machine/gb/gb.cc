@@ -237,8 +237,8 @@ Gameboy::~Gameboy(void)
 MachineInformation gb_info {
     "Gameboy",
     "1989",
-    true,
     "gb",
+    true,
 };
 
 MachineDefinition gb(

@@ -1,12 +1,16 @@
 find_package(OpenGL REQUIRED)
+
 add_library(driver
     wrapper.cc
     emulator.cc
     opengl.cc)
+
 target_link_libraries(driver
     emu
     cpu
     machine)
+
+include_directories(${OPENGL_INCLUDE_DIR})
 
 if (BUILD_OSX)
     message("Building OSX support.")

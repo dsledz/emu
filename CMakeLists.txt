@@ -34,6 +34,7 @@ option(BUILD_SFML "Build SFML" ON)
 option(BUILD_TESTING "Enable testing" ON)
 option(BUILD_CORE_ONLY "Enable core only" OFF)
 option(BUILD_JIT "Build JIT" OFF)
+option(BUILD_LUA "Build LUA" ON)
 
 set(TARGET_ARCH "x64" CACHE STRING "Target Architecture")
 
@@ -63,7 +64,9 @@ else (!BUILD_CORE_ONLY)
     add_subdirectory(emu)
     add_subdirectory(cpu)
     add_subdirectory(machine)
-    add_subdirectory(driver)
+    if (BUILD_IOS OR BUILD_OSX OR BUILD_SDL OR BUILD_SFML)
+        add_subdirectory(driver)
+    endif()
 endif (BUILD_CORE_ONLY)
 
 configure_file(

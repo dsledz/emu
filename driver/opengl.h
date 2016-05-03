@@ -29,6 +29,7 @@
 #include <future>
 #include <mutex>
 
+#if __APPLE__
 #include "TargetConditionals.h"
 #if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
 #include <OpenGLES/ES2/gl.h>
@@ -36,6 +37,11 @@
 #include <OpenGL/OpenGL.h>
 #include <OpenGL/gl.h>
 #endif
+#else
+#include <OpenGL/OpenGL.h>
+#include <OpenGL/gl.h>
+#endif
+
 
 using namespace EMU;
 

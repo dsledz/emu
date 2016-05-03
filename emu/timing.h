@@ -28,9 +28,14 @@
 #define NSEC_PER_SEC 1000000000ll
 #define NSEC_PER_MSEC 1000000ll
 #define NSEC_PER_USEC 1000ll
-#else
+#elif HAVE_MACH
 #include <mach/mach.h>
 #include <mach/mach_time.h>
+#else
+#define NSEC_PER_SEC 1000000000ll
+#define NSEC_PER_MSEC 1000000ll
+#define NSEC_PER_USEC 1000ll
+#include <time.h>
 #endif
 
 #include "core/channel.h"
@@ -107,6 +112,8 @@ struct Cycles {
 
 struct nsec {
     explicit nsec(uint64_t v): v(v) { }
+    explicit nsec(const struct timespec &t):
+        v(t.tv_sec * NSEC_PER_SEC + t.tv_nsec) { }
     uint64_t v;
 };
 
@@ -279,8 +286,7 @@ private:
 	LARGE_INTEGER m_pause;
 	LARGE_INTEGER m_frequency;
 };
-#else
-
+#elif HAVE_MACH
 /**
  * Clock device. Regulates the running of a device based on real time.
  */
@@ -332,6 +338,73 @@ class RealTimeClock {
         uint64_t _start;
         uint64_t _pause;
 };
+#else
+
+static inline void timespec_diff(struct timespec *dest,
+    struct timespec first, struct timespec second)
+{
+    if (second.tv_nsec < first.tv_nsec) {
+        second.tv_sec -= 1;
+        second.tv_nsec += NSEC_PER_SEC;
+    }
+    dest->tv_sec = first.tv_sec - second.tv_sec;
+    dest->tv_nsec = first.tv_nsec - second.tv_nsec;
+}
+
+/**
+ * Clock device. Regulates the running of a device based on real time.
+ */
+class RealTimeClock {
+    public:
+        RealTimeClock(void) {
+            clock_gettime(CLOCK_MONOTONIC, &m_start);
+            m_clock = m_start;
+        }
+        ~RealTimeClock(void) { }
+
+        void reset(void) {
+            clock_gettime(CLOCK_MONOTONIC, &m_start);
+            m_clock = m_start;
+        }
+
+        void pause(void) {
+            clock_gettime(CLOCK_MONOTONIC, &m_pause);
+        }
+
+        void resume(void) {
+            clock_gettime(CLOCK_MONOTONIC, &m_now);
+            timespec_diff(&m_start, m_now, m_pause);
+        }
+
+        Time runtime(void) {
+            clock_gettime(CLOCK_MONOTONIC, &m_now);
+            timespec_diff(&m_runtime, m_now, m_start);
+
+            return Time(nsec(m_runtime));
+        }
+
+        /* Return the number of ticks since last call */
+        Time get_delta(void) {
+            clock_gettime(CLOCK_MONOTONIC, &m_now);
+            timespec_diff(&m_delta, m_now, m_clock);
+
+            return Time(nsec(m_delta));
+        }
+
+        Time now(void) {
+            clock_gettime(CLOCK_MONOTONIC, &m_now);
+            return Time(nsec(m_now));
+        }
+
+    private:
+        struct timespec m_clock;
+        struct timespec m_start;
+        struct timespec m_pause;
+        struct timespec m_runtime;
+        struct timespec m_now;
+        struct timespec m_delta;
+};
+
 #endif
 
 struct WorkItem {
