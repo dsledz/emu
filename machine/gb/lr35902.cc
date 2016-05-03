@@ -153,8 +153,8 @@ LR35902Cpu::reset(void)
     _rE = 0xD8;
     _rH = 0x01;
     _rL = 0x4D;
-    _rSP = 0xFFFE;
-    _rPC = 0x0100;
+	_rSP = reg16_t(0xFFFE);
+    _rPC = reg16_t(0x0100);
     _ime = IME::Disabled;
     _state = State::Running;
     _IF = 0x00;
@@ -209,7 +209,7 @@ void LR35902Cpu::_add(byte_t &dest, byte_t arg)
     _set_zflag(result);
     _set_nflag(false);
 
-    dest = result;
+    dest = (byte_t)result;
 }
 
 void LR35902Cpu::_inc(byte_t &dest)
@@ -220,7 +220,7 @@ void LR35902Cpu::_inc(byte_t &dest)
     _set_zflag(result);
     _set_nflag(false);
 
-    dest = result;
+    dest = (byte_t)result;
 }
 
 void LR35902Cpu::_inci(addr_t addr)
@@ -595,7 +595,7 @@ void LR35902Cpu::_addw(uint16_t &wdest, uint16_t arg)
 
 void LR35902Cpu::_addsp(byte_t arg)
 {
-    uint16_t &wdest = _rSP;
+    uint16_t &wdest = _rSP.d;
     uint16_t result = wdest + arg;
 
     _set_cflag(_rSP, arg, result);
@@ -701,7 +701,7 @@ void LR35902Cpu::_daa(void)
     _flags.H = 0;
     _set_zflag(result);
 
-    dest = result;
+    dest = (byte_t)result;
 }
 
 #define OPCODE(op, cycles, bytes, name, func) \

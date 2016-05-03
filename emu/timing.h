@@ -24,8 +24,14 @@
  */
 #pragma once
 
+#ifdef WIN32
+#define NSEC_PER_SEC 1000000000ll
+#define NSEC_PER_MSEC 1000000ll
+#define NSEC_PER_USEC 1000ll
+#else
 #include <mach/mach.h>
 #include <mach/mach_time.h>
+#endif
 
 #include "core/channel.h"
 #include "core/task.h"
@@ -213,6 +219,68 @@ typedef Time EmuTime;
 
 extern const Time time_zero;
 
+#ifdef WIN32
+#include <Windows.h>
+class RealTimeClock {
+public:
+	RealTimeClock(void) {
+		QueryPerformanceCounter(&m_start);
+		QueryPerformanceFrequency(&m_frequency);
+	}
+	~RealTimeClock(void) { }
+
+	void reset(void) {
+		QueryPerformanceCounter(&m_start);
+		m_clock = m_start;
+	}
+
+	void pause(void) {
+		QueryPerformanceCounter(&m_pause);
+	}
+
+	void resume(void) {
+		LARGE_INTEGER now;
+		QueryPerformanceCounter(&now);
+		m_start.QuadPart -= now.QuadPart - m_pause.QuadPart;
+	}
+
+	Time runtime(void) {
+		LARGE_INTEGER now;
+		QueryPerformanceCounter(&now);
+		now.QuadPart -= m_start.QuadPart;
+
+		return Time(to_nsec(now));
+	}
+
+	Time get_delta(void) {
+		LARGE_INTEGER now;
+		QueryPerformanceCounter(&now);
+		LARGE_INTEGER delta;
+		delta.QuadPart = now.QuadPart - m_start.QuadPart;
+		m_clock = now;
+
+		return Time(to_nsec(delta));
+	}
+
+	Time now(void) {
+		LARGE_INTEGER now;
+		QueryPerformanceCounter(&now);
+		return Time(to_nsec(now));
+	}
+
+private:
+
+	nsec to_nsec(LARGE_INTEGER val) {
+		return nsec(val.QuadPart);
+	}
+
+	LARGE_INTEGER m_clock;
+	LARGE_INTEGER m_start;
+	LARGE_INTEGER m_pause;
+	LARGE_INTEGER m_frequency;
+};
+#else
+
 /**
  * Clock device. Regulates the running of a device based on real time.
  */
@@ -264,6 +332,7 @@ class RealTimeClock {
         uint64_t _start;
         uint64_t _pause;
 };
+#endif
 
 struct WorkItem {
     WorkItem(callback_t callback):

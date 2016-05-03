@@ -151,6 +151,9 @@ enum Flags {
     OF = 11,
 };
 
+#ifdef WIN32
+#pragma pack(push,1)
+#endif
 /**
  * Each JITTed CPU keeps track of it's private data here.
  */
@@ -161,7 +164,7 @@ public:
     typedef void    (*jit_bus_write_t)(void *, uint16_t addr, uint8_t value);
 
     JITState(uintptr_t ctx, jit_bus_read_t read, jit_bus_write_t write):
-        m_ctx(reinterpret_cast<uintptr_t>(ctx)),
+        m_ctx(ctx),
         m_bus_read(reinterpret_cast<uintptr_t>(read)),
         m_bus_write(reinterpret_cast<uintptr_t>(write))
     {
@@ -172,7 +175,13 @@ private:
     uintptr_t m_bus_read;
     uintptr_t m_bus_write;
 
-} __attribute__((packed));
+}
+#ifdef WIN32
+;
+#pragma pack(pop)
+#else
+__attribute__((packed));
+#endif
 
 /**
  * A JITTed code block
@@ -205,6 +214,12 @@ public:
         return true;
     }
 
+#ifdef WIN32
+	void execute(uintptr_t cpu_state, uintptr_t jit_state)
+	{
+		throw JITError("JIT not supported");
+	}
+#else
     void execute(uintptr_t cpu_state, uintptr_t jit_state)
     {
         uintptr_t func = reinterpret_cast<uintptr_t>(m_code.data());
@@ -231,8 +246,8 @@ public:
 
 
         assert(sp_before == sp_after);
-
     }
+#endif
 
     uint32_t pc;
     uint32_t len;

@@ -25,7 +25,9 @@
 
 #include "emu/rom.h"
 
+#ifndef WIN32
 #include <dirent.h>
+#endif
 #include <stdlib.h>
 
 using namespace EMU;
@@ -93,6 +95,27 @@ Rom::direct(offset_t offset) const
     return &_rom[offset];
 }
 
+#ifdef WIN32
+RomSet::RomSet(const std::string &path)
+{
+	HANDLE hFind;
+	WIN32_FIND_DATA data;
+	if ((hFind = FindFirstFile(path.c_str(), &data)) == INVALID_HANDLE_VALUE) {
+		throw RomException(path.c_str());
+	}
+
+	do {
+		std::string name(data.cFileName);
+		if (name == "." || name == "..")
+			continue;
+		std::string full_path = path + "\\" + name;
+		Rom rom(full_path);
+		_roms.insert(std::make_pair(name, rom));
+	} while (FindNextFile(hFind, &data));
+	FindClose(hFind);
+}
+
+#else
 RomSet::RomSet(const std::string &path)
 {
     DIR *dir;
@@ -108,6 +131,7 @@ RomSet::RomSet(const std::string &path)
         _roms.insert(std::make_pair(name, rom));
     }
 }
+#endif
 
 RomSet::RomSet(const RomDefinition &def)
 {

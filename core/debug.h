@@ -126,24 +126,28 @@ private:
 
 extern Debug log;
 
+#ifdef WIN32
+#define pthread_self() "Unknown"
+#endif
+
 #define IF_LOG(lvl) \
     for (bool once=true; once && Core::log.enabled(LogLevel::lvl); once=false)
 
-#define LOG_TRACE(fmt, args...) \
+#define LOG_TRACE(fmt, ...) \
     for (bool once=true; once && Core::log.enabled(Core::LogLevel::Trace); once=false) \
-        Core::log.trace(Core::stringfn(pthread_self(), " ", fmt, ##args));
+        Core::log.trace(Core::stringfn(pthread_self(), " ", fmt, ##__VA_ARGS__));
 
-#define LOG_DEBUG(fmt, args...) \
+#define LOG_DEBUG(fmt, ...) \
     for (bool once=true; once && Core::log.enabled(Core::LogLevel::Debug); once=false) \
-        Core::log.debug(Core::stringfn(pthread_self(), " ", fmt, ##args));
+        Core::log.debug(Core::stringfn(pthread_self(), " ", fmt, ##__VA_ARGS__));
 
-#define LOG_INFO(fmt, args...) \
+#define LOG_INFO(fmt, ...) \
     for (bool once=true; once && Core::log.enabled(Core::LogLevel::Info); once=false) \
-        Core::log.info(Core::stringfn(pthread_self(), " ", fmt, ##args));
+        Core::log.info(Core::stringfn(pthread_self(), " ", fmt, ##__VA_ARGS__));
 
-#define LOG_ERROR(fmt, args...) \
+#define LOG_ERROR(fmt, ...) \
     for (bool once=true; once && Core::log.enabled(Core::LogLevel::Error); once=false) \
-        Core::log.error(Core::stringfn(fmt, ##args));
+        Core::log.error(Core::stringfn(fmt, ##__VA_ARGS__));
 
 #define DEVICE_TRACE(fmt, ...) \
     for (bool once=true; once && Core::log.enabled(Core::LogLevel::Trace); once=false) \

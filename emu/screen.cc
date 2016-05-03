@@ -70,6 +70,7 @@ ScreenDevice::next_hstate(unsigned *cycles_out)
         *cycles_out = 0;
         return HState::HStart;
     }
+	assert(false);
 }
 
 ScreenDevice::VState

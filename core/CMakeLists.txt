@@ -1,7 +1,9 @@
 
-ENABLE_LANGUAGE(ASM-ATT)
+if (BUILD_ASM)
+    ENABLE_LANGUAGE(ASM-ATT)
 
-set(SUPPORT_ASM ${TARGET_ARCH}_asm.s)
+    set(SUPPORT_ASM ${TARGET_ARCH}_asm.s)
+endif (BUILD_ASM)
 
 add_library(core
     debug.cc

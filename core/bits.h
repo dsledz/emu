@@ -25,9 +25,18 @@
 
 #pragma once
 
+#ifndef WIN32
 #include <sys/cdefs.h>
+#include <sys/mman.h>
+#else
+#define _CRT_SECURE_NO_WARNINGS
+#include <windows.h>
+#define __builtin_expect(expr, val) expr
+#endif
+
 #include <string.h>
 
+#include <stdint.h>
 #include <string>
 #include <algorithm>
 #include <future>
@@ -43,9 +52,15 @@
 #include <map>
 #include <atomic>
 
+#ifdef WIN32
+#define a_unused 
+#define likely(x) x
+#define unlikely(x) x
+#else
 #define a_unused __attribute((unused))
 #define likely(x)      __builtin_expect(!!(x), 1)
 #define unlikely(x)    __builtin_expect(!!(x), 0)
+#endif
 
 /*  _____                     _       __
  * |_   _|   _ _ __   ___  __| | ___ / _|___
@@ -146,11 +161,19 @@ static inline bool bit_isset(uint16_t arg, int n)
 
 typedef std::function<void ()> callback_t;
 
+#ifdef WIN32
+template<typename T>
+static inline uint8_t val(T t)
+{
+    return static_cast<typename std::underlying_type<T>::type>(t);
+}
+#else
 template<typename T>
 static inline uint8_t __attribute__((const)) val(T t)
 {
     return static_cast<typename std::underlying_type<T>::type>(t);
 }
+#endif
 
 /* XXX: Find a better place for this */
 

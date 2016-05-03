@@ -26,7 +26,6 @@
  */
 #pragma once
 
-#include "sys/mman.h"
 #include <vector>
 
 template<typename T>
@@ -52,16 +51,33 @@ public:
     //    memory allocation
     inline pointer allocate(size_type cnt,
           typename std::allocator<void>::const_pointer = 0) {
+#ifdef WIN32
+		return reinterpret_cast<T*>(VirtualAllocEx(
+			GetCurrentProcess(),
+			NULL,
+			sizeof(T) * cnt,
+			MEM_COMMIT,
+			PAGE_EXECUTE_READWRITE)
+			);
+#else
         return reinterpret_cast<T*>(mmap(0, sizeof(T) * cnt,
             PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANON|MAP_PRIVATE, -1, 0));
+#endif
     }
     inline void deallocate(pointer p, size_type cnt) {
+#ifdef WIN32
+		VirtualFreeEx(GetCurrentProcess(),
+			p,
+			sizeof(T) * cnt,
+			MEM_DECOMMIT);
+#else
         munmap(p, sizeof(T) * cnt);
+#endif
     }
 
     //    size
     inline size_type max_size() const {
-        return std::numeric_limits<size_type>::max() / sizeof(T);
+        return (std::numeric_limits<size_type>::max)() / sizeof(T);
     }
 
 private:
@@ -82,6 +98,10 @@ inline bool operator==(ExecPolicy<T> const&, OtherAllocator const&) {
     return false;
 }
 
+#ifdef WIN32
+typedef std::vector<uint8_t> exec_buf_t;
+#else
 typedef std::vector<uint8_t, ExecPolicy<uint8_t> > exec_buf_t;
+#endif
 
 

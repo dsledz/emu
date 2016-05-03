@@ -40,7 +40,7 @@ public:
     ~SaveState(void) { }
 
     bvec &data;
-    unsigned pos;
+    size_t pos;
 };
 
 class LoadState {
@@ -48,7 +48,7 @@ public:
     LoadState(const bvec &data): data(data), pos(0) { }
 
     const bvec &data;
-    unsigned pos;
+    size_t pos;
 };
 
 template<typename T> static inline

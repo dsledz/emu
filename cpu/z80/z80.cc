@@ -264,7 +264,7 @@ Z80Cpu::_adc(byte_t &dest, byte_t arg)
     _flags.N = false;
     _flags.C = bit_isset(result, 8);
 
-    dest = result;
+    dest = (byte_t)result;
 }
 
 void
@@ -281,7 +281,7 @@ Z80Cpu::_sub(byte_t &dest, byte_t arg)
     _flags.N = true;
     _flags.C = bit_isset(dest ^ arg ^ result, 8);
 
-    dest = result;
+    dest = (byte_t)result;
 }
 
 void
@@ -297,7 +297,7 @@ Z80Cpu::_dec(byte_t &dest)
     _flags.V = (dest == 0x80);
     _flags.N = true;
 
-    dest = result;
+    dest = (byte_t)result;
 }
 
 void
@@ -1064,7 +1064,7 @@ Z80Cpu::_daa(void)
     _set_parity(result);
     _flags.C = bit_isset(dest ^ arg ^ result, 8);
 
-    dest = result;
+    dest = (byte_t)result;
 }
 
 void

@@ -10,8 +10,6 @@ void
 SwitchContext(ThreadRegisters *old_ctx, ThreadRegisters *new_ctx);
 };
 
-__thread int Core::held_locks = 0;
-
 ThreadContext::ThreadContext(uint64_t rip):
     m_stack(64*1024),
     m_registers()
@@ -43,11 +41,9 @@ void
 ThreadContext::switch_context(
     ThreadContext *saved_ctx)
 {
-    assert(held_locks == 0);
     // Swap our registers On return, we'll be in the other context
     // and our return stack will change.
     SwitchContext(&saved_ctx->m_registers, &m_registers);
-    assert(held_locks == 0);
 }
 
 /**

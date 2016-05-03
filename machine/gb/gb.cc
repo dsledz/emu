@@ -235,10 +235,10 @@ Gameboy::~Gameboy(void)
 }
 
 MachineInformation gb_info {
-    .name = "Gameboy",
-    .year = "1989",
-    .cartridge = true,
-    .extension = "gb",
+    "Gameboy",
+    "1989",
+    true,
+    "gb",
 };
 
 MachineDefinition gb(

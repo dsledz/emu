@@ -6,8 +6,12 @@ include_directories("/opt/local/include")
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_BINARY_DIR})
 
-set(CMAKE_CXX_FLAGS "-Wall -Werror -g -std=c++11 -stdlib=libc++ -Wno-unused-private-field -Wuninitialized -O0")
-set(CMAKE_CC "clang++")
+IF (WIN32)
+
+ELSE()
+    set(CMAKE_CXX_FLAGS "-Wall -Werror -g -std=c++11 -stdlib=libc++ -Wno-unused-private-field -Wuninitialized -O0")
+    set(CMAKE_CC "clang++")
+ENDIF()
 
 # XCode options
 set(CMAKE_XCODE_ATTRIBUTE_GCC_VERSION "com.apple.compilers.llvm.clang.1_0")
@@ -22,6 +26,7 @@ macro(add_framework fwname)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework ${fwname}")
 endmacro(add_framework)
 
+option(BUILD_ASM "Build ASM" OFF)
 option(BUILD_IOS "Build iOS Support" OFF)
 option(BUILD_OSX "Build OSX" ON)
 option(BUILD_SDL "Build SDL" ON)

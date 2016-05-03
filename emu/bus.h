@@ -237,9 +237,9 @@ typedef DataBus<uint16_t, 16, uint16_t> AddressBus16x16;
 typedef DataBus<uint8_t, 8, byte_t> DataBus8x8;
 typedef std::unique_ptr<AddressBus16> AddressBus16_ptr;
 
-#define WRITE_CB(cb, args...) std::bind(&cb, args, std::placeholders::_1, \
+#define WRITE_CB(cb, ...) std::bind(&cb, __VA_ARGS__, std::placeholders::_1, \
                                std::placeholders::_2)
-#define READ_CB(cb, args...) std::bind(&cb, args, std::placeholders::_1)
+#define READ_CB(cb, ...) std::bind(&cb, __VA_ARGS__, std::placeholders::_1)
 
 
 };

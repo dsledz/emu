@@ -34,6 +34,9 @@ using namespace JITx64;
 
 namespace M6502v2 {
 
+#ifdef WIN32
+#pragma pack(push, 1)
+#endif
 struct M6502State
 {
     M6502State(void) {
@@ -86,7 +89,13 @@ struct M6502State
 
     AddressBus16 *bus;
     uint8_t icycles;
-} __attribute__((packed));
+}
+#ifdef WIN32
+;
+#pragma pack(pop)
+#else
+__attribute__((packed));
+#endif
 
 class M6502Cpu;
 

@@ -158,7 +158,8 @@ private:
         Z80Op(void): name("NONE") { }
 
         void reset(void) {
-            pc = opcode = d8 = i8 = d16 = i16 = yield = 0;
+			d8 = i8 = 0;
+            pc = opcode = d16 = i16 = yield = 0;
         }
 
         addr_t pc;
@@ -308,6 +309,9 @@ private:
                           bit_isset(result, 4) ^ bit_isset(result, 5) ^
                           bit_isset(result, 6) ^ bit_isset(result, 7)));
     }
+	inline void _set_parity(uint16_t result) {
+		_set_parity((byte_t)result);
+	}
 
     /* Addition */
     void _add(byte_t &orig, byte_t value);

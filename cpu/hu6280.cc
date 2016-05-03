@@ -106,7 +106,7 @@ hu6280Cpu::execute(void)
     while (true) {
         Cycles used = dispatch();
         add_icycles(used);
-        _timer_value -= used.v;
+        _timer_value -= (int)used.v;
     }
 }
 

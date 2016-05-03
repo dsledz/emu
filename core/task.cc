@@ -5,7 +5,11 @@
 
 using namespace Core;
 
+#ifdef WIN32
+__declspec(thread) Thread *curthread = NULL;
+#else
 static __thread Thread * curthread = NULL;
+#endif
 
 uint64_t
 Task::next_id(void)
@@ -104,7 +108,7 @@ Thread::thread_task(void)
             LOG_DEBUG("ThreadTask waiting");
             task = m_channel->get();
         } catch (CanceledException &e) {
-            LOG_DEBUG("Loop canceled");
+			LOG_DEBUG("Loop canceled: ", e.message());
             break;
         }
         Task::State task_state;
