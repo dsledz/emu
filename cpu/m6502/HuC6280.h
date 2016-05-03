@@ -28,20 +28,32 @@
 #include "cpu/m6502/m6502.h"
 #include "cpu/m6502/m65c02.h"
 
-using namespace M6502v2;
+namespace M6502v2
+{
 
 class HuC6280Cpu: public M65c02Cpu
 {
 public:
     HuC6280Cpu(Machine *machine, const std::string &name, unsigned clock,
-              bus_type *bus);
+              AddressBus21 *bus);
     virtual ~HuC6280Cpu(void);
+
+    virtual void reset(void);
+    virtual bool Interrupt(void);
+
+    byte_t irq_read(offset_t offset);
+    void irq_write(offset_t offset, byte_t value);
+
+    byte_t timer_read(offset_t offset);
+    void timer_write(offset_t offset, byte_t value);
 
 private:
 
     uint8_t mmu_read(offset_t offset);
     void mmu_write(offset_t offset, uint8_t value);
 
+    AddressBus21 *m_data_bus;
+    AddressBus16 m_mmu;
     uint8_t m_irq_status;
     uint8_t m_irq_disable;
     bool m_timer_status;
@@ -49,3 +61,4 @@ private:
     int m_timer_value;
 };
 
+};

@@ -2,8 +2,8 @@
 
 #include "emu/emu.h"
 
-#define ADDR(addr) void addr(M6502State *state)
-#define OP(op, ...) void op(M6502State *state, ##__VA_ARGS__)
+#define ADDR(addr) static inline void addr(M6502State *state)
+#define OP(op, ...) static inline void op(M6502State *state, ##__VA_ARGS__)
 
 namespace M6502v2
 {
@@ -448,23 +448,23 @@ namespace M6502v2
         state->SP = state->X;
     }
 
-    OP(NMI) {
+    OP(NMI, uint16_t addr) {
         state->F.B = 0;
         push(state, state->PC.b.h);
         push(state, state->PC.b.l);
         push(state, state->SR);
-        state->PC.b.l = state->bus_read(0xFFFA);
-        state->PC.b.h = state->bus_read(0xFFFB);
+        state->PC.b.l = state->bus_read(addr);
+        state->PC.b.h = state->bus_read(++addr);
     }
 
-    OP(IRQ) {
+    OP(IRQ, uint16_t addr) {
         state->F.B = 0;
         state->F.I = 1;
         push(state, state->PC.b.h);
         push(state, state->PC.b.l);
         push(state, state->SR);
-        state->PC.b.l = state->bus_read(0xFFFE);
-        state->PC.b.h = state->bus_read(0xFFFF);
+        state->PC.b.l = state->bus_read(addr);
+        state->PC.b.h = state->bus_read(++addr);
     }
 };
 

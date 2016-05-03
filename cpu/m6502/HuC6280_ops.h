@@ -6,7 +6,8 @@ namespace HuC6280v2
 {
     using namespace M6502v2;
 
-    static inline void op_tstart(M6502State *state, reg16_t *src, reg16_t *dest, reg16_t *len) {
+    static inline void op_tstart(M6502State *state, reg16_t *src, reg16_t *dest,
+                                 reg16_t *len) {
         src->b.l = pc_read(state);
         src->b.h = pc_read(state);
         dest->b.l = pc_read(state);
@@ -124,11 +125,11 @@ namespace HuC6280v2
     }
 
     OP(CSL) {
-        throw CpuFeatureFault("HuC6280", "Speed");
+        state->clock_divider = 4;
     }
 
     OP(CSH) {
-        throw CpuFeatureFault("HuC6280", "Spped");
+        state->clock_divider = 1;
     }
 
     OP(CLA) {
@@ -150,24 +151,63 @@ namespace HuC6280v2
         state->PC = state->EA;
     }
 
-    OP(TST) {
-        throw CpuFeatureFault("HuC6280", "NYI");
-        /*
-        Immediate();
-        int value = fetch(state);
-        fetch(state);
+    OP(TST_ZPG) {
+        state->EA.b.l = pc_read(state);
+        state->EA.b.h = state->ZPG;
+        byte_t value = state->bus_read(state->EA.d);
         state->F.N = bit_isset(state->ARG, 7);
         state->F.V = bit_isset(state->ARG, 6);
         state->F.Z = (value & state->ARG) == 0;
-        */
+        value &= state->ARG;
+        state->bus_write(state->EA.d, value);
     }
 
+    OP(TST_ZPGX) {
+        state->EA.b.l = pc_read(state) + state->X;
+        state->EA.b.h = state->ZPG;
+        byte_t value = state->bus_read(state->EA.d);
+        state->F.N = bit_isset(state->ARG, 7);
+        state->F.V = bit_isset(state->ARG, 6);
+        state->F.Z = (value & state->ARG) == 0;
+        value &= state->ARG;
+        state->bus_write(state->EA.d, value);
+    }
+
+    OP(TST_ABS) {
+        state->EA.b.l = pc_read(state);
+        state->EA.b.h = pc_read(state);
+        byte_t value = state->bus_read(state->EA.d);
+        state->F.N = bit_isset(state->ARG, 7);
+        state->F.V = bit_isset(state->ARG, 6);
+        state->F.Z = (value & state->ARG) == 0;
+        value &= state->ARG;
+        state->bus_write(state->EA.d, value);
+    }
+
+    OP(TST_ABSX) {
+        state->EA.b.l = pc_read(state) + state->X;
+        state->EA.b.h = pc_read(state);
+        byte_t value = state->bus_read(state->EA.d);
+        state->F.N = bit_isset(state->ARG, 7);
+        state->F.V = bit_isset(state->ARG, 6);
+        state->F.Z = (value & state->ARG) == 0;
+        value &= state->ARG;
+        state->bus_write(state->EA.d, value);
+    }
+
+
     OP(TAM) {
-        throw CpuFeatureFault("HuC6280", "MMU");
+        for (int i = 0; i < 8; i++)
+            if (bit_isset(state->ARG, i))
+                state->mmu_map[i] = state->A;
     }
 
     OP(TMA) {
-        throw CpuFeatureFault("HuC6280", "MMU");
+        reg8_t result = 0;
+        for (int i = 0; i < 8; i++)
+            if (bit_isset(state->ARG, i))
+                result |= state->mmu_map[i];
+        state->A = result;
     }
 
     OP(ST0) {

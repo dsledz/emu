@@ -182,7 +182,6 @@ public:
 
     virtual void line(Line line, LineState state);
 
-    virtual void step(void);
     virtual std::string dasm(addr_type addr);
 
 private:

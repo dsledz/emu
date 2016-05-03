@@ -210,6 +210,16 @@ M6502Cpu::M6502Cpu(Machine *machine, const std::string &name,
         m_opcodes[opcodes[i].code] = opcodes[i];
     }
 
+    add_debug_var("A",    m_state.A);
+    add_debug_var("SP",   m_state.SP);
+    add_debug_var("X",    m_state.X);
+    add_debug_var("Y",    m_state.Y);
+    add_debug_var("SR",   m_state.SR);
+    add_debug_var("ZPG",  m_state.ZPG);
+    add_debug_var("PC",   m_state.PC);
+    add_debug_var("EA",   m_state.EA);
+    add_debug_var("ARG",  m_state.ARG);
+
     m_state.reset();
 }
 
@@ -267,25 +277,32 @@ M6502Cpu::test_step(void)
 #endif
 }
 
-void
-M6502Cpu::step(void)
+bool
+M6502Cpu::Interrupt(void)
 {
-    /* Interrupts */
     if (m_reset_line == LineState::Pulse) {
         DEVICE_DEBUG("Reset triggered");
         reset();
         m_reset_line = LineState::Clear;
-        return;
+        return true;
     } else if (m_nmi_line == LineState::Pulse) {
         DEVICE_DEBUG("NMI triggered");
-        NMI(&m_state);
+        NMI(&m_state, 0xFFFA);
         m_nmi_line = LineState::Clear;
-        return;
+        return true;
     } else if (m_state.F.I == 0 && m_irq_line == LineState::Assert) {
         DEVICE_DEBUG("IRQ triggered");
-        IRQ(&m_state);
-        return;
+        IRQ(&m_state, 0xFFFE);
+        return true;
     }
+    return false;
+}
+
+void
+M6502Cpu::step(void)
+{
+    if (Interrupt())
+        return;
 
     uint16_t pc = m_state.PC.d;
 #if JIT
@@ -296,9 +313,26 @@ M6502Cpu::step(void)
 }
 
 void
-M6502Cpu::log_state(void)
+M6502Cpu::execute(void)
+{
+    while (true) {
+        step();
+    }
+}
+
+void
+M6502Cpu::log_op(const Opcode *op, uint16_t pc, const uint8_t *instr)
 {
     std::stringstream os;
+    os << std::setw(8) << name() << ":"
+       << Hex(pc) << ":" << Hex(op->code) << ":"
+       << op->name << " ";
+    if (op->bytes == 2)
+        os << std::setw(8) << Hex(instr[1]);
+    else if (op->bytes == 3)
+        os << std::setw(8) << Hex(instr[1] | (instr[2] << 8));
+    else
+        os << std::setw(8) << " ";
     os << "CPU:";
     os << " PC: " << Hex(m_state.PC);
     os << " A: " << Hex(m_state.A);
@@ -307,63 +341,6 @@ M6502Cpu::log_state(void)
     os << " F: " << Hex(m_state.SR);
     os << " S: " << Hex(m_state.SP);
     DEVICE_TRACE(os.str());
-}
-
-void
-M6502Cpu::log_op(const Opcode *op, uint16_t pc, const uint8_t *instr)
-{
-    std::stringstream os;
-#if 1
-    os << std::setw(8) << name() << ":"
-       << Hex(pc) << ":" << Hex(op->code) << ":"
-       << op->name << " ";
-    if (op->bytes == 2)
-        os << Hex(instr[1]);
-    else if (op->bytes == 3)
-        os << Hex(instr[1] | (instr[2] << 8));
-    DEVICE_TRACE(os.str());
-#else
-    os << " = >";
-    const std::string &str = op->name;
-    const std::string &delimiters = " ";
-    auto lastPos = str.find_first_not_of(delimiters, 0);
-    auto pos = str.find_first_of(delimiters, lastPos);
-    while (std::string::npos != pos || std::string::npos != lastPos)
-    {
-        std::string it = str.substr(lastPos, pos - lastPos);
-        os << " ";
-        if (it == "abs" || it == "abs,X" || it == "abs,Y")
-            os << Hex(m_state.EA);
-        else if (it == "ind")
-            os << " " << Hex(m_state.EA);
-        else if (it == "LDX")
-            os << Hex(m_state.X);
-        else if (it == "LDY")
-            os << Hex(m_state.Y);
-        else if (it == "LDA")
-            os << Hex(m_state.A);
-        else if (it == "STX")
-            os << Hex(m_state.X);
-        else if (it == "STY")
-            os << Hex(m_state.Y);
-        else if (it == "STA")
-            os << Hex(m_state.A);
-        else if (it == "#")
-            os << Hex(m_state.ARG);
-        else if (it == "BEQ")
-            os << it << " " << Hex(m_state.EA);
-        else if (it == "zpg" || it == "zpg,X" || it == "zpg,Y" ||
-                 it == "ind,Y" || it == "X,ind")
-            os << Hex(m_state.EA);
-        else if (it == "(zpg)")
-            os << Hex(m_state.EA);
-        else
-            os << it;
-        lastPos = str.find_first_not_of(delimiters, pos);
-        pos = str.find_first_of(delimiters, lastPos);
-    }
-    DEVICE_TRACE(os.str());
-#endif
 }
 
 std::string

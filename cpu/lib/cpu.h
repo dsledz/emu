@@ -117,12 +117,7 @@ public:
     }
     Cpu(const Cpu &cpu) = delete;
 
-    virtual void execute(void)
-    {
-        while (true) {
-            step();
-        }
-    }
+    virtual void execute(void) = 0;
 
     virtual void line(Line line, LineState state)
     {
@@ -139,23 +134,16 @@ public:
 
     data_type bus_read(addr_type addr) {
         data_type tmp = m_bus->read(addr);
-        /* XXX: Should we always incur a cycle here? */
-        //add_icycles(1);
         return tmp;
     }
 
     void bus_write(addr_type addr, data_type value) {
         m_bus->write(addr, value);
-        //add_icycles(1);
     }
 
-    virtual void test_step(void) {
-        step();
+    virtual std::string dasm(addr_type addr) {
+        return "NOP";
     }
-
-    /* Process a single clock cycle */
-    virtual void step(void) = 0;
-    virtual std::string dasm(addr_type addr) = 0;
 
 protected:
 
@@ -175,7 +163,7 @@ protected:
 
         op->addr_mode(&m_state);
         op->operation(&m_state);
-        add_icycles(op->cycles + m_state.icycles);
+        add_icycles((op->cycles + m_state.icycles) * m_state.clock_divider);
 
         return;
     }
@@ -238,9 +226,9 @@ protected:
         m_state.F.N = bit_isset(m_state.NativeFlags.d, Flags::SF);
 
         // Account for the extra cycles if we branched
-        add_icycles(block->cycles);
+        add_icycles(block->cycles * m_state.clock_divider);
         if (m_state.PC.d != (block->pc + block->len))
-            add_icycles(2);
+            add_icycles(2 * m_state.clock_divider);
     }
 
     jit_block_ptr jit_compile(pc_type start_pc)

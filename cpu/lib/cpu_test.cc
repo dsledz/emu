@@ -45,9 +45,11 @@ public:
     {
     }
 
-    virtual void step(void)
+    virtual void execute(void)
     {
-        add_icycles(1);
+        while (true) {
+            add_icycles(1);
+        }
     }
 
     virtual std::string dasm(addr_type addr)

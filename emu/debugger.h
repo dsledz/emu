@@ -60,6 +60,18 @@ protected:
         add_register(debug_reg);
     }
 
+    void add_debug_var(const std::string &name, reg16_t &reg)
+    {
+        DebugRegister debug_reg(name,
+            [&](void) -> std::string {
+                return std::to_string(reg.d);
+            },
+            [&](const std::string &value) {
+                reg.d = static_cast<uint16_t>(stoi(value));
+            });
+        add_register(debug_reg);
+    }
+
 private:
     std::string m_name;
     std::list<std::string> m_register_list;

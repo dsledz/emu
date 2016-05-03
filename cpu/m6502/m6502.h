@@ -87,6 +87,8 @@ struct M6502State
     reg16_t EA;  /* %r8 */
     reg8_t  ARG; /* %rdx */
 
+    byte_t mmu_map[8];
+    int clock_divider;
     AddressBus16 *bus;
     uint8_t icycles;
 }
@@ -114,14 +116,17 @@ public:
         return &m_state;
     }
 
-    void log_state(void);
     void log_op(const Opcode *op, uint16_t pc, const uint8_t *instr);
 
-    virtual void test_step(void);
-    virtual void step(void);
+    void test_step(void);
+    virtual void execute(void);
     virtual std::string dasm(addr_type addr);
 
 protected:
+
+    void step(void);
+    virtual bool Interrupt(void);
+
     LineState m_nmi_line;
     LineState m_irq_line;
     LineState m_reset_line;

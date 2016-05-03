@@ -35,6 +35,7 @@ Device::Device(Machine *machine, const std::string &name):
 }
 
 Device::Device(Machine *machine, const std::string &name, unsigned hertz):
+    Debuggable(name),
     m_name(name),
     m_machine(machine),
     m_status(DeviceStatus::Off),

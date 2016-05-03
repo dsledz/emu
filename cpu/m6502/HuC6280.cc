@@ -44,6 +44,10 @@ using namespace std::placeholders;
     std::bind(&op ## _jit, _1, _2, ##__VA_ARGS__), \
 }
 
+M65c02Cpu::~M65c02Cpu()
+{
+}
+
 M65c02Cpu::M65c02Cpu(Machine *machine, const std::string &name, unsigned hertz,
     AddressBus16 *bus):
     M6502Cpu(machine, name, hertz, bus)
@@ -167,7 +171,7 @@ M65c02Cpu::M65c02Cpu(Machine *machine, const std::string &name, unsigned hertz,
         OPCODE(0x80, 2, 2, "BRA", Relative, BRA),
         OPCODE(0x81, 2, 6, "STA X,ind", XIndirect, STA),
         OPCODE(0x82, 1, 2, "CLX", Inherent, CLX),
-        OPCODE(0x83, 3, 5, "TST zpg", Immediate, TST),
+        OPCODE(0x83, 3, 5, "TST Imm, zpg", Immediate, TST_ZPG),
         OPCODE(0x84, 2, 3, "STY zpg", ZeroPage, STY),
         OPCODE(0x85, 2, 3, "STA zpg", ZeroPage, STA),
         OPCODE(0x86, 2, 3, "STX zpg", ZeroPage, STX),
@@ -182,6 +186,7 @@ M65c02Cpu::M65c02Cpu(Machine *machine, const std::string &name, unsigned hertz,
         OPCODE(0x90, 2, 2, "BCC", Relative, BCC),
         OPCODE(0x91, 2, 6, "STA ind,Y", IndirectY, STA),
         OPCODE(0x92, 2, 5, "STA ind", ZeroIndirect, STA),
+        OPCODE(0x93, 4, 5, "TST imm, abs", Immediate, TST_ABS),
         OPCODE(0x94, 2, 4, "STY zpg,X", ZeroPageX, STY),
         OPCODE(0x95, 2, 4, "STA zpg,X", ZeroPageX, STA),
         OPCODE(0x96, 2, 4, "STX zpg,Y", ZeroPageY, STX),
@@ -196,6 +201,7 @@ M65c02Cpu::M65c02Cpu(Machine *machine, const std::string &name, unsigned hertz,
         OPCODE(0xA0, 2, 2, "LDY #", Immediate, LDY),
         OPCODE(0xA1, 2, 6, "LDA X,ind", XIndirect, LDA),
         OPCODE(0xA2, 2, 2, "LDX #", Immediate, LDX),
+        OPCODE(0xA3, 3, 5, "TST Imm, zpgX", Immediate, TST_ZPGX),
         OPCODE(0xA4, 2, 3, "LDY zpg", ZeroPage, LDY),
         OPCODE(0xA5, 2, 3, "LDA zpg", ZeroPage, LDA),
         OPCODE(0xA6, 2, 3, "LDX zpg", ZeroPage, LDX),
@@ -210,7 +216,7 @@ M65c02Cpu::M65c02Cpu(Machine *machine, const std::string &name, unsigned hertz,
         OPCODE(0xB0, 2, 2, "BCS", Relative, BCS),
         OPCODE(0xB1, 2, 5, "LDA ind,Y", IndirectY, LDA),
         OPCODE(0xB2, 2, 5, "LDA ind", ZeroIndirect, LDA),
-        OPCODE(0xB3, 4, 5, "TST abs,X", Immediate, TST),
+        OPCODE(0xB3, 4, 5, "TST imm, abs,X", Immediate, TST_ABSX),
         OPCODE(0xB4, 2, 4, "LDY zpg,X", ZeroPageX, LDY),
         OPCODE(0xB5, 2, 4, "LDA zpg,X", ZeroPageX, LDA),
         OPCODE(0xB6, 2, 4, "LDX zpg,Y", ZeroPageY, LDX),
@@ -285,3 +291,143 @@ M65c02Cpu::M65c02Cpu(Machine *machine, const std::string &name, unsigned hertz,
         m_opcodes[opcodes[i].code] = opcodes[i];
     }
 }
+
+HuC6280Cpu::HuC6280Cpu(Machine *machine, const std::string &name, unsigned clock,
+                       AddressBus21 *bus):
+    M65c02Cpu(machine, name, clock, &m_mmu),
+    m_data_bus(bus),
+    m_mmu(),
+    m_irq_status(0),
+    m_irq_disable(0),
+    m_timer_status(false),
+    m_timer_load(0),
+    m_timer_value(0)
+{
+    m_state.ZPG = 0x20;
+    m_mmu.add(0x0000, 0xFFFF,
+              READ_CB(HuC6280Cpu::mmu_read, this),
+              WRITE_CB(HuC6280Cpu::mmu_write, this));
+}
+
+HuC6280Cpu::~HuC6280Cpu(void)
+{
+
+}
+
+void
+HuC6280Cpu::reset(void)
+{
+    m_state.PC.d = 0;
+    m_state.A = 0;
+    m_state.X = 0;
+    m_state.Y = 0;
+    m_state.SR = 0;
+    m_state.SP = 0;
+
+    m_state.mmu_map[0] = 0xFF;
+    m_state.mmu_map[1] = 0xF8;
+    m_state.mmu_map[2] = 0x00;
+    m_state.mmu_map[3] = 0x00;
+    m_state.mmu_map[4] = 0x00;
+    m_state.mmu_map[5] = 0x00;
+    m_state.mmu_map[6] = 0x00;
+    m_state.mmu_map[7] = 0x00;
+
+    m_state.PC.b.l = bus_read(0xFFFE);
+    m_state.PC.b.h = bus_read(0xFFFF);
+}
+
+bool
+HuC6280Cpu::Interrupt(void)
+{
+    if (m_timer_status && m_timer_value < 0) {
+        DEVICE_INFO("Timer Triggered");
+        bit_set(m_irq_status, 2, true);
+        while (m_timer_value <= 0)
+            m_timer_value += m_timer_load;
+    }
+
+    if (m_nmi_line == LineState::Pulse) {
+        DEVICE_DEBUG("NMI triggered");
+        NMI(&m_state, 0xFFFC);
+        m_nmi_line = LineState::Clear;
+        return true;
+    } else if (m_state.F.I == 0) {
+        uint16_t addr = 0x0000;
+        if (bit_isset(m_irq_status, 0) && !bit_isset(m_irq_disable, 0))
+            addr = 0xFFF6;
+        else if (bit_isset(m_irq_status, 1) && !bit_isset(m_irq_disable, 1))
+            addr = 0xFFF8;
+        else if (bit_isset(m_irq_status, 2) && !bit_isset(m_irq_disable, 2))
+            addr = 0xFFFA;
+        if (addr != 0x0000) {
+            DEVICE_DEBUG("Interrupt");
+            IRQ(&m_state, addr);
+            return true;
+        }
+    }
+    return false;
+}
+
+byte_t
+HuC6280Cpu::mmu_read(offset_t offset)
+{
+    const int bank = (offset & 0xE000) >> 13;
+    offset = (offset & 0x1FFF) | (m_state.mmu_map[bank] << 13);
+    return m_data_bus->read(offset);
+}
+
+void
+HuC6280Cpu::mmu_write(offset_t offset, uint8_t value)
+{
+    const int bank = (offset & 0xE000) >> 13;
+    offset = (offset & 0x1FFF) | (m_state.mmu_map[bank] << 13);
+    m_data_bus->write(offset, value);
+}
+
+byte_t
+HuC6280Cpu::timer_read(offset_t offset)
+{
+    return (m_timer_value >> 10) & 0x7F;
+}
+
+void
+HuC6280Cpu::timer_write(offset_t offset, byte_t value)
+{
+    switch (offset & 0x01) {
+    case 0:
+        m_timer_value = m_timer_load = ((value & 0x7F) + 1) << 10;
+        break;
+    case 1:
+        m_timer_status = bit_isset(value, 0);
+        break;
+    }
+}
+
+byte_t
+HuC6280Cpu::irq_read(offset_t offset)
+{
+    switch (offset & 0x03) {
+    case 2:
+        return m_irq_disable;
+    case 3:
+        return m_irq_status;
+    }
+    return 0;
+}
+
+void
+HuC6280Cpu::irq_write(offset_t offset, byte_t value)
+{
+    switch (offset & 0x03) {
+    case 2:
+        m_irq_disable = value;
+        break;
+    case 3:
+        bit_set(m_irq_status, 2, false);
+        break;
+    }
+}
+
+
+

@@ -31,6 +31,7 @@
 #include "emu/io.h"
 #include "emu/input.h"
 #include "emu/timing.h"
+#include "emu/debugger.h"
 
 using namespace Core;
 
@@ -89,7 +90,7 @@ typedef std::shared_ptr<EmuDeviceChannel> EmuDeviceChannel_ptr;
 /**
  * Emulation device. Specific chips implement the device class.
  */
-class Device {
+class Device: public Debuggable {
 public:
     Device(Machine *machine, const std::string &name);
     Device(Machine *machine, const std::string &name, unsigned hertz);

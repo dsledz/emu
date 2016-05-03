@@ -44,10 +44,6 @@ public:
     M6502State *get_state(void) {
         return &m_state;
     }
-
-    virtual void test_step(void);
-    virtual void step(void);
-    virtual std::string dasm(addr_type addr);
 };
 
 };

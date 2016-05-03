@@ -51,7 +51,13 @@ namespace HuC6280v2
 
     JIT_OP_NYI(BSR);
 
-    JIT_OP_NYI(TST);
+    JIT_OP_NYI(TST_ZPG);
+
+    JIT_OP_NYI(TST_ZPGX);
+
+    JIT_OP_NYI(TST_ABS);
+
+    JIT_OP_NYI(TST_ABSX);
 
     JIT_OP_NYI(TAM);
 

@@ -50,8 +50,8 @@ TG16::TG16(const std::string &rom):
     /* XXX: Is this screen correct? */
     add_screen(256, 240);
 
-    m_cpu = std::unique_ptr<M6502::hu6280Cpu>(
-        new M6502::hu6280Cpu(this, "cpu", MASTER_CLOCK/3, &m_cpu_bus));
+    m_cpu = std::unique_ptr<M6502v2::HuC6280Cpu>(
+        new M6502v2::HuC6280Cpu(this, "cpu", MASTER_CLOCK/3, &m_cpu_bus));
 
     m_cpu_bus.add(0x000000, 0x0FFFFF,
         READ_CB(TG16::bank_read, this),
@@ -74,16 +74,16 @@ TG16::TG16(const std::string &rom):
         WRITE_CB(PSG::write, &m_psg));
 
     m_cpu_bus.add(0x1FEC00, 0x1FEFFF,
-        READ_CB(M6502::hu6280Cpu::timer_read, m_cpu.get()),
-        WRITE_CB(M6502::hu6280Cpu::timer_write, m_cpu.get()));
+        READ_CB(M6502v2::HuC6280Cpu::timer_read, m_cpu.get()),
+        WRITE_CB(M6502v2::HuC6280Cpu::timer_write, m_cpu.get()));
 
     m_cpu_bus.add(0x1FF000, 0x1FF3FF,
         READ_CB(TG16::joypad_read, this),
         WRITE_CB(TG16::joypad_write, this));
 
     m_cpu_bus.add(0x1FF400, 0x1FF7FF,
-        READ_CB(M6502::hu6280Cpu::irq_read, m_cpu.get()),
-        WRITE_CB(M6502::hu6280Cpu::irq_write, m_cpu.get()));
+        READ_CB(M6502v2::HuC6280Cpu::irq_read, m_cpu.get()),
+        WRITE_CB(M6502v2::HuC6280Cpu::irq_write, m_cpu.get()));
 }
 
 TG16::~TG16(void)

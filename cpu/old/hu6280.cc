@@ -88,7 +88,7 @@ byte_t
 hu6280Cpu::mmu_read(offset_t offset)
 {
     const int bank = (offset & 0xE000) >> 13;
-    offset = (offset & 0x1FFF) | (_mmu_map[bank] << 13);
+    offset = (offset & 0x1FFF) | (static_cast<offset_t>(_mmu_map[bank]) << 13);
     return _data_bus->read(offset);
 }
 
@@ -96,7 +96,7 @@ void
 hu6280Cpu::mmu_write(offset_t offset, byte_t value)
 {
     const int bank = (offset & 0xE000) >> 13;
-    offset = (offset & 0x1FFF) | (_mmu_map[bank] << 13);
+    offset = (offset & 0x1FFF) | (static_cast<offset_t>(_mmu_map[bank]) << 13);
     _data_bus->write(offset, value);
 }
 
