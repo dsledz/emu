@@ -31,13 +31,26 @@ using namespace Core;
 namespace EMU {
 
 typedef std::function<std::string (void)> debug_read_fn;
-typedef std::function<void (std::string)> debug_write_fn;
+typedef std::function<void (const std::string &)> debug_write_fn;
 
 struct DebugRegister {
     DebugRegister(const std::string &name, debug_read_fn read_fn,
                   debug_write_fn write_fn):
         m_name(name), m_read(read_fn), m_write(write_fn) {}
 
+    inline const std::string &name(void) const {
+        return m_name;
+    }
+
+    std::string read(void) {
+        return m_read();
+    }
+
+    void write(const std::string &value) {
+        m_write(value);
+    }
+
+private:
     const std::string &m_name;
     debug_read_fn m_read;
     debug_write_fn m_write;
