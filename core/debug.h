@@ -127,58 +127,78 @@ private:
 extern Debug log;
 
 #ifdef WIN32
-#define pthread_self() "Unknown"
+#define pthread_self() "Thread"
 #endif
 
 #define IF_LOG(lvl) \
     for (bool once=true; once && Core::log.enabled(LogLevel::lvl); once=false)
 
 #define LOG_TRACE(fmt, ...) \
-    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Trace); once=false) \
+    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Trace); \
+         once=false) \
         Core::log.trace(Core::stringfn(pthread_self(), " ", fmt, ##__VA_ARGS__));
 
 #define LOG_DEBUG(fmt, ...) \
-    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Debug); once=false) \
+    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Debug); \
+         once=false) \
         Core::log.debug(Core::stringfn(pthread_self(), " ", fmt, ##__VA_ARGS__));
 
 #define LOG_INFO(fmt, ...) \
-    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Info); once=false) \
+    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Info); \
+         once=false) \
         Core::log.info(Core::stringfn(pthread_self(), " ", fmt, ##__VA_ARGS__));
 
 #define LOG_ERROR(fmt, ...) \
-    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Error); once=false) \
+    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Error); \
+         once=false) \
         Core::log.error(Core::stringfn(fmt, ##__VA_ARGS__));
 
 #define DEVICE_TRACE(fmt, ...) \
-    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Trace); once=false) \
-        EMU::Device::log(Core::LogLevel::Trace, fmt, ##__VA_ARGS__)
+    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Trace); \
+         once=false) \
+        EMU::Device::log(Core::LogLevel::Trace, \
+                         Core::stringfn(fmt, ##__VA_ARGS__))
 
 #define DEVICE_DEBUG(fmt, ...) \
-    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Debug); once=false) \
-        EMU::Device::log(Core::LogLevel::Debug, fmt, ##__VA_ARGS__)
+    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Debug); \
+         once=false) \
+        EMU::Device::log(Core::LogLevel::Debug, \
+                         Core::stringfn(fmt, ##__VA_ARGS__))
 
 #define DEVICE_INFO(fmt, ...) \
-    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Info); once=false) \
-        EMU::Device::log(Core::LogLevel::Info, fmt, ##__VA_ARGS__)
+    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Info); \
+         once=false) \
+        EMU::Device::log(Core::LogLevel::Info, \
+                         Core::stringfn(fmt, ##__VA_ARGS__))
 
 #define DEVICE_ERROR(fmt, ...) \
-    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Error); once=false) \
-        EMU::Device::log(Core::LogLevel::Error, fmt, ##__VA_ARGS__)
+    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Error); \
+         once=false) \
+        EMU::Device::log(Core::LogLevel::Error, \
+                         Core::stringfn(fmt, ##__VA_ARGS__))
 
 #define MACHINE_TRACE(fmt, ...) \
-    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Trace); once=false) \
-        EMU::Machine::log(Core::LogLevel::Trace, fmt, ##__VA_ARGS__)
+    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Trace); \
+         once=false) \
+        EMU::Machine::log(Core::LogLevel::Trace, \
+                          Core::stringfn(fmt, ##__VA_ARGS__))
 
 #define MACHINE_DEBUG(fmt, ...) \
-    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Debug); once=false) \
-        EMU::Machine::log(Core::LogLevel::Debug, fmt, ##__VA_ARGS__)
+    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Debug); \
+         once=false) \
+        EMU::Machine::log(Core::LogLevel::Debug, \
+                          Core::stringfn(fmt, ##__VA_ARGS__))
 
 #define MACHINE_INFO(fmt, ...) \
-    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Info); once=false) \
-        EMU::Machine::log(Core::LogLevel::Info, fmt, ##__VA_ARGS__)
+    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Info); \
+         once=false) \
+        EMU::Machine::log(Core::LogLevel::Info, \
+                          Core::stringfn(fmt, ##__VA_ARGS__))
 
 #define MACHINE_ERROR(fmt, ...) \
-    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Error); once=false) \
-        EMU::Machine::log(Core::LogLevel::Error, fmt, ##__VA_ARGS__)
+    for (bool once=true; once && Core::log.enabled(Core::LogLevel::Error); \
+         once=false) \
+        EMU::Machine::log(Core::LogLevel::Error, \
+                          Core::stringfn(fmt, ##__VA_ARGS__))
 
 };
