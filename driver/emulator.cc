@@ -91,7 +91,14 @@ Emulator::do_execute(void)
                 break;
         }
 
+#if 0
+        _machine->set_time(_clock.runtime());
+        /* Advance the clock by 1 millsecond each time. */
+        struct timespec t = { 0, 50000 };
+        nanosleep(&t, NULL);
+#else
         _machine->run_forward(_clock.get_delta());
+#endif
     } while (true);
 
     /* XXX: workaround */
