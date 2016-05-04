@@ -2,7 +2,11 @@
 if (BUILD_ASM)
     ENABLE_LANGUAGE(ASM-ATT)
 
-    set(SUPPORT_ASM ${TARGET_ARCH}_asm.s)
+    if (APPLE)
+        set(SUPPORT_ASM osx_asm.s)
+    else (APPLE)
+        set(SUPPORT_ASM freebsd_asm.s)
+    endif (APPLE)
 endif (BUILD_ASM)
 
 add_library(core
