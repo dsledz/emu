@@ -35,9 +35,12 @@ using namespace TG16Machine;
 TEST(TG16Test, create)
 {
     TG16 machine("bonks.pce");
+    FrameBuffer fb;
 
-//    EMU::log.set_level(LogLevel::Trace);
+    Core::log.set_level(LogLevel::Trace);
     machine.reset();
+    machine.set_frame_buffer(&fb);
+    machine.poweron();
 
     while (true)
         machine.run();

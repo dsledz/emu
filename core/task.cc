@@ -60,6 +60,7 @@ Thread::Thread(TaskChannel_ptr channel):
     thread(std::bind(&Thread::thread_main, this)),
     m_task(NULL),
     m_mtx(),
+    m_cv(),
     m_state(ThreadState::Dead),
     m_channel(channel)
 {
@@ -83,6 +84,14 @@ Thread::schedule(Task *task)
 }
 
 void
+Thread::wait_for_idle(void)
+{
+    lock_mtx lock(m_mtx);
+    while (m_state == ThreadState::Running)
+        lock.wait(m_cv);
+}
+
+void
 Thread::thread_main(void)
 {
     curthread = this;
@@ -90,7 +99,9 @@ Thread::thread_main(void)
         thread_task();
     } catch (...) {
         LOG_ERROR("Unclean thread exit");
+        lock_mtx lock(m_mtx);
         m_state = ThreadState::Dead;
+        m_cv.notify_all();
     }
 }
 
@@ -101,28 +112,32 @@ Thread::thread_task(void)
     m_state = ThreadState::Idle;
     for (;;) {
         // Grab the first task off the runnable queue
-        m_state = ThreadState::Idle;
-        Task * task;
-        try {
-            unlock_mtx unlock(m_mtx);
-            LOG_DEBUG("ThreadTask waiting");
-            task = m_channel->get();
-        } catch (CanceledException &e) {
-			LOG_DEBUG("Loop canceled: ", e.message());
-            break;
+        Task * task = m_channel->try_get();
+        if (task == nullptr) {
+            m_state = ThreadState::Idle;
+            m_cv.notify_all();
+            try {
+                unlock_mtx unlock(m_mtx);
+                LOG_DEBUG("ThreadTask waiting");
+                task = m_channel->get();
+            } catch (CanceledException &e) {
+                LOG_DEBUG("Loop canceled: ", e.message());
+                break;
+            }
         }
-        Task::State task_state;
         m_state = ThreadState::Running;
         m_task = task;
+        m_cv.notify_all();
         try {
             unlock_mtx unlock(m_mtx);
-            task_state = task->run();
+            task->run();
         } catch (CoreException &e) {
             LOG_DEBUG("Task exception");
             throw e;
         }
     }
     m_state = ThreadState::Dead;
+    m_cv.notify_all();
     curthread = NULL;
 }
 
@@ -269,6 +284,12 @@ void
 TaskScheduler::add_task(Task * task)
 {
     m_tasks.push_back(task);
+}
+
+void
+TaskScheduler::wait_for_idle(void)
+{
+    m_event_thread->wait_for_idle();
 }
 
 void

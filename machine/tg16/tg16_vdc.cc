@@ -229,10 +229,10 @@ VDC::step(void)
         m_hpos = 0;
         m_vpos = (m_vpos + 1) % VMAX;
         if (m_vpos == VBSTART) {
+            DEVICE_DEBUG("vblank start");
             m_flags.vblank = 1;
             if (bit_isset(m_reg[CR].d, 3))
                 machine()->set_line("cpu", Line::INT1, LineState::Assert);
-            DEVICE_DEBUG("vblank start");
             if (m_satb_write || bit_isset(m_reg[DCR].d, 4)) {
                 for (int i = 0; i < 256; i++)
                     m_sat[i] = m_vram[m_reg[SATB].d + i];

@@ -107,7 +107,6 @@ public:
     Cpu(Machine *machine, const std::string &name, unsigned hertz,
         bus_type *bus):
         ClockedDevice(machine, name, hertz),
-        m_icycles(0),
         m_bus(bus),
         m_state()
     {
@@ -161,7 +160,7 @@ protected:
         opcode_type opcode = bus_read(m_state.PC.d++);
         auto it = m_opcodes.find(opcode);
         if (it == m_opcodes.end()) {
-            DEVICE_ERROR("Unknown opcode");
+            DEVICE_ERROR("Unknown opcode: ", Hex(opcode), " at ", Hex(pc));
             throw CpuOpcodeFault(name(), opcode, pc);
         }
 
@@ -281,7 +280,6 @@ protected:
         return jit_block_ptr(new JITBlock(jit.code(), start_pc, source, len, cycles));
     }
 
-    Cycles m_icycles;
     bus_type *m_bus;
     state_type m_state;
     std::unordered_map<opcode_type, Opcode> m_opcodes;

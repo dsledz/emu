@@ -96,6 +96,19 @@ Machine::set_time(EmuTime now)
 void
 Machine::run(void)
 {
+    EmuTime t = m_sim_clock.now();
+    t += usec(100);
+    m_sim_clock.set(t);
+    m_scheduler.wait_for_idle();
+}
+
+void
+Machine::run_forward(EmuTime delta)
+{
+    EmuTime t = m_sim_clock.now();
+    t += delta;
+    m_sim_clock.set(t);
+    m_scheduler.wait_for_idle();
 }
 
 Device *

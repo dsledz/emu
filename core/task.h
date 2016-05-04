@@ -182,6 +182,7 @@ public:
     Thread(const Thread &thread) = delete;
 
     void schedule(Task *);
+    void wait_for_idle(void);
 
     static Task *cur_task(void);
     static Thread *cur_thread(void);
@@ -193,6 +194,7 @@ private:
     Task *          m_task;
     Task *          m_idle_task;
     std::mutex      m_mtx;         /**< Mutex */
+    std::condition_variable m_cv;
     ThreadState     m_state;       /**< Thread state */
     TaskChannel_ptr m_channel;     /**< Channel to receive new tasks */
 };
@@ -204,6 +206,11 @@ class TaskScheduler
 public:
     TaskScheduler(void);
     ~TaskScheduler(void);
+
+    /**
+     * Wait for idle
+     */
+    void wait_for_idle(void);
 
     /**
      * Start the execution of the task.

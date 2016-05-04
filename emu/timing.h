@@ -263,7 +263,7 @@ public:
 		LARGE_INTEGER now;
 		QueryPerformanceCounter(&now);
 		LARGE_INTEGER delta;
-		delta.QuadPart = now.QuadPart - m_start.QuadPart;
+		delta.QuadPart = now.QuadPart - m_clock.QuadPart;
 		m_clock = now;
 
 		return Time(to_nsec(delta));
@@ -387,6 +387,7 @@ class RealTimeClock {
         Time get_delta(void) {
             clock_gettime(CLOCK_MONOTONIC, &m_now);
             timespec_diff(&m_delta, m_now, m_clock);
+            m_clock = m_now;
 
             return Time(nsec(m_delta));
         }

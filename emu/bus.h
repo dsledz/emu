@@ -86,7 +86,7 @@ public:
         for (auto it = list.begin(); it != list.end(); it++)
             if (it->match(key))
                 return it->value;
-        assert(false);
+        throw BusError(key);
     }
 
     const size_t bucket(addr_type key) {
@@ -153,6 +153,10 @@ public:
             read(DataRead(data)), write(DataWrite(data)) { }
         IOPort(addr_type base, addr_type end, read_fn read, write_fn write):
             base(base), end(end), read(read), write(write) { }
+        IOPort(addr_type base, addr_type end, data_type *raw,
+               bool read_only):
+            base(base), end(end), read(), write(),
+            read_only(read_only), raw(raw) {}
 
         data_type io(offset_t offset, data_type data, bool wr) {
             if (wr)
@@ -166,9 +170,11 @@ public:
         addr_type end;
         read_fn read;
         write_fn write;
+        bool read_only;
+        data_type *raw;
     };
 
-    DataBus(void): _map()
+    DataBus(void): m_map()
     {
     }
     ~DataBus(void)
@@ -177,26 +183,39 @@ public:
 
     data_type io(addr_type addr, data_type data, bool write)
     {
-        IOPort & it = _map.find(addr);
+        IOPort & it = m_map.find(addr);
         addr -= it.base;
-        return it.io(addr, data, write);
+        if (it.raw != nullptr) {
+            assert(addr % sizeof(data_type) == 0);
+            addr /= sizeof(data_type);
+            if (write) {
+                if (it.read_only)
+                    throw BusError(addr);
+                it.raw[addr] = data;
+            } else {
+                data = it.raw[addr];
+            }
+            return data;
+        } else
+            return it.io(addr, data, write);
     }
+
     void write(addr_type addr, data_type data)
     {
-        IOPort & it = _map.find(addr);
+        IOPort & it = m_map.find(addr);
         addr -= it.base;
         it.write(addr, data);
     }
     data_type read(addr_type addr)
     {
-        IOPort & it = _map.find(addr);
+        IOPort & it = m_map.find(addr);
         addr -= it.base;
         return it.read(addr);
     }
 
     void add(const IOPort &dev)
     {
-        _map.add(dev.base, dev.end, dev);
+        m_map.add(dev.base, dev.end, dev);
     }
 
     void add(addr_type base, addr_type end)
@@ -236,7 +255,7 @@ public:
     }
 
 private:
-    MemoryMap<IOPort, addr_type, addr_width, 5> _map;
+    MemoryMap<IOPort, addr_type, addr_width, 5> m_map;
 
     /* XXX: The radix tree is slow */
     // RadixTree<IOPort, addr_type, addr_width> _map;

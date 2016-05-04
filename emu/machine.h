@@ -72,6 +72,7 @@ public:
     void send_input(InputKey key, bool pressed);
     void reset(void);
     void run(void);
+    void run_forward(EmuTime delta);
     void set_frame_buffer(FrameBuffer *screen);
 
     void add_device(Device *dev);
