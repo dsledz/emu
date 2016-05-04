@@ -174,6 +174,7 @@ namespace HuC6280v2
     }
 
     OP(TST_ABS) {
+        fetch(state);
         state->EA.b.l = pc_read(state);
         state->EA.b.h = pc_read(state);
         byte_t value = state->bus_read(state->EA.d);
@@ -185,6 +186,7 @@ namespace HuC6280v2
     }
 
     OP(TST_ABSX) {
+        fetch(state);
         state->EA.b.l = pc_read(state) + state->X;
         state->EA.b.h = pc_read(state);
         byte_t value = state->bus_read(state->EA.d);
@@ -197,6 +199,7 @@ namespace HuC6280v2
 
 
     OP(TAM) {
+        fetch(state);
         for (int i = 0; i < 8; i++)
             if (bit_isset(state->ARG, i))
                 state->mmu_map[i] = state->A;
@@ -204,6 +207,7 @@ namespace HuC6280v2
 
     OP(TMA) {
         reg8_t result = 0;
+        fetch(state);
         for (int i = 0; i < 8; i++)
             if (bit_isset(state->ARG, i))
                 result |= state->mmu_map[i];

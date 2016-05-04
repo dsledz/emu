@@ -225,7 +225,7 @@ IODevice::size(void)
 
 ClockedDevice::ClockedDevice(Machine *machine, const std::string &name, unsigned hertz):
     Device(machine, name, hertz),
-    EmuClockBase(),
+    EmuClockBase(Device::m_name),
     m_avail(0)
 {
     m_machine->add_clock(this);

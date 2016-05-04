@@ -115,13 +115,11 @@ VDC::data_write(offset_t offset, byte_t value)
         break;
     }
     case BYR:
-#if 0
         if (b == 1) {
             m_bgvtile = m_reg[BYR].d / 8;
             m_bgvtile &= (bit_isset(m_reg[MWR].d, 6) ? 0x3F : 0x1F);
             m_bgvidx = m_reg[BYR].d % 8;
         }
-#endif
         break;
     case SATB:
         m_satb_write = true;
@@ -181,9 +179,9 @@ VDC::bg_cache(void)
     m_bgaddr = m_bgvtile * width + m_bghtile;
     uint16_t bat = m_vram.at(m_bgaddr).d;
 #if 0
-    IF_LOG(Trace) {
-        std::cout << "BGTile: " << Hex(m_bgvtile) << " : " << Hex(m_bghtile)
-                  << " " << Hex(m_bgaddr) << " : " << Hex(bat)<< std::endl;
+    IF_LOG(Debug) {
+        LOG_DEBUG("BGTile: ", Hex(m_bgvtile), " : ", Hex(m_bghtile),
+                  " ", Hex(m_bgaddr), " : ", Hex(bat));
     }
 #endif
     uint16_t address = ((bat & 0x0FFF) << 4) + m_bgvidx;
@@ -210,8 +208,9 @@ void
 VDC::execute(void)
 {
     while (true) {
-        add_icycles(1);
-        step();
+        add_icycles(1000);
+        for (int i = 0; i < 1000; i++)
+            step();
     }
 }
 

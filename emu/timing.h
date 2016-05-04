@@ -28,7 +28,7 @@
 #define NSEC_PER_SEC 1000000000ll
 #define NSEC_PER_MSEC 1000000ll
 #define NSEC_PER_USEC 1000ll
-#elif HAVE_MACH
+#elif __APPLE__
 #include <mach/mach.h>
 #include <mach/mach_time.h>
 #else
@@ -286,7 +286,7 @@ private:
 	LARGE_INTEGER m_pause;
 	LARGE_INTEGER m_frequency;
 };
-#elif HAVE_MACH
+#elif __APPLE__
 /**
  * Clock device. Regulates the running of a device based on real time.
  */
@@ -491,7 +491,7 @@ typedef std::shared_ptr<EmuTimeChannel> EmuTimeChannel_ptr;
 class EmuClockBase
 {
 public:
-    EmuClockBase(void):m_target(), m_current() { }
+    EmuClockBase(const std::string &name):m_name(name), m_target(), m_current() { }
     virtual ~EmuClockBase(void) { }
     EmuClockBase(const EmuClockBase &clock) = delete;
 
@@ -502,9 +502,19 @@ public:
     }
 
 protected:
+
+    friend inline std::ostream & operator << (std::ostream &os, const EmuClockBase *obj);
+    const std::string &m_name;
     EmuTime    m_target;
     EmuTime    m_current;
 };
+
+inline std::ostream & operator << (std::ostream &os, const EmuClockBase *obj)
+{
+    os << "Name: " << obj->m_name << " Target: " << obj->m_target
+        << " Current: " << obj->m_current;
+    return os;
+}
 
 /**
  * Global clock.
@@ -553,7 +563,7 @@ public:
                 (*it)->time_set(m_current);
         } else {
             EmuTime diff = m_current - m_oldest;
-            LOG_DEBUG("Running ", diff, " behind, ", m_oldest, " ", m_current);
+            LOG_TRACE("Running ", diff, " behind, (", m_oldest, " - ", m_current, ")");
         }
     }
 
@@ -564,7 +574,7 @@ private:
         EmuTime newest = time_zero;
         for (auto it = m_clocks.begin(); it != m_clocks.end(); it++) {
             EmuTime fb = (*it)->time_now();
-            LOG_DEBUG("Found clock: ", fb);
+            LOG_TRACE("Found clock: ", (*it));
             if (oldest == time_zero || fb < oldest)
                 oldest = fb;
             if (newest == time_zero || fb > newest)

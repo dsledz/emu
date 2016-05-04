@@ -145,10 +145,19 @@ public:
         return "NOP";
     }
 
+    virtual void log_op(const Opcode *op, uint16_t pc, const uint8_t *instr) {
+        std::stringstream os;
+        os << std::setw(8) << name() << ":"
+            << Hex(pc) << ":" << Hex(op->code) << ":"
+            << op->name << " ";
+        DEVICE_TRACE(os.str());
+    }
+
 protected:
 
-    void dispatch(pc_type pc)
+    unsigned dispatch(pc_type pc)
     {
+        unsigned cycles;
         opcode_type opcode = bus_read(m_state.PC.d++);
         auto it = m_opcodes.find(opcode);
         if (it == m_opcodes.end()) {
@@ -160,12 +169,17 @@ protected:
 
         m_state.bus = bus();
         m_state.icycles = 0;
+        uint8_t instr[3] = {};
 
         op->addr_mode(&m_state);
         op->operation(&m_state);
-        add_icycles((op->cycles + m_state.icycles) * m_state.clock_divider);
+        cycles = (op->cycles + m_state.icycles) * m_state.clock_divider;
+        add_icycles(cycles);
 
-        return;
+        IF_LOG(Trace) {
+            log_op(op, pc, instr);
+        }
+        return cycles;
     }
 
     static data_type jit_bus_read(void *ctx, addr_type addr)

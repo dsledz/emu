@@ -60,6 +60,7 @@ struct M6502State
     void reset(void) {
         A = 0; SP = 0; X = 0; Y = 0; SR = 0; ZPG = 0;
         PC = 0; NativeFlags = 0; EA = 0; ARG = 0;
+        clock_divider = 1;
     }
 
     reg8_t A;
@@ -116,7 +117,7 @@ public:
         return &m_state;
     }
 
-    void log_op(const Opcode *op, uint16_t pc, const uint8_t *instr);
+    virtual void log_op(const Opcode *op, uint16_t pc, const uint8_t *instr);
 
     void test_step(void);
     virtual void execute(void);

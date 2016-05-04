@@ -327,11 +327,13 @@ M6502Cpu::log_op(const Opcode *op, uint16_t pc, const uint8_t *instr)
     os << std::setw(8) << name() << ":"
        << Hex(pc) << ":" << Hex(op->code) << ":"
        << op->name << " ";
+#if 0
     if (op->bytes == 2)
-        os << std::setw(8) << Hex(instr[1]);
+        os << Hex(instr[1]);
     else if (op->bytes == 3)
-        os << std::setw(8) << Hex(instr[1] | (instr[2] << 8));
+        os << Hex(instr[1] | (instr[2] << 8));
     else
+#endif
         os << std::setw(8) << " ";
     os << "CPU:";
     os << " PC: " << Hex(m_state.PC);
@@ -340,6 +342,8 @@ M6502Cpu::log_op(const Opcode *op, uint16_t pc, const uint8_t *instr)
     os << " Y: " << Hex(m_state.Y);
     os << " F: " << Hex(m_state.SR);
     os << " S: " << Hex(m_state.SP);
+    os << " EA: " << Hex(m_state.EA);
+    os << " ARG: " << Hex(m_state.ARG);
     DEVICE_TRACE(os.str());
 }
 

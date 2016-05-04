@@ -40,6 +40,8 @@ public:
 
     virtual void reset(void);
     virtual bool Interrupt(void);
+    virtual void line(Line line, LineState state);
+    virtual void execute(void);
 
     byte_t irq_read(offset_t offset);
     void irq_write(offset_t offset, byte_t value);
@@ -49,6 +51,7 @@ public:
 
 private:
 
+    void step(void);
     uint8_t mmu_read(offset_t offset);
     void mmu_write(offset_t offset, uint8_t value);
 

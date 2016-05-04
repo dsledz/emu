@@ -341,13 +341,18 @@ bool
 HuC6280Cpu::Interrupt(void)
 {
     if (m_timer_status && m_timer_value < 0) {
-        DEVICE_INFO("Timer Triggered");
+        DEVICE_ERROR("Timer Triggered");
         bit_set(m_irq_status, 2, true);
         while (m_timer_value <= 0)
             m_timer_value += m_timer_load;
     }
 
-    if (m_nmi_line == LineState::Pulse) {
+    if (m_reset_line == LineState::Pulse) {
+        DEVICE_DEBUG("Reset triggered");
+        reset();
+        m_reset_line = LineState::Clear;
+        return true;
+    } else if (m_nmi_line == LineState::Pulse) {
         DEVICE_DEBUG("NMI triggered");
         NMI(&m_state, 0xFFFC);
         m_nmi_line = LineState::Clear;
@@ -367,6 +372,48 @@ HuC6280Cpu::Interrupt(void)
         }
     }
     return false;
+}
+
+void
+HuC6280Cpu::step(void)
+{
+    if (Interrupt())
+        return;
+
+    uint16_t pc = m_state.PC.d;
+    unsigned cycles = dispatch(pc);
+    m_timer_value -= cycles;
+}
+
+void
+HuC6280Cpu::execute(void)
+{
+    while (true) {
+        step();
+    }
+}
+
+void
+HuC6280Cpu::line(Line line, LineState state)
+{
+    switch (line) {
+    case Line::RESET:
+        reset();
+        break;
+    case Line::INT2:
+        bit_set(m_irq_status, 0, state == LineState::Assert);
+        break;
+    case Line::INT1:
+        bit_set(m_irq_status, 1, state == LineState::Assert);
+        break;
+    case Line::INT0:
+        bit_set(m_irq_status, 2, state == LineState::Assert);
+        break;
+    default:
+        break;
+    }
+    if (line != Line::RESET)
+        Task::yield();
 }
 
 byte_t
