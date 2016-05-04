@@ -90,14 +90,13 @@ Emulator::do_execute(void)
             if (_state == EmuState::Stopped)
                 break;
         }
-
 #if 0
-        _machine->set_time(_clock.runtime());
+        _machine->run_until(_clock.runtime());
         /* Advance the clock by 1 millsecond each time. */
         struct timespec t = { 0, 50000 };
         nanosleep(&t, NULL);
 #else
-        _machine->run_forward(_clock.get_delta());
+        _machine->run_forward(usec(100));
 #endif
     } while (true);
 

@@ -341,7 +341,7 @@ bool
 HuC6280Cpu::Interrupt(void)
 {
     if (m_timer_status && m_timer_value < 0) {
-        DEVICE_ERROR("Timer Triggered");
+        DEVICE_DEBUG("Timer Triggered");
         bit_set(m_irq_status, 2, true);
         while (m_timer_value <= 0)
             m_timer_value += m_timer_load;

@@ -103,6 +103,13 @@ Machine::run(void)
 }
 
 void
+Machine::run_until(EmuTime target)
+{
+    m_sim_clock.set(target);
+    m_scheduler.wait_for_idle();
+}
+
+void
 Machine::run_forward(EmuTime delta)
 {
     EmuTime t = m_sim_clock.now();

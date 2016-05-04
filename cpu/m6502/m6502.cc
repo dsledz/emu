@@ -237,9 +237,11 @@ M6502Cpu::line(Line line, LineState state)
         break;
     case Line::INT0:
         m_irq_line = state;
+        Task::yield();
         break;
     case Line::NMI:
         m_nmi_line = state;
+        Task::yield();
         break;
     default:
         break;
