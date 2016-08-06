@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013, Dan Sledz * All rights reserved.
+ * Copyright (c) 2016, Dan Sledz
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -21,39 +22,36 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#pragma once
 
-#include "core/bits.h"
-#include "core/exception.h"
+#include "gtest/gtest.h"
 
-using namespace Core;
+#include "emu/emu.h"
+using namespace EMU;
 
-namespace EMU {
-
-typedef std::function<std::string (void)> debug_read_fn;
-typedef std::function<void (const std::string &)> debug_write_fn;
-
-struct DebugVariable {
-    DebugVariable(const std::string &name, debug_read_fn read_fn,
-                  debug_write_fn write_fn):
-        m_name(name), m_read(read_fn), m_write(write_fn) {}
-
-    inline const std::string &name(void) const {
-        return m_name;
+class DebuggableDevice: public Debuggable
+{
+public:
+    DebuggableDevice(): Debuggable("test") {
+        add_debug_var("A", regA);
+        add_debug_var("B", regB);
     }
+    ~DebuggableDevice() { }
 
-    std::string read(void) {
-        return m_read();
-    }
-
-    void write(const std::string &value) {
-        m_write(value);
-    }
-
-private:
-    const std::string &m_name;
-    debug_read_fn m_read;
-    debug_write_fn m_write;
+public:
+    uint8_t regA;
+    uint8_t regB;
 };
 
-};
+TEST(DebuggerTest, test)
+{
+    DebuggableDevice device;
+
+    device.regA = 60;
+    device.regB = 10;
+
+    EXPECT_EQ("60", device.read_register("A"));
+
+    debug_vars_t variables = device.read_registers();
+    auto first = variables.front();
+    EXPECT_EQ(std::make_pair(std::string("A"), std::string("60")), first);
+}

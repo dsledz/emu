@@ -29,4 +29,10 @@ if (BUILD_TESTING)
         emu
         gtest gtest_main)
     add_test(mem-check mem-check)
+    add_executable(debug-check
+        debugger_test.cc)
+    target_link_libraries(debug-check
+        emu
+        gtest gtest_main)
+    add_test(debug-check debug-check)
 endif (BUILD_TESTING)

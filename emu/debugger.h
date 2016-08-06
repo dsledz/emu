@@ -7,7 +7,9 @@
 
 namespace EMU {
 
-typedef std::list<std::pair<std::string, std::string> > debug_vars_t;
+typedef std::pair<std::string, std::string> debug_var_t;
+
+typedef std::list<debug_var_t> debug_vars_t;
 
 class Debuggable
 {
@@ -38,19 +40,21 @@ public:
         for (auto it = m_registers.begin(); it != m_registers.end(); it++) {
             result.push_back(std::make_pair(it->first, it->second.read()));
         }
+        result.sort([&](const debug_var_t &v1, const debug_var_t &v2) -> bool {
+                    return v1.first < v2.first; });
         return result;
     }
 
 protected:
 
-    void add_register(const DebugRegister &reg) {
+    void add_register(const DebugVariable &reg) {
         m_register_list.push_back(reg.name());
         m_registers.insert(std::make_pair(reg.name(), reg));
     }
 
     void add_debug_var(const std::string &name, uint8_t &reg)
     {
-        DebugRegister debug_reg(name,
+        DebugVariable debug_reg(name,
             [&](void) -> std::string {
                 return std::to_string(reg);
             },
@@ -62,7 +66,7 @@ protected:
 
     void add_debug_var(const std::string &name, reg16_t &reg)
     {
-        DebugRegister debug_reg(name,
+        DebugVariable debug_reg(name,
             [&](void) -> std::string {
                 return std::to_string(reg.d);
             },
@@ -75,16 +79,18 @@ protected:
 private:
     std::string m_name;
     std::list<std::string> m_register_list;
-    std::unordered_map<std::string, DebugRegister> m_registers;
+    std::unordered_map<std::string, DebugVariable> m_registers;
 };
 
 class Debugger
 {
 public:
-    Debugger();
+    Debugger(): m_devices() {
+    }
     ~Debugger();
 
 private:
+    std::unordered_map<std::string, Debuggable *> m_devices;
 
 };
 
