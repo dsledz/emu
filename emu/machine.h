@@ -74,7 +74,14 @@ public:
     void run(void);
     void run_forward(EmuTime delta);
     void run_until(EmuTime target);
+
+    /* FrameBuffer */
     void set_frame_buffer(FrameBuffer *screen);
+    /* Debugger */
+    void set_debugger(Debugger *debugger);
+    Debugger *get_debugger(void) {
+        return m_debugger;
+    }
 
     void add_device(Device *dev);
     void remove_device(Device *dev);
@@ -146,6 +153,7 @@ private:
     std::map<std::string, dipswitch_ptr> m_switches;
     std::map<std::string, IOPort> m_ports;
 
+    Debugger *m_debugger;
     FrameBuffer *m_screen;
     short m_screen_width;
     short m_screen_height;

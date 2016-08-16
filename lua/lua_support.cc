@@ -23,5 +23,6 @@ LuaSupport::load_libraries(void)
     luaopen_table(m_L);
     luaopen_string(m_L);
     luaopen_math(m_L);
+    luaL_openlibs(m_L);
 }
 

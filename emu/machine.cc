@@ -34,6 +34,7 @@ Machine::Machine(void):
     m_devs(),
     m_switches(),
     m_ports(),
+    m_debugger(),
     m_screen(NULL),
     m_screen_width(0),
     m_screen_height(0),
@@ -84,6 +85,9 @@ Machine::add_device(Device *dev)
 void
 Machine::remove_device(Device *dev)
 {
+    /* XXX: This is broken */
+    if (m_debugger)
+        m_debugger->remove_debuggable(dev);
     m_devs.remove(dev);
 }
 
@@ -254,6 +258,15 @@ Machine::set_frame_buffer(FrameBuffer *screen)
     m_screen = screen;
     m_screen->set_rotation(m_screen_rot);
     m_screen->resize(m_screen_width, m_screen_height);
+}
+
+void
+Machine::set_debugger(Debugger *debugger)
+{
+    m_debugger = debugger;
+    for (auto it = m_devs.begin(); it != m_devs.end(); it++) {
+        m_debugger->add_debuggable(*it);
+    }
 }
 
 void

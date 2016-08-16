@@ -55,3 +55,30 @@ TEST(DebuggerTest, test)
     auto first = variables.front();
     EXPECT_EQ(std::make_pair(std::string("A"), std::string("60")), first);
 }
+
+class TestMachine: public Machine
+{
+public:
+    TestMachine(void):
+        Machine(),
+        ram(this, "ram", 0x10000) {
+    }
+    ~TestMachine(void) { }
+private:
+    RamDevice ram;
+};
+
+TEST(DebuggerTest, test_machine)
+{
+    Debugger debugger;
+    TestMachine machine;
+
+    machine.set_debugger(&debugger);
+
+    Debugger *d = machine.get_debugger();
+
+    Debuggable *ram = d->get_debuggable("ram");
+
+    EXPECT_EQ(ram->read_register("foo"), "Unknown");
+}
+

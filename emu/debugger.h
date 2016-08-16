@@ -14,8 +14,12 @@ typedef std::list<debug_var_t> debug_vars_t;
 class Debuggable
 {
 public:
-    Debuggable(const std::string &name) {}
+    Debuggable(const std::string &name):m_name(name) {}
     ~Debuggable() {}
+
+    const std::string &name() const {
+        return m_name;
+    }
 
     const std::list<std::string> & list_registers(void) {
         return m_register_list;
@@ -87,7 +91,20 @@ class Debugger
 public:
     Debugger(): m_devices() {
     }
-    ~Debugger();
+    ~Debugger() {
+    }
+
+    void add_debuggable(Debuggable *debuggable) {
+        m_devices.insert(make_pair(debuggable->name(), debuggable));
+    }
+
+    void remove_debuggable(Debuggable *debuggable) {
+        m_devices.erase(debuggable->name());
+    }
+
+    Debuggable * get_debuggable(const std::string &dev) {
+        return m_devices.at(dev);
+    }
 
 private:
     std::unordered_map<std::string, Debuggable *> m_devices;
