@@ -1,7 +1,7 @@
 add_library(emu
     device.cc
     emu.cc
-    timing.cc
+    timer_queue.cc
     input.cc
     machine.cc
     ram.cc
@@ -17,6 +17,7 @@ if (BUILD_TESTING)
     add_executable(emu-check
         emu_test.cc
         time_test.cc
+        timer_queue_test.cc
         dipswitch_test.cc
         io_test.cc)
     target_link_libraries(emu-check

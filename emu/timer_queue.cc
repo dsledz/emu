@@ -27,6 +27,7 @@
 #include "core/exception.h"
 
 #include "emu/timing.h"
+#include "emu/timer_queue.h"
 
 using namespace EMU;
 
