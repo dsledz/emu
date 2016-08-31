@@ -23,6 +23,7 @@ add_library(core
 if (BUILD_TESTING)
     add_executable(core-check
         fiber_test.cc
+        lock_test.cc
         task_test.cc
         debug_test.cc)
     target_link_libraries(core-check

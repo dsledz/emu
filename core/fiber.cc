@@ -89,7 +89,7 @@ FiberTask::run_internal(void)
     }
     LOG_DEBUG("FiberTask execute: ", *this);
     State new_state = State::Finished;
-        m_func();
+    m_func();
     {
         lock_mtx lock(m_mtx);
         m_state = new_state;

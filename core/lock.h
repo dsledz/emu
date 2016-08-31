@@ -29,7 +29,40 @@
 
 #include "core/bits.h"
 
+#ifdef LINUX
+#include "sched.h"
+#endif
+
 namespace Core {
+
+class spin_lock {
+public:
+    spin_lock():m_lock(0) { }
+    ~spin_lock() {
+        assert(m_lock == 0);
+    }
+
+    inline void lock() {
+        // TODO: thread for debugging
+        uint64_t unlocked = UNLOCKED;
+        while (!std::atomic_compare_exchange_strong(&m_lock, &unlocked, LOCKED)) {
+#ifdef LINUX
+            sched_yield();
+#endif
+        }
+    }
+
+    inline void unlock() {
+        uint64_t locked = LOCKED;
+        bool result = std::atomic_compare_exchange_strong(&m_lock, &locked, UNLOCKED);
+        assert(result);
+    }
+
+private:
+    static const uint64_t UNLOCKED = 0;
+    static const uint64_t LOCKED = 1;
+    std::atomic<uint64_t> m_lock;
+};
 
 template<typename mtx_type>
 class unlock_guard {

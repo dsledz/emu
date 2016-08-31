@@ -40,6 +40,8 @@ template<class object_t>
 class Channel
 {
 public:
+    typedef Core::spin_lock lock_t;
+
     Channel(void): m_mtx(), m_waiting(), m_objects()
     {
     }
@@ -52,7 +54,7 @@ public:
      * Place an object in the channel.
      */
     void put(object_t obj) {
-        lock_mtx lock(m_mtx);
+        lock_guard<lock_t> lock(m_mtx);
         m_objects.push_back(obj);
         if (m_waiting) {
             m_waiting->wake();
@@ -64,7 +66,7 @@ public:
      * exists.
      */
     object_t get(void) {
-        std::unique_lock<std::mutex> lock(m_mtx);
+        std::unique_lock<lock_t> lock(m_mtx);
         assert(m_waiting == NULL);
         Task * task = Thread::cur_task();
         while (m_objects.empty()) {
@@ -85,7 +87,7 @@ public:
      */
     object_t try_get(void) {
         object_t obj = object_t();
-        std::unique_lock<std::mutex> lock(m_mtx);
+        std::unique_lock<lock_t> lock(m_mtx);
         if (!m_objects.empty()) {
             obj = m_objects.front();
             m_objects.pop();
@@ -98,7 +100,7 @@ public:
     }
 
 private:
-    std::mutex               m_mtx;
+    lock_t                   m_mtx;
     Task *                   m_waiting;
     RingBuffer<object_t, 64> m_objects;
 };

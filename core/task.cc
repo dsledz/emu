@@ -14,7 +14,7 @@ static __thread Thread * curthread = NULL;
 uint64_t
 Task::next_id(void)
 {
-    static std::atomic<uint64_t> next_id= ATOMIC_VAR_INIT(1);
+    static std::atomic<uint64_t> next_id = ATOMIC_VAR_INIT(1);
     return std::atomic_fetch_add(&next_id, (uint64_t)1);
 }
 
