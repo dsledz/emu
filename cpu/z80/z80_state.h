@@ -87,6 +87,8 @@ struct Z80Opcode
 {
     uint8_t code;
     const char *name;
+    int cycles;
+    int bytes;
     void (*func)(Z80State *state);
 };
 
@@ -130,12 +132,16 @@ struct Z80State {
 
     reg16_t EA;
 
-    Z80Opcode *Op;
+    const Z80Opcode *Op;
 
     reg8_t d8;
     reg8_t i8;
     reg16_t d16;
     reg16_t i16;
+    reg16_t latch_pc;
+    reg8_t latch_op;
+
+    bool yield;
 
     CPU2::CpuPhase Phase;
     uint8_t icycles;

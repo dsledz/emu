@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Dan Sledz
+ * Copyright (c) 2016, Dan Sledz
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -22,56 +22,31 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#pragma once
 
-#include "core/bits.h"
-#include "emu/emu.h"
-#include "cpu/lib/cpu2.h"
-#include "cpu/z80/z80_state.h"
+#include "emu/test.h"
+#include "cpu/z80/z80v2.h"
 
-using namespace Core;
 using namespace EMU;
-using namespace CPU2;
-using namespace Z80;
+using namespace EMUTest;
+using namespace Z80v2;
 
-namespace Z80v2 {
-
-enum Z80Arg {
-    ArgRegB  = 0,
-    ArgRegC  = 1,
-    ArgRegD  = 2,
-    ArgRegE  = 3,
-    ArgRegH  = 4,
-    ArgRegL  = 5,
-    ArgRegHL = 6,
-    ArgRegA  = 7
-};
-
-enum Z80Arg16 {
-    RegBC = 0,
-    RegDE = 1,
-    RegHL = 2,
-    RegIX = 3,
-    RegIY = 4
-};
-
-typedef ClockedBus16 Z80Bus;
-typedef std::unique_ptr<Z80Bus> Z80Bus_ptr;
-
-class Z80Class
+class Z80Machine: public Machine
 {
 public:
-    Z80Class();
-    ~Z80Class();
+    Z80Machine():
+        bus(new Z80Bus()),
+        cpu(new Z80Cpu(this, "cpu", 1000000, bus.get())) {
 
-    void Interrupt(Z80State *state, Z80Bus *bus);
-    void Decode(Z80State *state, Z80Bus *bus);
-    void Dispatch(Z80State *state, Z80Bus *bus);
-    std::string Log(Z80State *state);
-
+    }
+    ~Z80Machine() {
+    }
 private:
+    Z80Bus_ptr bus;
+    Z80Cpu_ptr cpu;
 };
 
-typedef CPU2::Cpu<Z80Bus, Z80State, Z80Opcode, Z80Class> Z80Cpu;
-typedef std::unique_ptr<Z80Cpu> Z80Cpu_ptr;
-};
+TEST(Z80v2, init)
+{
+    Z80Machine machine;
+}
+
