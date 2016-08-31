@@ -38,8 +38,8 @@
 #include <OpenGL/gl.h>
 #endif
 #else
-#include <OpenGL/OpenGL.h>
-#include <OpenGL/gl.h>
+#include <GL/gl.h>
+#include <GL/glext.h>
 #endif
 
 
