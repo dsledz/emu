@@ -91,6 +91,25 @@ return x)";
     lua_pop(lua,-1);
 }
 
+TEST(LuaText, external_call_object)
+{
+    Lua::LuaSupport lua;
+    std::string script = R"(
+-- Call a function
+x = double(5)
+return x)";
+    std::string name = "double";
+    Lua::lua_call_t func = test_external_function;
+    Lua::LuaCall call(name, &func);
+
+    lua.add(call);
+    lua.call(script);
+
+    int ret = lua_tonumber(lua, -1);
+    EXPECT_EQ(ret, 10);
+    lua_pop(lua,-1);
+}
+
 int test_external_function_failure(lua_State *L)
 {
     int n = lua_gettop(L);
@@ -134,5 +153,103 @@ TEST(LuaTest, virtual_func)
 
     int ret = lua_tonumber(lua, -1);
     EXPECT_EQ(ret, 10);
+    lua_pop(lua,-1);
+}
+
+TEST(LuaTest, closure_test)
+{
+    Lua::LuaSupport lua;
+    Lua::LuaClosure<int (int)> closure("test", [] (int v) -> int { return v * 5; } );
+    lua.add(closure);
+
+    std::string script = R"(
+        return test(5)
+    )";
+
+    lua.call(script);
+
+    int ret = lua_tonumber(lua, -1);
+    EXPECT_EQ(ret, 25);
+    lua_pop(lua,-1);
+}
+
+TEST(LuaTest, closure_string_return_string)
+{
+    Lua::LuaSupport lua;
+    Lua::LuaClosure<std::string (const std::string &)> closure(
+            "test", [] (const std::string &v) -> std::string { return v + "_end" ; } );
+    lua.add(closure);
+
+    std::string script = R"(
+        x = test("start")
+        return x
+    )";
+
+    lua.call(script);
+
+    std::string ret = lua_tostring(lua, -1);
+    EXPECT_EQ(ret, "start_end");
+    lua_pop(lua,-1);
+}
+
+TEST(LuaTest, closure_void_return_string)
+{
+    Lua::LuaSupport lua;
+    Lua::LuaClosure<std::string (void)> closure(
+            "test", [] (void) -> std::string { return "end" ; } );
+    lua.add(closure);
+
+    std::string script = R"(
+        x = test()
+        return x
+    )";
+
+    lua.call(script);
+
+    std::string ret = lua_tostring(lua, -1);
+    EXPECT_EQ(ret, "end");
+    lua_pop(lua,-1);
+}
+
+TEST(LuaTest, closure_exception)
+{
+    Lua::LuaSupport lua;
+    Lua::LuaClosure<std::string (void)> closure(
+            "test", [] (void) -> std::string { return "end" ; } );
+    lua.add(closure);
+
+    std::string script = R"(
+        x = test("start")
+        return x
+    )";
+
+    EXPECT_THROW(lua.call(script), Lua::LuaException);
+}
+
+TEST(LuaTest, library_test)
+{
+    Lua::LuaSupport lua;
+    Lua::LuaClosure<int (int)> inc("inc", [] (int v) -> int { return v + 1; } );
+    Lua::LuaClosure<int (int)> dec("dec", [] (int v) -> int { return v - 1; } );
+    Lua::LuaLibrary lib(lua, "ops");
+
+    lib.add_call(inc);
+    lib.add_call(dec);
+
+    lib.finalize_library();
+
+    std::string script = R"(
+        lib = ops()
+        x = 10
+        x = lib.inc(x)
+        x = lib.inc(x)
+        x = lib.dec(x)
+        return x
+    )";
+
+    lua.call(script);
+
+    int ret = lua_tonumber(lua, -1);
+    EXPECT_EQ(ret, 11);
     lua_pop(lua,-1);
 }
