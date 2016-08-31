@@ -28,6 +28,7 @@
 #pragma once
 
 #include "emu/emu.h"
+#include "cpu/z80/z80_state.h"
 
 using namespace EMU;
 
@@ -44,77 +45,6 @@ enum class Reg {
     HL = 0x06,
 };
 
-struct Registers {
-public:
-    Registers(void);
-    ~Registers(void);
-    union {
-        struct {
-            union {
-                struct {
-                    byte_t C:1;   /**< carry flag */
-                    byte_t N:1;   /**< add/substract */
-                    byte_t V:1;  /**< parity/overflow */
-                    byte_t X:1;
-                    byte_t H:1;   /**< half carry */
-                    byte_t Y:1;
-                    byte_t Z:1;   /**< zero flag */
-                    byte_t S:1;   /**< sign flag */
-                } f;
-                byte_t l;
-            };
-            byte_t h;
-        } b;
-        uint16_t d;
-    } _AF;
-    reg16_t _BC;
-    reg16_t _DE;
-    reg16_t _HL;
-    reg16_t _IX;
-    reg16_t _IY;
-    reg16_t _SP;
-    reg16_t _PC;
-
-    byte_t _I;
-    byte_t _R;
-
-    reg16_t _sAF;
-    reg16_t _sBC;
-    reg16_t _sDE;
-    reg16_t _sHL;
-};
-
-#define _rAF    _R._AF.d
-#define _rA     _R._AF.b.h
-#define _rF     _R._AF.b.l
-#define _flags  _R._AF.b.f
-#define _rBC   _R._BC.d
-#define _rB    _R._BC.b.h
-#define _rC    _R._BC.b.l
-#define _rDE   _R._DE.d
-#define _rD    _R._DE.b.h
-#define _rE    _R._DE.b.l
-#define _rHL   _R._HL.d
-#define _rH    _R._HL.b.h
-#define _rL    _R._HL.b.l
-#define _rSP   _R._SP.d
-#define _rSPh  _R._SP.b.h
-#define _rSPl  _R._SP.b.l
-#define _rPC   _R._PC.d
-#define _rPCh  _R._PC.b.h
-#define _rPCl  _R._PC.b.l
-#define _rIX   _R._IX.d
-#define _rIXh  _R._IX.b.h
-#define _rIXl  _R._IX.b.l
-#define _rIY   _R._IY.d
-#define _rIYh  _R._IY.b.h
-#define _rIYl  _R._IY.b.l
-#define _rsAF  _R._sAF.d
-#define _rsBC  _R._sBC.d
-#define _rsDE  _R._sDE.d
-#define _rsHL  _R._sHL.d
-#define _rI    _R._I
-#define _rR    _R._R
 
 class Z80Cpu: public EMU::ClockedDevice {
 public:
@@ -147,20 +77,22 @@ public:
     void load_rom(Rom *rom, addr_t offset);
 
 private:
-    enum Prefix {
-        NoPrefix = 0x00,
-        DDPrefix = 0xDD,
-        FDPrefix = 0xFD,
-    } _prefix;
 
     /* Operation specific state */
     struct Z80Op {
         Z80Op(void): name("NONE") { }
 
         void reset(void) {
-			d8 = i8 = 0;
+            prefix = NoPrefix;
+            d8 = i8 = 0;
             pc = opcode = d16 = i16 = yield = 0;
         }
+
+        enum Prefix {
+            NoPrefix = 0x00,
+            DDPrefix = 0xDD,
+            FDPrefix = 0xFD,
+        } prefix;
 
         addr_t pc;
         byte_t opcode;
@@ -182,7 +114,7 @@ private:
     /* Trace support */
     void op_log(void);
     void op_set(const std::string &name) {
-        _op.name = name;
+        m_op.name = name;
     }
 
     byte_t _data;
@@ -190,10 +122,10 @@ private:
 
     Cycles _icycles;      /**< Current number of cycles for instruction */
 
-    Z80Op _op;
+    Z80Op m_op;
 
     /* Internal state */
-    Registers _R; /**< Registers */
+    Z80State m_R; /**< Registers */
     bool _iff1;
     bool _iff2;
     bool _iwait;
@@ -214,7 +146,7 @@ private:
     }
 
     inline byte_t pc_read(void) {
-        return bus_read(_rPC++);
+        return bus_read(m_R.PC.d++);
     }
     inline byte_t bus_read(addr_t addr) {
         if (addr < _rom.size())
@@ -231,33 +163,38 @@ private:
 
     /* decode accessors */
     inline uint16_t _d16(void) {
-        _op.d16 = pc_read() | (pc_read() << 8);
-        return _op.d16;
+        m_op.d16 = pc_read() | (pc_read() << 8);
+        return m_op.d16;
     }
     inline byte_t _d8(void) {
-        _op.d8 = pc_read();
-        return _op.d8;
+        m_op.d8 = pc_read();
+        return m_op.d8;
     }
     inline byte_t _r8(void) {
-        _op.d8 = pc_read();
-        return _op.d8;
+        m_op.d8 = pc_read();
+        return m_op.d8;
     }
     inline uint16_t _dIX(void) {
-        _op.d8 = pc_read();
-        return _rIX + _op.d8;
+        m_op.d8 = pc_read();
+        return m_R.IX.d + m_op.d8;
     }
     inline uint16_t _dIY(void) {
-        _op.d8 = pc_read();
-        return _rIY + _op.d8;
+        m_op.d8 = pc_read();
+        return m_R.IY.d + m_op.d8;
     }
     inline addr_t _dAddr(void) {
-        if (_prefix == DDPrefix)
-            _op.d16 = _dIX();
-        else if (_prefix == FDPrefix)
-            _op.d16 = _dIY();
-        else
-            _op.d16 = _rHL;
-        return _op.d16;
+        switch (m_op.prefix) {
+        case Z80Op::NoPrefix:
+            m_op.d16 = m_R.HL.d;
+            break;
+        case Z80Op::DDPrefix:
+            m_op.d16 = _dIX();
+            break;
+        case Z80Op::FDPrefix:
+            m_op.d16 = _dIY();
+            break;
+        }
+        return m_op.d16;
     }
     inline byte_t _iIX(void) {
         return _i8(_dIX());
@@ -266,45 +203,45 @@ private:
         return _i8(_dIY());
     }
     inline byte_t _iHL(void) {
-        _op.i8 = bus_read(_rHL);
-        return _op.i8;
+        m_op.i8 = bus_read(m_R.HL.d);
+        return m_op.i8;
     }
     inline byte_t _i8(addr_t addr) {
-        _op.i8 = bus_read(addr);
-        return _op.i8;
+        m_op.i8 = bus_read(addr);
+        return m_op.i8;
     }
     inline byte_t _iAddr(void) {
         return _i8(_dAddr());
     }
     inline uint16_t _i16(void) {
-        _op.d16 = pc_read() | (pc_read() << 8);
-        _op.i16 = bus_read(_op.d16) | (bus_read(_op.d16 + 1) << 8);
-        return _op.i16;
+        m_op.d16 = pc_read() | (pc_read() << 8);
+        m_op.i16 = bus_read(m_op.d16) | (bus_read(m_op.d16 + 1) << 8);
+        return m_op.i16;
     }
 
 private:
 
     inline void _set_hflag(uint16_t orig, uint16_t arg, uint16_t result) {
-        _flags.H = bit_isset(orig ^ arg ^ result, 4);
+        m_R.AF.b.f.H = bit_isset(orig ^ arg ^ result, 4);
     }
     inline void _set_cflag(uint16_t orig, uint16_t arg, uint16_t result) {
-        _flags.C = bit_isset(orig ^ arg ^ result, 8);
+        m_R.AF.b.f.C = bit_isset(orig ^ arg ^ result, 8);
     }
     inline void _set_zflag(uint16_t result) {
-        _flags.Z = (result & 0xff) == 0;
+        m_R.AF.b.f.Z = (result & 0xff) == 0;
     }
     inline void _set_zsflag(uint16_t result) {
-        _flags.Z = (result & 0xff) == 0;
-        _flags.V = bit_isset(result, 8);
-        _flags.S = bit_isset(result, 7);
-        _flags.Y = bit_isset(result, 5);
-        _flags.X = bit_isset(result, 3);
+        m_R.AF.b.f.Z = (result & 0xff) == 0;
+        m_R.AF.b.f.V = bit_isset(result, 8);
+        m_R.AF.b.f.S = bit_isset(result, 7);
+        m_R.AF.b.f.Y = bit_isset(result, 5);
+        m_R.AF.b.f.X = bit_isset(result, 3);
     };
     inline void _set_nflag(bool neg) {
-        _flags.N = neg;
+        m_R.AF.b.f.N = neg;
     }
     inline void _set_parity(byte_t result) {
-        _flags.V = (0 == (bit_isset(result, 0) ^ bit_isset(result, 1) ^
+        m_R.AF.b.f.V = (0 == (bit_isset(result, 0) ^ bit_isset(result, 1) ^
                           bit_isset(result, 2) ^ bit_isset(result, 3) ^
                           bit_isset(result, 4) ^ bit_isset(result, 5) ^
                           bit_isset(result, 6) ^ bit_isset(result, 7)));
