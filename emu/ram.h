@@ -44,5 +44,7 @@ private:
     bvec m_ram;
 };
 
+typedef MappedDevice MappedRamDevice;
+
 };
 

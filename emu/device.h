@@ -154,6 +154,19 @@ protected:
     size_t m_size;
 };
 
+class MappedDevice: public Device {
+public:
+    MappedDevice(Machine *machine, const std::string &name, size_t size);
+    virtual ~MappedDevice(void);
+
+    size_t size(void);
+    virtual bool read_only();
+    byte_t &at8(offset_t offset);
+
+protected:
+    bvec m_mem;
+};
+
 class ClockedDevice: public Device, public EmuClockBase {
 public:
     ClockedDevice(Machine *machine, const std::string &name, unsigned hertz);

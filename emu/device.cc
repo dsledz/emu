@@ -223,6 +223,29 @@ IODevice::size(void)
     return m_size;
 }
 
+MappedDevice::MappedDevice(Machine *machine, const std::string &name, size_t size):
+    Device(machine, name, DEFAULT_HERTZ),
+    m_mem()
+{
+    m_mem.resize(size);
+}
+
+MappedDevice::~MappedDevice(void)
+{
+}
+
+size_t
+MappedDevice::size(void)
+{
+    return m_mem.size();
+}
+
+bool
+MappedDevice::read_only(void)
+{
+    return false;
+}
+
 ClockedDevice::ClockedDevice(Machine *machine, const std::string &name, unsigned hertz):
     Device(machine, name, hertz),
     EmuClockBase(Device::m_name),
