@@ -51,15 +51,15 @@ public:
         bus(new AddressBus16()),
         cpu(new Z80Cpu(this, "cpu", 1000000, bus.get())),
         rom("zex.bin"),
-        _data(0), _req(0), _req_last(0), _ack(0)
+        m_data(0), m_req(0), m_req_last(0), m_ack(0)
     {
         cpu->load_rom(&rom, 0x0000);
 
-        bus->add(0xFFFF, &_data);
+        bus->add(0xFFFF, &m_data);
         bus->add(0xFFFE, 0xFFFF,
                  READ_CB(Zexall::req_read, this),
                  WRITE_CB(Zexall::req_write, this));
-        bus->add(0xFFFD, &_ack);
+        bus->add(0xFFFD, &m_ack);
 
         cpu->io()->add(0x01, 0x01,
             DataBus8x8::DefaultRead(),
@@ -70,34 +70,34 @@ public:
 
     byte_t req_read(byte_t vlaue)
     {
-        return _req;
+        return m_req;
     }
 
     void req_write(offset_t offset, byte_t value)
     {
-        if (_req_last != value) {
-            _ack++;
-            std::cout << _data;
+        if (m_req_last != value) {
+            m_ack++;
+            std::cout << m_data;
             std::cout.flush();
         }
-        _req_last = _req;
-        _req = value;
+        m_req_last = m_req;
+        m_req = value;
     }
 
     std::unique_ptr<AddressBus16> bus;
     std::unique_ptr<Z80Cpu> cpu;
     Rom rom;
-    byte_t _data, _req, _req_last, _ack;
+    byte_t m_data, m_req, m_req_last, m_ack;
 };
 
 TEST(Zexall_test, test)
 {
     Zexall zex;
 
-    Core::log.set_level(LogLevel::Trace);
+    Core::log.set_level(LogLevel::Debug);
 
     // Run the first few seconds of the rom
     zex.poweron();
     zex.reset();
-    zex.run_forward(sec(600));
+    zex.run_forward(sec(60));
 }

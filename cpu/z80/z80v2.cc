@@ -579,27 +579,38 @@ Z80Class::Log(Z80State *state)
     const std::string &delimiters = " ,";
     auto lastPos = str.find_first_not_of(delimiters, 0);
     auto pos = str.find_first_of(delimiters, lastPos);
+    std::stringstream op;
     while (std::string::npos != pos || std::string::npos != lastPos)
     {
         std::string it = str.substr(lastPos, pos - lastPos);
-        os << " ";
+        op << " ";
         if (it == "(IX+d)")
-            os << "(IX+" << Hex(state->d8) << ")";
+            op << "(IX+" << Hex(state->d8) << ")";
         else if (it == "(IY+d)")
-            os << "(IY+" << Hex(state->d8) << ")";
+            op << "(IY+" << Hex(state->d8) << ")";
         else if (it == "d16" || it == "a16")
-            os << Hex(state->d16);
+            op << Hex(state->d16);
         else if (it == "(d16)")
-            os << "(" << Hex(state->d16) << ")";
+            op << "(" << Hex(state->d16) << ")";
         else if (it == "(d8)")
-            os << "(" << Hex(state->d8) << ")";
+            op << "(" << Hex(state->d8) << ")";
         else if (it == "d8" || it == "r8")
-            os << Hex(state->d8);
+            op << Hex(state->d8);
         else
-            os << it;
+            op << it;
         lastPos = str.find_first_not_of(delimiters, pos);
         pos = str.find_first_of(delimiters, lastPos);
     }
+    os << std::setfill(' ') << std::left << std::setw(20) << op.str();
+    os << "  CPU:";
+    os << " PC:" << Hex(state->PC.d);
+    os << ",AF:" << Hex(state->AF.d);
+    os << ",BC:" << Hex(state->BC.d);
+    os << ",DE:" << Hex(state->DE.d);
+    os << ",HL:" << Hex(state->HL.d);
+    os << ",IX:" << Hex(state->IX.d);
+    os << ",IY:" << Hex(state->IY.d);
+
     return os.str();
 }
 

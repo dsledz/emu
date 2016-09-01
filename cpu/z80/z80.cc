@@ -1050,70 +1050,44 @@ void
 Z80Cpu::op_log(void)
 {
     std::stringstream os;
-    os << std::setw(8) << name() << ":"
-       << Hex(m_op.pc) << ":" << Hex(m_op.opcode) << ":"
-       << m_op.name << " =>";
+    os << Hex(m_op.pc) << ":";
     const std::string &str = m_op.name;
     const std::string &delimiters = " ,";
     auto lastPos = str.find_first_not_of(delimiters, 0);
     auto pos = str.find_first_of(delimiters, lastPos);
+    std::stringstream op;
     while (std::string::npos != pos || std::string::npos != lastPos)
     {
         std::string it = str.substr(lastPos, pos - lastPos);
-        os << " ";
-        if (it == "A")
-            os << Hex(m_R.AF.b.h);
-        else if (it == "B")
-            os << Hex(m_R.BC.b.h);
-        else if (it == "C")
-            os << Hex(m_R.BC.b.l);
-        else if (it == "D")
-            os << Hex(m_R.DE.b.h);
-        else if (it == "E")
-            os << Hex(m_R.DE.b.l);
-        else if (it == "H")
-            os << Hex(m_R.HL.b.h);
-        else if (it == "L")
-            os << Hex(m_R.HL.b.l);
-        else if (it == "BC")
-            os << Hex(m_R.BC.d);
-        else if (it == "(BC)")
-            os << "(" << Hex(m_R.BC.d) << ")";
-        else if (it == "DE")
-            os << Hex(m_R.DE.d);
-        else if (it == "(DE)")
-            os << "(" << Hex(m_R.DE.d) << ")";
-        else if (it == "HL")
-            os << Hex(m_R.HL.d);
-        else if (it == "(HL)")
-            os << Hex(m_op.i8);
-        else if (it == "AF")
-            os << Hex(m_R.AF.d);
-        else if (it == "AF'")
-            os << Hex(m_R.AF2.d);
-        else if (it == "SP")
-            os << Hex(m_R.SP.d);
-        else if (it == "IX")
-            os << Hex(m_R.IX.d);
-        else if (it == "(IX+d)")
-            os << "(" << Hex(m_R.IX.d) << "+" << Hex(m_op.d8) << ")";
-        else if (it == "IY")
-            os << Hex(m_R.IY.d);
+        op << " ";
+        if (it == "(IX+d)")
+            op << "(IX+" << Hex(m_op.d8) << ")";
         else if (it == "(IY+d)")
-            os << "(" << Hex(m_R.IY.d) << "+" << Hex(m_op.d8) << ")";
+            op << "(IY" << Hex(m_op.d8) << ")";
         else if (it == "d16" || it == "a16")
-            os << Hex(m_op.d16);
+            op << Hex(m_op.d16);
         else if (it == "(d16)")
-            os << "(" << Hex(m_op.d16) << ")";
+            op << "(" << Hex(m_op.d16) << ")";
         else if (it == "(d8)")
-            os << "(" << Hex(m_op.d8) << ")";
+            op << "(" << Hex(m_op.d8) << ")";
         else if (it == "d8" || it == "r8")
-            os << Hex(m_op.d8);
+            op << Hex(m_op.d8);
         else
-            os << it;
+            op << it;
+
         lastPos = str.find_first_not_of(delimiters, pos);
         pos = str.find_first_of(delimiters, lastPos);
     }
+    os << std::setfill(' ') << std::left << std::setw(20) << op.str();
+    os << "  CPU:";
+    os << " PC:" << Hex(m_R.PC.d);
+    os << ",AF:" << Hex(m_R.AF.d);
+    os << ",BC:" << Hex(m_R.BC.d);
+    os << ",DE:" << Hex(m_R.DE.d);
+    os << ",HL:" << Hex(m_R.HL.d);
+    os << ",IX:" << Hex(m_R.IX.d);
+    os << ",IY:" << Hex(m_R.IY.d);
+
     DEVICE_TRACE(os.str());
 }
 
