@@ -142,7 +142,7 @@ public:
             base(base), end(end), read(read), write(write),
             read_only(false), raw(nullptr) { }
         IOPort(addr_type base, addr_type end, data_type *raw, bool read_only):
-            base(base), end(end), read(), write(),
+            base(base), end(end), read(DefaultRead), write(DefaultWrite),
             read_only(read_only), raw(raw) {}
 
         addr_type base;
@@ -240,9 +240,6 @@ public:
 
 private:
     MemoryMap<IOPort, addr_type, addr_width, 5> m_map;
-
-    /* XXX: The radix tree is slow */
-    // RadixTree<IOPort, addr_type, addr_width> _map;
 };
 
 typedef DataBus<uint32_t, 21, byte_t> AddressBus21;
@@ -251,7 +248,6 @@ typedef DataBus<uint16_t, 8, byte_t>  AddressBus8;
 typedef DataBus<uint16_t, 16, uint16_t> AddressBus16x16;
 typedef DataBus<uint8_t, 8, byte_t> DataBus8x8;
 typedef std::unique_ptr<AddressBus16> AddressBus16_ptr;
-
 
 };
 
