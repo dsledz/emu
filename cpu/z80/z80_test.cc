@@ -90,16 +90,14 @@ public:
     byte_t _data, _req, _req_last, _ack;
 };
 
-#if 0
 TEST(Zexall_test, test)
 {
     Zexall zex;
 
-    //EMU::log.set_level(LogLevel::Trace);
+    Core::log.set_level(LogLevel::Trace);
 
-    while (true) {
-        zex.add_time(Time(sec(1000)));
-        zex.execute();
-    }
+    // Run the first few seconds of the rom
+    zex.poweron();
+    zex.reset();
+    zex.run_forward(sec(600));
 }
-#endif
