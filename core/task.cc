@@ -87,8 +87,13 @@ void
 Thread::wait_for_idle(void)
 {
     lock_mtx lock(m_mtx);
-    while (m_state == ThreadState::Running)
+    for (;;) {
+        if (m_state == ThreadState::Idle && m_channel->available() == 0)
+            break;
+        if (m_state == ThreadState::Dead)
+            break;
         lock.wait(m_cv);
+    }
 }
 
 void

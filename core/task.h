@@ -172,6 +172,7 @@ class Thread: public std::thread
 public:
     enum class ThreadState {
         Dead,
+        Init,
         Idle,
         Running,
         Exiting

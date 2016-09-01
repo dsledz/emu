@@ -165,6 +165,10 @@ public:
         return obj;
     }
 
+    int available(void) {
+        return m_objects.size();
+    }
+
 private:
     std::mutex              m_mtx;
     std::condition_variable m_cv;

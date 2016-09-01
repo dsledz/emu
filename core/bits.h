@@ -198,8 +198,9 @@ public:
 static inline std::ostream& operator << (std::ostream &os,
                                          const Hex & obj)
 {
-    os << std::hex << "0x" << std::setfill('0') << std::setw(obj.w)
-        << obj.v;
+    os << "0x"
+       << std::hex << std::setfill('0') << std::right << std::setw(obj.w)
+       << obj.v;
     return os;
 }
 
