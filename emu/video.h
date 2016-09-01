@@ -37,17 +37,17 @@ struct RGBColor {
     ~RGBColor(void) = default;
     RGBColor(const RGBColor &rhs): v(rhs.v) { }
     RGBColor(unsigned r, unsigned g, unsigned b, unsigned a=0xff):
-        _r(r), _g(g), _b(b), _a(a) { }
+        r(r), g(g), b(b), a(a) { }
     RGBColor(uint32_t c): v(c) { }
 
-    bool operator !=(const RGBColor &rhs) const { return v != rhs.v; };
-    bool operator ==(const RGBColor &rhs) const { return v == rhs.v; };
-    RGBColor & operator=(const RGBColor &rhs) {
+    inline bool operator !=(const RGBColor &rhs) const { return v != rhs.v; };
+    inline bool operator ==(const RGBColor &rhs) const { return v == rhs.v; };
+    inline RGBColor & operator=(const RGBColor &rhs) {
         this->v = rhs.v;
         return *this;
     }
     union {
-        struct { uint8_t _r; uint8_t _g; uint8_t _b; uint8_t _a; };
+        struct { uint8_t r; uint8_t g; uint8_t b; uint8_t a; };
         uint32_t v;
     };
 };
@@ -55,7 +55,7 @@ struct RGBColor {
 static inline RGBColor operator *(const RGBColor &rhs, unsigned i)
 {
     RGBColor res(rhs);
-    res._r *= i; res._g *= i; res._b *= i;
+    res.r *= i; res.g *= i; res.b *= i;
     return res;
 }
 
@@ -82,14 +82,18 @@ struct GfxObject {
     const int w = width;
     const int h = height;
     bool dirty;
-    entry_t at(int x, int y) {
+    inline entry_t at(int x, int y) {
         return data[y * w + x];
     }
     std::array<entry_t, width * height> data;
 };
 
 /**
- * Emulated screen.
+ * Emulated Screen Abstraction.
+ *
+ * The FrameBuffer provides a generic interface to describe a screen.  For most
+ * machines, this exists outside the emulated hardware and instead stands in
+ * for video DAC (digital to analog converter).
  */
 class FrameBuffer
 {
@@ -116,33 +120,33 @@ public:
 
     void clear(void);
 
-    short width(void) const {
-        return _width;
+    inline short width(void) const {
+        return m_width;
     }
 
-    short height(void) const {
-        return _height;
+    inline short height(void) const {
+        return m_height;
     }
 
-    short pitch(void) const {
-        return _pitch;
+    inline short pitch(void) const {
+        return m_pitch;
     }
 
-    const byte_t *fb(void) const {
-        return reinterpret_cast<const byte_t *>(_data.data());
+    inline const byte_t *fb(void) const {
+        return reinterpret_cast<const byte_t *>(m_data.data());
     }
 
 protected:
     void do_resize(short width, short height);
 
 private:
-    short _width;   /* Width of the screen */
-    short _pitch;   /* Line pitch */
-    short _height;  /* Height of the screen */
-    Rotation _rot;
+    short m_width;   /* Width of the screen */
+    short m_pitch;   /* Line pitch */
+    short m_height;  /* Height of the screen */
+    Rotation m_rot;
 
-    std::vector<RGBColor> _data;
-    RGBColor _empty;
+    std::vector<RGBColor> m_data;
+    RGBColor m_empty;
 };
 
 template<class gfx, class palette> static inline void
@@ -236,6 +240,5 @@ draw_gfx_overlay(FrameBuffer *screen, palette *pal, gfx *obj, int sx, int sy,
         }
     }
 }
-
 
 };

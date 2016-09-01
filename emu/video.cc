@@ -28,13 +28,13 @@
 using namespace EMU;
 
 FrameBuffer::FrameBuffer(Rotation rot):
-    _rot(rot)
+    m_rot(rot)
 {
     resize(0, 0);
 }
 
 FrameBuffer::FrameBuffer(short width, short height, Rotation rot):
-    _rot(rot)
+    m_rot(rot)
 {
     resize(width, height);
 }
@@ -47,7 +47,7 @@ FrameBuffer::~FrameBuffer(void)
 void
 FrameBuffer::set_rotation(Rotation rot)
 {
-    _rot = rot;
+    m_rot = rot;
 }
 
 void
@@ -69,46 +69,46 @@ FrameBuffer::flip(void)
 void
 FrameBuffer::do_resize(short width, short height)
 {
-    _width = width;
-    _height = height;
-    _pitch = width * sizeof(uint32_t);
-    _data.resize(_width * _height);
+    m_width = width;
+    m_height = height;
+    m_pitch = width * sizeof(uint32_t);
+    m_data.resize(m_width * m_height);
 }
 
 void
 FrameBuffer::set(int x, int y, RGBColor color)
 {
     int sy, sx;
-    switch (_rot) {
+    switch (m_rot) {
     case ROT0: sx = x; sy = y; break;
-    case ROT90: sx = _width - y - 1; sy = x; break;
-    case ROT180: sx = x; sy = _height - y -1; break;
-    case ROT270: sx = _width - y - 1; sy = _height - x -1; break;
+    case ROT90: sx = m_width - y - 1; sy = x; break;
+    case ROT180: sx = x; sy = m_height - y -1; break;
+    case ROT270: sx = m_width - y - 1; sy = m_height - x -1; break;
     }
 
-    if ((sy >= 0 && sy < _height) && (sx >= 0 && sx < _width))
-        _data[sy * _width + sx] = color.v;
+    if ((sy >= 0 && sy < m_height) && (sx >= 0 && sx < m_width))
+        m_data[sy * m_width + sx] = color.v;
 }
 
 const RGBColor
 FrameBuffer::get(int x, int y) const
 {
     int sy, sx;
-    switch (_rot) {
+    switch (m_rot) {
     case ROT0: sx = x; sy = y; break;
-    case ROT90: sx = _width - y - 1; sy = x; break;
-    case ROT180: sx = x; sy = _height - y -1; break;
-    case ROT270: sx = _width - y - 1; sy = _height - x -1; break;
+    case ROT90: sx = m_width - y - 1; sy = x; break;
+    case ROT180: sx = x; sy = m_height - y -1; break;
+    case ROT270: sx = m_width - y - 1; sy = m_height - x -1; break;
     }
 
-    if ((sy >= 0 && sy < _height) && (sx >= 0 && sx < _width))
-        return _data[sy * _width +sx];
+    if ((sy >= 0 && sy < m_height) && (sx >= 0 && sx < m_width))
+        return m_data[sy * m_width +sx];
     else
-        return _empty;
+        return m_empty;
 }
 
 void
 FrameBuffer::clear(void)
 {
-    std::fill(_data.begin(), _data.end(), _empty);
+    std::fill(m_data.begin(), m_data.end(), m_empty);
 }
