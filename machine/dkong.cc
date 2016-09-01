@@ -157,12 +157,8 @@ DonkeyKong::init_controls(void)
 void
 DonkeyKong::init_bus(void)
 {
-    m_bus->add(0x6000, 0x6fff,
-        READ_CB(RamDevice::read8, &m_ram),
-        WRITE_CB(RamDevice::write8, &m_ram));
-    m_bus->add(0x7000, 0x77ff,
-        READ_CB(DonkeyKongGfx::vmem_read, m_gfx.get()),
-        WRITE_CB(DonkeyKongGfx::vmem_write, m_gfx.get()));
+    m_bus->add(0x6000, &m_ram);
+    m_bus->add(0x7000, &m_gfx->vmem());
     m_bus->add(0x7c00, 0x7fff,
         READ_CB(DonkeyKong::latch_read, this),
         WRITE_CB(DonkeyKong::latch_write, this));

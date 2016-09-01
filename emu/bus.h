@@ -131,40 +131,19 @@ public:
         void operator ()(offset_t offset, data_type d) { *data = d; }
         data_type *data;
     };
-    struct BufferRead {
-        BufferRead(bvec *d): data(d) { }
-        data_type operator ()(offset_t offset) { return (*data)[offset]; }
-        bvec *data;
-    };
-    struct BufferWrite {
-        BufferWrite(bvec *d): data(d) { }
-        void operator ()(offset_t offset, data_type d) {
-            (*data)[offset] = d; }
-        bvec *data;
-    };
 
     struct IOPort
     {
         IOPort(addr_type base, addr_type end):
             base(base), end(end),
-            read(DefaultRead()), write(DefaultWrite()) { }
-        IOPort(addr_type base, addr_type end, data_type *data):
-            base(base), end(end),
-            read(DataRead(data)), write(DataWrite(data)) { }
+            read(DefaultRead()), write(DefaultWrite()),
+            read_only(false), raw(nullptr) { }
         IOPort(addr_type base, addr_type end, read_fn read, write_fn write):
-            base(base), end(end), read(read), write(write) { }
-        IOPort(addr_type base, addr_type end, data_type *raw,
-               bool read_only):
+            base(base), end(end), read(read), write(write),
+            read_only(false), raw(nullptr) { }
+        IOPort(addr_type base, addr_type end, data_type *raw, bool read_only):
             base(base), end(end), read(), write(),
             read_only(read_only), raw(raw) {}
-
-        data_type io(offset_t offset, data_type data, bool wr) {
-            if (wr)
-                write(offset, data);
-            else
-                data = read(offset);
-            return data;
-        }
 
         addr_type base;
         addr_type end;
@@ -181,7 +160,7 @@ public:
     {
     }
 
-    data_type io(addr_type addr, data_type data, bool write)
+    inline data_type io(addr_type addr, data_type data, bool write)
     {
         IOPort & it = m_map.find(addr);
         addr -= it.base;
@@ -196,21 +175,21 @@ public:
                 data = it.raw[addr];
             }
             return data;
-        } else
-            return it.io(addr, data, write);
+        } else if (write) {
+            it.write(addr, data);
+            return data;
+        } else {
+            return it.read(addr);
+        }
     }
 
-    void write(addr_type addr, data_type data)
+    inline void write(addr_type addr, data_type data)
     {
-        IOPort & it = m_map.find(addr);
-        addr -= it.base;
-        it.write(addr, data);
+        io(addr, data, true);
     }
-    data_type read(addr_type addr)
+    inline data_type read(addr_type addr)
     {
-        IOPort & it = m_map.find(addr);
-        addr -= it.base;
-        return it.read(addr);
+        return io(addr, 0, false);
     }
 
     void add(const IOPort &dev)
@@ -230,27 +209,32 @@ public:
         add(port);
     }
 
-    void add(addr_type base, RamDevice *ram)
-    {
-        IOPort port(base, ram->size()- 1,
-            READ_CB(RamDevice::read8, ram),
-            WRITE_CB(RamDevice::write8, ram));
-    }
-
     void add(addr_type base, read_fn read, write_fn write)
     {
         IOPort port(base, base, read, write);
         add(port);
     }
 
-    void add(addr_type base, bvec *buf)
+    void add(addr_type base, bvec &buf)
     {
-        add(base, base + buf->size() - 1, BufferRead(buf), BufferWrite(buf));
+        IOPort port(base, base + buf.size() - 1, &buf[0], false);
+        add(port);
     }
 
     void add(addr_type base, data_type *data)
     {
-        IOPort port(base, base, DataRead(data), DataWrite(data));
+        IOPort port(base, base, data, false);
+        add(port);
+    }
+
+    void add(addr_type base, RamDevice *ram)
+    {
+        add(base, base + ram->size() - 1, ram);
+    }
+
+    void add(addr_type base, addr_type end, RamDevice *ram)
+    {
+        IOPort port(base, end, ram->direct(0), false);
         add(port);
     }
 

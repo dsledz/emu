@@ -41,17 +41,11 @@ public:
     PacmanGfx(Machine *machine, const std::string &name, unsigned hertz, AddressBus16 *bus);
     ~PacmanGfx(void);
 
-    byte_t vram_read(offset_t offset) {
-        return m_vram.read8(offset);
+    RamDevice &vram() {
+        return m_vram;
     }
-    void vram_write(offset_t offset, byte_t value) {
-        m_vram.write8(offset, value);
-    }
-    byte_t cram_read(offset_t offset) {
-        return m_cram.read8(offset);
-    }
-    void cram_write(offset_t offset, byte_t value) {
-        m_cram.write8(offset, value);
+    RamDevice &cram() {
+        return m_cram;
     }
     byte_t spr_read(offset_t offset) {
         if (offset & 0x01) {

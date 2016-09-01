@@ -19,7 +19,7 @@ RomDefinition sbc_rom(void) {
 
 SingleBoardZ80::SingleBoardZ80(const std::string &rom):
     Machine(),
-    m_ram(this, "ram", 0x7000),
+    m_ram(this, "ram", 0x10000),
     m_acia_irq(false)
 {
     unsigned hertz = 7372800;
@@ -65,9 +65,7 @@ SingleBoardZ80::io_write(offset_t offset, byte_t value)
 void
 SingleBoardZ80::init_bus(void)
 {
-    m_bus->add(0x2000,  0xFFFF,
-        READ_CB(SingleBoardZ80::ram_read, this),
-        WRITE_CB(SingleBoardZ80::ram_write, this));
+    m_bus->add(0x2000,  0xFFFF, &m_ram);
 
     m_cpu->io()->add(0x00, 0xff,
             READ_CB(SingleBoardZ80::io_read, this),

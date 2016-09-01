@@ -50,18 +50,6 @@ DonkeyKongGfx::palette_write(offset_t offset, uint8_t value)
 }
 
 void
-DonkeyKongGfx::vmem_write(offset_t offset_t, uint8_t value)
-{
-    vram.write8(offset_t, value);
-}
-
-uint8_t
-DonkeyKongGfx::vmem_read(offset_t offset)
-{
-    return vram.read8(offset);
-}
-
-void
 DonkeyKongGfx::init_tile(GfxObject<8, 8> *t, byte_t *b)
 {
     int p = 0;

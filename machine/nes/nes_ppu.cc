@@ -62,7 +62,7 @@ NESPPU::NESPPU(NES *machine, const std::string &name, unsigned hertz):
         WRITE_CB(NESPPU::ppu_bus_write, this)
     );
 
-    machine->sprite_bus()->add(0x00, &m_sram);
+    machine->sprite_bus()->add(0x00, m_sram);
 
     reset();
 }

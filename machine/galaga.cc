@@ -194,17 +194,9 @@ Galaga::init_bus(void)
         READ_CB(GalagaGfx::vmem_read, m_gfx.get()),
         WRITE_CB(GalagaGfx::vmem_write, m_gfx.get()));
 
-    m_bus->add(0x8800, 0x8BFF,
-        READ_CB(RamDevice::read8, &ram1),
-        WRITE_CB(RamDevice::write8, &ram1));
-
-    m_bus->add(0x9000, 0x93FF,
-        READ_CB(RamDevice::read8, &ram2),
-        WRITE_CB(RamDevice::write8, &ram2));
-
-    m_bus->add(0x9800, 0x9BFF,
-        READ_CB(RamDevice::read8, &ram3),
-        WRITE_CB(RamDevice::write8, &ram3));
+    m_bus->add(0x8800, &ram1);
+    m_bus->add(0x9000, &ram2);
+    m_bus->add(0x9800, &ram3);
 
     /* XXX: Star control */
     m_bus->add(0xA000, 0xA007);

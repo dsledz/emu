@@ -57,9 +57,7 @@ TG16::TG16(const std::string &rom):
         READ_CB(TG16::bank_read, this),
         WRITE_CB(TG16::bank_write, this));
 
-    m_cpu_bus.add(0x1F0000, 0x1F1FFF,
-        READ_CB(TG16::ram_read, this),
-        WRITE_CB(TG16::ram_write, this));
+    m_cpu_bus.add(0x1F0000, &m_ram);
 
     m_cpu_bus.add(0x1FE000, 0x1FE3FF,
         READ_CB(VDC::read, &m_vdc),
@@ -177,18 +175,6 @@ TG16::joypad_write(offset_t offset, byte_t value)
 
     if (bit_isset(value, 1))
         m_joypad = 0;
-}
-
-byte_t
-TG16::ram_read(offset_t offset)
-{
-    return m_ram.read8(offset);
-}
-
-void
-TG16::ram_write(offset_t offset, byte_t value)
-{
-    m_ram.write8(offset, value);
 }
 
 PSG::PSG(TG16 *tg16):

@@ -117,13 +117,8 @@ void
 Pacman::init_bus(void)
 {
 
-    m_bus->add(0x4000, 0x43ff,
-        READ_CB(PacmanGfx::vram_read, m_gfx.get()),
-        WRITE_CB(PacmanGfx::vram_write, m_gfx.get()));
-
-    m_bus->add(0x4400, 0x47ff,
-        READ_CB(PacmanGfx::cram_read, m_gfx.get()),
-        WRITE_CB(PacmanGfx::cram_write, m_gfx.get()));
+    m_bus->add(0x4000, &m_gfx->vram());
+    m_bus->add(0x4400, 0x47ff, &m_gfx->cram());
 
     m_bus->add(0x4800, 0x4bff,
         AddressBus16::DefaultRead(),
@@ -168,13 +163,9 @@ Pacman::init_bus(void)
         WRITE_CB(Pacman::rom_write, this));
 #endif
 
-    m_bus->add(0xC000, 0xC3ff,
-        READ_CB(PacmanGfx::vram_read, m_gfx.get()),
-        WRITE_CB(PacmanGfx::vram_write, m_gfx.get()));
+    m_bus->add(0xC000, &m_gfx->vram());
 
-    m_bus->add(0xC400, 0xC7ff,
-        READ_CB(PacmanGfx::cram_read, m_gfx.get()),
-        WRITE_CB(PacmanGfx::cram_write, m_gfx.get()));
+    m_bus->add(0xC400, &m_gfx->cram());
 
     m_bus->add(0xCC00, 0xCfef,
         READ_CB(Pacman::ram_read, this),

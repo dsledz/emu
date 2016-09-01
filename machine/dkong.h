@@ -46,6 +46,10 @@ public:
         m_vblank_cb = func;
     }
 
+    RamDevice &vmem() {
+        return vram;
+    }
+
     void vmem_write(offset_t offset, uint8_t value);
     uint8_t vmem_read(offset_t offset);
     void palette_write(offset_t offset, uint8_t value);

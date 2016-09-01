@@ -210,17 +210,11 @@ Gameboy::Gameboy(const std::string &rom_name):
 
     m_ram = std::unique_ptr<RamDevice>(new RamDevice(this, "ram", 0x2000));
     /* XXX: Ram isn't mirrored */
-    m_bus->add(0xC000, 0xDFFF,
-        READ_CB(RamDevice::read8, m_ram.get()),
-        WRITE_CB(RamDevice::write8, m_ram.get()));
-    m_bus->add(0xE000, 0xFDFF,
-        READ_CB(RamDevice::read8, m_ram.get()),
-        WRITE_CB(RamDevice::write8, m_ram.get()));
+    m_bus->add(0xC000, 0xDFFF, m_ram.get());
+    m_bus->add(0xE000, 0xFDFF, m_ram.get());
 
     m_hiram = std::unique_ptr<RamDevice>(new RamDevice(this, "hiram", 0x80));
-    m_bus->add(0xFF80, 0xFFFF,
-        READ_CB(RamDevice::read8, m_hiram.get()),
-        WRITE_CB(RamDevice::write8, m_hiram.get()));
+    m_bus->add(0xFF80, 0xFFFF, m_hiram.get());
 
     /* XXX: Some games need this. */
     m_bus->add(0xFF7F, 0xFF7F);
