@@ -126,10 +126,7 @@ private:
 
     /* Internal state */
     Z80State m_R; /**< Registers */
-    bool _iff1;
-    bool _iff2;
-    bool _iwait;
-    int _imode;
+    Z80State *state;
     LineState _nmi_line;
     LineState _int0_line;
     LineState _reset_line;
@@ -146,7 +143,7 @@ private:
     }
 
     inline byte_t pc_read(void) {
-        return bus_read(m_R.PC.d++);
+        return bus_read(state->PC.d++);
     }
     inline byte_t bus_read(addr_t addr) {
         if (addr < _rom.size())
@@ -176,16 +173,16 @@ private:
     }
     inline uint16_t _dIX(void) {
         m_op.d8 = pc_read();
-        return m_R.IX.d + m_op.d8;
+        return state->IX.d + m_op.d8;
     }
     inline uint16_t _dIY(void) {
         m_op.d8 = pc_read();
-        return m_R.IY.d + m_op.d8;
+        return state->IY.d + m_op.d8;
     }
     inline addr_t _dAddr(void) {
         switch (m_op.prefix) {
         case Z80Op::NoPrefix:
-            m_op.d16 = m_R.HL.d;
+            m_op.d16 = state->HL.d;
             break;
         case Z80Op::DDPrefix:
             m_op.d16 = _dIX();
@@ -203,7 +200,7 @@ private:
         return _i8(_dIY());
     }
     inline byte_t _iHL(void) {
-        m_op.i8 = bus_read(m_R.HL.d);
+        m_op.i8 = bus_read(state->HL.d);
         return m_op.i8;
     }
     inline byte_t _i8(addr_t addr) {
@@ -222,33 +219,33 @@ private:
 private:
 
     inline void _set_hflag(uint16_t orig, uint16_t arg, uint16_t result) {
-        m_R.AF.b.f.H = bit_isset(orig ^ arg ^ result, 4);
+        state->AF.b.f.H = bit_isset(orig ^ arg ^ result, 4);
     }
     inline void _set_cflag(uint16_t orig, uint16_t arg, uint16_t result) {
-        m_R.AF.b.f.C = bit_isset(orig ^ arg ^ result, 8);
+        state->AF.b.f.C = bit_isset(orig ^ arg ^ result, 8);
     }
     inline void _set_zflag(uint16_t result) {
-        m_R.AF.b.f.Z = (result & 0xff) == 0;
+        state->AF.b.f.Z = (result & 0xff) == 0;
     }
     inline void _set_zsflag(uint16_t result) {
-        m_R.AF.b.f.Z = (result & 0xff) == 0;
-        m_R.AF.b.f.V = bit_isset(result, 8);
-        m_R.AF.b.f.S = bit_isset(result, 7);
-        m_R.AF.b.f.Y = bit_isset(result, 5);
-        m_R.AF.b.f.X = bit_isset(result, 3);
+        state->AF.b.f.Z = (result & 0xff) == 0;
+        state->AF.b.f.V = bit_isset(result, 8);
+        state->AF.b.f.S = bit_isset(result, 7);
+        state->AF.b.f.Y = bit_isset(result, 5);
+        state->AF.b.f.X = bit_isset(result, 3);
     };
     inline void _set_nflag(bool neg) {
-        m_R.AF.b.f.N = neg;
+        state->AF.b.f.N = neg;
     }
     inline void _set_parity(byte_t result) {
-        m_R.AF.b.f.V = (0 == (bit_isset(result, 0) ^ bit_isset(result, 1) ^
+        state->AF.b.f.V = (0 == (bit_isset(result, 0) ^ bit_isset(result, 1) ^
                           bit_isset(result, 2) ^ bit_isset(result, 3) ^
                           bit_isset(result, 4) ^ bit_isset(result, 5) ^
                           bit_isset(result, 6) ^ bit_isset(result, 7)));
     }
-	inline void _set_parity(uint16_t result) {
-		_set_parity((byte_t)result);
-	}
+    inline void _set_parity(uint16_t result) {
+        _set_parity((byte_t)result);
+    }
 
     /* Addition */
     void _add(byte_t &orig, byte_t value);
@@ -317,7 +314,7 @@ private:
     void _out(byte_t port, byte_t value);
     void _neg(byte_t &orig);
     void _otir(void) { /*XXX: nop */ }
-    void _im(int mode) { _imode = mode; };
+    void _im(int mode) { state->imode = mode; };
     void _ldi(void);
     void _ldir(void);
     void _ldd(void);

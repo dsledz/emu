@@ -130,22 +130,133 @@ struct Z80State {
     reg16_t DE2;
     reg16_t HL2;
 
-    reg16_t EA;
-
     const Z80Opcode *Op;
 
+    Z80Prefix prefix;
     reg8_t d8;
     reg8_t i8;
     reg16_t d16;
     reg16_t i16;
     reg16_t latch_pc;
     reg8_t latch_op;
+    reg16_t *vHL;
 
     bool yield;
+    bool iff1;
+    bool iff2;
+    bool iwait;
+    int  imode;
 
     CPU2::CpuPhase Phase;
     uint8_t icycles;
     Z80Bus *bus;
 } __attribute__((packed));
+
+static inline reg8_t pc_read(Z80State *state)
+{
+    reg8_t result;
+    state->bus->io_read(state->PC.d, &result);
+    state->PC.d++;
+    state->icycles++;
+    return result;
+}
+
+static inline void bus_write(Z80State *state, reg16_t addr, reg8_t reg)
+{
+    state->bus->io_write(addr.d, reg);
+}
+
+static inline reg8_t bus_read(Z80State *state, reg16_t addr)
+{
+    reg8_t result;
+    state->bus->io_read(addr.d, &result);
+    return result;
+}
+
+static inline void io_write(Z80State *state, reg8_t port, reg8_t reg)
+{
+    // TODO
+}
+
+static inline reg8_t io_read(Z80State *state, reg8_t port)
+{
+    // TODO
+    return 0;
+}
+
+static inline void ADD_ICYCLES(Z80State *state, unsigned cycles)
+{
+    state->icycles += cycles;
+}
+
+static inline uint16_t D16(Z80State *state)
+{
+    state->d16.d = pc_read(state) | (pc_read(state) << 8);
+    return state->d16.d;
+}
+
+static inline byte_t D8(Z80State *state) {
+    state->d8 = pc_read(state);
+    return state->d8;
+}
+
+static inline byte_t I8(Z80State *state, addr_t addr)
+{
+    state->i8 = bus_read(state, addr);
+    return state->i8;
+}
+
+static inline uint16_t DIX(Z80State *state)
+{
+    state->d8 = pc_read(state);
+    return state->IX.d + state->d8;
+}
+
+static inline uint16_t DIY(Z80State *state)
+{
+    state->d8 = pc_read(state);
+    return state->IY.d + state->d8;
+}
+
+static inline addr_t DADDR(Z80State *state)
+{
+    switch (state->prefix) {
+        case Z80Prefix::DDPrefix:
+            return DIX(state);
+        case Z80Prefix::FDPrefix:
+            return DIY(state);
+        default:
+            state->d16 = state->HL.d;
+            return state->d16.d;
+    }
+}
+
+static inline byte_t IIX(Z80State *state)
+{
+    return I8(state, DIX(state));
+}
+
+static inline byte_t IIY(Z80State *state)
+{
+    return I8(state, DIY(state));
+}
+
+static inline byte_t IHL(Z80State *state)
+{
+    state->i8 = bus_read(state, state->HL.d);
+    return state->i8;
+}
+
+static inline byte_t IADDR(Z80State *state)
+{
+    return I8(state, DADDR(state));
+}
+
+static inline uint16_t I16(Z80State *state)
+{
+    state->d16 = pc_read(state) | (pc_read(state) << 8);
+    state->i16 = bus_read(state, state->d16) | (bus_read(state, state->d16.d + 1) << 8);
+    return state->i16.d;
+}
 
 };
