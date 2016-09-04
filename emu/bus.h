@@ -142,7 +142,7 @@ public:
             base(base), end(end), read(read), write(write),
             read_only(false), raw(nullptr) { }
         IOPort(addr_type base, addr_type end, data_type *raw, bool read_only):
-            base(base), end(end), read(DefaultRead), write(DefaultWrite),
+            base(base), end(end), read(DefaultRead()), write(DefaultWrite()),
             read_only(read_only), raw(raw) {}
 
         addr_type base;
