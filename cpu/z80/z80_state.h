@@ -56,6 +56,7 @@ struct Z80State;
 enum Z80Prefix {
     NoPrefix = 0x00,
     DDPrefix = 0xDD,
+    EDPrefix = 0xED,
     FDPrefix = 0xFD,
 };
 

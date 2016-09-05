@@ -10,6 +10,14 @@ namespace Z80v2
 static inline int __attribute__((__used__)) CALC_PARITY(reg8_t reg);
 static inline void __attribute__((__used__)) PUSH(Z80State *state, byte_t high, byte_t low);
 static inline void __attribute__((__used__)) POP(Z80State *state, byte_t &high, byte_t &low);
+static inline void __attribute__((__used__)) RL(Z80State *state, byte_t &dest, byte_t value);
+static inline void __attribute__((__used__)) RLC(Z80State *state, byte_t &dest, byte_t value);
+static inline void __attribute__((__used__)) RR(Z80State *state, byte_t &dest, byte_t value);
+static inline void __attribute__((__used__)) RRC(Z80State *state, byte_t &dest, byte_t value);
+static inline void __attribute__((__used__)) SLA(Z80State *state, byte_t &dest, byte_t value);
+static inline void __attribute__((__used__)) SLL(Z80State *state, byte_t &dest, byte_t value);
+static inline void __attribute__((__used__)) SRL(Z80State *state, byte_t &dest, byte_t value);
+static inline void __attribute__((__used__)) SRA(Z80State *state, byte_t &dest, byte_t value);
 static inline void __attribute__((__used__)) SUB(Z80State *state, byte_t &dest, byte_t arg);
 
 static inline void __attribute__((__used__))
@@ -27,6 +35,23 @@ ADC(Z80State *state, byte_t &dest, byte_t arg)
     state->AF.b.f.C = bit_isset(result, 8);
 
     dest = (byte_t)result;
+}
+
+static inline void __attribute__((__used__))
+ADC16(Z80State *state, uint16_t &wdest, uint16_t arg)
+{
+    uint32_t result = wdest + arg + state->AF.b.f.C;
+
+    state->AF.b.f.S = bit_isset(result, 15);
+    state->AF.b.f.Z = (result & 0xffff) == 0;
+    state->AF.b.f.Y = bit_isset(result, 13);
+    state->AF.b.f.H = bit_isset(wdest ^ arg  ^ result, 12);
+    state->AF.b.f.X = bit_isset(result, 11);
+    state->AF.b.f.V = bit_isset((wdest ^ arg ^ 0x8000) & (arg ^ result), 15);
+    state->AF.b.f.N = false;
+    state->AF.b.f.C = bit_isset(result, 16);
+
+    wdest = result;
 }
 
 static inline void __attribute__((__used__))
@@ -185,6 +210,16 @@ CPI(Z80State *state)
     state->AF.b.f.N = true;
 }
 
+void
+CPIR(Z80State *state)
+{
+    CPI(state);
+    if (state->BC.d != 0 && !state->AF.b.f.Z) {
+        state->PC.d -= 2;
+        ADD_ICYCLES(state, 5);
+    }
+}
+
 static inline void __attribute__((__used__))
 CPL(Z80State *state)
 {
@@ -277,28 +312,114 @@ DI(Z80State *state)
     state->iff1 = state->iff2 = false;
 }
 
+static inline byte_t __attribute__((__used__))
+FETCH(Z80State *state, Z80Arg reg)
+{
+    switch (reg) {
+        case Z80Arg::ArgRegA: return state->AF.b.h;
+        case Z80Arg::ArgRegB: return state->BC.b.h;
+        case Z80Arg::ArgRegC: return state->BC.b.l;
+        case Z80Arg::ArgRegD: return state->DE.b.h;
+        case Z80Arg::ArgRegE: return state->DE.b.l;
+        case Z80Arg::ArgRegH: return state->HL.b.h;
+        case Z80Arg::ArgRegL: return state->HL.b.l;
+        case Z80Arg::ArgRegHL: return I8(state, DADDR(state));
+    }
+}
+
+static inline void __attribute__((__used__))
+STORE(Z80State *state, Z80Arg reg, addr_t addr, byte_t value)
+{
+    switch (reg) {
+        case Z80Arg::ArgRegA: state->AF.b.h = value; break;
+        case Z80Arg::ArgRegB: state->BC.b.h = value; break;
+        case Z80Arg::ArgRegC: state->BC.b.l = value; break;
+        case Z80Arg::ArgRegD: state->DE.b.h = value; break;
+        case Z80Arg::ArgRegE: state->DE.b.l = value; break;
+        case Z80Arg::ArgRegH: state->HL.b.h = value; break;
+        case Z80Arg::ArgRegL: state->HL.b.l = value; break;
+        case Z80Arg::ArgRegHL: state->bus_write(state, addr, value); break;
+    }
+}
+
 static inline void __attribute__((__used__))
 DISPATCH_CB(Z80State *state)
 {
-
+    byte_t op;
+    byte_t value;
+    addr_t addr;
+    switch (state->prefix) {
+    case Z80Prefix::DDPrefix:
+        addr = DIX(state);
+        op = pc_read(state);
+        value = I8(state, addr);
+        ADD_ICYCLES(state, 8);
+        break;
+    case Z80Prefix::FDPrefix:
+        addr = DIY(state);
+        op = pc_read(state);
+        value = I8(state, addr);
+        ADD_ICYCLES(state, 8);
+        break;
+    default:
+        addr = state->HL.d;
+        op = pc_read(state);
+        value = FETCH(state, Z80Arg(op & 0x07));
+        break;
+    }
+    int bit = (op & 0x38) >> 3;
+    Z80Arg reg = Z80Arg(op & 0x07);
+    byte_t dest = 0;
+    if ((op & 0xC0) == 0x00) {
+        if ((op & 0xF8) == 0x00) {
+            RLC(state, dest, value);
+        } else if ((op & 0xF8) == 0x08) {
+            RRC(state, dest, value);
+        } else if ((op & 0xF8) == 0x10) {
+            RL(state, dest, value);
+        } else if ((op & 0xF8) == 0x18) {
+            RR(state, dest, value);
+        } else if ((op & 0xF8) == 0x20) {
+            SLA(state, dest, value);
+        } else if ((op & 0xF8) == 0x28) {
+            SRA(state, dest, value);
+        } else if ((op & 0xF8) == 0x30) {
+            SLL(state, dest, value);
+        } else if ((op & 0xF8) == 0x38) {
+            SRL(state, dest, value);
+        }
+        (reg == Z80Arg::ArgRegHL) ? ADD_ICYCLES(state, 15) : ADD_ICYCLES(state, 8);
+        STORE(state, reg, addr, dest);
+    } else if ((op & 0xC0) == 0x40) {
+        BIT_TEST(state, value, bit);
+        (reg == Z80Arg::ArgRegHL) ? ADD_ICYCLES(state, 12) : ADD_ICYCLES(state, 8);
+    } else if ((op & 0xC0) == 0x80) {
+        BIT_RESET(state, dest, value, bit);
+        (reg == Z80Arg::ArgRegHL) ? ADD_ICYCLES(state, 15) : ADD_ICYCLES(state, 8);
+        STORE(state, reg, addr, dest);
+    } else if ((op & 0xC0) == 0xC0) {
+        BIT_SET(state, dest, value, bit);
+        (reg == Z80Arg::ArgRegHL) ? ADD_ICYCLES(state, 15) : ADD_ICYCLES(state, 8);
+        STORE(state, reg, addr, dest);
+    }
 }
 
 static inline void __attribute__((__used__))
 DISPATCH_DD(Z80State *state)
 {
-
+    throw CpuFault("z80", "Invalid 0xDD");
 }
 
 static inline void __attribute__((__used__))
 DISPATCH_ED(Z80State *state)
 {
-
+    throw CpuFault("z80", "Invalid 0xED");
 }
 
 static inline void __attribute__((__used__))
 DISPATCH_FD(Z80State *state)
 {
-
+    throw CpuFault("z80", "Invalid 0xFD");
 }
 
 static inline void __attribute__((__used__))
@@ -348,6 +469,12 @@ static inline void __attribute__((__used__))
 HALT(Z80State *state)
 {
     // NYI
+}
+
+static inline void __attribute__((__used__))
+IM(Z80State *state, byte_t arg)
+{
+    state->imode = arg;
 }
 
 static inline void __attribute__((__used__))
@@ -515,6 +642,12 @@ OUT(Z80State *state, byte_t port, byte_t value)
 {
     io_write(state, port, value);
     state->yield = 1;
+}
+
+static inline void __attribute__((__used__))
+OTIR(Z80State *state)
+{
+    /* XXX: NOP */
 }
 
 static inline void __attribute__((__used__))
@@ -797,6 +930,24 @@ SBC(Z80State *state, byte_t &dest, byte_t arg)
 
     dest = result;
 }
+
+static inline void __attribute__((__used__))
+SBC16(Z80State * state, uint16_t &wdest, uint16_t arg)
+{
+    uint32_t result = wdest - arg - state->AF.b.f.C;
+
+    state->AF.b.f.S = bit_isset(result, 15);
+    state->AF.b.f.Z = (result & 0xffff) == 0;
+    state->AF.b.f.Y = bit_isset(result, 13);
+    state->AF.b.f.H = bit_isset(wdest ^ arg  ^ result, 12);
+    state->AF.b.f.X = bit_isset(result, 11);
+    state->AF.b.f.V = bit_isset((wdest ^ arg) & (wdest ^ result), 15);
+    state->AF.b.f.N = true;
+    state->AF.b.f.C = bit_isset(result, 16);
+
+    wdest = result;
+}
+
 
 static inline void __attribute__((__used__))
 SCF(Z80State *state)

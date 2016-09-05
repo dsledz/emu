@@ -293,22 +293,111 @@ OPCODE(0xFD,  0, 0, "FD", DISPATCH_ED(state));
 OPCODE(0xFE,  7, 2, "CP d8", CP(state, state->AF.b.h, D8(state)));
 OPCODE(0xFF, 11, 1, "RST 38H", RST(state, 0x38));
 
-#define OPCODE_DEF(num) \
-    { num, name_##num, cycles_##num, bytes_##num, func_##num }
+#define OPCODE_DEF(prefix, num) \
+    { 0x##num, name_0x##prefix##num, cycles_0x##prefix##num, bytes_0x##prefix##num, func_0x##prefix##num }
 
 #define OPCODE16(prefix, num) \
-    OPCODE_DEF(0x##num##0), OPCODE_DEF(0x##num##1), OPCODE_DEF(0x##num##2), \
-    OPCODE_DEF(0x##num##3), OPCODE_DEF(0x##num##4), OPCODE_DEF(0x##num##5), \
-    OPCODE_DEF(0x##num##6), OPCODE_DEF(0x##num##7), OPCODE_DEF(0x##num##8), \
-    OPCODE_DEF(0x##num##9), OPCODE_DEF(0x##num##A), OPCODE_DEF(0x##num##B), \
-    OPCODE_DEF(0x##num##C), OPCODE_DEF(0x##num##D), OPCODE_DEF(0x##num##E), \
-    OPCODE_DEF(0x##num##F)
+    OPCODE_DEF(prefix, num##0), OPCODE_DEF(prefix, num##1), OPCODE_DEF(prefix, num##2), \
+    OPCODE_DEF(prefix, num##3), OPCODE_DEF(prefix, num##4), OPCODE_DEF(prefix, num##5), \
+    OPCODE_DEF(prefix, num##6), OPCODE_DEF(prefix, num##7), OPCODE_DEF(prefix, num##8), \
+    OPCODE_DEF(prefix, num##9), OPCODE_DEF(prefix, num##A), OPCODE_DEF(prefix, num##B), \
+    OPCODE_DEF(prefix, num##C), OPCODE_DEF(prefix, num##D), OPCODE_DEF(prefix, num##E), \
+    OPCODE_DEF(prefix, num##F)
 
 static Z80Opcode opcodes[256] = {
-    OPCODE16(op_, 0), OPCODE16(op_, 1), OPCODE16(op_, 2), OPCODE16(op_, 3),
-    OPCODE16(op_, 4), OPCODE16(op_, 5), OPCODE16(op_, 6), OPCODE16(op_, 7),
-    OPCODE16(op_, 8), OPCODE16(op_, 9), OPCODE16(op_, A), OPCODE16(op_, B),
-    OPCODE16(op_, C), OPCODE16(op_, D), OPCODE16(op_, E), OPCODE16(op_, F)
+    OPCODE16(, 0), OPCODE16(, 1), OPCODE16(, 2), OPCODE16(, 3),
+    OPCODE16(, 4), OPCODE16(, 5), OPCODE16(, 6), OPCODE16(, 7),
+    OPCODE16(, 8), OPCODE16(, 9), OPCODE16(, A), OPCODE16(, B),
+    OPCODE16(, C), OPCODE16(, D), OPCODE16(, E), OPCODE16(, F)
+};
+
+OPCODE(0xED00,  5, 2, "NOP", );
+OPCODE(0xED40, 12, 2, "IN B, (C)", IN(state, state->BC.b.h, state->BC.b.l));
+OPCODE(0xED41, 12, 2, "OUT (C), B", OUT(state, state->BC.b.l, state->BC.b.h));
+OPCODE(0xED42, 15, 2, "SBC HL, BC", SBC16(state, state->HL.d, state->BC.d));
+OPCODE(0xED43, 20, 4, "LD (d16), BC", LD16I(state, D16(state), state->BC.d));
+OPCODE(0xED44,  8, 2, "NEG", NEG(state, state->AF.b.h));
+OPCODE(0xED45, 14, 2, "RET N", RETN(state));
+OPCODE(0xED47,  9, 2, "LD I, A", LD(state, state->I, state->AF.b.h));
+OPCODE(0xED48, 12, 2, "IN C, (C)", IN(state, state->BC.b.l, state->BC.b.l));
+OPCODE(0xED49, 12, 2, "OUT (C), C", OUT(state, state->BC.b.l, state->BC.b.l));
+OPCODE(0xED4A, 15, 2, "ADC HL, BC", ADC16(state, state->HL.d, state->BC.d));
+OPCODE(0xED4B, 20, 2, "LD BC, (d16)", LD16(state, state->BC, I16(state)));
+OPCODE(0xED4C,  8, 2, "NEG", NEG(state, state->AF.b.h));
+OPCODE(0xED4D, 14, 2, "RET I", RETI(state));
+OPCODE(0xED4F,  9, 2, "LD R, A", LD(state, state->R, state->AF.b.h));
+OPCODE(0xED50, 12, 2, "IN D, (C)", IN(state, state->DE.b.h, state->BC.b.l));
+OPCODE(0xED51, 12, 2, "OUT (C), D", OUT(state, state->BC.b.l, state->DE.b.h));
+OPCODE(0xED52, 15, 2, "SBC HL, DE", SBC16(state, state->HL.d, state->DE.d));
+OPCODE(0xED53, 20, 4, "LD (d16), DE", LD16I(state, D16(state), state->DE.d));
+OPCODE(0xED54,  8, 2, "NEG", NEG(state, state->AF.b.h));
+OPCODE(0xED55, 14, 2, "RET N", RETN(state));
+OPCODE(0xED56,  8, 2, "IM 1", IM(state, 1));
+OPCODE(0xED58, 12, 2, "IN E, (C)", IN(state, state->DE.b.l, state->BC.b.l));
+OPCODE(0xED59, 12, 2, "OUT (C), E", OUT(state, state->BC.b.l, state->DE.b.l));
+OPCODE(0xED5A, 15, 2, "ADC HL, DE", ADC16(state, state->HL.d, state->DE.d));
+OPCODE(0xED5B, 20, 2, "LD DE, (d16)", LD16(state, state->DE, I16(state)));
+OPCODE(0xED5C,  8, 2, "NEG", NEG(state, state->AF.b.h));
+OPCODE(0xED5D, 14, 2, "RET N", RETN(state));
+OPCODE(0xED5E,  8, 2, "IM 2", IM(state, 2));
+OPCODE(0xED5F,  9, 2, "LD A, R", LD(state, state->AF.b.h, state->R));
+OPCODE(0xED60, 12, 2, "IN H, (C)", IN(state, state->HL.b.h, state->BC.b.l));
+OPCODE(0xED61, 12, 2, "OUT (C), H", OUT(state, state->BC.b.l, state->HL.b.h));
+OPCODE(0xED62, 15, 2, "SBC HL, HL", SBC16(state, state->HL.d, state->HL.d));
+OPCODE(0xED63, 20, 4, "LD (d16), HL", LD16I(state, D16(state), state->HL.d));
+OPCODE(0xED64,  8, 2, "NEG", NEG(state, state->AF.b.h));
+OPCODE(0xED65, 14, 2, "RET N", RETN(state));
+OPCODE(0xED67, 18, 2, "RRD" , RRD(state));
+OPCODE(0xED68, 12, 2, "IN L, (C)", IN(state, state->HL.b.l, state->BC.b.l));
+OPCODE(0xED69, 12, 2, "OUT (C), L", OUT(state, state->BC.b.l, state->HL.b.l));
+OPCODE(0xED6A, 15, 2, "ADC HL, HL", ADC16(state, state->HL.d, state->HL.d));
+OPCODE(0xED6B, 20, 2, "LD HL, (d16)", LD16(state, state->HL, I16(state)));
+OPCODE(0xED6C,  8, 2, "NEG", NEG(state, state->AF.b.h));
+OPCODE(0xED6D, 14, 2, "RET N", RETN(state));
+OPCODE(0xED6F, 18, 2, "RLD" , RLD(state));
+OPCODE(0xED70, 12, 2, "IN (C)", IN(state, state->HL.b.h, state->BC.b.l));
+OPCODE(0xED71, 12, 2, "OUT (C), 0", OUT(state, state->BC.b.l, 0));
+OPCODE(0xED72, 15, 2, "SBC HL, SP", SBC16(state, state->HL.d, state->SP.d));
+OPCODE(0xED73, 20, 4, "LD (d16), SP", LD16I(state, D16(state), state->SP.d));
+OPCODE(0xED74,  8, 2, "NEG", NEG(state, state->AF.b.h));
+OPCODE(0xED75, 14, 2, "RET N", RETN(state));
+OPCODE(0xED78, 12, 2, "IN A, (C)", IN(state, state->AF.b.h, state->BC.b.l));
+OPCODE(0xED79, 12, 2, "OUT (C), A", OUT(state, state->BC.b.l, state->AF.b.h));
+OPCODE(0xED7A, 15, 2, "ADC HL, SP", ADC16(state, state->HL.d, state->SP.d));
+OPCODE(0xED7B, 20, 2, "LD SP, (d16)", LD16(state, state->SP, I16(state)));
+OPCODE(0xED7C,  8, 2, "NEG", NEG(state, state->AF.b.h));
+OPCODE(0xED7D, 14, 2, "RET N", RETN(state));
+OPCODE(0xEDA0, 16, 2, "LDI (HL) (DE) BC", LDI(state));
+OPCODE(0xEDA1, 16, 2, "CPI", CPI(state));
+OPCODE(0xEDA8, 16, 2, "LDD (HL) (DE) BC", LDD(state));
+OPCODE(0xEDA9, 16, 2, "CPD", CPD(state));
+OPCODE(0xEDB0, 16, 2, "LDIR", LDIR(state));
+OPCODE(0xEDB1, 16, 2, "CPIR", CPIR(state));
+OPCODE(0xEDB3, 16, 2, "OTIR", OTIR(state));
+OPCODE(0xEDB8, 16, 2, "LDDR", LDDR(state));
+OPCODE(0xEDB9, 16, 2, "CPDR", CPDR(state));
+
+static Z80Opcode EDopcodes[256] = {
+    OPCODE_DEF(ED, 00),
+    OPCODE_DEF(ED, 40), OPCODE_DEF(ED, 41), OPCODE_DEF(ED, 42), OPCODE_DEF(ED, 43),
+    OPCODE_DEF(ED, 44), OPCODE_DEF(ED, 45), OPCODE_DEF(ED, 47),
+    OPCODE_DEF(ED, 48), OPCODE_DEF(ED, 49), OPCODE_DEF(ED, 4A), OPCODE_DEF(ED, 4B),
+    OPCODE_DEF(ED, 4C), OPCODE_DEF(ED, 4D), OPCODE_DEF(ED, 4F),
+    OPCODE_DEF(ED, 50), OPCODE_DEF(ED, 51), OPCODE_DEF(ED, 52), OPCODE_DEF(ED, 53),
+    OPCODE_DEF(ED, 54), OPCODE_DEF(ED, 55), OPCODE_DEF(ED, 56),
+    OPCODE_DEF(ED, 58), OPCODE_DEF(ED, 59), OPCODE_DEF(ED, 5A), OPCODE_DEF(ED, 5B),
+    OPCODE_DEF(ED, 5C), OPCODE_DEF(ED, 5D), OPCODE_DEF(ED, 5E), OPCODE_DEF(ED, 5F),
+    OPCODE_DEF(ED, 60), OPCODE_DEF(ED, 61), OPCODE_DEF(ED, 62), OPCODE_DEF(ED, 63),
+    OPCODE_DEF(ED, 64), OPCODE_DEF(ED, 65), OPCODE_DEF(ED, 67),
+    OPCODE_DEF(ED, 68), OPCODE_DEF(ED, 69), OPCODE_DEF(ED, 6A), OPCODE_DEF(ED, 6B),
+    OPCODE_DEF(ED, 6C), OPCODE_DEF(ED, 6D), OPCODE_DEF(ED, 6F),
+    OPCODE_DEF(ED, 70), OPCODE_DEF(ED, 71), OPCODE_DEF(ED, 72), OPCODE_DEF(ED, 73),
+    OPCODE_DEF(ED, 74), OPCODE_DEF(ED, 75),
+    OPCODE_DEF(ED, 78), OPCODE_DEF(ED, 79), OPCODE_DEF(ED, 7A), OPCODE_DEF(ED, 7B),
+    OPCODE_DEF(ED, 7C), OPCODE_DEF(ED, 7D),
+    OPCODE_DEF(ED, A0), OPCODE_DEF(ED, A1), OPCODE_DEF(ED, A8), OPCODE_DEF(ED, A9),
+    OPCODE_DEF(ED, B0), OPCODE_DEF(ED, B1), OPCODE_DEF(ED, B3),
+    OPCODE_DEF(ED, B8), OPCODE_DEF(ED, B9),
 };
 
 Z80Class::Z80Class(void)
@@ -331,10 +420,22 @@ Z80Class::Decode(Z80State *state, Z80Bus *bus)
     state->bus = bus;
     state->latch_pc = state->PC;
     state->latch_op = pc_read(state);
-    state->Op = &opcodes[state->latch_op];
+    if (state->latch_op == 0xDD || state->latch_op == 0xFD) {
+        state->prefix = Z80Prefix(state->latch_op);
+        state->latch_op = pc_read(state);
+        state->Op = &opcodes[state->latch_op];
+    } else if (state->latch_op == 0xED) {
+        state->prefix = Z80Prefix(0xED);
+        state->latch_op = pc_read(state);
+        state->Op = &EDopcodes[state->latch_op];
+    } else {
+        state->prefix = Z80Prefix::NoPrefix;
+        state->Op = &opcodes[state->latch_op];
+    }
     state->Phase = CpuPhase::Dispatch;
 }
 
+/* Example */
 void
 Z80Class::Dispatch(Z80State *state, Z80Bus *bus)
 {
