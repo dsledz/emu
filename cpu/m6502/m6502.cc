@@ -38,8 +38,8 @@ using namespace std::placeholders;
     name, \
     bytes, \
     cycles, \
-    std::bind(&addr, _1), \
-    std::bind(&op, _1), \
+    std::bind(&addr<state_type>, _1), \
+    std::bind(&op<state_type>, _1), \
     std::bind(&addr ## _jit, _1, _2, _3), \
     std::bind(&op ## _jit, _1, _2), \
 }

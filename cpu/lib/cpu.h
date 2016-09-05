@@ -83,15 +83,23 @@ struct CpuFeatureFault: public CpuFault {
     }
 };
 
-template<class _bus_type, class _state_type, typename _opcode_type>
+template<typename _addr_width, typename _data_width>
+struct CpuTraits {
+    typedef _addr_width pc_type;
+    typedef _addr_width addr_type;
+    typedef _data_width data_type;
+};
+
+template<class _bus_type, class _cpu_traits, class _state_type, typename _opcode_type>
 class Cpu: public ClockedDevice {
 public:
     typedef _bus_type bus_type;
     typedef _state_type state_type;
     typedef _opcode_type opcode_type;
-    typedef typename bus_type::addr_type pc_type;
-    typedef typename bus_type::addr_type addr_type;
-    typedef typename bus_type::data_type data_type;
+    typedef _cpu_traits cpu_traits;
+    typedef typename cpu_traits::addr_type pc_type;
+    typedef typename cpu_traits::addr_type addr_type;
+    typedef typename cpu_traits::data_type data_type;
 
     struct Opcode {
         opcode_type code;
@@ -107,9 +115,9 @@ public:
     Cpu(Machine *machine, const std::string &name, unsigned hertz,
         bus_type *bus):
         ClockedDevice(machine, name, hertz),
-        m_bus(bus),
         m_state()
     {
+        m_state.bus = bus;
     }
     virtual ~Cpu(void)
     {
@@ -123,21 +131,17 @@ public:
         Device::line(line, state);
     }
 
-    bus_type *bus(void) {
-        return m_bus;
-    }
-
     state_type *state(void) {
         return &m_state;
     }
 
     data_type bus_read(addr_type addr) {
-        data_type tmp = m_bus->read(addr);
+        data_type tmp = m_state.bus_read(addr);
         return tmp;
     }
 
     void bus_write(addr_type addr, data_type value) {
-        m_bus->write(addr, value);
+        m_state.bus_write(addr, value);
     }
 
     virtual std::string dasm(addr_type addr) {
@@ -157,7 +161,7 @@ protected:
     unsigned dispatch(pc_type pc)
     {
         unsigned cycles;
-        opcode_type opcode = bus_read(m_state.PC.d++);
+        opcode_type opcode = m_state.bus_read(m_state.PC.d++);
         auto it = m_opcodes.find(opcode);
         if (it == m_opcodes.end()) {
             DEVICE_ERROR("Unknown opcode: ", Hex(opcode), " at ", Hex(pc));
@@ -166,7 +170,6 @@ protected:
 
         Opcode *op = &it->second;
 
-        m_state.bus = bus();
         m_state.icycles = 0;
         uint8_t instr[3] = {};
 
@@ -183,14 +186,14 @@ protected:
 
     static data_type jit_bus_read(void *ctx, addr_type addr)
     {
-        auto *cpu = static_cast<Cpu<bus_type, state_type, opcode_type> *>(ctx);
-        return cpu->bus_read(addr);
+        auto *cpu = static_cast<Cpu<bus_type, cpu_traits, state_type, opcode_type> *>(ctx);
+        return cpu->m_state.bus_read(addr);
     }
 
     static void jit_bus_write(void *ctx, addr_type addr, data_type value)
     {
-        auto *cpu = static_cast<Cpu<bus_type, state_type, opcode_type> *>(ctx);
-        cpu->bus_write(addr, value);
+        auto *cpu = static_cast<Cpu<bus_type, cpu_traits, state_type, opcode_type> *>(ctx);
+        cpu->m_state.bus_write(addr, value);
     }
 
     void jit_dispatch(pc_type pc)
@@ -280,7 +283,6 @@ protected:
         return jit_block_ptr(new JITBlock(jit.code(), start_pc, source, len, cycles));
     }
 
-    bus_type *m_bus;
     state_type m_state;
     std::unordered_map<opcode_type, Opcode> m_opcodes;
     std::unordered_map<pc_type, jit_block_ptr> m_jit_cache;

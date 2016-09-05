@@ -38,8 +38,8 @@ using namespace std::placeholders;
     name, \
     bytes, \
     cycles, \
-    std::bind(&addr, _1), \
-    std::bind(&op, _1, ##__VA_ARGS__), \
+    std::bind(&addr<state_type>, _1), \
+    std::bind(&op<state_type>, _1, ##__VA_ARGS__), \
     std::bind(&addr ## _jit, _1, _2, _3), \
     std::bind(&op ## _jit, _1, _2, ##__VA_ARGS__), \
 }
@@ -294,9 +294,7 @@ M65c02Cpu::M65c02Cpu(Machine *machine, const std::string &name, unsigned hertz,
 
 HuC6280Cpu::HuC6280Cpu(Machine *machine, const std::string &name, unsigned clock,
                        AddressBus21 *bus):
-    M65c02Cpu(machine, name, clock, &m_mmu),
-    m_data_bus(bus),
-    m_mmu(),
+    Cpu(machine, name, clock, bus),
     m_irq_status(0),
     m_irq_disable(0),
     m_timer_status(false),
@@ -304,9 +302,6 @@ HuC6280Cpu::HuC6280Cpu(Machine *machine, const std::string &name, unsigned clock
     m_timer_value(0)
 {
     m_state.ZPG = 0x20;
-    m_mmu.add(0x0000, 0xFFFF,
-              READ_CB(HuC6280Cpu::mmu_read, this),
-              WRITE_CB(HuC6280Cpu::mmu_write, this));
 }
 
 HuC6280Cpu::~HuC6280Cpu(void)
@@ -414,22 +409,6 @@ HuC6280Cpu::line(Line line, LineState state)
     }
     if (line != Line::RESET)
         Task::yield();
-}
-
-byte_t
-HuC6280Cpu::mmu_read(offset_t offset)
-{
-    const int bank = (offset & 0xE000) >> 13;
-    offset = (offset & 0x1FFF) | (m_state.mmu_map[bank] << 13);
-    return m_data_bus->read(offset);
-}
-
-void
-HuC6280Cpu::mmu_write(offset_t offset, uint8_t value)
-{
-    const int bank = (offset & 0xE000) >> 13;
-    offset = (offset & 0x1FFF) | (m_state.mmu_map[bank] << 13);
-    m_data_bus->write(offset, value);
 }
 
 byte_t

@@ -2,42 +2,47 @@
 
 #include "emu/emu.h"
 
-#define ADDR(addr) static inline void addr(M6502State *state)
-#define OP(op, ...) static inline void op(M6502State *state, ##__VA_ARGS__)
+#define ADDR(addr) template <class _state_type> static inline void addr(_state_type *state)
+#define OP(op, ...) template <class _state_type> static inline void op(_state_type *state, ##__VA_ARGS__)
 
 namespace M6502v2
 {
-
-    static inline void set_sz(M6502State *state, byte_t result)
+    template <class _state_type>
+    static inline void set_sz(_state_type *state, byte_t result)
     {
         state->F.N = bit_isset(result, 7);
         state->F.Z = (result == 0);
     }
 
-    static inline uint8_t pc_read(M6502State *state)
+    template <class _state_type>
+    static inline uint8_t pc_read(_state_type *state)
     {
         return state->bus_read(state->PC.d++);
     }
 
-    static inline void push(M6502State *state, uint8_t value)
+    template <class _state_type>
+    static inline void push(_state_type *state, uint8_t value)
     {
         state->bus_write((state->ZPG << 8) + 0x0100 + state->SP, value);
         state->SP--;
     }
 
-    static inline uint8_t pop(M6502State *state)
+    template <class _state_type>
+    static inline uint8_t pop(_state_type *state)
     {
         state->SP++;
         return state->bus_read((state->ZPG << 8) + 0x0100 + state->SP);
     }
 
-    static inline uint8_t fetch(M6502State *state)
+    template <class _state_type>
+    static inline uint8_t fetch(_state_type *state)
     {
         state->ARG = state->bus_read(state->EA.d);
         return state->ARG;
     }
 
-    static inline void store(M6502State *state, byte_t value)
+    template <class _state_type>
+    static inline void store(_state_type *state, byte_t value)
     {
         state->bus_write(state->EA.d, value);
     }

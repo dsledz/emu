@@ -83,14 +83,7 @@ struct Z80Op {
 
 struct Z80State;
 
-struct Z80Opcode
-{
-    uint8_t code;
-    const char *name;
-    int cycles;
-    int bytes;
-    void (*func)(Z80State *state);
-};
+typedef CPU2::CpuOpcode<Z80State> Z80Opcode;
 
 struct Z80State {
     Z80State(void) = default;
@@ -147,6 +140,16 @@ struct Z80State {
     bool iwait;
     int  imode;
 
+    inline void bus_write(Z80State *state, reg16_t addr, reg8_t reg) {
+        bus->io_write(addr.d, reg);
+    }
+
+    inline reg8_t bus_read(Z80State *state, reg16_t addr) {
+        reg8_t result;
+        state->bus->io_read(addr.d, &result);
+        return result;
+    }
+
     CPU2::CpuPhase Phase;
     uint8_t icycles;
     Z80Bus *bus;
@@ -158,18 +161,6 @@ static inline reg8_t pc_read(Z80State *state)
     state->bus->io_read(state->PC.d, &result);
     state->PC.d++;
     state->icycles++;
-    return result;
-}
-
-static inline void bus_write(Z80State *state, reg16_t addr, reg8_t reg)
-{
-    state->bus->io_write(addr.d, reg);
-}
-
-static inline reg8_t bus_read(Z80State *state, reg16_t addr)
-{
-    reg8_t result;
-    state->bus->io_read(addr.d, &result);
     return result;
 }
 
@@ -202,7 +193,7 @@ static inline byte_t D8(Z80State *state) {
 
 static inline byte_t I8(Z80State *state, addr_t addr)
 {
-    state->i8 = bus_read(state, addr);
+    state->i8 = state->bus_read(state, addr);
     return state->i8;
 }
 
@@ -243,7 +234,7 @@ static inline byte_t IIY(Z80State *state)
 
 static inline byte_t IHL(Z80State *state)
 {
-    state->i8 = bus_read(state, state->HL.d);
+    state->i8 = state->bus_read(state, state->HL.d);
     return state->i8;
 }
 
@@ -255,7 +246,8 @@ static inline byte_t IADDR(Z80State *state)
 static inline uint16_t I16(Z80State *state)
 {
     state->d16 = pc_read(state) | (pc_read(state) << 8);
-    state->i16 = bus_read(state, state->d16) | (bus_read(state, state->d16.d + 1) << 8);
+    state->i16 = (state->bus_read(state, state->d16)) |
+                 (state->bus_read(state, state->d16.d + 1) << 8);
     return state->i16.d;
 }
 

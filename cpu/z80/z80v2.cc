@@ -30,11 +30,11 @@ using namespace Z80v2;
 using namespace Z80;
 
 #define OPCODE(opnum, cycles, bytes, name, code) \
-static inline void func_##opnum(Z80State *state); \
+template<typename CpuState> static inline void func_##opnum(CpuState *state); \
 static const char *name_##opnum = name; \
 static const uint8_t cycles_##opnum = cycles; \
 static const uint8_t  bytes_##opnum = bytes; \
-static inline void func_##opnum(Z80State *state) { code; }
+template <typename CpuState> static inline void func_##opnum(CpuState *state) { code; }
 
 OPCODE(0x00,  4, 1, "NOP", );
 OPCODE(0x01, 10, 3, "LD BC,d16", LD16(state, state->BC, D16(state)));
@@ -46,7 +46,7 @@ OPCODE(0x06,  7, 2, "LD B,d8", LD(state, state->BC.b.h, D8(state)));
 OPCODE(0x07,  4, 1, "RLCA", RLCA(state));
 OPCODE(0x08,  4, 1, "EX AF,AF'", EX(state, state->AF.d, state->AF2.d));
 OPCODE(0x09, 11, 1, "ADD HL,BC", ADD16(state, *state->vHL, state->BC.d));
-OPCODE(0x0A,  7, 1, "LD A,(BC)", LD(state, state->AF.b.h, bus_read(state, state->BC.d)));
+OPCODE(0x0A,  7, 1, "LD A,(BC)", LD(state, state->AF.b.h, state->bus_read(state, state->BC.d)));
 OPCODE(0x0B,  6, 1, "DEC BC", DEC16(state, state->BC));
 OPCODE(0x0C,  4, 1, "INC C", INC(state, state->BC.b.l));
 OPCODE(0x0D,  4, 1, "DEC C", DEC(state, state->BC.b.l));
@@ -62,7 +62,7 @@ OPCODE(0x16,  7, 2, "LD D,d8", LD(state, state->DE.b.h, D8(state)));
 OPCODE(0x17,  4, 1, "RLA", RLA(state));
 OPCODE(0x18, 12, 2, "JR r8", JR(state, true, D8(state)));
 OPCODE(0x19, 11, 1, "ADD HL,DE", ADD16(state, *state->vHL, state->DE.d));
-OPCODE(0x1A,  7, 1, "LD A,(DE)", LD(state, state->AF.b.h, bus_read(state, state->DE.d)));
+OPCODE(0x1A,  7, 1, "LD A,(DE)", LD(state, state->AF.b.h, state->bus_read(state, state->DE.d)));
 OPCODE(0x1B,  6, 1, "DEC DE", DEC16(state, state->DE));
 OPCODE(0x1C,  4, 1, "INC E", INC(state, state->DE.b.l));
 OPCODE(0x1D,  4, 1, "DEC E", DEC(state, state->DE.b.l));
@@ -304,7 +304,7 @@ OPCODE(0xFF, 11, 1, "RST 38H", RST(state, 0x38));
     OPCODE_DEF(0x##num##C), OPCODE_DEF(0x##num##D), OPCODE_DEF(0x##num##E), \
     OPCODE_DEF(0x##num##F)
 
-static struct Z80Opcode opcodes[256] = {
+static Z80Opcode opcodes[256] = {
     OPCODE16(op_, 0), OPCODE16(op_, 1), OPCODE16(op_, 2), OPCODE16(op_, 3),
     OPCODE16(op_, 4), OPCODE16(op_, 5), OPCODE16(op_, 6), OPCODE16(op_, 7),
     OPCODE16(op_, 8), OPCODE16(op_, 9), OPCODE16(op_, A), OPCODE16(op_, B),

@@ -43,10 +43,10 @@ struct M6502State
         reset();
     }
 
-    uint8_t bus_read(uint16_t addr) {
+    inline uint8_t bus_read(uint16_t addr) {
         return bus->read(addr);
     }
-    void bus_write(uint16_t addr, uint8_t value) {
+    inline void bus_write(uint16_t addr, uint8_t value) {
         bus->write(addr, value);
     }
     uint8_t get_flags(uint16_t flags) {
@@ -102,7 +102,9 @@ __attribute__((packed));
 
 class M6502Cpu;
 
-class M6502Cpu: public Cpu<AddressBus16, M6502State, uint8_t>
+typedef CpuTraits<uint16_t, uint8_t> M6502Traits;
+
+class M6502Cpu: public Cpu<AddressBus16, M6502Traits, M6502State, uint8_t>
 {
 public:
     M6502Cpu(Machine *machine, const std::string &name, unsigned hertz,

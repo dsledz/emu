@@ -31,10 +31,12 @@ using namespace EMUTest;
 using namespace CPU;
 
 struct TestState {
-
+    AddressBus16 *bus;
 };
 
-class TestCpu: public Cpu<AddressBus16, TestState, uint8_t> {
+typedef CpuTraits<uint16_t, uint8_t> TestTraits;
+
+class TestCpu: public Cpu<AddressBus16, TestTraits, TestState, uint8_t> {
 public:
     TestCpu(Machine *machine, const std::string &name, unsigned hertz,
             AddressBus16 *bus):

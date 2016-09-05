@@ -6,7 +6,8 @@ namespace HuC6280v2
 {
     using namespace M6502v2;
 
-    static inline void op_tstart(M6502State *state, reg16_t *src, reg16_t *dest,
+    template <class _state_type>
+    static inline void op_tstart(_state_type *state, reg16_t *src, reg16_t *dest,
                                  reg16_t *len) {
         src->b.l = pc_read(state);
         src->b.h = pc_read(state);

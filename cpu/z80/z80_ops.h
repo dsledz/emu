@@ -143,7 +143,7 @@ static inline void __attribute__((__used__))
 CPD(Z80State *state)
 {
     byte_t dest = state->AF.b.h;
-    byte_t arg = bus_read(state, state->HL.d);
+    byte_t arg = state->bus_read(state, state->HL.d);
     uint16_t result = dest - arg;
     state->HL.d--;
     state->BC.d--;
@@ -171,7 +171,7 @@ static inline void __attribute__((__used__))
 CPI(Z80State *state)
 {
     byte_t dest = state->AF.b.h;
-    byte_t arg = bus_read(state, state->HL.d);
+    byte_t arg = state->bus_read(state, state->HL.d);
     uint16_t result = dest - arg;
     state->HL.d++;
     state->BC.d--;
@@ -256,11 +256,11 @@ DEC(Z80State *state, reg8_t &dest)
 static inline void __attribute__((__used__))
 DECI(Z80State *state, addr_t addr)
 {
-    byte_t dest = bus_read(state, addr);
+    byte_t dest = state->bus_read(state, addr);
 
     DEC(state, dest);
 
-    bus_write(state, addr, dest);
+    state->bus_write(state, addr, dest);
 }
 
 static inline void
@@ -328,10 +328,10 @@ EX(Z80State *state, uint16_t &lhs, uint16_t &rhs)
 static inline void __attribute__((__used__))
 EXI(Z80State *state, addr_t addr, byte_t &rh, byte_t &rl)
 {
-    byte_t ll = bus_read(state, addr);
-    byte_t lh = bus_read(state, addr + 1);
-    bus_write(state, addr, rl);
-    bus_write(state, addr + 1, rh);
+    byte_t ll = state->bus_read(state, addr);
+    byte_t lh = state->bus_read(state, addr + 1);
+    state->bus_write(state, addr, rl);
+    state->bus_write(state, addr + 1, rh);
     rh = lh;
     rl = ll;
 }
@@ -376,11 +376,11 @@ INC(Z80State *state, reg8_t &dest)
 static inline void __attribute__((__used__))
 INCI(Z80State *state, addr_t addr)
 {
-    byte_t dest = bus_read(state, addr);
+    byte_t dest = state->bus_read(state, addr);
 
     INC(state, dest);
 
-    bus_write(state, addr, dest);
+    state->bus_write(state, addr, dest);
 }
 
 static inline void
@@ -426,15 +426,15 @@ LD16(Z80State *state, reg16_t &wdest, uint16_t arg)
 static inline void __attribute__((__used__))
 LD16I(Z80State *state, addr_t addr, uint16_t arg)
 {
-    bus_write(state, addr, arg & 0xff);
-    bus_write(state, addr+1, arg >> 8);
+    state->bus_write(state, addr, arg & 0xff);
+    state->bus_write(state, addr+1, arg >> 8);
 }
 
 static inline void __attribute__((__used__))
 LDI(Z80State *state)
 {
-    byte_t value = bus_read(state, state->HL.d++);
-    bus_write(state, state->DE.d++, value);
+    byte_t value = state->bus_read(state, state->HL.d++);
+    state->bus_write(state, state->DE.d++, value);
     value += state->AF.b.h;
     state->BC.d--;
     state->AF.b.f.Y = bit_isset(value, 1);
@@ -457,8 +457,8 @@ LDIR(Z80State *state)
 static inline void __attribute__((__used__))
 LDD(Z80State *state)
 {
-    byte_t value = bus_read(state, state->HL.d--);
-    bus_write(state, state->DE.d--, value);
+    byte_t value = state->bus_read(state, state->HL.d--);
+    state->bus_write(state, state->DE.d--, value);
     value += state->AF.b.h;
     state->BC.d--;
     state->AF.b.f.Y = bit_isset(value, 1);
@@ -481,7 +481,7 @@ LDDR(Z80State *state)
 static inline void __attribute__((__used__))
 LDMEM(Z80State *state, addr_t addr, byte_t arg)
 {
-    bus_write(state, addr, arg);
+    state->bus_write(state, addr, arg);
 }
 
 static inline void __attribute__((__used__))
@@ -520,15 +520,15 @@ OUT(Z80State *state, byte_t port, byte_t value)
 static inline void __attribute__((__used__))
 PUSH(Z80State *state, byte_t high, byte_t low)
 {
-    bus_write(state, --state->SP.d, high);
-    bus_write(state, --state->SP.d, low);
+    state->bus_write(state, --state->SP.d, high);
+    state->bus_write(state, --state->SP.d, low);
 }
 
 static inline void __attribute__((__used__))
 POP(Z80State *state, byte_t &high, byte_t &low)
 {
-    low = bus_read(state, state->SP.d++);
-    high = bus_read(state, state->SP.d++);
+    low = state->bus_read(state, state->SP.d++);
+    high = state->bus_read(state, state->SP.d++);
 }
 
 static inline void __attribute__((__used__))
@@ -615,9 +615,9 @@ RLCA(Z80State *state)
 static inline void __attribute__((__used__))
 RLD(Z80State *state)
 {
-    byte_t value = bus_read(state, state->HL.d);
+    byte_t value = state->bus_read(state, state->HL.d);
 
-    bus_write(state, state->HL.d, (state->AF.b.h & 0x0F) | ((value & 0x0F) << 4));
+    state->bus_write(state, state->HL.d, (state->AF.b.h & 0x0F) | ((value & 0x0F) << 4));
     state->AF.b.h = (state->AF.b.h & 0xF0) | ((value & 0xF0) >> 4);
 
     state->AF.b.f.S = bit_isset(state->AF.b.h, 7);
@@ -690,9 +690,10 @@ RRCA(Z80State *state)
 static inline void __attribute__((__used__))
 RRD(Z80State *state)
 {
-    byte_t value = bus_read(state, state->HL.d);
+    byte_t value = state->bus_read(state, state->HL.d);
 
-    bus_write(state, state->HL.d, (state->AF.b.h & 0x0F) << 4 | ((value & 0xF0) >> 4));
+    state->bus_write(state, state->HL.d,
+                     (state->AF.b.h & 0x0F) << 4 | ((value & 0xF0) >> 4));
     state->AF.b.h = (state->AF.b.h & 0xF0) | (value & 0x0F);
 
     state->AF.b.f.S = bit_isset(state->AF.b.h, 7);

@@ -88,6 +88,15 @@ struct CpuFeatureFault: public CpuFault {
     }
 };
 
+template<class _state_type>
+struct CpuOpcode {
+    uint8_t code;
+    const char *name;
+    int cycles;
+    int bytes;
+    void (*func)(_state_type *state);
+};
+
 template<class _bus_type, class _state_type, class _opcode_type,
     class _class_type>
 class Cpu: public ClockedDevice {
