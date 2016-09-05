@@ -217,9 +217,6 @@ private:
 
     void init_joypad(void);
 
-    byte_t bank_read(offset_t offset);
-    void bank_write(offset_t offset, byte_t value);
-
     byte_t joypad_read(offset_t offset);
     void joypad_write(offset_t offset, byte_t value);
 
@@ -229,7 +226,6 @@ private:
     VDC m_vdc;
     PSG m_psg;
     bvec m_rom;
-    offset_t m_rom_offset;
 
     int m_joypad;
     int m_joypad_data;

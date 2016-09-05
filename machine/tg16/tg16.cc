@@ -38,12 +38,36 @@ TG16::TG16(const std::string &rom):
 {
     IF_LOG(Info)
         std::cout << "Loading: " << rom << std::endl;
+    bvec rom_data;
 
-    EMU::read_rom(rom, m_rom);
-    m_rom_offset = m_rom.size() % 8192;
+    EMU::read_rom(rom, rom_data);
+    offset_t rom_offset = rom_data.size() % 8192;
 
-    if (bank_read(0x1FFF) < 0xe0)
+    if (rom_data.at(rom_offset + 0x1FFF) < 0xe0)
         throw RomException("Encrypted Rom");
+    if (rom_data.size() - rom_offset == 0x60000) {
+        /* TODO: rewrite rom accordingly */
+        /*
+        int bank = offset >> 17;
+        offset &= 0x1FFFF;
+        switch (bank) {
+        case 0:
+        case 2:
+            return m_rom.at(offset + m_rom_offset);
+        case 1:
+        case 3:
+            return m_rom.at(0x20000 + offset + m_rom_offset);
+        default:
+            return m_rom.at(0x40000 + offset + m_rom_offset);
+        }
+        */
+        throw RomException("Unsupported ROM format");
+    } else if (rom_data.size() - rom_offset > 0x100000) {
+        throw RomException("Unsupported ROM size");
+    } else {
+        m_rom.assign(0x100000, 0);
+        memcpy(&m_rom.front(), &rom_data[rom_offset], rom_data.size() - rom_offset);
+    }
 
     init_joypad();
 
@@ -53,9 +77,7 @@ TG16::TG16(const std::string &rom):
     m_cpu = std::unique_ptr<M6502v2::HuC6280Cpu>(
         new M6502v2::HuC6280Cpu(this, "cpu", MASTER_CLOCK/3, &m_cpu_bus));
 
-    m_cpu_bus.add(0x000000, 0x0FFFFF,
-        READ_CB(TG16::bank_read, this),
-        WRITE_CB(TG16::bank_write, this));
+    m_cpu_bus.add(0x000000, m_rom);
 
     m_cpu_bus.add(0x1F0000, &m_ram);
 
@@ -117,35 +139,6 @@ TG16::init_joypad(void)
     add_input(InputSignal(InputKey::Joy1Right, port, TG16Key::Right, false));
     m_joypad_data = 0;
     m_joypad = 0;
-}
-
-byte_t
-TG16::bank_read(offset_t offset)
-{
-    /* XXX: Horrible hack */
-    if (m_rom.size() - m_rom_offset == 0x60000) {
-        int bank = offset >> 17;
-        offset &= 0x1FFFF;
-        switch (bank) {
-        case 0:
-        case 2:
-            return m_rom.at(offset + m_rom_offset);
-        case 1:
-        case 3:
-            return m_rom.at(0x20000 + offset + m_rom_offset);
-        default:
-            return m_rom.at(0x40000 + offset + m_rom_offset);
-        }
-    } else {
-        /* XXX: Is this correct? */
-        return m_rom.at((offset % m_rom.size()) + m_rom_offset);
-    }
-}
-
-void
-TG16::bank_write(offset_t offset, byte_t value)
-{
-    MACHINE_DEBUG("bank_write");
 }
 
 byte_t
