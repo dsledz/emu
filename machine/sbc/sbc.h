@@ -22,14 +22,6 @@ public:
 
 private:
 
-    byte_t ram_read(offset_t offset) {
-        return m_ram.read8(offset);
-    }
-
-    void ram_write(offset_t offset, byte_t value) {
-        m_ram.write8(offset, value);
-    }
-
     byte_t io_read(offset_t offset);
     void io_write(offset_t offset, byte_t value);
 
