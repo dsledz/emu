@@ -49,7 +49,8 @@ enum Z80Arg16 {
     RegIY = 4
 };
 
-typedef ClockedBus16 Z80Bus;
+typedef AddressBus16 Z80Bus;
+typedef AddressBus8 Z80IOBus;
 
 struct Z80State;
 
@@ -141,39 +142,46 @@ struct Z80State {
     bool iwait;
     int  imode;
 
+    LineState nmi_line;
+    LineState int0_line;
+    LineState reset_line;
+    LineState wait_line;
+
     inline void bus_write(Z80State *state, reg16_t addr, reg8_t reg) {
-        bus->io_write(addr.d, reg);
+        state->bus->write(addr.d, reg);
     }
 
     inline reg8_t bus_read(Z80State *state, reg16_t addr) {
-        reg8_t result;
-        state->bus->io_read(addr.d, &result);
-        return result;
+        return state->bus->read(addr.d);
+    }
+
+    inline void io_write(Z80State *state, reg8_t port, reg8_t reg)
+    {
+        state->io->write(port, reg);
+    }
+
+    inline reg8_t io_read(Z80State *state, reg8_t port)
+    {
+        return state->io->read(port);
+    }
+
+    void reset() {
+        AF.d = BC.d = DE.d = HL.d = SP.d = IX.d = IY.d = 0;
+        AF2.d = BC2.d = DE2.d = HL2.d = 0;
     }
 
     CPU2::CpuPhase Phase;
     uint8_t icycles;
     Z80Bus *bus;
+    Z80IOBus *io;
 } __attribute__((packed));
 
 static inline reg8_t pc_read(Z80State *state)
 {
-    reg8_t result;
-    state->bus->io_read(state->PC.d, &result);
+    reg8_t result = state->bus->read(state->PC.d);
     state->PC.d++;
     state->icycles++;
     return result;
-}
-
-static inline void io_write(Z80State *state, reg8_t port, reg8_t reg)
-{
-    // TODO
-}
-
-static inline reg8_t io_read(Z80State *state, reg8_t port)
-{
-    // TODO
-    return 0;
 }
 
 static inline void ADD_ICYCLES(Z80State *state, unsigned cycles)

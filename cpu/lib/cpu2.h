@@ -109,24 +109,20 @@ public:
     typedef typename bus_type::data_type data_type;
 
     Cpu(Machine *machine, const std::string &name, unsigned hertz,
-        bus_type *bus):
+        state_type *state):
         ClockedDevice(machine, name, hertz),
-        m_bus(bus),
-        m_state(),
-        m_class()
-    {
+        m_state(state),
+        m_class() {
     }
-    virtual ~Cpu(void)
-    {
-    }
+    virtual ~Cpu(void) { }
     Cpu(const Cpu &cpu) = delete;
 
-    bus_type *bus(void) {
-        return m_bus;
+    state_type *state(void) {
+        return m_state;
     }
 
-    state_type *state(void) {
-        return &m_state;
+    virtual void reset(void) {
+        m_state->reset();
     }
 
     virtual std::string dasm(addr_type addr) { return ""; }
@@ -136,22 +132,23 @@ protected:
     virtual void execute(void)
     {
         while (true) {
-            switch (m_state.Phase) {
+            switch (m_state->Phase) {
             case CpuPhase::Interrupt:
-                m_class.Interrupt(&m_state, m_bus);
+                m_class.Interrupt(this, m_state);
                 break;
             case CpuPhase::Decode:
-                m_class.Decode(&m_state, m_bus);
+                m_class.Decode(this, m_state);
                 break;
             case CpuPhase::Dispatch:
-                m_class.Dispatch(&m_state, m_bus);
+                m_class.Dispatch(this, m_state);
                 break;
+            default:
+                throw DeviceFault(name(), "Invalid state");
             }
         }
     }
 
-    bus_type *m_bus;
-    state_type m_state;
+    state_type *m_state;
     class_type m_class;
 };
 

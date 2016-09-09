@@ -48,6 +48,8 @@ public:
         //add_debug_var("PC", PC);
     }
 
+    virtual void reset(void) { }
+
 public:
     CpuPhase Phase;
     uint16_t PC;
@@ -56,10 +58,11 @@ public:
     reg8_t   A;
     reg8_t   B;
     LineState INT0;
+    ClockedBus16 *bus;
 };
 
 struct TestClass {
-    void Interrupt(TestState *state, ClockedBus16 *bus) {
+    void Interrupt(ClockedDevice *dev, TestState *state) {
         if (state->INT0 == LineState::Pulse) {
             state->INT0 = LineState::Clear;
             state->PC = 0x0000;
@@ -67,12 +70,12 @@ struct TestClass {
         state->Phase = CpuPhase::Decode;
     }
 
-    void Decode(TestState *state, ClockedBus16 *bus) {
-        bus->io_read(state->PC, &state->opcode);
+    void Decode(ClockedDevice *dev, TestState *state) {
+        state->bus->io_read(state->PC, &state->opcode);
         state->Phase = CpuPhase::Dispatch;
     }
 
-    void Dispatch(TestState *state, ClockedBus16 *bus) {
+    void Dispatch(ClockedDevice *dev, TestState *state) {
         switch (state->opcode) {
         case 0:
             state->A++;
@@ -91,23 +94,59 @@ struct TestOpcode
 class TestCpu: public Cpu<ClockedBus16, TestState, TestOpcode, TestClass> {
 public:
     TestCpu(Machine *machine, const std::string &name, unsigned hertz,
-            ClockedBus16 *bus):
-        Cpu(machine, name, hertz, bus)
+            TestState *state):
+        Cpu(machine, name, hertz, state)
     {
     }
     virtual ~TestCpu(void)
     {
     }
+private:
+    TestState m_state;
 };
+
+
+template<typename CpuType, unsigned initial_pc=0x0000>
+class TestMachine2: public Machine
+{
+public:
+    TestMachine2(void):
+        Machine(),
+        bus(),
+        state(),
+        cpu(this, "maincpu", 1000000, &state),
+        ram(this, "ram", 0x10000),
+        pc(initial_pc)
+    {
+        state.bus = &bus;
+        bus.add(0x0000, &ram);
+
+        set_line("maincpu", Line::RESET, LineState::Pulse);
+    }
+    ~TestMachine2(void)
+    {
+    }
+
+    void write8(byte_t value) {
+        ram.write8(pc++, value);
+    }
+
+    typename CpuType::bus_type bus;
+    typename CpuType::state_type state;
+    CpuType cpu;
+    RamDevice ram;
+    unsigned pc;
+};
+
 
 TEST(CpuTest, constructor)
 {
-    TestMachine<TestCpu> machine;
+    TestMachine2<TestCpu> machine;
 }
 
 TEST(CpuTest, debug_print)
 {
-    TestMachine<TestCpu> machine;
+    TestMachine2<TestCpu> machine;
     TestState *state = machine.cpu.state();
 
     EXPECT_EQ("0", state->read_register("A"));

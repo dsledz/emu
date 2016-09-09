@@ -55,7 +55,6 @@ enum Z80Arg16 {
     RegIY = 4
 };
 
-typedef ClockedBus16 Z80Bus;
 typedef std::unique_ptr<Z80Bus> Z80Bus_ptr;
 
 class Z80Class
@@ -64,9 +63,9 @@ public:
     Z80Class();
     ~Z80Class();
 
-    void Interrupt(Z80State *state, Z80Bus *bus);
-    void Decode(Z80State *state, Z80Bus *bus);
-    void Dispatch(Z80State *state, Z80Bus *bus);
+    void Interrupt(ClockedDevice *cpu, Z80State *state);
+    void Decode(ClockedDevice *cpu, Z80State *state);
+    void Dispatch(ClockedDevice *cpu, Z80State *state);
     std::string Log(Z80State *state);
 
 private:

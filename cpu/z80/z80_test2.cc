@@ -30,23 +30,71 @@ using namespace EMU;
 using namespace EMUTest;
 using namespace Z80v2;
 
-class Z80Machine: public Machine
+class Zexall2: public Machine
 {
 public:
-    Z80Machine():
-        bus(new Z80Bus()),
-        cpu(new Z80Cpu(this, "cpu", 1000000, bus.get())) {
+    Zexall2(void):
+        bus(new AddressBus16()),
+        io(new AddressBus8()),
+        state(),
+        cpu(new Z80Cpu(this, "cpu", 1000000, &state)),
+        rom("zex.bin"),
+        ram(),
+        m_data(0), m_req(0), m_req_last(0), m_ack(0)
+    {
+        state.bus = bus.get();
+        state.io = io.get();
+        state.Phase = CpuPhase::Interrupt;
 
+        ram.assign(rom.cbegin(), rom.cend());
+        bus->add(0x0000, ram);
+
+        bus->add(0xFFFF, &m_data);
+        bus->add(0xFFFE, 0xFFFF,
+                 READ_CB(Zexall2::req_read, this),
+                 WRITE_CB(Zexall2::req_write, this));
+        bus->add(0xFFFD, &m_ack);
+
+        io->add(0x01, 0x01,
+            DataBus8x8::DefaultRead(),
+            DataBus8x8::DefaultWrite());
     }
-    ~Z80Machine() {
+    ~Zexall2(void) {
     }
-private:
-    Z80Bus_ptr bus;
-    Z80Cpu_ptr cpu;
+
+    byte_t req_read(byte_t vlaue)
+    {
+        return m_req;
+    }
+
+    void req_write(offset_t offset, byte_t value)
+    {
+        if (m_req_last != value) {
+            m_ack++;
+            std::cout << m_data;
+            std::cout.flush();
+        }
+        m_req_last = m_req;
+        m_req = value;
+    }
+
+    std::unique_ptr<AddressBus16> bus;
+    std::unique_ptr<AddressBus8> io;
+    Z80State state;
+    std::unique_ptr<Z80Cpu> cpu;
+    Rom rom;
+    bvec ram;
+    byte_t m_data, m_req, m_req_last, m_ack;
 };
 
-TEST(Z80v2, init)
+TEST(Zexall2_test, test)
 {
-    Z80Machine machine;
-}
+    Zexall2 zex;
 
+    Core::log.set_level(LogLevel::Trace);
+
+    // Run the first few seconds of the rom
+    zex.poweron();
+    zex.reset();
+    zex.run_forward(sec(60));
+}

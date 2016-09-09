@@ -480,7 +480,7 @@ IM(Z80State *state, byte_t arg)
 static inline void __attribute__((__used__))
 IN(Z80State *state, byte_t &orig, byte_t port)
 {
-    orig = io_read(state, port);
+    orig = state->io_read(state, port);
     state->yield = 1;
 }
 
@@ -640,7 +640,7 @@ OR(Z80State *state, reg8_t &dest, reg8_t arg)
 static inline void __attribute__((__used__))
 OUT(Z80State *state, byte_t port, byte_t value)
 {
-    io_write(state, port, value);
+    state->io_write(state, port, value);
     state->yield = 1;
 }
 

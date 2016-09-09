@@ -1060,7 +1060,25 @@ Z80Cpu::op_log(void)
             op << "(IY" << Hex(m_op.d8) << ")";
         else if (it == "d16" || it == "a16")
             op << Hex(m_op.d16);
-        else if (it == "(d16)")
+        else if (it == "HL") {
+            switch (m_op.prefix) {
+            case Z80Prefix::DDPrefix: op << "IX"; break;
+            case Z80Prefix::FDPrefix: op << "IY"; break;
+            default: op << "HL"; break;
+            }
+        } else if (it == "L") {
+            switch (m_op.prefix) {
+            case Z80Prefix::DDPrefix: op << "IXl"; break;
+            case Z80Prefix::FDPrefix: op << "IYl"; break;
+            default: op << "L"; break;
+            }
+        } else if (it == "H") {
+            switch (m_op.prefix) {
+            case Z80Prefix::DDPrefix: op << "IXh"; break;
+            case Z80Prefix::FDPrefix: op << "IYh"; break;
+            default: op << "H"; break;
+            }
+        } else if (it == "(d16)")
             op << "(" << Hex(m_op.d16) << ")";
         else if (it == "(d8)")
             op << "(" << Hex(m_op.d8) << ")";
@@ -1081,8 +1099,9 @@ Z80Cpu::op_log(void)
     os << ",HL:" << Hex(state->HL.d);
     os << ",IX:" << Hex(state->IX.d);
     os << ",IY:" << Hex(state->IY.d);
+    os << ",SP:" << Hex(state->SP.d);
 
-    DEVICE_TRACE(os.str());
+    LOG_TRACE(os.str());
 }
 
 #define OPCODE(op, cycles, bytes, name, func) \
@@ -1326,7 +1345,7 @@ Z80Cpu::dispatch(void)
         OPCODE(0xBF,  4, 1, "CP A", _cp(state->AF.b.h, state->AF.b.h));
         OPCODE(0xC0,  5, 1, "RET NZ", _ret(!state->AF.b.f.Z));
         OPCODE(0xC1, 10, 1, "POP BC", _pop(state->BC.b.h, state->BC.b.l));
-        OPCODE(0xC2, 10, 0, "JP NZ", _jp(!state->AF.b.f.Z, _d16()));
+        OPCODE(0xC2, 10, 0, "JP NZ a16", _jp(!state->AF.b.f.Z, _d16()));
         OPCODE(0xC3, 10, 0, "JP a16", _jp(true, _d16()));
         OPCODE(0xC4, 10, 3, "CALL NZ,a16", _call(!state->AF.b.f.Z, _d16()));
         OPCODE(0xC5, 11, 1, "PUSH BC", _push(state->BC.b.h, state->BC.b.l));
