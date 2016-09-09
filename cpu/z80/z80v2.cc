@@ -480,11 +480,11 @@ Z80Class::Decode(ClockedDevice *dev, Z80State *state)
 void
 Z80Class::Dispatch(ClockedDevice *dev, Z80State *state)
 {
+    state->icycles = state->Op->cycles;
     state->Op->func(state);
     IF_LOG(Trace)
         LOG_TRACE(Log(state));
-    unsigned cycles = state->icycles;
-    dev->add_icycles(cycles);
+    dev->add_icycles(state->icycles);
     state->Phase = CpuPhase::Interrupt;
 }
 
