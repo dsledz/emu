@@ -54,8 +54,7 @@ public:
 
     inline void unlock() {
         uint64_t locked = LOCKED;
-        bool result = std::atomic_compare_exchange_strong(&m_lock, &locked, UNLOCKED);
-        assert(result);
+        std::atomic_compare_exchange_strong(&m_lock, &locked, UNLOCKED);
     }
 
 private:
