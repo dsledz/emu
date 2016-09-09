@@ -118,7 +118,7 @@ Pacman::init_bus(void)
 {
 
     m_bus->add(0x4000, &m_gfx->vram());
-    m_bus->add(0x4400, 0x47ff, &m_gfx->cram());
+    m_bus->add(0x4400, &m_gfx->cram());
 
     m_bus->add(0x4800, 0x4bff,
         AddressBus16::DefaultRead(),

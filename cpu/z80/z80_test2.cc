@@ -56,8 +56,8 @@ public:
         bus->add(0xFFFD, &m_ack);
 
         io->add(0x01, 0x01,
-            DataBus8x8::DefaultRead(),
-            DataBus8x8::DefaultWrite());
+            AddressBus8x8::DefaultRead(),
+            AddressBus8x8::DefaultWrite());
     }
     ~Zexall2(void) {
     }
@@ -91,10 +91,10 @@ TEST(Zexall2_test, test)
 {
     Zexall2 zex;
 
-    Core::log.set_level(LogLevel::Trace);
+    Core::log.set_level(LogLevel::Debug);
 
     // Run the first few seconds of the rom
     zex.poweron();
     zex.reset();
-    zex.run_forward(sec(60));
+    zex.run_forward(sec(6000));
 }

@@ -28,6 +28,7 @@
 #include "core/bits.h"
 #include "emu/io.h"
 #include "emu/ram.h"
+#include "emu/page.h"
 #include "core/radix.h"
 
 namespace EMU {
@@ -64,9 +65,9 @@ public:
     {
     }
 
-    void add(addr_type key, addr_type keyend, const Val &val)
+    void add(addr_type key_begin, addr_type key_end, const Val &val)
     {
-        Entry entry(key, keyend, val);
+        Entry entry(key_begin, key_end, val);
 
         auto start = bucket(entry.start);
         auto end = bucket(entry.end);
@@ -74,8 +75,8 @@ public:
             entry_list &list = m_entries[i];
             /* Check for duplicates */
             for (auto it = list.begin(); it != list.end(); it++)
-                if (it->match(key))
-                    throw Core::BusError(key);
+                if (it->match(key_begin))
+                    throw Core::BusError(key_begin);
             list.push_back(entry);
         }
     }
@@ -86,7 +87,7 @@ public:
         for (auto it = list.begin(); it != list.end(); it++)
             if (it->match(key))
                 return it->value;
-        throw BusError(key);
+        abort();
     }
 
     const size_t bucket(addr_type key) {
@@ -168,9 +169,10 @@ public:
             assert(addr % sizeof(data_type) == 0);
             addr /= sizeof(data_type);
             if (write) {
-                assert(addr != 0x1d5b);
+#if DEBUG
                 if (it.read_only)
                     throw BusError(addr);
+#endif
                 it.raw[addr] = data;
             } else {
                 data = it.raw[addr];
@@ -186,11 +188,32 @@ public:
 
     inline void write(addr_type addr, data_type data)
     {
-        io(addr, data, true);
+        IOPort & it = m_map.find(addr);
+        addr -= it.base;
+        if (it.raw != nullptr) {
+            assert(addr % sizeof(data_type) == 0);
+            addr /= sizeof(data_type);
+#if DEBUG
+            if (it.read_only)
+                throw BusError(addr);
+#endif
+            it.raw[addr] = data;
+        } else {
+            it.write(addr, data);
+        }
     }
+
     inline data_type read(addr_type addr)
     {
-        return io(addr, 0, false);
+        IOPort & it = m_map.find(addr);
+        addr -= it.base;
+        if (it.raw != nullptr) {
+            assert(addr % sizeof(data_type) == 0);
+            addr /= sizeof(data_type);
+            return it.raw[addr];
+        } else {
+            return it.read(addr);
+        }
     }
 
     void add(const IOPort &dev)
@@ -254,12 +277,108 @@ private:
     MemoryMap<IOPort, addr_type, addr_width, 5> m_map;
 };
 
+#if 0
 typedef DataBus<uint32_t, 21, byte_t> AddressBus21;
 typedef DataBus<uint16_t, 16, byte_t> AddressBus16;
 typedef DataBus<uint16_t, 8, byte_t>  AddressBus8;
 typedef DataBus<uint16_t, 16, uint16_t> AddressBus16x16;
 typedef DataBus<uint8_t, 8, byte_t> DataBus8x8;
 typedef std::unique_ptr<AddressBus16> AddressBus16_ptr;
+#endif
+
+/**
+ * Page-based bus
+ */
+template<typename _addr_type, typename _data_type, int addr_width>
+class IOBus
+{
+public:
+    typedef _addr_type addr_type;
+    typedef _data_type data_type;
+    typedef PageTable<addr_type, data_type, addr_width, 5> page_table_type;
+    typedef typename page_table_type::page_type page_type;
+    typedef typename page_type::read_fn read_fn;
+    typedef typename page_type::write_fn write_fn;
+    typedef typename page_type::DefaultRead DefaultRead;
+    typedef typename page_type::DefaultWrite DefaultWrite;
+    typedef typename page_type::DataRead DataRead;
+    typedef typename page_type::DataWrite DataWrite;
+
+    IOBus(): m_page_table() {}
+    ~IOBus() { }
+    IOBus(const IOBus &rhs) = delete;
+
+    inline data_type read(addr_type addr) {
+        return m_page_table.page(addr)->read(addr % m_page_table.page_size);
+    }
+
+    inline void write(addr_type addr, data_type data) {
+        m_page_table.page(addr)->write(addr % m_page_table.page_size, data);
+    }
+
+    void add(addr_type start, addr_type end, read_fn read, write_fn write) {
+        for (page_type *p = m_page_table.page(start);
+             p != m_page_table.page(end) + 1; p++) {
+            p->add(start, end, read, write);
+        }
+    }
+    void add(addr_type start, read_fn read, write_fn write) {
+        add(start, start, read, write);
+    }
+
+    void add(addr_type start, data_type *ptr, size_t size,
+            bool read_only) {
+        addr_type end = start + size - 1;
+        assert((start & (m_page_table.page_size - 1)) == 0);
+        for (page_type *p = m_page_table.page(start);
+             p != m_page_table.page(end) + 1; p++) {
+            p->m_page = ptr;
+            ptr += m_page_table.page_size;
+        }
+    }
+
+    void add(addr_type start, bvec &buf) {
+        add(start, &buf.front(), buf.size(), false);
+    }
+
+    void add(addr_type start, data_type *data) {
+        m_page_table.page(start)->add(start, data);
+    }
+
+    void add(addr_type start, addr_type end)
+    {
+        add(start, end, DefaultRead(), DefaultWrite());
+    }
+
+    void add(addr_type start, RamDevice *ram) {
+        add(start, ram->direct(0), ram->size(), false);
+    }
+
+    void add(addr_type start, Rom *rom) {
+        add(start, rom->direct(0), rom->size(), true);
+    }
+
+private:
+    page_table_type m_page_table;
+};
+
+typedef IOBus<uint16_t, uint8_t, 16> IOBus16x8;
+typedef IOBus<uint32_t, byte_t, 21> IOBus21;
+typedef IOBus<uint16_t, byte_t, 16> IOBus16;
+typedef IOBus<uint16_t, byte_t, 8>  IOBus8;
+typedef IOBus<uint16_t, uint16_t, 16> IOBus16x16;
+typedef IOBus<uint8_t, byte_t, 8> IOBus8x8;
+typedef std::unique_ptr<IOBus16> IOBus16_ptr;
+
+#if 1
+typedef IOBus<uint16_t, uint8_t, 16> AddressBus16x8;
+typedef IOBus<uint32_t, byte_t, 21> AddressBus21;
+typedef IOBus<uint16_t, byte_t, 16> AddressBus16;
+typedef IOBus<uint16_t, byte_t, 8>  AddressBus8;
+typedef IOBus<uint16_t, uint16_t, 16> AddressBus16x16;
+typedef IOBus<uint8_t, byte_t, 8> AddressBus8x8;
+typedef std::unique_ptr<AddressBus16> AddressBus16_ptr;
+#endif
 
 };
 

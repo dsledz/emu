@@ -210,9 +210,10 @@ Gameboy::Gameboy(const std::string &rom_name):
 
     m_ram = std::unique_ptr<RamDevice>(new RamDevice(this, "ram", 0x2000));
     /* XXX: Ram isn't mirrored */
-    m_bus->add(0xC000, 0xDFFF, m_ram.get());
-    m_bus->add(0xE000, 0xFDFF, m_ram.get());
+    m_bus->add(0xC000, m_ram.get());
+    m_bus->add(0xE000, m_ram.get());
 
+#if 0
     m_hiram = std::unique_ptr<RamDevice>(new RamDevice(this, "hiram", 0x80));
     m_bus->add(0xFF80, 0xFFFF, m_hiram.get());
 
@@ -221,6 +222,7 @@ Gameboy::Gameboy(const std::string &rom_name):
 
     // XXX: Sound
     m_bus->add(0xFF10, 0xFF3F);
+#endif
 }
 
 Gameboy::~Gameboy(void)

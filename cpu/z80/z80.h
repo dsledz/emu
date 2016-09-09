@@ -67,7 +67,7 @@ public:
         _data = arg;
     }
 
-    DataBus8x8 *io(void) {
+    AddressBus8x8 *io(void) {
         return &_io;
     };
 
@@ -118,7 +118,7 @@ private:
     }
 
     byte_t _data;
-    DataBus8x8 _io;
+    AddressBus8x8 _io;
 
     Cycles _icycles;      /**< Current number of cycles for instruction */
 
