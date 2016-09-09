@@ -74,7 +74,7 @@ ADD(Z80State *state, byte_t &dest, byte_t arg)
 static inline void __attribute__((__used__))
 ADD16(Z80State *state, reg16_t &dest, uint16_t arg)
 {
-    uint16_t result = dest.d + arg;
+    uint32_t result = dest.d + arg;
 
     state->AF.b.f.Y = bit_isset(result, 13);
     state->AF.b.f.H = bit_isset(dest.d ^ arg ^ result, 12);
