@@ -142,8 +142,6 @@ protected:
             case CpuPhase::Dispatch:
                 m_class.Dispatch(this, m_state);
                 break;
-            default:
-                throw DeviceFault(name(), "Invalid state");
             }
         }
     }
