@@ -135,13 +135,10 @@ protected:
             switch (m_state->Phase) {
             case CpuPhase::Interrupt:
                 m_class.Interrupt(this, m_state);
-                break;
             case CpuPhase::Decode:
                 m_class.Decode(this, m_state);
-                break;
             case CpuPhase::Dispatch:
                 m_class.Dispatch(this, m_state);
-                break;
             }
         }
     }
