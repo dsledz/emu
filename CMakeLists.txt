@@ -26,7 +26,7 @@ macro(add_framework fwname)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework ${fwname}")
 endmacro(add_framework)
 
-option(BUILD_ASM "Build ASM" OFF)
+option(BUILD_ASM "Build ASM" ON)
 option(BUILD_IOS "Build iOS Support" OFF)
 option(BUILD_OSX "Build OSX" OFF)
 option(BUILD_SDL "Build SDL" OFF)
