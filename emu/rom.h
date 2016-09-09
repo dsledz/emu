@@ -59,6 +59,12 @@ public:
     const uint8_t *direct(offset_t offset) const;
 
     void append(const bvec &data);
+    bvec::const_iterator cbegin() const {
+        return _rom.cbegin();
+    }
+    bvec::const_iterator cend() const {
+        return _rom.cend();
+    }
 
 private:
     bvec _rom;

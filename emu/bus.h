@@ -168,6 +168,7 @@ public:
             assert(addr % sizeof(data_type) == 0);
             addr /= sizeof(data_type);
             if (write) {
+                assert(addr != 0x1d5b);
                 if (it.read_only)
                     throw BusError(addr);
                 it.raw[addr] = data;
@@ -227,6 +228,11 @@ public:
         add(port);
     }
 
+    void add(addr_type base, Rom *rom)
+    {
+        add(base, base + rom->size() - 1, rom);
+    }
+
     void add(addr_type base, RamDevice *ram)
     {
         add(base, base + ram->size() - 1, ram);
@@ -235,6 +241,12 @@ public:
     void add(addr_type base, addr_type end, RamDevice *ram)
     {
         IOPort port(base, end, ram->direct(0), false);
+        add(port);
+    }
+
+    void add(addr_type base, addr_type end, Rom *rom)
+    {
+        IOPort port(base, end, rom->direct(0), true);
         add(port);
     }
 
