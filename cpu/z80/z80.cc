@@ -1184,8 +1184,8 @@ Z80Cpu::dispatch(void)
         OPCODE(0x31, 10, 3, "LD SP,d16", _ld16(state->SP.d, _d16()));
         OPCODE(0x32, 13, 3, "LD (d16), A", _ldmem(_d16(), state->AF.b.h));
         OPCODE(0x33,  6, 1, "INC SP", _inc16(state->SP.d));
-        OPCODE(0x34, 11, 1, "INC (HL)", _inci(_dAddr()));
-        OPCODE(0x35, 11, 1, "DEC (HL)", _deci(_dAddr()));
+        OPCODE(0x34, 11, 1, "INC (HL)", _inci(*vrHL));
+        OPCODE(0x35, 11, 1, "DEC (HL)", _deci(*vrHL));
         OPCODE(0x36, 10, 2, "LD (HL),d8", _ldmem(_dAddr(), _d8()));
         OPCODE(0x37,  4, 1, "SCF", _scf());
         OPCODE(0x38,  7 ,2, "JR C,r8", _jr(state->AF.b.f.C, _r8()));
