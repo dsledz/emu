@@ -122,10 +122,19 @@ FiberTask::run(void)
             return m_state;
         }
     }
-    LOG_DEBUG("FiberTask switch: ", *this);
+    // TODO: Avoid optimization
+    if (false) {
+        const Task &self = *this;
+        LOG_DEBUG("FiberTask switch: ", self);
+    }
     // Switch to our context and run.
     m_our_ctx.switch_context(&m_thread_ctx);
-    LOG_DEBUG("FiberTask swapped: ", *this);
+    asm volatile ("" : : : "memory");
+    // TODO: Avoid optimization
+    if (false) {
+        const Task &self = *this;
+        LOG_DEBUG("FiberTask swapped: ", self);
+    }
     // We've returned from our context.
     {
         lock_mtx lock(m_mtx);
