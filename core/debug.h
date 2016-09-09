@@ -136,17 +136,17 @@ extern Debug log;
 #define LOG_TRACE(fmt, ...) \
     for (bool once=true; once && Core::log.enabled(Core::LogLevel::Trace); \
          once=false) \
-        Core::log.trace(Core::stringfn(pthread_self(), " ", fmt, ##__VA_ARGS__));
+        Core::log.trace(Core::stringfn(Hex(pthread_self()), " ", fmt, ##__VA_ARGS__));
 
 #define LOG_DEBUG(fmt, ...) \
     for (bool once=true; once && Core::log.enabled(Core::LogLevel::Debug); \
          once=false) \
-        Core::log.debug(Core::stringfn(pthread_self(), " ", fmt, ##__VA_ARGS__));
+        Core::log.debug(Core::stringfn(Hex(pthread_self()), " ", fmt, ##__VA_ARGS__));
 
 #define LOG_INFO(fmt, ...) \
     for (bool once=true; once && Core::log.enabled(Core::LogLevel::Info); \
          once=false) \
-        Core::log.info(Core::stringfn(pthread_self(), " ", fmt, ##__VA_ARGS__));
+        Core::log.info(Core::stringfn(Hex(pthread_self()), " ", fmt, ##__VA_ARGS__));
 
 #define LOG_ERROR(fmt, ...) \
     for (bool once=true; once && Core::log.enabled(Core::LogLevel::Error); \
