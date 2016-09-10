@@ -37,6 +37,9 @@ namespace EMU {
                                std::placeholders::_2)
 #define READ_CB(cb, ...) std::bind(&cb, __VA_ARGS__, std::placeholders::_1)
 
+#define PAGE_FAULT_CB(cb, ...) std::bind(&cb, __VA_ARGS__, \
+                               std::placeholders::_1, std::placeholders::_2)
+
 template<class Val, typename addr_type, int addr_width, int shift>
 class MemoryMap
 {
@@ -309,11 +312,17 @@ public:
     IOBus(const IOBus &rhs) = delete;
 
     inline data_type read(addr_type addr) {
-        return m_page_table.page(addr)->read(addr % m_page_table.page_size);
+        auto *page = m_page_table.page(addr);
+        return page->read(addr % m_page_table.page_size);
     }
 
     inline void write(addr_type addr, data_type data) {
-        m_page_table.page(addr)->write(addr % m_page_table.page_size, data);
+        auto *page = m_page_table.page(addr);
+
+        if (unlikely(page->m_flags.is_clear(PageFlags::Write)))
+            page->m_page_fault(addr, data);
+        else
+            page->write(addr % m_page_table.page_size, data);
     }
 
     void add(addr_type start, addr_type end, read_fn read, write_fn write) {
@@ -337,6 +346,16 @@ public:
         }
     }
 
+    void add(addr_type start, data_type *ptr, size_t size,
+            typename page_table_type::page_type::page_fault_fn handler) {
+        addr_type end = start + size - 1;
+        assert((start & (m_page_table.page_size - 1)) == 0);
+        for (page_type *p = m_page_table.page(start);
+             p != m_page_table.page(end) + 1; p++) {
+            p->set(ptr, handler);
+            ptr += m_page_table.page_size;
+        }
+    }
     void add(addr_type start, bvec &buf) {
         add(start, &buf.front(), buf.size(), false);
     }

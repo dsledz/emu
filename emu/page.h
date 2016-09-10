@@ -67,6 +67,10 @@ public:
 
     typedef std::function<data_type (offset_t)> read_fn;
     typedef std::function<void (offset_t, data_type)> write_fn;
+    typedef std::function<void (offset_t, data_type)> page_fault_fn;
+    struct DefaultPageFault {
+        void operator()(offset_t offset, data_type data) { abort(); }
+    };
     struct DefaultRead {
         data_type operator ()(offset_t offset) { return 0; }
     };
@@ -108,27 +112,30 @@ public:
 
 public:
     Page(void):
+        m_page_fault(DefaultPageFault()),
         m_port_list(),
         m_page(nullptr),
+        m_page_data(nullptr),
         m_flags({PageFlags::Write, PageFlags::Read}) {
     }
+
     Page(std::initializer_list<PageFlags> flags):
+        m_page_fault(DefaultPageFault()),
         m_port_list(),
         m_page(nullptr),
+        m_page_data(nullptr),
         m_flags(flags) {
         if (m_flags.is_set(PageFlags::Auto)) {
-            m_page = new data_type[page_size];
+            m_page_data = new data_type[page_size];
+            m_page = m_page_data;
         }
     }
     Page(const Page &rhs) = delete;
     ~Page(void) {
-        if (m_flags.is_set(PageFlags::Auto)) {
-            delete m_page;
-        }
+        delete m_page_data;
     }
 
-    void add(addr_type start, data_type *data)
-    {
+    void add(addr_type start, data_type *data) {
         IOPort port(start, start, data);
         for (auto it = m_port_list.begin(); it != m_port_list.end(); it++) {
             assert(m_page == NULL);
@@ -138,8 +145,7 @@ public:
         m_port_list.push_back(port);
     }
 
-    void add(addr_type start, addr_type end, read_fn read, write_fn write)
-    {
+    void add(addr_type start, addr_type end, read_fn read, write_fn write) {
         IOPort port(start, end, read, write);
         for (auto it = m_port_list.begin(); it != m_port_list.end(); it++)
             if (it->match(start))
@@ -147,56 +153,39 @@ public:
         m_port_list.push_back(port);
     }
 
-    inline void write(addr_type offset, data_type data)
-    {
+    inline void set(data_type *ptr, page_fault_fn handler) {
+        m_page = ptr;
+        m_page_fault = handler;
+        m_flags.clear(PageFlags::Write);
+    }
+
+    inline void set(data_type *ptr) {
+        m_page = ptr;
+    }
+
+    inline void write(addr_type offset, data_type data) {
         auto it = m_port_list.begin();
-#if 1
         for (;it != m_port_list.end() && !it->match(offset); it++) { }
         if (it != m_port_list.end())
             it->write(offset, data);
         else
             m_page[offset] = data;
-#else
-        if (likely(it == m_port_list.end())) {
-#if DEBUG
-            if (unlikely(m_flags.is_clear(PageFlags::Write)))
-                throw PageException(offset);
-#endif
-            m_page[offset] = data;
-        } else {
-            for (;!it->match(offset) && it != m_port_list.end(); it++) { }
-            assert(it != m_port_list.end());
-            it->write(offset, data);
-        }
-#endif
     }
 
     inline data_type read(addr_type offset)
     {
         auto it = m_port_list.begin();
-#if 1
         for (;it != m_port_list.end() && !it->match(offset); it++) { }
         if (it != m_port_list.end())
             return it->read(offset);
         else
             return m_page[offset];
-#else
-        if (likely(it == m_port_list.end())) {
-#if DEBUG
-            if (unlikely(m_flags.is_clear(PageFlags::Read)))
-                throw PageException(offset);
-#endif
-            return m_page[offset];
-        } else {
-            for (;!it->match(offset) && it != m_port_list.end(); it++) { }
-            assert(it != m_port_list.end());
-            return it->read(offset);
-        }
-#endif
     }
 
+    page_fault_fn m_page_fault;
     std::vector<IOPort> m_port_list;
     data_type *m_page;
+    data_type *m_page_data;
     BitField<PageFlags> m_flags;
 };
 
