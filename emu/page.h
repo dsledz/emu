@@ -151,7 +151,7 @@ public:
     {
         auto it = m_port_list.begin();
 #if 1
-        for (;!it->match(offset) && it != m_port_list.end(); it++) { }
+        for (;it != m_port_list.end() && !it->match(offset); it++) { }
         if (it != m_port_list.end())
             it->write(offset, data);
         else
@@ -175,7 +175,7 @@ public:
     {
         auto it = m_port_list.begin();
 #if 1
-        for (;!it->match(offset) && it != m_port_list.end(); it++) { }
+        for (;it != m_port_list.end() && !it->match(offset); it++) { }
         if (it != m_port_list.end())
             return it->read(offset);
         else
