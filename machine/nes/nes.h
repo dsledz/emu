@@ -72,7 +72,7 @@ class NES;
 class NESMapper: public Device
 {
 public:
-    NESMapper(Machine *machine, const iNesHeader *header, bvec &rom);
+    NESMapper(NES *nes, const iNesHeader *header, bvec &rom);
 
     virtual ~NESMapper(void);
 
@@ -81,18 +81,6 @@ public:
     virtual byte_t prg_read(offset_t offset) = 0;
 
     virtual void prg_write(offset_t offset, byte_t value) { }
-
-    virtual byte_t chr_read(offset_t offset) = 0;
-
-    virtual void chr_write(offset_t offset, byte_t value) { }
-
-    virtual byte_t sram_read(offset_t offset) {
-        throw DeviceFault(name(), "sram read");
-    }
-
-    virtual void sram_write(offset_t offset, byte_t value) {
-        throw DeviceFault(name(), "sram write");
-    }
 
     /* Convert a prg bank into an offset */
     size_t prg_bank(int bank);
@@ -104,6 +92,7 @@ public:
 
 protected:
 
+    NES *m_nes;
     iNesHeader m_header;
     bvec m_rom;
 };
