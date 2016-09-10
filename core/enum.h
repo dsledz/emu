@@ -81,32 +81,36 @@ template< typename T>
 class BitField
 {
 public:
-        BitField():m_value(0)
-        {
-        }
 
-        BitField(std::initializer_list<T> l) {
-            for (auto b : l)
-                m_value |= static_cast<typename std::underlying_type<T>::type>(b);
+    typedef typename std::underlying_type<T>::type field_type;
 
-        }
+    BitField():m_value(0) { }
 
-        ~BitField()
-        {
-        }
+    BitField(std::initializer_list<T> l) {
+        for (auto b : l)
+            m_value |= static_cast<field_type>(b);
+    }
 
-        bool is_set(T t)
-        {
-            return m_value & static_cast<typename std::underlying_type<T>::type>(t);
-        }
+    ~BitField() { }
 
-        bool is_clear(T t)
-        {
-            return !is_set(t);
-        }
+    bool is_set(T t) {
+        return m_value & static_cast<field_type>(t);
+    }
+
+    bool is_clear(T t) {
+        return !is_set(t);
+    }
+
+    void clear(T t) {
+        m_value &= ~static_cast<field_type>(t);
+    }
+
+    void set(T t) {
+        m_value |= static_cast<field_type>(t);
+    }
 
 private:
-        typename std::underlying_type<T>::type m_value;
+    field_type m_value;
 };
 
 }
