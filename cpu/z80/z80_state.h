@@ -141,6 +141,7 @@ struct Z80State {
     bool iff2;
     bool iwait;
     int  imode;
+    byte_t data;
 
     LineState nmi_line;
     LineState int0_line;

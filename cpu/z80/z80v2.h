@@ -67,7 +67,14 @@ public:
 
     virtual void execute(void);
 
+    void set_data(byte_t data) {
+        // XXX: Horrible hack for IM2 and pacman
+        m_state->data = data;
+    }
+
 private:
+    void interrupt(addr_t addr);
+
     std::string Log(Z80State *state);
 };
 

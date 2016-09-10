@@ -400,6 +400,30 @@ static Z80Opcode EDopcodes[256] = {
     OPCODE_DEF(ED, B8), OPCODE_DEF(ED, B9),
 };
 
+#define OPCODE_SWITCH(op, state) \
+    case op: { func_##op(state); break; }
+
+#define OPCODE_SWITCH16(prefix, state) \
+    OPCODE_SWITCH(prefix##0, state) OPCODE_SWITCH(prefix##1, state) \
+    OPCODE_SWITCH(prefix##2, state) OPCODE_SWITCH(prefix##3, state) \
+    OPCODE_SWITCH(prefix##4, state) OPCODE_SWITCH(prefix##5, state) \
+    OPCODE_SWITCH(prefix##6, state) OPCODE_SWITCH(prefix##7, state) \
+    OPCODE_SWITCH(prefix##8, state) OPCODE_SWITCH(prefix##9, state) \
+    OPCODE_SWITCH(prefix##A, state) OPCODE_SWITCH(prefix##B, state) \
+    OPCODE_SWITCH(prefix##C, state) OPCODE_SWITCH(prefix##D, state) \
+    OPCODE_SWITCH(prefix##E, state) OPCODE_SWITCH(prefix##F, state)
+
+#define OPCODE_SWITCH_BLOCK(state) \
+    switch (state->latch_op) { \
+    OPCODE_SWITCH16(0x0, state) OPCODE_SWITCH16(0x1, state) \
+    OPCODE_SWITCH16(0x2, state) OPCODE_SWITCH16(0x3, state) \
+    OPCODE_SWITCH16(0x4, state) OPCODE_SWITCH16(0x5, state) \
+    OPCODE_SWITCH16(0x6, state) OPCODE_SWITCH16(0x7, state) \
+    OPCODE_SWITCH16(0x8, state) OPCODE_SWITCH16(0x9, state) \
+    OPCODE_SWITCH16(0xA, state) OPCODE_SWITCH16(0xB, state) \
+    OPCODE_SWITCH16(0xC, state) OPCODE_SWITCH16(0xD, state) \
+    OPCODE_SWITCH16(0xE, state) OPCODE_SWITCH16(0xF, state) }
+
 Z80Cpu::Z80Cpu(Machine *machine, const std::string &name, unsigned hertz,
         state_type *state):
     Cpu(machine, name, hertz, state)
@@ -408,6 +432,16 @@ Z80Cpu::Z80Cpu(Machine *machine, const std::string &name, unsigned hertz,
 
 Z80Cpu::~Z80Cpu(void)
 {
+}
+
+void
+Z80Cpu::interrupt(addr_t addr)
+{
+    PUSH(m_state, m_state->PC.b.h, m_state->PC.b.l);
+    m_state->PC.d = addr;
+    m_state->iff2 = m_state->iff1;
+    m_state->iff1 = false;
+    add_icycles(20);
 }
 
 void
@@ -424,23 +458,22 @@ Z80Cpu::execute(void)
                 m_state->nmi_line = LineState::Clear;
             } else if (m_state->int0_line == LineState::Assert &&
                     m_state->iff1 && !m_state->iwait) {
-                /*
-                   switch (m_state->imode) {
-                   case 0:
-                   throw CpuFault(name(), "Unsupported Interrupt mode 0");
-                   break;
-                   case 1:
-                   interrupt(0x0038);
-                   break;
-                   case 2: {
-                // XXX: We should do this when we read _data
-                m_state->int0_line = LineState::Clear;
-                reg16_t irq;
-                irq.b.l = bus_read((m_state->I << 8) | _data);
-                irq.b.h = bus_read(((m_state->I << 8) | _data) + 1);
-                interrupt(irq.d);
+                switch (m_state->imode) {
+                case 0:
+                    throw CpuFault(name(), "Unsupported Interrupt mode 0");
+                    break;
+                case 1:
+                    interrupt(0x0038);
+                    break;
+                case 2: {
+                    // XXX: We should do this when we read _data
+                    m_state->int0_line = LineState::Clear;
+                    reg16_t irq;
+                    irq.b.l = m_state->bus_read(m_state, (m_state->I << 8) | m_state->data);
+                    irq.b.h = m_state->bus_read(m_state, ((m_state->I << 8) | m_state->data) + 1);
+                    interrupt(irq.d);
                 }
-                }*/
+                }
             }
 
             if (unlikely(m_state->iwait))
@@ -467,7 +500,7 @@ Z80Cpu::execute(void)
                 m_state->Op = &opcodes[m_state->latch_op];
             } else if (m_state->latch_op == 0xED) {
                 m_state->vHL = &m_state->HL;
-                m_state->prefix = Z80Prefix(0xED);
+                m_state->prefix = Z80Prefix(m_state->latch_op);
                 m_state->latch_op = pc_read(m_state);
                 m_state->Op = &EDopcodes[m_state->latch_op];
             } else {
@@ -479,7 +512,12 @@ Z80Cpu::execute(void)
         }
         case CpuPhase::Dispatch: {
             m_state->icycles = m_state->Op->cycles;
-            m_state->Op->func(m_state);
+#if 1
+            if (m_state->prefix != Z80Prefix::EDPrefix) {
+                OPCODE_SWITCH_BLOCK(m_state);
+            } else
+#endif
+                m_state->Op->func(m_state);
             IF_LOG(Trace)
                 LOG_TRACE(Log(m_state));
             add_icycles(m_state->icycles);
