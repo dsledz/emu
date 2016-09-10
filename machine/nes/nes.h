@@ -78,10 +78,6 @@ public:
 
     virtual void reset(void) = 0;
 
-    virtual byte_t prg_read(offset_t offset) = 0;
-
-    virtual void prg_write(offset_t offset, byte_t value) { }
-
     /* Convert a prg bank into an offset */
     size_t prg_bank(int bank);
     size_t prg_bank8k(int bank);

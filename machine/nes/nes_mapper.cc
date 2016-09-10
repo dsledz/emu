@@ -96,6 +96,12 @@ public:
         } else {
             m_nes->ppu_bus()->add(0x0000, &m_rom[m_chr_offset], 0x2000, true);
         }
+        if (m_header.rom_banks == 1) {
+            m_nes->cpu_bus()->add(0x8000, &m_rom[m_prg_offset], 0x4000, true);
+            m_nes->cpu_bus()->add(0xC000, &m_rom[m_prg_offset], 0x4000, true);
+        } else {
+            m_nes->cpu_bus()->add(0x8000, &m_rom[m_prg_offset], 0x8000, true);
+        }
     }
 
     ~NESMapperNone(void)
@@ -106,13 +112,6 @@ public:
     {
         m_prg_offset = prg_bank(0);
         m_chr_offset = chr_bank(0);
-    }
-
-    byte_t prg_read(offset_t offset)
-    {
-        if (m_header.rom_banks == 1)
-            offset &= 0x3fff;
-        return m_rom[m_prg_offset + offset];
     }
 
 private:
@@ -140,24 +139,19 @@ public:
     {
         m_prg_offset0 = prg_bank(0);
         m_prg_offset1 = prg_bank(m_header.rom_banks -1 );
-        m_nes->cpu_bus()->add(0x8000, &m_rom[m_prg_offset0], 0x4000, false);
-        m_nes->cpu_bus()->add(0xC000, &m_rom[m_prg_offset1], 0x4000, false);
+        m_nes->cpu_bus()->add(0x8000, &m_rom[m_prg_offset0], 0x4000,
+                PAGE_FAULT_CB(NESMapperUNROM::page_fault, this));
+        m_nes->cpu_bus()->add(0xC000, &m_rom[m_prg_offset1], 0x4000,
+                PAGE_FAULT_CB(NESMapperUNROM::page_fault, this));
         std::fill(m_chr.begin(), m_chr.end(), 0);
     }
 
-    byte_t prg_read(offset_t offset)
-    {
-        if (offset & 0x4000) {
-            offset &= 0x3FFF;
-            return m_rom[m_prg_offset1 + offset];
-        } else
-            return m_rom[m_prg_offset0 + offset];
-    }
-
-    void prg_write(offset_t offset, byte_t value)
+    void page_fault(offset_t offset, byte_t value)
     {
         int prg  = (value & 0x0f);
         m_prg_offset0 = prg_bank(prg);
+        m_nes->cpu_bus()->add(0x8000, &m_rom[m_prg_offset0], 0x4000,
+                PAGE_FAULT_CB(NESMapperUNROM::page_fault, this));
     }
 
 private:
@@ -184,22 +178,19 @@ public:
     {
         m_prg_offset = prg_bank(0);
         m_chr_offset = chr_bank(0);
-        m_nes->cpu_bus()->add(0x8000, &m_rom[m_prg_offset], 0x8000, false);
+        m_nes->cpu_bus()->add(0x8000, &m_rom[m_prg_offset], 0x8000,
+                PAGE_FAULT_CB(NESMapperGNROM::page_fault, this));
         m_nes->ppu_bus()->add(0x0000, &m_rom[m_chr_offset], 0x2000, false);
     }
 
-    byte_t prg_read(offset_t offset)
-    {
-        return m_rom[m_prg_offset + offset];
-    }
-
-    void prg_write(offset_t offset, byte_t value)
+    void page_fault(offset_t offset, byte_t value)
     {
         int chr = (value & 0x03);
         int prg  = (value & 0x30) >> 3;
         m_prg_offset = prg_bank(prg);
         m_chr_offset = chr_bank(chr);
-        m_nes->cpu_bus()->add(0x8000, &m_rom[m_prg_offset], 0x8000, false);
+        m_nes->cpu_bus()->add(0x8000, &m_rom[m_prg_offset], 0x8000,
+                PAGE_FAULT_CB(NESMapperGNROM::page_fault, this));
         m_nes->ppu_bus()->add(0x0000, &m_rom[m_chr_offset], 0x2000, false);
     }
 
@@ -224,6 +215,7 @@ public:
         if (m_header.battery) {
             m_battery_ram.resize(0x2000);
         }
+        update_mappings();
     }
 
     ~NESMapperMMC1(void)
@@ -239,19 +231,11 @@ public:
         m_shift_count = 0;
         std::fill(m_ram.begin(), m_ram.end(), 0);
         std::fill(m_battery_ram.begin(), m_battery_ram.end(), 0);
+
+        update_mappings();
     }
 
-    byte_t prg_read(offset_t offset)
-    {
-        if ((offset & 0x4000) == 0)
-            return m_rom[m_prg_offset0 + offset];
-        else {
-            offset &= 0x3fff;
-            return m_rom[m_prg_offset1 + offset];
-        }
-    }
-
-    void prg_write(offset_t offset, byte_t value)
+    void page_fault(offset_t offset, byte_t value)
     {
         if (value & 0x80) {
             m_shift_count = 0;
@@ -282,10 +266,15 @@ public:
             m_shift_count = 0;
             m_shift = 0;
         }
+        update_mappings();
+    }
 
-        m_nes->cpu_bus()->add(0x8000, &m_rom[m_prg_offset0], 0x4000, false);
-        m_nes->cpu_bus()->add(0xC000, &m_rom[m_prg_offset1], 0x4000, false);
-        m_nes->ppu_bus()->add(0x0000, &m_ram[0], 0x2000, false);
+    void update_mappings(void) {
+        m_nes->cpu_bus()->add(0x8000, &m_rom[m_prg_offset0], 0x4000,
+                PAGE_FAULT_CB(NESMapperMMC1::page_fault, this));
+        m_nes->cpu_bus()->add(0xC000, &m_rom[m_prg_offset1], 0x4000,
+                PAGE_FAULT_CB(NESMapperMMC1::page_fault, this));
+        m_nes->ppu_bus()->add(0x0000, &m_ram[m_chr_offset], 0x2000, false);
         m_nes->cpu_bus()->add(0x6000, &m_battery_ram[0], 0x2000, false);
     }
 
@@ -361,14 +350,7 @@ public:
         }
     }
 
-    byte_t prg_read(offset_t offset)
-    {
-        int bank = (offset & 0x6000) >> 13;
-        offset &= 0x1fff;
-        return m_rom[m_prg_offset[bank] + offset];
-    }
-
-    void prg_write(offset_t offset, byte_t value)
+    void page_fault(offset_t offset, byte_t value)
     {
         switch (offset) {
         case 0x0000:
@@ -381,21 +363,13 @@ public:
                 if (bit_isset(m_command, 7))
                     bank += 4;
                 m_chr_offset[bank + 0] = chr_bank1k(value);
-                m_nes->ppu_bus()->add((bank + 0) * 0x400,
-                        &m_rom[m_chr_offset[bank]], 0x400, false);
                 m_chr_offset[bank + 1] = chr_bank1k(value+1);
-                m_nes->ppu_bus()->add((bank + 1) * 0x400,
-                        &m_rom[m_chr_offset[bank + 1]], 0x400, false);
                 break;
             case 1:
                 if (bit_isset(m_command, 7))
                     bank += 4;
                 m_chr_offset[bank + 2] = chr_bank1k(value);
-                m_nes->ppu_bus()->add((bank + 2) * 0x400,
-                        &m_rom[m_chr_offset[bank + 2]], 0x400, false);
                 m_chr_offset[bank + 3] = chr_bank1k(value+1);
-                m_nes->ppu_bus()->add((bank + 3) * 0x400,
-                        &m_rom[m_chr_offset[bank + 3]], 0x400, false);
                 break;
             case 2:
             case 3:
@@ -439,6 +413,18 @@ public:
             m_irq_enable = true;
             break;
         }
+        // XXX: Offsets are wrong
+        update_mappings();
+    }
+
+    void update_mappings(void) {
+        for (int i = 0; i < 4; i++)
+            m_nes->cpu_bus()->add((i * 0x2000) + 0x8000,
+                    &m_rom[m_prg_offset[i]], 0x2000,
+                    PAGE_FAULT_CB(NESMapperMMC3::page_fault, this));
+        for (int i = 0; i < 8; i++)
+            m_nes->ppu_bus()->add((i * 0x0400),
+                    &m_rom[m_chr_offset[i]], 0x0400, false);
     }
 
 private:

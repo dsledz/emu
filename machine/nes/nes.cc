@@ -65,14 +65,7 @@ NES::NES(void):
     m_ppu = std::unique_ptr<NESPPU>(
         new NESPPU(this, "ppu", MASTER_CLOCK/4));
 
-    /* Program rom is on the CPU bus */
-    m_cpu_bus.add(0x8000, 0xFFFF,
-        [&](addr_t addr) -> byte_t {
-            return m_mapper->prg_read(addr);
-        },
-        [&](addr_t addr, byte_t value) {
-            m_mapper->prg_write(addr, value);
-        });
+    /* XXX: Mappers supply the majority of the IO mappings */
 
     /* XXX: APU registers 0x4000 - 0x4017 */
     m_cpu_bus.add(0x4000, 0x5FFF,
