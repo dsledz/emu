@@ -400,96 +400,97 @@ static Z80Opcode EDopcodes[256] = {
     OPCODE_DEF(ED, B8), OPCODE_DEF(ED, B9),
 };
 
-Z80Class::Z80Class(void)
+Z80Cpu::Z80Cpu(Machine *machine, const std::string &name, unsigned hertz,
+        state_type *state):
+    Cpu(machine, name, hertz, state)
 {
 }
 
-Z80Class::~Z80Class(void)
+Z80Cpu::~Z80Cpu(void)
 {
 }
 
 void
-Z80Class::Interrupt(ClockedDevice *dev, Z80State *state)
+Z80Cpu::execute(void)
 {
-    if (state->reset_line == LineState::Pulse) {
-        state->reset();
-        state->reset_line = LineState::Clear;
-    } else if (state->nmi_line == LineState::Pulse) {
-        //interrupt(0x0066);
-        state->nmi_line = LineState::Clear;
-    } else if (state->int0_line == LineState::Assert &&
-               state->iff1 && !state->iwait) {
-        /*
-        switch (state->imode) {
-        case 0:
-            throw CpuFault(name(), "Unsupported Interrupt mode 0");
-            break;
-        case 1:
-            interrupt(0x0038);
-            break;
-        case 2: {
-            // XXX: We should do this when we read _data
-            state->int0_line = LineState::Clear;
-            reg16_t irq;
-            irq.b.l = bus_read((state->I << 8) | _data);
-            irq.b.h = bus_read(((state->I << 8) | _data) + 1);
-            interrupt(irq.d);
+    while (true) {
+        switch (m_state->Phase) {
+        case CpuPhase::Interrupt: {
+            if (m_state->reset_line == LineState::Pulse) {
+                m_state->reset();
+                m_state->reset_line = LineState::Clear;
+            } else if (m_state->nmi_line == LineState::Pulse) {
+                //interrupt(0x0066);
+                m_state->nmi_line = LineState::Clear;
+            } else if (m_state->int0_line == LineState::Assert &&
+                    m_state->iff1 && !m_state->iwait) {
+                /*
+                   switch (m_state->imode) {
+                   case 0:
+                   throw CpuFault(name(), "Unsupported Interrupt mode 0");
+                   break;
+                   case 1:
+                   interrupt(0x0038);
+                   break;
+                   case 2: {
+                // XXX: We should do this when we read _data
+                m_state->int0_line = LineState::Clear;
+                reg16_t irq;
+                irq.b.l = bus_read((m_state->I << 8) | _data);
+                irq.b.h = bus_read(((m_state->I << 8) | _data) + 1);
+                interrupt(irq.d);
+                }
+                }*/
+            }
+
+            if (unlikely(m_state->iwait))
+                m_state->iwait = false;
+
+            if (unlikely(m_state->yield)) {
+                yield();
+                m_state->yield = false;
+            }
+            m_state->Phase = CpuPhase::Decode;
         }
-        }*/
+        case CpuPhase::Decode: {
+            m_state->latch_pc = m_state->PC;
+            m_state->latch_op = pc_read(m_state);
+            if (m_state->latch_op == 0xDD) {
+                m_state->vHL = &m_state->IX;
+                m_state->prefix = Z80Prefix(m_state->latch_op);
+                m_state->latch_op = pc_read(m_state);
+                m_state->Op = &opcodes[m_state->latch_op];
+            } else if (m_state->latch_op == 0xFD) {
+                m_state->vHL = &m_state->IY;
+                m_state->prefix = Z80Prefix(m_state->latch_op);
+                m_state->latch_op = pc_read(m_state);
+                m_state->Op = &opcodes[m_state->latch_op];
+            } else if (m_state->latch_op == 0xED) {
+                m_state->vHL = &m_state->HL;
+                m_state->prefix = Z80Prefix(0xED);
+                m_state->latch_op = pc_read(m_state);
+                m_state->Op = &EDopcodes[m_state->latch_op];
+            } else {
+                m_state->vHL = &m_state->HL;
+                m_state->prefix = Z80Prefix::NoPrefix;
+                m_state->Op = &opcodes[m_state->latch_op];
+            }
+            m_state->Phase = CpuPhase::Dispatch;
+        }
+        case CpuPhase::Dispatch: {
+            m_state->icycles = m_state->Op->cycles;
+            m_state->Op->func(m_state);
+            IF_LOG(Trace)
+                LOG_TRACE(Log(m_state));
+            add_icycles(m_state->icycles);
+            m_state->Phase = CpuPhase::Interrupt;
+        }
+        }
     }
-
-    if (unlikely(state->iwait))
-        state->iwait = false;
-
-    if (unlikely(state->yield)) {
-        dev->yield();
-        state->yield = false;
-    }
-    state->Phase = CpuPhase::Decode;
-}
-
-void
-Z80Class::Decode(ClockedDevice *dev, Z80State *state)
-{
-    state->latch_pc = state->PC;
-    state->latch_op = pc_read(state);
-    if (state->latch_op == 0xDD) {
-        state->vHL = &state->IX;
-        state->prefix = Z80Prefix(state->latch_op);
-        state->latch_op = pc_read(state);
-        state->Op = &opcodes[state->latch_op];
-    } else if (state->latch_op == 0xFD) {
-        state->vHL = &state->IY;
-        state->prefix = Z80Prefix(state->latch_op);
-        state->latch_op = pc_read(state);
-        state->Op = &opcodes[state->latch_op];
-    } else if (state->latch_op == 0xED) {
-        state->vHL = &state->HL;
-        state->prefix = Z80Prefix(0xED);
-        state->latch_op = pc_read(state);
-        state->Op = &EDopcodes[state->latch_op];
-    } else {
-        state->vHL = &state->HL;
-        state->prefix = Z80Prefix::NoPrefix;
-        state->Op = &opcodes[state->latch_op];
-    }
-    state->Phase = CpuPhase::Dispatch;
-}
-
-/* Example */
-void
-Z80Class::Dispatch(ClockedDevice *dev, Z80State *state)
-{
-    state->icycles = state->Op->cycles;
-    state->Op->func(state);
-    IF_LOG(Trace)
-        LOG_TRACE(Log(state));
-    dev->add_icycles(state->icycles);
-    state->Phase = CpuPhase::Interrupt;
 }
 
 std::string
-Z80Class::Log(Z80State *state)
+Z80Cpu::Log(Z80State *state)
 {
     std::stringstream os;
     const std::string &str = state->Op->name;

@@ -61,50 +61,45 @@ public:
     ClockedBus16 *bus;
 };
 
-struct TestClass {
-    void Interrupt(ClockedDevice *dev, TestState *state) {
-        if (state->INT0 == LineState::Pulse) {
-            state->INT0 = LineState::Clear;
-            state->PC = 0x0000;
-        }
-        state->Phase = CpuPhase::Decode;
-    }
-
-    void Decode(ClockedDevice *dev, TestState *state) {
-        state->bus->io_read(state->PC, &state->opcode);
-        state->Phase = CpuPhase::Dispatch;
-    }
-
-    void Dispatch(ClockedDevice *dev, TestState *state) {
-        switch (state->opcode) {
-        case 0:
-            state->A++;
-            break;
-        case 1:
-            state->B++;
-            break;
-        }
-    }
-};
-
 struct TestOpcode
 {
 };
 
-class TestCpu: public Cpu<ClockedBus16, TestState, TestOpcode, TestClass> {
+class TestCpu: public Cpu<ClockedBus16, TestState, TestOpcode> {
 public:
     TestCpu(Machine *machine, const std::string &name, unsigned hertz,
             TestState *state):
-        Cpu(machine, name, hertz, state)
-    {
-    }
-    virtual ~TestCpu(void)
-    {
-    }
-private:
-    TestState m_state;
-};
+        Cpu(machine, name, hertz, state) {}
+    ~TestCpu() {}
 
+    virtual void execute(void) {
+        while (true) {
+            switch (m_state->Phase) {
+            case CpuPhase::Interrupt: {
+                if (m_state->INT0 == LineState::Pulse) {
+                    m_state->INT0 = LineState::Clear;
+                    m_state->PC = 0x0000;
+                }
+                m_state->Phase = CpuPhase::Decode;
+            }
+            case CpuPhase::Decode: {
+                m_state->bus->io_read(m_state->PC, &m_state->opcode);
+                m_state->Phase = CpuPhase::Dispatch;
+            }
+            case CpuPhase::Dispatch: {
+                switch (m_state->opcode) {
+                case 0:
+                    m_state->A++;
+                    break;
+                case 1:
+                    m_state->B++;
+                    break;
+                }
+            }
+            }
+        }
+    }
+};
 
 template<typename CpuType, unsigned initial_pc=0x0000>
 class TestMachine2: public Machine
@@ -137,7 +132,6 @@ public:
     RamDevice ram;
     unsigned pc;
 };
-
 
 TEST(CpuTest, constructor)
 {

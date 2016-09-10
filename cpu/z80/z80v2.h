@@ -57,20 +57,19 @@ enum Z80Arg16 {
 
 typedef std::unique_ptr<Z80Bus> Z80Bus_ptr;
 
-class Z80Class
+class Z80Cpu: public Cpu<Z80Bus, Z80State, Z80Opcode>
 {
 public:
-    Z80Class();
-    ~Z80Class();
+    Z80Cpu(Machine *machine, const std::string &name, unsigned hertz,
+           state_type *state);
+    ~Z80Cpu();
+    Z80Cpu(const Z80Cpu &rhs) = delete;
 
-    void Interrupt(ClockedDevice *cpu, Z80State *state);
-    void Decode(ClockedDevice *cpu, Z80State *state);
-    void Dispatch(ClockedDevice *cpu, Z80State *state);
-    std::string Log(Z80State *state);
+    virtual void execute(void);
 
 private:
+    std::string Log(Z80State *state);
 };
 
-typedef CPU2::Cpu<Z80Bus, Z80State, Z80Opcode, Z80Class> Z80Cpu;
 typedef std::unique_ptr<Z80Cpu> Z80Cpu_ptr;
 };

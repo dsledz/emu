@@ -97,13 +97,11 @@ struct CpuOpcode {
     void (*func)(_state_type *state);
 };
 
-template<class _bus_type, class _state_type, class _opcode_type,
-    class _class_type>
+template<class _bus_type, class _state_type, class _opcode_type>
 class Cpu: public ClockedDevice {
 public:
     typedef _bus_type bus_type;
     typedef _state_type state_type;
-    typedef _class_type class_type;
     typedef _opcode_type opcode_type;
     typedef typename bus_type::addr_type addr_type;
     typedef typename bus_type::data_type data_type;
@@ -111,8 +109,7 @@ public:
     Cpu(Machine *machine, const std::string &name, unsigned hertz,
         state_type *state):
         ClockedDevice(machine, name, hertz),
-        m_state(state),
-        m_class() {
+        m_state(state) {
     }
     virtual ~Cpu(void) { }
     Cpu(const Cpu &cpu) = delete;
@@ -129,22 +126,9 @@ public:
 
 protected:
 
-    virtual void execute(void)
-    {
-        while (true) {
-            switch (m_state->Phase) {
-            case CpuPhase::Interrupt:
-                m_class.Interrupt(this, m_state);
-            case CpuPhase::Decode:
-                m_class.Decode(this, m_state);
-            case CpuPhase::Dispatch:
-                m_class.Dispatch(this, m_state);
-            }
-        }
-    }
+    virtual void execute(void) = 0;
 
     state_type *m_state;
-    class_type m_class;
 };
 
 };
