@@ -5,5 +5,7 @@ cscope.*
 *.swp
 *.swo
 
+.ycm_extra_conf.pyc
+
 build
 roms
