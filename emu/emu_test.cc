@@ -48,8 +48,8 @@ TEST(MachineTest, time2) {
 }
 
 TEST(MachineTest, time3) {
-  Cycles hertz(18432000);
-  Cycles c = Time(usec(200)).to_cycles(hertz);
+  Hertz hertz(18432000);
+  Cycles c(Time(usec(200)), hertz);
   EXPECT_EQ(Cycles(3686), c);
 }
 

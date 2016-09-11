@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Dan Sledz
+ * Copyright (c) 2016, Dan Sledz
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,6 +23,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "emu/emu.h"
+#include  "core/rtc.h"
 
-using namespace EMU;
+const Core::Time Core::time_zero = Time(sec(0));

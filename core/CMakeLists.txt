@@ -16,6 +16,7 @@ endif (BUILD_ASM)
 add_library(core
     debug.cc
     fiber.cc
+    rtc.cc
     task.cc
     ${SUPPORT_ASM}
     )

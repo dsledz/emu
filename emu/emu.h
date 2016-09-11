@@ -27,9 +27,6 @@
  */
 #pragma once
 
-#include "core/bits.h"
-#include "core/debug.h"
-#include "core/exception.h"
 #include "emu/bus.h"
 #include "emu/clock_bus.h"
 #include "emu/device.h"

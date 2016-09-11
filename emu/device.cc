@@ -207,8 +207,7 @@ void ClockedDevice::update(DeviceUpdate &update) {
   switch (update.type) {
     case DeviceUpdateType::Clock: {
       m_target = update.clock.now;
-      EmuTime avail = m_target - m_current;
-      m_avail = avail.to_cycles(Cycles(m_hertz));
+      m_avail = Cycles(m_target - m_current, m_hertz);
       break;
     }
     default:

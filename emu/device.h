@@ -24,6 +24,7 @@
 #pragma once
 
 #include "core/bits.h"
+#include "core/channel.h"
 #include "core/exception.h"
 #include "core/fiber.h"
 #include "core/task.h"
@@ -187,7 +188,7 @@ class ClockedDevice : public Device, public EmuClockBase {
  private:
   void wait_icycles(Cycles cycles);
   void time_advance(void) {
-    m_current.add_cycles(m_used, Cycles(m_hertz));
+    m_current += m_used.to_time(m_hertz);
     m_used = Cycles(0);
   }
 
