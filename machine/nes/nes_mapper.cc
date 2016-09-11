@@ -286,6 +286,7 @@ class NESMapperMMC3 : public NESMapper {
         prg_bank8k((m_header.rom_banks - 1) * 2);
     m_prg_offset[1] = m_prg_offset[3] =
         prg_bank8k((m_header.rom_banks - 1) * 2 + 1);
+    update_mappings();
   }
 
   virtual void line(Line line, LineState state) {
