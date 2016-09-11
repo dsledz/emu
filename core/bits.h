@@ -37,29 +37,30 @@
 #include <string.h>
 
 #include <stdint.h>
-#include <string>
 #include <algorithm>
-#include <future>
-#include <string>
-#include <functional>
-#include <type_traits>
-#include <vector>
-#include <list>
-#include <queue>
-#include <memory>
-#include <cassert>
 #include <array>
-#include <map>
 #include <atomic>
+#include <cassert>
+#include <functional>
+#include <future>
+#include <list>
+#include <map>
+#include <memory>
+#include <queue>
+#include <string>
+#include <sstream>
+#include <type_traits>
+#include <unordered_map>
+#include <vector>
 
 #ifdef WIN32
-#define a_unused 
+#define a_unused
 #define likely(x) x
 #define unlikely(x) x
 #else
 #define a_unused __attribute((unused))
-#define likely(x)      __builtin_expect(!!(x), 1)
-#define unlikely(x)    __builtin_expect(!!(x), 0)
+#define likely(x) __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
 #endif
 
 /*  _____                     _       __
@@ -77,27 +78,27 @@ typedef std::vector<uint16_t> u16vec;
 typedef unsigned char reg8_t;
 
 union reg16_t {
-    reg16_t(void) = default;
-    reg16_t(uint16_t d): d(d) { }
-    reg16_t(reg8_t h, reg8_t l): b(h, l) { }
+  reg16_t(void) = default;
+  reg16_t(uint16_t d) : d(d) {}
+  reg16_t(reg8_t h, reg8_t l) : b(h, l) {}
 
-    struct Bits {
-        Bits(void) = default;
-        Bits(reg8_t h, reg8_t l): l(l), h(h) { }
-        reg8_t l;
-        reg8_t h;
-    } b;
-    uint16_t d = 0;
+  struct Bits {
+    Bits(void) = default;
+    Bits(reg8_t h, reg8_t l) : l(l), h(h) {}
+    reg8_t l;
+    reg8_t h;
+  } b;
+  uint16_t d = 0;
 };
 union reg32_t {
-    reg32_t(void) = default;
-    reg32_t(uint32_t d): d(d) { }
+  reg32_t(void) = default;
+  reg32_t(uint32_t d) : d(d) {}
 
-    struct Bits {
-        reg16_t l;
-        reg16_t h;
-    } b;
-    uint16_t d = 0;
+  struct Bits {
+    reg16_t l;
+    reg16_t h;
+  } b;
+  uint16_t d = 0;
 };
 
 /*  ____  _ _      ___
@@ -107,31 +108,27 @@ union reg32_t {
  * |____/|_|\__|  \___/| .__/|___/
  *                     |_|
  */
-template<typename A, typename T>
-static inline void bit_set(A &arg, T bit, bool val)
-{
-    auto n = static_cast<typename std::underlying_type<T>::type>(bit);
-    arg &= ~(1 << n);
-    arg |= (val ? (1 << n) : 0);
+template <typename A, typename T>
+static inline void bit_set(A &arg, T bit, bool val) {
+  auto n = static_cast<typename std::underlying_type<T>::type>(bit);
+  arg &= ~(1 << n);
+  arg |= (val ? (1 << n) : 0);
 }
 
-template<typename A>
-static inline void bit_set(A &arg, int n, bool val)
-{
-    arg &= ~(1 << n);
-    arg |= (val ? (1 << n) : 0);
+template <typename A>
+static inline void bit_set(A &arg, int n, bool val) {
+  arg &= ~(1 << n);
+  arg |= (val ? (1 << n) : 0);
 }
 
-template<typename A>
-static inline void bit_set(A &arg, unsigned n, bool val)
-{
-    arg &= ~(1 << n);
-    arg |= (val ? (1 << n) : 0);
+template <typename A>
+static inline void bit_set(A &arg, unsigned n, bool val) {
+  arg &= ~(1 << n);
+  arg |= (val ? (1 << n) : 0);
 }
 
-static inline void bit_setmask(byte_t &arg, byte_t mask, byte_t val)
-{
-    arg = (arg & ~mask) | val;
+static inline void bit_setmask(byte_t &arg, byte_t mask, byte_t val) {
+  arg = (arg & ~mask) | val;
 }
 #if 0
 template<typename T>
@@ -151,72 +148,63 @@ static inline bool bit_isset(uint16_t arg, int n)
     return (arg & (1 << n));
 }
 #else
-#define bit_isset(arg, bit) \
-    (((arg) & (1 << (bit))) != 0)
+#define bit_isset(arg, bit) (((arg) & (1 << (bit))) != 0)
 #endif
 
-#define bit_toggle(arg1, arg2, bit) \
-    ((bit_isset((arg1), (bit)) ^ bit_isset((arg2), (bit))) \
-      && bit_isset((arg1), (bit)))
+#define bit_toggle(arg1, arg2, bit)                         \
+  ((bit_isset((arg1), (bit)) ^ bit_isset((arg2), (bit))) && \
+   bit_isset((arg1), (bit)))
 
-typedef std::function<void ()> callback_t;
+typedef std::function<void()> callback_t;
 
 #ifdef WIN32
-template<typename T>
-static inline uint8_t val(T t)
-{
-    return static_cast<typename std::underlying_type<T>::type>(t);
+template <typename T>
+static inline uint8_t val(T t) {
+  return static_cast<typename std::underlying_type<T>::type>(t);
 }
 #else
-template<typename T>
-static inline uint8_t __attribute__((const)) val(T t)
-{
-    return static_cast<typename std::underlying_type<T>::type>(t);
+template <typename T>
+static inline uint8_t __attribute__((const)) val(T t) {
+  return static_cast<typename std::underlying_type<T>::type>(t);
 }
 #endif
 
 /* XXX: Find a better place for this */
 
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 class Hex {
-public:
-    Hex(bool arg): v(arg), w(2) {}
-    Hex(byte_t arg): v(arg), w(2) {}
-    Hex(char arg): v(arg), w(2) {}
-    Hex(uint16_t arg): v(arg), w(4) {}
-    Hex(unsigned arg): v(arg), w(4) {}
-    Hex(size_t arg): v((unsigned)arg), w(8) {}
-    Hex(int arg): v(arg), w(2) {}
-    Hex(off_t arg): v((unsigned)arg), w(8) {}
-    Hex(reg16_t arg): v(arg.d), w(4) {}
-    Hex(reg32_t arg): v(arg.d), w(2) {}
-    unsigned v;
-    unsigned w;
+ public:
+  Hex(bool arg) : v(arg), w(2) {}
+  Hex(byte_t arg) : v(arg), w(2) {}
+  Hex(char arg) : v(arg), w(2) {}
+  Hex(uint16_t arg) : v(arg), w(4) {}
+  Hex(unsigned arg) : v(arg), w(4) {}
+  Hex(size_t arg) : v((unsigned)arg), w(8) {}
+  Hex(int arg) : v(arg), w(2) {}
+  Hex(off_t arg) : v((unsigned)arg), w(8) {}
+  Hex(reg16_t arg) : v(arg.d), w(4) {}
+  Hex(reg32_t arg) : v(arg.d), w(2) {}
+  unsigned v;
+  unsigned w;
 };
 
-static inline std::ostream& operator << (std::ostream &os,
-                                         const Hex & obj)
-{
-    os << "0x"
-       << std::hex << std::setfill('0') << std::right << std::setw(obj.w)
-       << obj.v;
-    return os;
+static inline std::ostream &operator<<(std::ostream &os, const Hex &obj) {
+  os << "0x" << std::hex << std::setfill('0') << std::right << std::setw(obj.w)
+     << obj.v;
+  return os;
 }
 
-static inline void set_byte(reg16_t &reg, int b, byte_t value)
-{
-    if (b == 0)
-        reg.b.l = value;
-    else
-        reg.b.h = value;
+static inline void set_byte(reg16_t &reg, int b, byte_t value) {
+  if (b == 0)
+    reg.b.l = value;
+  else
+    reg.b.h = value;
 }
 
-static inline byte_t get_byte(reg16_t &reg, int b)
-{
-    if (b == 0)
-        return reg.b.l;
-    else
-        return reg.b.h;
+static inline byte_t get_byte(reg16_t &reg, int b) {
+  if (b == 0)
+    return reg.b.l;
+  else
+    return reg.b.h;
 }
-

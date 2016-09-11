@@ -26,102 +26,77 @@
 #include "core/bits.h"
 #include "core/exception.h"
 
-#include "emu/timing.h"
 #include "emu/timer_queue.h"
+#include "emu/timing.h"
 
 using namespace EMU;
 
-TimerQueue::TimerQueue(void):
-    _clock(time_zero),
-    _quit(false)
-{
+TimerQueue::TimerQueue(void) : _clock(time_zero), _quit(false) {}
+
+TimerQueue::~TimerQueue(void) {}
+
+void TimerQueue::stop(void) {
+  lock_mtx lock(mtx);
+  _quit = true;
+  cv.notify_one();
 }
 
-TimerQueue::~TimerQueue(void)
-{
+Time TimerQueue::run(Time delta) {
+  lock_mtx lock(mtx);
+  Time deadline = _clock + delta;
+  TimerItem_ptr item = NULL;
+  while ((item = pop(deadline)) != NULL) {
+    (*item.get())();
+    _clock = item->deadline();
+    if (item->periodic()) add(item);
+  }
+  _clock = deadline;
+  return _clock;
 }
 
-void
-TimerQueue::stop(void)
-{
-    lock_mtx lock(mtx);
-    _quit = true;
-    cv.notify_one();
+TimerItem_ptr TimerQueue::add_periodic(Time period, callback_t callback) {
+  lock_mtx lock(mtx);
+  TimerItem_ptr timer = TimerItem_ptr(new TimerItem(period, callback, true));
+  add(timer);
+  return timer;
 }
 
-Time
-TimerQueue::run(Time delta)
-{
-    lock_mtx lock(mtx);
-    Time deadline = _clock + delta;
-    TimerItem_ptr item = NULL;
-    while ((item = pop(deadline)) != NULL) {
-        (*item.get())();
-        _clock = item->deadline();
-        if (item->periodic())
-            add(item);
-    }
-    _clock = deadline;
-    return _clock;
+TimerItem_ptr TimerQueue::add_timeout(Time period, callback_t callback) {
+  lock_mtx lock(mtx);
+  TimerItem_ptr timer = TimerItem_ptr(new TimerItem(period, callback));
+  add(timer);
+  return timer;
 }
 
-TimerItem_ptr
-TimerQueue::add_periodic(Time period, callback_t callback)
-{
-    lock_mtx lock(mtx);
-    TimerItem_ptr timer = TimerItem_ptr(new TimerItem(period, callback, true));
-    add(timer);
-    return timer;
+void TimerQueue::add(TimerItem_ptr timer) {
+  _timers.remove(timer);
+  timer->schedule(_clock);
+  auto it = _timers.begin();
+  while (it != _timers.end()) {
+    if ((*it)->deadline() > timer->deadline()) break;
+    it++;
+  }
+  _timers.insert(it, timer);
+  cv.notify_one();
 }
 
-TimerItem_ptr
-TimerQueue::add_timeout(Time period, callback_t callback)
-{
-    lock_mtx lock(mtx);
-    TimerItem_ptr timer = TimerItem_ptr(new TimerItem(period, callback));
-    add(timer);
-    return timer;
+bool TimerQueue::remove(TimerItem_ptr timer) {
+  lock_mtx lock(mtx);
+  _timers.remove(timer);
+  cv.notify_one();
+  return true;
 }
 
-void
-TimerQueue::add(TimerItem_ptr timer)
-{
-    _timers.remove(timer);
-    timer->schedule(_clock);
-    auto it = _timers.begin();
-    while (it != _timers.end()) {
-        if ((*it)->deadline() > timer->deadline())
-            break;
-        it++;
-    }
-    _timers.insert(it, timer);
-    cv.notify_one();
+TimerItem_ptr TimerQueue::pop(Time deadline) {
+  TimerItem_ptr item = NULL;
+  if (!_timers.empty() && _timers.front()->deadline() < deadline) {
+    item = _timers.front();
+    _timers.pop_front();
+  }
+  return item;
 }
 
-bool
-TimerQueue::remove(TimerItem_ptr timer)
-{
-    lock_mtx lock(mtx);
-    _timers.remove(timer);
-    cv.notify_one();
-    return true;
+void TimerQueue::wait(void) {
+  lock_mtx lock(mtx);
+  lock.wait(cv);
 }
-
-TimerItem_ptr
-TimerQueue::pop(Time deadline)
-{
-    TimerItem_ptr item = NULL;
-    if (!_timers.empty() && _timers.front()->deadline() < deadline) {
-        item = _timers.front();
-        _timers.pop_front();
-    }
-    return item;
-}
-
-void
-TimerQueue::wait(void)
-{
-    lock_mtx lock(mtx);
-    lock.wait(cv);
-}
-

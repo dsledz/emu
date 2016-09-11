@@ -25,106 +25,96 @@
 
 #include "emu/emu.h"
 
+#include "driver/cli_opts.h"
 #include "driver/emulator.h"
 #include "driver/opengl.h"
-#include "driver/cli_opts.h"
 
-#include <SFML/Window.hpp>
 #include <SFML/OpenGL.hpp>
+#include <SFML/Window.hpp>
 
 using namespace EMU;
 using namespace Core;
 
-class SFMLException: public Core::CoreException {
-    public:
-        SFMLException(): CoreException("SFML exception") { }
+class SFMLException : public Core::CoreException {
+ public:
+  SFMLException() : CoreException("SFML exception") {}
 };
 
-class SFMLEmulator: public Emulator
-{
-public:
-    SFMLEmulator(const Options &options):
-        Emulator(options),
-        m_window(nullptr)
-    {
-        sf::VideoMode vm(machine()->get_screen_width() * 2,
-                         machine()->get_screen_height() *2);
+class SFMLEmulator : public Emulator {
+ public:
+  SFMLEmulator(const Options &options) : Emulator(options), m_window(nullptr) {
+    sf::VideoMode vm(machine()->get_screen_width() * 2,
+                     machine()->get_screen_height() * 2);
 
-        m_window = std::unique_ptr<sf::Window>(
-            new sf::Window(vm, "OpenGL", sf::Style::Default, sf::ContextSettings(32)));
-        m_window->setVerticalSyncEnabled(true);
+    m_window = std::unique_ptr<sf::Window>(new sf::Window(
+        vm, "OpenGL", sf::Style::Default, sf::ContextSettings(32)));
+    m_window->setVerticalSyncEnabled(true);
 
-        m_fb = std::unique_ptr<GLFrameBuffer>(new GLFrameBuffer());
-        machine()->set_frame_buffer(m_fb.get());
-        m_fb->init();
+    m_fb = std::unique_ptr<GLFrameBuffer>(new GLFrameBuffer());
+    machine()->set_frame_buffer(m_fb.get());
+    m_fb->init();
 
-        poll_events();
+    poll_events();
+  }
+
+  virtual void start(void) {
+    machine()->load_rom(options()->rom);
+    machine()->reset();
+
+    set_state(EmuState::Running);
+    task = std::async(std::launch::async, &Emulator::do_execute, this);
+
+    while (get_state() == EmuState::Running) {
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      m_fb->render();
+      m_window->display();
+      poll_events();
     }
+  }
 
-    virtual void start(void) {
-        machine()->load_rom(options()->rom);
-        machine()->reset();
+  virtual void stop(void) {
+    Emulator::stop();
+    task.get();
+  }
 
-        set_state(EmuState::Running);
-        task = std::async(std::launch::async, &Emulator::do_execute, this);
+ private:
+  void poll_events(void) {
+    sf::Event event;
+    while (m_window->pollEvent(event)) on_event(event);
+  }
 
-        while (get_state() == EmuState::Running) {
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            m_fb->render();
-            m_window->display();
-            poll_events();
-        }
+  void on_event(const sf::Event &event) {
+    if (event.type == sf::Event::Closed) {
+      stop();
+    } else if (event.type == sf::Event::Resized) {
+      glViewport(0, 0, event.size.width, event.size.height);
+    } else if (event.type == sf::Event::KeyPressed) {
+      switch (event.key.code) {
+        case sf::Keyboard::Key::Q:
+          stop();
+          break;
+        default: { /* XXX: Find key */ }
+      }
     }
+  }
 
-    virtual void stop(void) {
-        Emulator::stop();
-        task.get();
-    }
+  std::unique_ptr<sf::Window> m_window;
+  std::unique_ptr<GLFrameBuffer> m_fb;
 
-private:
-    void poll_events(void) {
-        sf::Event event;
-        while (m_window->pollEvent(event))
-            on_event(event);
-    }
-
-    void on_event(const sf::Event & event) {
-        if (event.type == sf::Event::Closed) {
-            stop();
-        } else if (event.type == sf::Event::Resized) {
-            glViewport(0, 0, event.size.width, event.size.height);
-        } else if (event.type == sf::Event::KeyPressed) {
-            switch (event.key.code) {
-            case sf::Keyboard::Key::Q:
-                stop();
-                break;
-            default: {
-                /* XXX: Find key */
-            }
-            }
-        }
-    }
-
-    std::unique_ptr<sf::Window> m_window;
-    std::unique_ptr<GLFrameBuffer> m_fb;
-
-    std::future<void> task;
+  std::future<void> task;
 };
 
+extern "C" int main(int argc, char **argv) {
+  try {
+    Driver::CLIOptions opts(argc, argv);
 
-extern "C" int main(int argc, char **argv)
-{
-    try {
+    SFMLEmulator emu(opts);
 
-        Driver::CLIOptions opts(argc, argv);
+    emu.start();
 
-        SFMLEmulator emu(opts);
+  } catch (CoreException &e) {
+    std::cout << "Exception: " << e.message() << std::endl;
+  }
 
-        emu.start();
-
-    } catch (CoreException &e) {
-        std::cout << "Exception: " << e.message() << std::endl;
-    }
-
-    return 0;
+  return 0;
 }

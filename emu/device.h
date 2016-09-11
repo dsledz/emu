@@ -25,61 +25,58 @@
 
 #include "core/bits.h"
 #include "core/exception.h"
-#include "core/task.h"
 #include "core/fiber.h"
-#include "emu/state.h"
-#include "emu/io.h"
-#include "emu/input.h"
-#include "emu/timing.h"
+#include "core/task.h"
 #include "emu/debugger.h"
+#include "emu/input.h"
+#include "emu/io.h"
+#include "emu/state.h"
+#include "emu/timing.h"
 
 using namespace Core;
 
 namespace EMU {
 
 enum class DeviceStatus {
-    Off      = 0,
-    Halted   = 1,
-    Running  = 2,
-    Stopped  = 3,
-    Fault    = 4,
+  Off = 0,
+  Halted = 1,
+  Running = 2,
+  Stopped = 3,
+  Fault = 4,
 };
 
 class Machine;
 
 enum class DeviceUpdateType {
-    None,
-    Clock,
-    Status,
+  None,
+  Clock,
+  Status,
 };
 
 struct DeviceUpdate {
-    DeviceUpdate(void): type(DeviceUpdateType::None) {}
-    DeviceUpdate(const EmuClockUpdate &clock):
-        type(DeviceUpdateType::Clock), clock(clock) {}
-    DeviceUpdate(const DeviceStatus status):
-        type(DeviceUpdateType::Status), status(status) {}
+  DeviceUpdate(void) : type(DeviceUpdateType::None) {}
+  DeviceUpdate(const EmuClockUpdate &clock)
+      : type(DeviceUpdateType::Clock), clock(clock) {}
+  DeviceUpdate(const DeviceStatus status)
+      : type(DeviceUpdateType::Status), status(status) {}
 
-    DeviceUpdateType type;
-    union {
-        EmuClockUpdate clock;
-        DeviceStatus   status;
-    };
+  DeviceUpdateType type;
+  union {
+    EmuClockUpdate clock;
+    DeviceStatus status;
+  };
 };
 
-struct DeviceFault: public CoreException {
-    DeviceFault(const std::string &device, const std::string &details=""):
-        CoreException(""),
-        device(device)
-    {
-        std::stringstream ss;
-        ss << "(" << device << "): Fault";
-        if (details != "")
-            ss << " " << details;
-        msg += ss.str();
-    }
+struct DeviceFault : public CoreException {
+  DeviceFault(const std::string &device, const std::string &details = "")
+      : CoreException(""), device(device) {
+    std::stringstream ss;
+    ss << "(" << device << "): Fault";
+    if (details != "") ss << " " << details;
+    msg += ss.str();
+  }
 
-    std::string device;
+  std::string device;
 };
 
 typedef Channel<DeviceUpdate> EmuDeviceChannel;
@@ -90,145 +87,130 @@ typedef std::shared_ptr<EmuDeviceChannel> EmuDeviceChannel_ptr;
 /**
  * Emulation device. Specific chips implement the device class.
  */
-class Device: public Debuggable {
-public:
-    Device(Machine *machine, const std::string &name);
-    Device(Machine *machine, const std::string &name, unsigned hertz);
-    virtual ~Device(void);
+class Device : public Debuggable {
+ public:
+  Device(Machine *machine, const std::string &name);
+  Device(Machine *machine, const std::string &name, unsigned hertz);
+  virtual ~Device(void);
 
-    virtual EmuClockBase *clock(void) {
-        return NULL;
-    }
-    virtual void line(Line line, LineState state);
-    virtual void reset(void);
-    virtual void execute(void);
-    virtual void update(DeviceUpdate &update);
+  virtual EmuClockBase *clock(void) { return NULL; }
+  virtual void line(Line line, LineState state);
+  virtual void reset(void);
+  virtual void execute(void);
+  virtual void update(DeviceUpdate &update);
 
-    void set_status(DeviceStatus status);
-    void wait_status(DeviceStatus status);
-    DeviceStatus get_status(void);
+  void set_status(DeviceStatus status);
+  void wait_status(DeviceStatus status);
+  DeviceStatus get_status(void);
 
-    /** XXX: These should be protected */
-    const std::string &name(void);
-    Machine *machine(void);
+  /** XXX: These should be protected */
+  const std::string &name(void);
+  Machine *machine(void);
 
-    Task * task(void) {
-        return &m_task;
-    }
+  Task *task(void) { return &m_task; }
 
-protected:
+ protected:
+  void log(LogLevel level, const std::string fmt, ...);
+  void wait(DeviceStatus status);
+  void idle(void);
 
-    void log(LogLevel level, const std::string fmt, ...);
-    void wait(DeviceStatus status);
-    void idle(void);
+ protected:
+  void task_fn(void);
 
-protected:
-
-    void task_fn(void);
-
-    std::string              m_name;            /* ro */
-    Machine                 *m_machine;         /* ro */
-    DeviceStatus             m_status;          /* (m) */
-    DeviceStatus             m_target_status;   /* (p) */
-    unsigned                 m_hertz;
-    std::condition_variable  m_cv;              /* ? */
-    std::mutex               m_mtx;             /* ? */
-    EmuDeviceChannel         m_channel;         /* ? */
-    FiberTask                m_task;
+  std::string m_name;           /* ro */
+  Machine *m_machine;           /* ro */
+  DeviceStatus m_status;        /* (m) */
+  DeviceStatus m_target_status; /* (p) */
+  unsigned m_hertz;
+  std::condition_variable m_cv; /* ? */
+  std::mutex m_mtx;             /* ? */
+  EmuDeviceChannel m_channel;   /* ? */
+  FiberTask m_task;
 };
 
 typedef std::unique_ptr<Device> Device_ptr;
 
-class IODevice: public Device {
-public:
-    IODevice(Machine *machine, const std::string &name, size_t size);
-    virtual ~IODevice(void);
+class IODevice : public Device {
+ public:
+  IODevice(Machine *machine, const std::string &name, size_t size);
+  virtual ~IODevice(void);
 
-    size_t size(void);
+  size_t size(void);
 
-    virtual void write8(offset_t offset, byte_t arg) = 0;
-    virtual byte_t read8(offset_t offset) = 0;
-    virtual byte_t *direct(offset_t offset) = 0;
+  virtual void write8(offset_t offset, byte_t arg) = 0;
+  virtual byte_t read8(offset_t offset) = 0;
+  virtual byte_t *direct(offset_t offset) = 0;
 
-protected:
-    size_t m_size;
+ protected:
+  size_t m_size;
 };
 
-class MappedDevice: public Device {
-public:
-    MappedDevice(Machine *machine, const std::string &name, size_t size);
-    virtual ~MappedDevice(void);
+class MappedDevice : public Device {
+ public:
+  MappedDevice(Machine *machine, const std::string &name, size_t size);
+  virtual ~MappedDevice(void);
 
-    size_t size(void);
-    virtual bool read_only();
-    byte_t &at8(offset_t offset);
+  size_t size(void);
+  virtual bool read_only();
+  byte_t &at8(offset_t offset);
 
-protected:
-    bvec m_mem;
+ protected:
+  bvec m_mem;
 };
 
-class ClockedDevice: public Device, public EmuClockBase {
-public:
-    ClockedDevice(Machine *machine, const std::string &name, unsigned hertz);
-    virtual ~ClockedDevice(void);
+class ClockedDevice : public Device, public EmuClockBase {
+ public:
+  ClockedDevice(Machine *machine, const std::string &name, unsigned hertz);
+  virtual ~ClockedDevice(void);
 
-    virtual EmuClockBase *clock(void) {
-        return this;
-    }
+  virtual EmuClockBase *clock(void) { return this; }
 
-    inline void add_icycles(unsigned cycles) {
-        add_icycles(Cycles(cycles));
-    }
+  inline void add_icycles(unsigned cycles) { add_icycles(Cycles(cycles)); }
 
-    inline void add_icycles(Cycles cycles) {
-        if (__builtin_expect((m_channel.available() > 0), 0))
-            idle();
-        if (__builtin_expect((m_avail < cycles), 0))
-            wait_icycles(cycles);
-        m_avail -= cycles;
-        m_used += cycles;
-    }
+  inline void add_icycles(Cycles cycles) {
+    if (__builtin_expect((m_channel.available() > 0), 0)) idle();
+    if (__builtin_expect((m_avail < cycles), 0)) wait_icycles(cycles);
+    m_avail -= cycles;
+    m_used += cycles;
+  }
 
-    inline void yield(void) {
-        time_advance();
-        Task::yield();
-    }
+  inline void yield(void) {
+    time_advance();
+    Task::yield();
+  }
 
-    virtual void time_set(EmuTime now);
+  virtual void time_set(EmuTime now);
 
-protected:
-    virtual void update(DeviceUpdate &update);
+ protected:
+  virtual void update(DeviceUpdate &update);
 
-private:
+ private:
+  void wait_icycles(Cycles cycles);
+  void time_advance(void) {
+    m_current.add_cycles(m_used, Cycles(m_hertz));
+    m_used = Cycles(0);
+  }
 
-    void wait_icycles(Cycles cycles);
-    void time_advance(void) {
-        m_current.add_cycles(m_used, Cycles(m_hertz));
-        m_used = Cycles(0);
-    }
-
-    Cycles                   m_used;
-    Cycles                   m_avail;
+  Cycles m_used;
+  Cycles m_avail;
 };
 
-class GfxDevice: public ClockedDevice {
-public:
-    GfxDevice(Machine *machine, const std::string &name, unsigned hertz);
-    virtual ~GfxDevice(void);
+class GfxDevice : public ClockedDevice {
+ public:
+  GfxDevice(Machine *machine, const std::string &name, unsigned hertz);
+  virtual ~GfxDevice(void);
 
-    virtual void execute(void);
-    typedef std::function<void (void)> scanline_fn;
+  virtual void execute(void);
+  typedef std::function<void(void)> scanline_fn;
 
-    void register_callback(unsigned scanline, scanline_fn fn);
+  void register_callback(unsigned scanline, scanline_fn fn);
 
-protected:
-
-    unsigned m_scanline;
-    std::unordered_map<unsigned, scanline_fn> m_callbacks;
+ protected:
+  unsigned m_scanline;
+  std::unordered_map<unsigned, scanline_fn> m_callbacks;
 };
 
-std::ostream & operator<< (std::ostream &os, const DeviceStatus status);
+std::ostream &operator<<(std::ostream &os, const DeviceStatus status);
 
-std::ostream & operator<< (std::ostream &os, const EMU::DeviceUpdate &update);
+std::ostream &operator<<(std::ostream &os, const EMU::DeviceUpdate &update);
 };
-

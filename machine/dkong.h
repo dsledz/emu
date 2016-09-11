@@ -34,76 +34,69 @@ using namespace Z80;
 
 namespace Arcade {
 
-class DonkeyKongGfx: public ScreenDevice
-{
-public:
-    DonkeyKongGfx(Machine *machine, const std::string &name, unsigned hertz, AddressBus16 *bus);
-    ~DonkeyKongGfx(void);
+class DonkeyKongGfx : public ScreenDevice {
+ public:
+  DonkeyKongGfx(Machine *machine, const std::string &name, unsigned hertz,
+                AddressBus16 *bus);
+  ~DonkeyKongGfx(void);
 
-    void init(RomSet *romset);
+  void init(RomSet *romset);
 
-    void set_vblank_cb(std::function<void (void)> func) {
-        m_vblank_cb = func;
-    }
+  void set_vblank_cb(std::function<void(void)> func) { m_vblank_cb = func; }
 
-    RamDevice &vmem() {
-        return vram;
-    }
+  RamDevice &vmem() { return vram; }
 
-    void vmem_write(offset_t offset, uint8_t value);
-    uint8_t vmem_read(offset_t offset);
-    void palette_write(offset_t offset, uint8_t value);
+  void vmem_write(offset_t offset, uint8_t value);
+  uint8_t vmem_read(offset_t offset);
+  void palette_write(offset_t offset, uint8_t value);
 
-private:
+ private:
+  virtual void do_vblank(void);
+  virtual void do_vdraw(void);
 
-    virtual void do_vblank(void);
-    virtual void do_vdraw(void);
+  void init_sprite(GfxObject<16, 16> *obj, byte_t *b);
+  void init_tile(GfxObject<8, 8> *obj, byte_t *b);
 
-    void init_sprite(GfxObject<16, 16> *obj, byte_t *b);
-    void init_tile(GfxObject<8, 8> *obj, byte_t *b);
+  void draw_bg(FrameBuffer *screen);
+  void draw_sprites(FrameBuffer *screen);
 
-    void draw_bg(FrameBuffer *screen);
-    void draw_sprites(FrameBuffer *screen);
+  RamDevice vram;
 
-    RamDevice vram;
+  AddressBus16 *m_bus;
 
-    AddressBus16 *m_bus;
+  std::function<void(void)> m_vblank_cb;
 
-    std::function<void (void)> m_vblank_cb;
-
-    /* Graphic Data */
-    byte_t m_palette_select;
-    std::array<uint8_t, 256> m_palette_index;
-    std::array<ColorPalette<4>, 64> m_palette;
-    GfxObject<8,8> m_tiles[256];
-    GfxObject<16,16> m_sprites[128];
+  /* Graphic Data */
+  byte_t m_palette_select;
+  std::array<uint8_t, 256> m_palette_index;
+  std::array<ColorPalette<4>, 64> m_palette;
+  GfxObject<8, 8> m_tiles[256];
+  GfxObject<16, 16> m_sprites[128];
 };
 
 typedef std::unique_ptr<DonkeyKongGfx> DonkeyKongGfx_ptr;
 
-class DonkeyKong: public Machine
-{
-public:
-    DonkeyKong(const std::string &rom);
-    virtual ~DonkeyKong(void);
+class DonkeyKong : public Machine {
+ public:
+  DonkeyKong(const std::string &rom);
+  virtual ~DonkeyKong(void);
 
-private:
-    void latch_write(offset_t offset, byte_t value);
-    byte_t latch_read(offset_t offset);
+ private:
+  void latch_write(offset_t offset, byte_t value);
+  byte_t latch_read(offset_t offset);
 
-    void init_bus(void);
-    void init_switches(void);
-    void init_controls(void);
+  void init_bus(void);
+  void init_switches(void);
+  void init_controls(void);
 
-    RamDevice m_ram;
-    Z80Cpu_ptr m_main_cpu;
-    I8257_ptr m_i8257;
-    DonkeyKongGfx_ptr m_gfx;
+  RamDevice m_ram;
+  Z80Cpu_ptr m_main_cpu;
+  I8257_ptr m_i8257;
+  DonkeyKongGfx_ptr m_gfx;
 
-    AddressBus16_ptr m_bus;
+  AddressBus16_ptr m_bus;
 
-    /* Lines */
-    bool m_nmi_mask;
+  /* Lines */
+  bool m_nmi_mask;
 };
-
 };

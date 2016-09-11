@@ -26,109 +26,91 @@
  */
 #pragma once
 
-#include "emu/device.h"
 #include "cpu/lib/jit.h"
+#include "emu/device.h"
 
 using namespace EMU;
 
 namespace CPU2 {
 
-enum class CpuPhase {
-    Interrupt,
-    Decode,
-    Dispatch
-};
+enum class CpuPhase { Interrupt, Decode, Dispatch };
 
 /**
  * CPU Fault
  */
-struct CpuFault: public DeviceFault {
-    CpuFault(const std::string &cpu, const std::string &msg):
-        DeviceFault(cpu, msg) { }
+struct CpuFault : public DeviceFault {
+  CpuFault(const std::string &cpu, const std::string &msg)
+      : DeviceFault(cpu, msg) {}
 };
 
 /**
  * CPU Opcode error
  */
-struct CpuOpcodeFault: public CpuFault {
-    CpuOpcodeFault(const std::string &cpu, unsigned opcode, unsigned addr):
-        CpuFault(cpu, "invalid opcode"),
-        op(opcode),
-        pc(addr)
-    {
-        std::stringstream ss;
-        ss << " " << Hex(opcode);
-        if (addr != 0)
-            ss << " at address " << Hex(addr);
-        msg += ss.str();
-    }
-    unsigned op;
-    unsigned pc;
+struct CpuOpcodeFault : public CpuFault {
+  CpuOpcodeFault(const std::string &cpu, unsigned opcode, unsigned addr)
+      : CpuFault(cpu, "invalid opcode"), op(opcode), pc(addr) {
+    std::stringstream ss;
+    ss << " " << Hex(opcode);
+    if (addr != 0) ss << " at address " << Hex(addr);
+    msg += ss.str();
+  }
+  unsigned op;
+  unsigned pc;
 };
 
-struct CpuRegisterFault: public CpuFault {
-    CpuRegisterFault(const std::string &cpu, unsigned index):
-        CpuFault(cpu, "invalid regsiter")
-    {
-        std::stringstream ss;
-        ss << " " << Hex(index);
-        msg += ss.str();
-    }
+struct CpuRegisterFault : public CpuFault {
+  CpuRegisterFault(const std::string &cpu, unsigned index)
+      : CpuFault(cpu, "invalid regsiter") {
+    std::stringstream ss;
+    ss << " " << Hex(index);
+    msg += ss.str();
+  }
 };
 
-struct CpuFeatureFault: public CpuFault {
-    CpuFeatureFault(const std::string &cpu, const std::string &feature=""):
-        CpuFault(cpu, "unsupported feature")
-    {
-        std::stringstream ss;
-        if (feature != "") {
-            ss << " " << feature;
-            msg += ss.str();
-        }
+struct CpuFeatureFault : public CpuFault {
+  CpuFeatureFault(const std::string &cpu, const std::string &feature = "")
+      : CpuFault(cpu, "unsupported feature") {
+    std::stringstream ss;
+    if (feature != "") {
+      ss << " " << feature;
+      msg += ss.str();
     }
+  }
 };
 
-template<class _state_type>
+template <class _state_type>
 struct CpuOpcode {
-    uint8_t code;
-    const char *name;
-    int cycles;
-    int bytes;
-    void (*func)(_state_type *state);
+  uint8_t code;
+  const char *name;
+  int cycles;
+  int bytes;
+  void (*func)(_state_type *state);
 };
 
-template<class _bus_type, class _state_type, class _opcode_type>
-class Cpu: public ClockedDevice {
-public:
-    typedef _bus_type bus_type;
-    typedef _state_type state_type;
-    typedef _opcode_type opcode_type;
-    typedef typename bus_type::addr_type addr_type;
-    typedef typename bus_type::data_type data_type;
+template <class _bus_type, class _state_type, class _opcode_type>
+class Cpu : public ClockedDevice {
+ public:
+  typedef _bus_type bus_type;
+  typedef _state_type state_type;
+  typedef _opcode_type opcode_type;
+  typedef typename bus_type::addr_type addr_type;
+  typedef typename bus_type::data_type data_type;
 
-    Cpu(Machine *machine, const std::string &name, unsigned hertz,
-        state_type *state):
-        ClockedDevice(machine, name, hertz),
-        m_state(state) {
-    }
-    virtual ~Cpu(void) { }
-    Cpu(const Cpu &cpu) = delete;
+  Cpu(Machine *machine, const std::string &name, unsigned hertz,
+      state_type *state)
+      : ClockedDevice(machine, name, hertz), m_state(state) {}
+  virtual ~Cpu(void) {}
+  Cpu(const Cpu &cpu) = delete;
 
-    state_type *state(void) {
-        return m_state;
-    }
+  state_type *state(void) { return m_state; }
 
-    virtual void reset(void) {
-        m_state->reset();
-    }
+  virtual void reset(void) { m_state->reset(); }
 
-    virtual std::string dasm(addr_type addr) { return ""; }
+  virtual std::string dasm(addr_type addr) { return ""; }
 
-protected:
+ protected:
+  virtual void execute(void) = 0;
 
-    virtual void execute(void) = 0;
-
-    state_type *m_state;
+  state_type *m_state;
 };
-
 };

@@ -23,45 +23,33 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "emu/test.h"
 #include "cpu/lib/cpu.h"
+#include "emu/test.h"
 
 using namespace EMU;
 using namespace EMUTest;
 using namespace CPU;
 
 struct TestState {
-    AddressBus16 *bus;
+  AddressBus16 *bus;
 };
 
 typedef CpuTraits<uint16_t, uint8_t> TestTraits;
 
-class TestCpu: public Cpu<AddressBus16, TestTraits, TestState, uint8_t> {
-public:
-    TestCpu(Machine *machine, const std::string &name, unsigned hertz,
-            AddressBus16 *bus):
-        Cpu(machine, name, hertz, bus)
-    {
-    }
-    virtual ~TestCpu(void)
-    {
-    }
+class TestCpu : public Cpu<AddressBus16, TestTraits, TestState, uint8_t> {
+ public:
+  TestCpu(Machine *machine, const std::string &name, unsigned hertz,
+          AddressBus16 *bus)
+      : Cpu(machine, name, hertz, bus) {}
+  virtual ~TestCpu(void) {}
 
-    virtual void execute(void)
-    {
-        while (true) {
-            add_icycles(1);
-        }
+  virtual void execute(void) {
+    while (true) {
+      add_icycles(1);
     }
+  }
 
-    virtual std::string dasm(addr_type addr)
-    {
-        return "NOP";
-    }
+  virtual std::string dasm(addr_type addr) { return "NOP"; }
 };
 
-TEST(CpuTest, constructor)
-{
-    TestMachine<TestCpu> machine;
-}
-
+TEST(CpuTest, constructor) { TestMachine<TestCpu> machine; }

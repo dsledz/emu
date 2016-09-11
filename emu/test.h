@@ -34,50 +34,42 @@ namespace EMUTest {
 
 using namespace EMU;
 
-const unsigned TEST_CLOCK=1000000;
+const unsigned TEST_CLOCK = 1000000;
 
-template<typename CpuType, unsigned initial_pc=0x0000>
-class TestMachine: public Machine
-{
-public:
-    TestMachine(void):
-        Machine(),
+template <typename CpuType, unsigned initial_pc = 0x0000>
+class TestMachine : public Machine {
+ public:
+  TestMachine(void)
+      : Machine(),
         bus(),
         cpu(this, "maincpu", TEST_CLOCK, &bus),
         ram(this, "ram", 0x10000),
-        pc(initial_pc)
-    {
-        bus.add(0x0000, &ram);
+        pc(initial_pc) {
+    bus.add(0x0000, &ram);
 
-        set_line("maincpu", Line::RESET, LineState::Pulse);
-    }
-    ~TestMachine(void)
-    {
-    }
+    set_line("maincpu", Line::RESET, LineState::Pulse);
+  }
+  ~TestMachine(void) {}
 
-    void write8(byte_t value) {
-        ram.write8(pc++, value);
-    }
+  void write8(byte_t value) { ram.write8(pc++, value); }
 
-    typename CpuType::bus_type bus;
-    CpuType cpu;
-    RamDevice ram;
-    unsigned pc;
+  typename CpuType::bus_type bus;
+  CpuType cpu;
+  RamDevice ram;
+  unsigned pc;
 };
 
-#define LOAD1(op) \
-    machine.write8(op);
+#define LOAD1(op) machine.write8(op);
 #define LOAD2(op, arg) \
-    machine.write8(op); \
-    machine.write8(arg);
+  machine.write8(op);  \
+  machine.write8(arg);
 #define LOAD3(op, arg1, arg2) \
-    machine.write8(op); \
-    machine.write8(arg1); \
-    machine.write8(arg2);
+  machine.write8(op);         \
+  machine.write8(arg1);       \
+  machine.write8(arg2);
 #define LOAD4(op, arg1, arg2, arg3) \
-    machine.write8(op); \
-    machine.write8(arg1); \
-    machine.write8(arg2); \
-    machine.write8(arg3);
-
+  machine.write8(op);               \
+  machine.write8(arg1);             \
+  machine.write8(arg2);             \
+  machine.write8(arg3);
 };

@@ -27,116 +27,81 @@
 
 using namespace EMU;
 
-Emulator::Emulator(const Options &options):
-    _clock(),
-    _state(EmuState::Stopped),
-    _options(options),
-    _machine()
-{
-    Core::log.set_level(_options.log_level);
-    /* XXX: Fix constness */
-    _machine = loader()->load(const_cast<Options *>(&_options));
+Emulator::Emulator(const Options &options)
+    : _clock(), _state(EmuState::Stopped), _options(options), _machine() {
+  Core::log.set_level(_options.log_level);
+  /* XXX: Fix constness */
+  _machine = loader()->load(const_cast<Options *>(&_options));
 }
 
-Emulator::~Emulator(void)
-{
+Emulator::~Emulator(void) {}
+
+void Emulator::start(void) {
+  set_state(EmuState::Running);
+  _clock.resume();
 }
 
-void
-Emulator::start(void)
-{
-    set_state(EmuState::Running);
-    _clock.resume();
+void Emulator::stop(void) {
+  set_state(EmuState::Stopped);
+  /* XXX: task? */
+  _clock.reset();
 }
 
-void
-Emulator::stop(void)
-{
-    set_state(EmuState::Stopped);
-    /* XXX: task? */
-    _clock.reset();
+void Emulator::pause(void) {
+  set_state(EmuState::Paused);
+  _clock.pause();
 }
 
-void
-Emulator::pause(void)
-{
-    set_state(EmuState::Paused);
-    _clock.pause();
+void Emulator::reset(void) {
+  set_state(EmuState::Paused);
+  _machine->reset();
+  set_state(EmuState::Running);
 }
 
-void
-Emulator::reset(void)
-{
-    set_state(EmuState::Paused);
-    _machine->reset();
-    set_state(EmuState::Running);
-}
+void Emulator::render(void) {}
 
-void
-Emulator::render(void)
-{
-}
+void Emulator::do_execute(void) {
+  _machine->poweron();
 
-void
-Emulator::do_execute(void)
-{
-    _machine->poweron();
-
-    do {
-        {
-            lock_mtx lock(mtx);
-            while (_state == EmuState::Paused)
-                lock.wait(cv);
-            if (_state == EmuState::Stopped)
-                break;
-        }
+  do {
+    {
+      lock_mtx lock(mtx);
+      while (_state == EmuState::Paused) lock.wait(cv);
+      if (_state == EmuState::Stopped) break;
+    }
 #if 0
         _machine->run_until(_clock.runtime());
         /* Advance the clock by 1 millsecond each time. */
         struct timespec t = { 0, 50000 };
         nanosleep(&t, NULL);
 #else
-        _machine->run_forward(usec(100));
+    _machine->run_forward(usec(100));
 #endif
-    } while (true);
+  } while (true);
 
-    /* XXX: workaround */
-    exit(0);
-    //_machine->poweroff();
+  /* XXX: workaround */
+  exit(0);
+  //_machine->poweroff();
 }
 
-Emulator::EmuState
-Emulator::get_state(void)
-{
-    std::lock_guard<std::mutex> lock(mtx);
-    return _state;
+Emulator::EmuState Emulator::get_state(void) {
+  std::lock_guard<std::mutex> lock(mtx);
+  return _state;
 }
 
-void
-Emulator::set_state(EmuState state)
-{
-    std::lock_guard<std::mutex> lock(mtx);
-    _state = state;
-    _clock.reset();
-    cv.notify_one();
+void Emulator::set_state(EmuState state) {
+  std::lock_guard<std::mutex> lock(mtx);
+  _state = state;
+  _clock.reset();
+  cv.notify_one();
 }
 
-Machine *
-Emulator::machine(void)
-{
-    return _machine.get();
-}
+Machine *Emulator::machine(void) { return _machine.get(); }
 
-const Options *
-Emulator::options(void)
-{
-    return &_options;
-}
+const Options *Emulator::options(void) { return &_options; }
 
-void
-Emulator::key_event(InputKey key, bool pressed)
-{
-    machine()->send_input(key, pressed);
+void Emulator::key_event(InputKey key, bool pressed) {
+  machine()->send_input(key, pressed);
 }
 
 FORCE_UNDEFINED_SYMBOL(galaga);

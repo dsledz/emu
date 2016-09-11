@@ -34,40 +34,36 @@ namespace EMU {
 
 class Machine;
 
-struct DipswitchValueException: public CoreException {
-    DipswitchValueException(const std::string &value= ""):
-        CoreException("Unknown dipswitch value"),
-        value(value)
-    {
-        if (value != "")
-            msg += ": " + value;
-    }
-    std::string value;
+struct DipswitchValueException : public CoreException {
+  DipswitchValueException(const std::string &value = "")
+      : CoreException("Unknown dipswitch value"), value(value) {
+    if (value != "") msg += ": " + value;
+  }
+  std::string value;
 };
 
 /**
  * Describe a single setting.
  */
 class Dipswitch {
-    public:
-        Dipswitch(const std::string &name, const std::string &port,
-                  byte_t mask, byte_t def);
-        ~Dipswitch(void);
+ public:
+  Dipswitch(const std::string &name, const std::string &port, byte_t mask,
+            byte_t def);
+  ~Dipswitch(void);
 
-        void add_option(const std::string &name, byte_t value);
+  void add_option(const std::string &name, byte_t value);
 
-        void select(Machine *machine, const std::string &name);
+  void select(Machine *machine, const std::string &name);
 
-        void set_default(Machine *machine);
+  void set_default(Machine *machine);
 
-    private:
-        std::string _name;
-        std::string _port;
-        byte_t      _mask;
-        byte_t      _def;
-        std::map<std::string, byte_t> _options;
+ private:
+  std::string _name;
+  std::string _port;
+  byte_t _mask;
+  byte_t _def;
+  std::map<std::string, byte_t> _options;
 };
 
 typedef std::shared_ptr<Dipswitch> dipswitch_ptr;
-
 };

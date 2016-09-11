@@ -36,35 +36,33 @@ using namespace EMU;
 namespace GBMachine {
 
 enum Cartridge {
-    RomOnly = 0x00,
-    MBC1    = 0x01,
-    MBC1R   = 0x02,
-    MBC1RB  = 0x03,
-    MBC3RRB = 0x13
+  RomOnly = 0x00,
+  MBC1 = 0x01,
+  MBC1R = 0x02,
+  MBC1RB = 0x03,
+  MBC3RRB = 0x13
 };
 
-class GBMBC: public Device {
-    public:
-        GBMBC(Gameboy *gameboy);
-        virtual ~GBMBC(void);
+class GBMBC : public Device {
+ public:
+  GBMBC(Gameboy *gameboy);
+  virtual ~GBMBC(void);
 
-        virtual void save(SaveState &state);
-        virtual void load(LoadState &state);
-        virtual void line(Line line, LineState state) { }
-        virtual void reset(void);
+  virtual void save(SaveState &state);
+  virtual void load(LoadState &state);
+  virtual void line(Line line, LineState state) {}
+  virtual void reset(void);
 
-        void load_rom(const std::string &name);
+  void load_rom(const std::string &name);
 
-    private:
-
-        std::string _name;
-        Cartridge   _type;
-        unsigned    _rom_bank;
-        unsigned    _rom_size;
-        bvec        _rom;
-        unsigned    _ram_bank;
-        unsigned    _ram_size;
-        bvec        _ram;
+ private:
+  std::string _name;
+  Cartridge _type;
+  unsigned _rom_bank;
+  unsigned _rom_size;
+  bvec _rom;
+  unsigned _ram_bank;
+  unsigned _ram_size;
+  bvec _ram;
 };
-
 };

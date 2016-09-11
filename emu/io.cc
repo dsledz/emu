@@ -26,4 +26,3 @@
 #include "emu/io.h"
 
 using namespace EMU;
-

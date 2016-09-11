@@ -24,77 +24,81 @@
  */
 #pragma once
 
-#include "emu/emu.h"
 #include "cpu/m6502/m6502.h"
 #include "cpu/m6502/m65c02.h"
+#include "emu/emu.h"
 
-namespace M6502v2
-{
+namespace M6502v2 {
 
 #ifdef WIN32
 #pragma pack(push, 1)
 #endif
-struct HuC6280State
-{
-    HuC6280State(void) {
-        reset();
-    }
+struct HuC6280State {
+  HuC6280State(void) { reset(); }
 
-    inline uint8_t bus_read(uint16_t addr) {
-        uint16_t offset = addr;
-        const int bank = (offset & 0xE000) >> 13;
-        offset = (offset & 0x1FFF) | (mmu_map[bank] << 13);
-        return bus->read(offset);
-    }
-    inline void bus_write(uint16_t addr, uint8_t value) {
-        uint16_t offset = addr;
-        const int bank = (offset & 0xE000) >> 13;
-        offset = (offset & 0x1FFF) | (mmu_map[bank] << 13);
-        bus->write(offset, value);
-    }
-    uint8_t get_flags(uint16_t flags) {
-        F.C = bit_isset(flags, Flags::CF);
-        F.Z = bit_isset(flags, Flags::ZF);
-        F.V = bit_isset(flags, Flags::OF);
-        F.N = bit_isset(flags, Flags::SF);
+  inline uint8_t bus_read(uint16_t addr) {
+    uint16_t offset = addr;
+    const int bank = (offset & 0xE000) >> 13;
+    offset = (offset & 0x1FFF) | (mmu_map[bank] << 13);
+    return bus->read(offset);
+  }
+  inline void bus_write(uint16_t addr, uint8_t value) {
+    uint16_t offset = addr;
+    const int bank = (offset & 0xE000) >> 13;
+    offset = (offset & 0x1FFF) | (mmu_map[bank] << 13);
+    bus->write(offset, value);
+  }
+  uint8_t get_flags(uint16_t flags) {
+    F.C = bit_isset(flags, Flags::CF);
+    F.Z = bit_isset(flags, Flags::ZF);
+    F.V = bit_isset(flags, Flags::OF);
+    F.N = bit_isset(flags, Flags::SF);
 
-        return SR;
-    }
-    void reset(void) {
-        A = 0; SP = 0; X = 0; Y = 0; SR = 0; ZPG = 0;
-        PC = 0; NativeFlags = 0; EA = 0; ARG = 0;
-        clock_divider = 1;
-    }
+    return SR;
+  }
+  void reset(void) {
+    A = 0;
+    SP = 0;
+    X = 0;
+    Y = 0;
+    SR = 0;
+    ZPG = 0;
+    PC = 0;
+    NativeFlags = 0;
+    EA = 0;
+    ARG = 0;
+    clock_divider = 1;
+  }
 
-    reg8_t A;
-    reg8_t SP;
-    reg8_t X;
-    reg8_t Y;
-    union {
-        byte_t SR;
-        struct {
-            byte_t C:1;
-            byte_t Z:1;
-            byte_t I:1;
-            byte_t D:1;
-            byte_t B:1; /* XXX: Break flag */
-            byte_t E:1;
-            byte_t V:1;
-            byte_t N:1;
-        } F;
-    };
-    byte_t ZPG;
-    reg16_t PC;
+  reg8_t A;
+  reg8_t SP;
+  reg8_t X;
+  reg8_t Y;
+  union {
+    byte_t SR;
+    struct {
+      byte_t C : 1;
+      byte_t Z : 1;
+      byte_t I : 1;
+      byte_t D : 1;
+      byte_t B : 1; /* XXX: Break flag */
+      byte_t E : 1;
+      byte_t V : 1;
+      byte_t N : 1;
+    } F;
+  };
+  byte_t ZPG;
+  reg16_t PC;
 
-    reg16_t NativeFlags;
+  reg16_t NativeFlags;
 
-    reg16_t EA;  /* %r8 */
-    reg8_t  ARG; /* %rdx */
+  reg16_t EA; /* %r8 */
+  reg8_t ARG; /* %rdx */
 
-    byte_t mmu_map[8];
-    int clock_divider;
-    AddressBus21 *bus;
-    uint8_t icycles;
+  byte_t mmu_map[8];
+  int clock_divider;
+  AddressBus21 *bus;
+  uint8_t icycles;
 }
 #ifdef WIN32
 ;
@@ -103,36 +107,34 @@ struct HuC6280State
 __attribute__((packed));
 #endif
 
-class HuC6280Cpu: public Cpu<AddressBus21, M6502Traits, HuC6280State, uint8_t>
-{
-public:
-    HuC6280Cpu(Machine *machine, const std::string &name, unsigned clock,
-              AddressBus21 *bus);
-    virtual ~HuC6280Cpu(void);
+class HuC6280Cpu
+    : public Cpu<AddressBus21, M6502Traits, HuC6280State, uint8_t> {
+ public:
+  HuC6280Cpu(Machine *machine, const std::string &name, unsigned clock,
+             AddressBus21 *bus);
+  virtual ~HuC6280Cpu(void);
 
-    virtual void reset(void);
-    virtual bool Interrupt(void);
-    virtual void line(Line line, LineState state);
-    virtual void execute(void);
+  virtual void reset(void);
+  virtual bool Interrupt(void);
+  virtual void line(Line line, LineState state);
+  virtual void execute(void);
 
-    byte_t irq_read(offset_t offset);
-    void irq_write(offset_t offset, byte_t value);
+  byte_t irq_read(offset_t offset);
+  void irq_write(offset_t offset, byte_t value);
 
-    byte_t timer_read(offset_t offset);
-    void timer_write(offset_t offset, byte_t value);
+  byte_t timer_read(offset_t offset);
+  void timer_write(offset_t offset, byte_t value);
 
-private:
+ private:
+  void step(void);
 
-    void step(void);
-
-    uint8_t m_irq_status;
-    uint8_t m_irq_disable;
-    bool m_timer_status;
-    int m_timer_load;
-    int m_timer_value;
-    LineState m_nmi_line;
-    LineState m_irq_line;
-    LineState m_reset_line;
+  uint8_t m_irq_status;
+  uint8_t m_irq_disable;
+  bool m_timer_status;
+  int m_timer_load;
+  int m_timer_value;
+  LineState m_nmi_line;
+  LineState m_irq_line;
+  LineState m_reset_line;
 };
-
 };

@@ -30,11 +30,8 @@
 
 using namespace EMU;
 
-TEST(GameboyTest, run)
-{
-    GBMachine::Gameboy machine("tetris.gb");
+TEST(GameboyTest, run) {
+  GBMachine::Gameboy machine("tetris.gb");
 
-    for (unsigned i = 0; i < 6000; i++)
-        machine.run();
+  for (unsigned i = 0; i < 6000; i++) machine.run();
 }
-

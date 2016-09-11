@@ -36,50 +36,46 @@ class GBGraphics;
 class GBMBC;
 
 enum GBInterrupt {
-    VBlank = 0,
-    LCDStat = 1,
-    Timeout = 2,
-    Serial = 3,
-    Joypad = 4,
+  VBlank = 0,
+  LCDStat = 1,
+  Timeout = 2,
+  Serial = 3,
+  Joypad = 4,
 };
 
 /* XXX: Should we split this up more? */
 enum GBReg {
-    KEYS = 0xFF00,
-    SB   = 0xFF01,
-    SC   = 0xFF02,
-    DIV  = 0xFF04,
-    TIMA = 0xFF05,
-    TMA  = 0xFF06,
-    TAC  = 0xFF07,
-    IF   = 0xFF0F,
-    DMA  = 0xFF46,
-    DMG_RESET = 0xFF50,
-    IE   = 0xFFFF,
+  KEYS = 0xFF00,
+  SB = 0xFF01,
+  SC = 0xFF02,
+  DIV = 0xFF04,
+  TIMA = 0xFF05,
+  TMA = 0xFF06,
+  TAC = 0xFF07,
+  IF = 0xFF0F,
+  DMA = 0xFF46,
+  DMG_RESET = 0xFF50,
+  IE = 0xFFFF,
 };
 
-class Gameboy: public Machine
-{
-public:
-    Gameboy(const std::string &name);
-    virtual ~Gameboy(void);
+class Gameboy : public Machine {
+ public:
+  Gameboy(const std::string &name);
+  virtual ~Gameboy(void);
 
-    AddressBus16 *bus(void) {
-        return m_bus.get();
-    }
+  AddressBus16 *bus(void) { return m_bus.get(); }
 
-private:
-    AddressBus16_ptr m_bus;
+ private:
+  AddressBus16_ptr m_bus;
 
-    std::unique_ptr<LR35902Cpu> m_cpu;
-    std::unique_ptr<GBGraphics> m_gfx;
-    std::unique_ptr<RamDevice> m_ram;
-    std::unique_ptr<GBMBC> m_mbc;
-    std::unique_ptr<RamDevice> m_hiram;
+  std::unique_ptr<LR35902Cpu> m_cpu;
+  std::unique_ptr<GBGraphics> m_gfx;
+  std::unique_ptr<RamDevice> m_ram;
+  std::unique_ptr<GBMBC> m_mbc;
+  std::unique_ptr<RamDevice> m_hiram;
 
-    Device_ptr m_timer;
-    Device_ptr m_serial;
-    Device_ptr m_joypad;
+  Device_ptr m_timer;
+  Device_ptr m_serial;
+  Device_ptr m_joypad;
 };
-
 };

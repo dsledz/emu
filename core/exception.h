@@ -25,9 +25,9 @@
 
 #pragma once
 
-#include "core/bits.h"
-#include <stdexcept>
 #include <sstream>
+#include <stdexcept>
+#include "core/bits.h"
 
 namespace Core {
 
@@ -42,28 +42,26 @@ namespace Core {
 /**
  * General exception
  */
-struct CoreException: public std::exception {
-    const std::string &message() { return msg; }
+struct CoreException : public std::exception {
+  const std::string &message() { return msg; }
 
-    virtual const char *what(void) const noexcept { return msg.c_str(); }
+  virtual const char *what(void) const noexcept { return msg.c_str(); }
 
-protected:
-    CoreException(const std::string &msg): msg(msg) { }
+ protected:
+  CoreException(const std::string &msg) : msg(msg) {}
 
-    std::string msg;
+  std::string msg;
 };
 
 /**
  * Bus Error
  */
-struct BusError: public CoreException {
-    BusError(uint32_t addr): CoreException("Bus fault: "), address(addr)
-    {
-        std::stringstream ss;
-        ss << Hex(addr);
-        msg += ss.str();
-    }
-    uint32_t address;
+struct BusError : public CoreException {
+  BusError(uint32_t addr) : CoreException("Bus fault: "), address(addr) {
+    std::stringstream ss;
+    ss << Hex(addr);
+    msg += ss.str();
+  }
+  uint32_t address;
 };
-
 };

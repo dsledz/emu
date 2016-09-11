@@ -32,134 +32,95 @@
 
 using namespace EMU;
 
-void
-EMU::read_rom(const std::string &name, bvec &rom)
-{
-    struct stat sb;
-    std::string path;
-    if (getenv("ROM_PATH") != NULL && name[0] != '/') {
-        path = getenv("ROM_PATH");
-        path += "/";
-    }
-    path += name;
-    if (stat(path.c_str(), &sb) == -1)
-        throw RomException(name);
-    rom.resize(sb.st_size);
-    try {
-        std::ifstream file(path, std::ios::in | std::ios::binary);
-        file.read((char *)&rom[0], rom.size());
-    } catch (std::ifstream::failure e) {
-        throw RomException(name);
-    }
+void EMU::read_rom(const std::string &name, bvec &rom) {
+  struct stat sb;
+  std::string path;
+  if (getenv("ROM_PATH") != NULL && name[0] != '/') {
+    path = getenv("ROM_PATH");
+    path += "/";
+  }
+  path += name;
+  if (stat(path.c_str(), &sb) == -1) throw RomException(name);
+  rom.resize(sb.st_size);
+  try {
+    std::ifstream file(path, std::ios::in | std::ios::binary);
+    file.read((char *)&rom[0], rom.size());
+  } catch (std::ifstream::failure e) {
+    throw RomException(name);
+  }
 }
 
-Rom::Rom(void)
-{
+Rom::Rom(void) {}
+
+Rom::Rom(const std::string &path) { read_rom(path, _rom); }
+
+Rom::~Rom(void) {}
+
+uint8_t Rom::read8(offset_t offset) const { return _rom[offset]; }
+
+size_t Rom::size(void) { return _rom.size(); }
+
+uint8_t *Rom::direct(offset_t offset) { return &_rom[offset]; }
+
+void Rom::append(const bvec &data) {
+  _rom.insert(_rom.end(), data.begin(), data.end());
 }
 
-Rom::Rom(const std::string &path) {
-    read_rom(path, _rom);
-}
-
-Rom::~Rom(void)
-{
-}
-
-uint8_t
-Rom::read8(offset_t offset) const
-{
-    return _rom[offset];
-}
-
-size_t
-Rom::size(void)
-{
-    return _rom.size();
-}
-
-uint8_t *
-Rom::direct(offset_t offset)
-{
-    return &_rom[offset];
-}
-
-void
-Rom::append(const bvec &data)
-{
-    _rom.insert(_rom.end(), data.begin(), data.end());
-}
-
-const uint8_t *
-Rom::direct(offset_t offset) const
-{
-    return &_rom[offset];
-}
+const uint8_t *Rom::direct(offset_t offset) const { return &_rom[offset]; }
 
 #ifdef WIN32
-RomSet::RomSet(const std::string &path)
-{
-	HANDLE hFind;
-	WIN32_FIND_DATA data;
-	if ((hFind = FindFirstFile(path.c_str(), &data)) == INVALID_HANDLE_VALUE) {
-		throw RomException(path.c_str());
-	}
+RomSet::RomSet(const std::string &path) {
+  HANDLE hFind;
+  WIN32_FIND_DATA data;
+  if ((hFind = FindFirstFile(path.c_str(), &data)) == INVALID_HANDLE_VALUE) {
+    throw RomException(path.c_str());
+  }
 
-	do {
-		std::string name(data.cFileName);
-		if (name == "." || name == "..")
-			continue;
-		std::string full_path = path + "\\" + name;
-		Rom rom(full_path);
-		_roms.insert(std::make_pair(name, rom));
-	} while (FindNextFile(hFind, &data));
-	FindClose(hFind);
+  do {
+    std::string name(data.cFileName);
+    if (name == "." || name == "..") continue;
+    std::string full_path = path + "\\" + name;
+    Rom rom(full_path);
+    _roms.insert(std::make_pair(name, rom));
+  } while (FindNextFile(hFind, &data));
+  FindClose(hFind);
 }
 
 #else
-RomSet::RomSet(const std::string &path)
-{
-    DIR *dir;
-    struct dirent *ent;
-    if ((dir = opendir(path.c_str())) == NULL)
-        throw RomException(path.c_str());
-    while ((ent = readdir(dir)) != NULL) {
-        std::string name(ent->d_name);
-        if (name == "." || name == "..")
-            continue;
-        std::string full_path = path + "/" + name;
-        Rom rom(full_path);
-        _roms.insert(std::make_pair(name, rom));
-    }
+RomSet::RomSet(const std::string &path) {
+  DIR *dir;
+  struct dirent *ent;
+  if ((dir = opendir(path.c_str())) == NULL) throw RomException(path.c_str());
+  while ((ent = readdir(dir)) != NULL) {
+    std::string name(ent->d_name);
+    if (name == "." || name == "..") continue;
+    std::string full_path = path + "/" + name;
+    Rom rom(full_path);
+    _roms.insert(std::make_pair(name, rom));
+  }
 }
 #endif
 
-RomSet::RomSet(const RomDefinition &def)
-{
-    for (auto it = def.regions.begin(); it != def.regions.end(); it++) {
-        Rom rom;
-        for (auto it2 = it->roms.begin(); it2 != it->roms.end(); it2++) {
-            std::string path = def.name + "/" + (*it2);
-            bvec data;
+RomSet::RomSet(const RomDefinition &def) {
+  for (auto it = def.regions.begin(); it != def.regions.end(); it++) {
+    Rom rom;
+    for (auto it2 = it->roms.begin(); it2 != it->roms.end(); it2++) {
+      std::string path = def.name + "/" + (*it2);
+      bvec data;
 
-            read_rom(path, data);
+      read_rom(path, data);
 
-            rom.append(data);
-        }
-        _roms.insert(make_pair(it->name, rom));
+      rom.append(data);
     }
+    _roms.insert(make_pair(it->name, rom));
+  }
 }
 
-RomSet::~RomSet(void)
-{
-}
+RomSet::~RomSet(void) {}
 
-Rom *
-RomSet::rom(const std::string &name)
-{
-    auto it = _roms.find(name);
-    if (it == _roms.end())
-        throw RomException(name);
-    /* XXX This is unstable and unsafe */
-    return &it->second;
+Rom *RomSet::rom(const std::string &name) {
+  auto it = _roms.find(name);
+  if (it == _roms.end()) throw RomException(name);
+  /* XXX This is unstable and unsafe */
+  return &it->second;
 }
-

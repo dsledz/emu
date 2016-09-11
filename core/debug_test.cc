@@ -27,11 +27,9 @@
 
 #include "core/debug.h"
 
-TEST(DebugTest, trace)
-{
-    LOG_TRACE("foo");
-    LOG_DEBUG("foo");
-    LOG_INFO("foo");
-    LOG_ERROR("foo");
+TEST(DebugTest, trace) {
+  LOG_TRACE("foo");
+  LOG_DEBUG("foo");
+  LOG_INFO("foo");
+  LOG_ERROR("foo");
 }
-

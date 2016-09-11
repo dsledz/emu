@@ -25,64 +25,60 @@
 #pragma once
 
 #include "core/bits.h"
-#include "core/exception.h"
 #include "core/debug.h"
+#include "core/exception.h"
 #include "core/task.h"
 
 namespace Core {
 
 struct ThreadRegisters {
-    uint64_t r8;
-    uint64_t r9;
-    uint64_t r10;
-    uint64_t r11;
-    uint64_t r12;
-    uint64_t r13;
-    uint64_t r14;
-    uint64_t r15;
-    uint64_t rsp;
-    uint64_t rbp;
+  uint64_t r8;
+  uint64_t r9;
+  uint64_t r10;
+  uint64_t r11;
+  uint64_t r12;
+  uint64_t r13;
+  uint64_t r14;
+  uint64_t r15;
+  uint64_t rsp;
+  uint64_t rbp;
 };
 
-class ThreadContext
-{
-public:
-    ThreadContext(uint64_t rip);
-    ~ThreadContext(void);
+class ThreadContext {
+ public:
+  ThreadContext(uint64_t rip);
+  ~ThreadContext(void);
 
-    void switch_context(ThreadContext *new_context);
+  void switch_context(ThreadContext *new_context);
 
-private:
-    std::vector<uint8_t> m_stack;
-    ThreadRegisters m_registers;
+ private:
+  std::vector<uint8_t> m_stack;
+  ThreadRegisters m_registers;
 };
 
-class FiberTask: public Task
-{
-public:
-    FiberTask(TaskScheduler *Scheduler, task_fn fn);
-    FiberTask(TaskScheduler *Scheduler, task_fn fn, const std::string &name);
-    virtual ~FiberTask(void);
-    FiberTask(const FiberTask &rhs) = delete;
+class FiberTask : public Task {
+ public:
+  FiberTask(TaskScheduler *Scheduler, task_fn fn);
+  FiberTask(TaskScheduler *Scheduler, task_fn fn, const std::string &name);
+  virtual ~FiberTask(void);
+  FiberTask(const FiberTask &rhs) = delete;
 
-    virtual bool nonblocking(void);
-    virtual State run(void);
-    virtual void cancel(void);
-    virtual void suspend(void);
-    virtual void wake(void);
-    virtual State force(void);
+  virtual bool nonblocking(void);
+  virtual State run(void);
+  virtual void cancel(void);
+  virtual void suspend(void);
+  virtual void wake(void);
+  virtual State force(void);
 
-protected:
-    virtual void yield_internal(void);
+ protected:
+  virtual void yield_internal(void);
 
-private:
+ private:
+  void run_internal(void);
+  static void run_context(void);
 
-    void run_internal(void);
-    static void run_context(void);
-
-    Thread       *m_thread;
-    ThreadContext m_our_ctx;
-    ThreadContext m_thread_ctx;
+  Thread *m_thread;
+  ThreadContext m_our_ctx;
+  ThreadContext m_thread_ctx;
 };
-
 };

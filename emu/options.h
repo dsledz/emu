@@ -32,31 +32,23 @@ using namespace Core;
 
 namespace EMU {
 
-struct OptionException: public CoreException {
-    OptionException(const std::string &option, const std::string &value=""):
-        CoreException("Invalid Option: ")
-    {
-        msg += option;
-        if (value != "")
-            msg += " (value: " + value + ")";
-    }
-    std::string option;
-    std::string value;
+struct OptionException : public CoreException {
+  OptionException(const std::string &option, const std::string &value = "")
+      : CoreException("Invalid Option: ") {
+    msg += option;
+    if (value != "") msg += " (value: " + value + ")";
+  }
+  std::string option;
+  std::string value;
 };
 
 class Options {
-public:
-    Options(void):
-        driver(""),
-        rom(""),
-        log_level("error")
-    {
-    }
-    ~Options(void) { }
+ public:
+  Options(void) : driver(""), rom(""), log_level("error") {}
+  ~Options(void) {}
 
-    std::string driver;     /**< Driver module */
-    std::string rom;        /**< Rom */
-    std::string log_level;  /**< Log level */
+  std::string driver;    /**< Driver module */
+  std::string rom;       /**< Rom */
+  std::string log_level; /**< Log level */
 };
-
 };

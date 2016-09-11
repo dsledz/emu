@@ -127,4 +127,3 @@ TEST(ClockableTest, task)
     EXPECT_GT(500 + 10, test.value);
 }
 #endif
-

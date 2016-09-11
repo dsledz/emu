@@ -34,31 +34,28 @@ namespace Device {
  * Namco 06xx device. Acts as a multiplexer for multiple children
  * devices.
  */
-class Namco06: public ClockedDevice
-{
-public:
-    Namco06(Machine *machine, Device *parent);
-    ~Namco06(void);
+class Namco06 : public ClockedDevice {
+ public:
+  Namco06(Machine *machine, Device *parent);
+  ~Namco06(void);
 
-    void add_child(int pos, IODevice *child);
-    byte_t read_child(addr_t addr);
-    void write_child(addr_t addr, byte_t vlaue);
+  void add_child(int pos, IODevice *child);
+  byte_t read_child(addr_t addr);
+  void write_child(addr_t addr, byte_t vlaue);
 
-    byte_t read_control(addr_t addr);
-    void write_control(addr_t addr, byte_t value);
+  byte_t read_control(addr_t addr);
+  void write_control(addr_t addr, byte_t value);
 
-    virtual void execute(void);
-    virtual void line(Line line, LineState state);
-    virtual void reset(void);
+  virtual void execute(void);
+  virtual void line(Line line, LineState state);
+  virtual void reset(void);
 
-private:
-
-    LineState m_reset_line;
-    Device *m_parent;
-    std::array<IODevice *, 4> m_children;
-    byte_t m_control;
+ private:
+  LineState m_reset_line;
+  Device *m_parent;
+  std::array<IODevice *, 4> m_children;
+  byte_t m_control;
 };
 
 typedef std::unique_ptr<Namco06> Namco06_ptr;
-
 };

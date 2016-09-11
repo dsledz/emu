@@ -26,25 +26,23 @@
 
 #include "core/bits.h"
 #include "core/exception.h"
-#include "emu/io.h"
 #include "emu/device.h"
+#include "emu/io.h"
 
 namespace EMU {
 
-class RamDevice: public IODevice {
-public:
-    RamDevice(Machine *machine, const std::string &name, size_t size);
-    virtual ~RamDevice(void);
+class RamDevice : public IODevice {
+ public:
+  RamDevice(Machine *machine, const std::string &name, size_t size);
+  virtual ~RamDevice(void);
 
-    virtual void write8(offset_t offset, uint8_t value);
-    virtual uint8_t read8(offset_t offset);
-    virtual uint8_t *direct(offset_t offset);
+  virtual void write8(offset_t offset, uint8_t value);
+  virtual uint8_t read8(offset_t offset);
+  virtual uint8_t *direct(offset_t offset);
 
-private:
-    bvec m_ram;
+ private:
+  bvec m_ram;
 };
 
 typedef MappedDevice MappedRamDevice;
-
 };
-

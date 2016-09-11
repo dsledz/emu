@@ -23,8 +23,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "emu/test.h"
 #include "emu/rom.h"
+#include "emu/test.h"
 
 #include "cpu/z80/z80.h"
 
@@ -44,60 +44,53 @@ TEST(Z80Test, opcode_dd)
 }
 #endif
 
-class Zexall: public Machine
-{
-public:
-    Zexall(void):
-        bus(new AddressBus16()),
+class Zexall : public Machine {
+ public:
+  Zexall(void)
+      : bus(new AddressBus16()),
         cpu(new Z80Cpu(this, "cpu", 1000000, bus.get())),
         rom("zex.bin"),
-        m_data(0), m_req(0), m_req_last(0), m_ack(0)
-    {
-        cpu->load_rom(&rom, 0x0000);
+        m_data(0),
+        m_req(0),
+        m_req_last(0),
+        m_ack(0) {
+    cpu->load_rom(&rom, 0x0000);
 
-        bus->add(0xFFFF, &m_data);
-        bus->add(0xFFFE, 0xFFFF,
-                 READ_CB(Zexall::req_read, this),
-                 WRITE_CB(Zexall::req_write, this));
-        bus->add(0xFFFD, &m_ack);
+    bus->add(0xFFFF, &m_data);
+    bus->add(0xFFFE, 0xFFFF, READ_CB(Zexall::req_read, this),
+             WRITE_CB(Zexall::req_write, this));
+    bus->add(0xFFFD, &m_ack);
 
-        cpu->io()->add(0x01, 0x01,
-            AddressBus8x8::DefaultRead(),
-            AddressBus8x8::DefaultWrite());
+    cpu->io()->add(0x01, 0x01, AddressBus8x8::DefaultRead(),
+                   AddressBus8x8::DefaultWrite());
+  }
+  ~Zexall(void) {}
+
+  byte_t req_read(byte_t vlaue) { return m_req; }
+
+  void req_write(offset_t offset, byte_t value) {
+    if (m_req_last != value) {
+      m_ack++;
+      std::cout << m_data;
+      std::cout.flush();
     }
-    ~Zexall(void) {
-    }
+    m_req_last = m_req;
+    m_req = value;
+  }
 
-    byte_t req_read(byte_t vlaue)
-    {
-        return m_req;
-    }
-
-    void req_write(offset_t offset, byte_t value)
-    {
-        if (m_req_last != value) {
-            m_ack++;
-            std::cout << m_data;
-            std::cout.flush();
-        }
-        m_req_last = m_req;
-        m_req = value;
-    }
-
-    std::unique_ptr<AddressBus16> bus;
-    std::unique_ptr<Z80Cpu> cpu;
-    Rom rom;
-    byte_t m_data, m_req, m_req_last, m_ack;
+  std::unique_ptr<AddressBus16> bus;
+  std::unique_ptr<Z80Cpu> cpu;
+  Rom rom;
+  byte_t m_data, m_req, m_req_last, m_ack;
 };
 
-TEST(Zexall_test, test)
-{
-    Zexall zex;
+TEST(Zexall_test, test) {
+  Zexall zex;
 
-    Core::log.set_level(LogLevel::Debug);
+  Core::log.set_level(LogLevel::Debug);
 
-    // Run the first few seconds of the rom
-    zex.poweron();
-    zex.reset();
-    zex.run_forward(sec(6000));
+  // Run the first few seconds of the rom
+  zex.poweron();
+  zex.reset();
+  zex.run_forward(sec(6000));
 }

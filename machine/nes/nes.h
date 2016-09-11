@@ -25,7 +25,6 @@
 
 #include "emu/emu.h"
 
-
 using namespace EMU;
 #if 1
 #include "cpu/m6502/m6502.h"
@@ -38,223 +37,211 @@ using namespace M6502;
 namespace NESMachine {
 
 enum NameTableMirroring {
-    SingleScreenBLK0 = 0,
-    SingleScreenBLK1 = 1,
-    TwoScreenVMirroring = 2,
-    TwoScreenHMirroring = 3
+  SingleScreenBLK0 = 0,
+  SingleScreenBLK1 = 1,
+  TwoScreenVMirroring = 2,
+  TwoScreenHMirroring = 3
 };
 
 struct iNesHeader {
-    char magic[4];
-    byte_t rom_banks;
-    byte_t vrom_banks;
-    byte_t hmirroring:1;
-    byte_t battery:1;
-    byte_t trainer:1;
-    byte_t four_screen:1;
-    byte_t mapper_low:4;
-    byte_t m_reserved:4;
-    byte_t mapper_high:4;
-    byte_t ram_banks;
-    byte_t pal_flag;
-    byte_t reserved[6];
+  char magic[4];
+  byte_t rom_banks;
+  byte_t vrom_banks;
+  byte_t hmirroring : 1;
+  byte_t battery : 1;
+  byte_t trainer : 1;
+  byte_t four_screen : 1;
+  byte_t mapper_low : 4;
+  byte_t m_reserved : 4;
+  byte_t mapper_high : 4;
+  byte_t ram_banks;
+  byte_t pal_flag;
+  byte_t reserved[6];
 };
 
 enum NameTable {
-    NT0 = 0,
-    NT1 = 1,
-    NT2 = 2,
-    NT3 = 3,
+  NT0 = 0,
+  NT1 = 1,
+  NT2 = 2,
+  NT3 = 3,
 };
 
 class NES;
 
-class NESMapper: public Device
-{
-public:
-    NESMapper(NES *nes, const iNesHeader *header, bvec &rom);
+class NESMapper : public Device {
+ public:
+  NESMapper(NES *nes, const iNesHeader *header, bvec &rom);
 
-    virtual ~NESMapper(void);
+  virtual ~NESMapper(void);
 
-    virtual void reset(void) = 0;
+  virtual void reset(void) = 0;
 
-    /* Convert a prg bank into an offset */
-    size_t prg_bank(int bank);
-    size_t prg_bank8k(int bank);
+  /* Convert a prg bank into an offset */
+  size_t prg_bank(int bank);
+  size_t prg_bank8k(int bank);
 
-    /* Convert a chr bank into an offset */
-    size_t chr_bank(int bank);
-    size_t chr_bank1k(int bank);
+  /* Convert a chr bank into an offset */
+  size_t chr_bank(int bank);
+  size_t chr_bank1k(int bank);
 
-protected:
-
-    NES *m_nes;
-    iNesHeader m_header;
-    bvec m_rom;
+ protected:
+  NES *m_nes;
+  iNesHeader m_header;
+  bvec m_rom;
 };
 
-class NESPPU: public ScreenDevice
-{
-public:
-    NESPPU(NES *machine, const std::string &name, unsigned hertz);
-    virtual ~NESPPU(void);
+class NESPPU : public ScreenDevice {
+ public:
+  NESPPU(NES *machine, const std::string &name, unsigned hertz);
+  virtual ~NESPPU(void);
 
-    virtual void reset(void);
+  virtual void reset(void);
 
-    int draw_bg(void);
-    int draw_sprite(int color, int x, int y);
+  int draw_bg(void);
+  int draw_sprite(int color, int x, int y);
 
-    Cycles step(void);
+  Cycles step(void);
 
-private:
+ private:
+  virtual void do_hend(void);
+  virtual void do_hdraw(void);
+  virtual void do_vblank(void);
 
-    virtual void do_hend(void);
-    virtual void do_hdraw(void);
-    virtual void do_vblank(void);
+  void init_palette(void);
 
-    void init_palette(void);
+  void cache_bg_tile(void);
+  int get_obj_pixel(int obj, int x, int y);
 
-    void cache_bg_tile(void);
-    int get_obj_pixel(int obj, int x, int y);
+  byte_t ppu_read(offset_t offset);
+  void ppu_write(offset_t offset, byte_t value);
 
-    byte_t ppu_read(offset_t offset);
-    void ppu_write(offset_t offset, byte_t value);
+  byte_t ppu_bus_read(offset_t offset);
+  void ppu_bus_write(offset_t offset, byte_t value);
 
-    byte_t ppu_bus_read(offset_t offset);
-    void ppu_bus_write(offset_t offset, byte_t value);
+  byte_t ppu_nt_read(offset_t offset);
+  void ppu_nt_write(offset_t offset, byte_t value);
 
-    byte_t ppu_nt_read(offset_t offset);
-    void ppu_nt_write(offset_t offset, byte_t value);
+  byte_t ppu_pal_read(offset_t offset);
+  void ppu_pal_write(offset_t offset, byte_t value);
 
-    byte_t ppu_pal_read(offset_t offset);
-    void ppu_pal_write(offset_t offset, byte_t value);
+  std::vector<RGBColor> m_color_table;
+  std::vector<RGBColor> m_palette;
+  bvec m_palette_bytes;
 
-    std::vector<RGBColor> m_color_table;
-    std::vector<RGBColor> m_palette;
-    bvec m_palette_bytes;
+  union {
+    struct {
+      byte_t htable : 1;
+      byte_t vtable : 1;
+      byte_t vram_step : 1;
+      byte_t sprite_table : 1;
+      byte_t bg_table : 1;
+      byte_t sprite_size : 1;
+      byte_t m_reserved0 : 1;
+      byte_t nmi_enabled : 1;
+    };
+    byte_t value;
+  } m_reg1;
 
-    union {
-        struct {
-            byte_t htable: 1;
-            byte_t vtable: 1;
-            byte_t vram_step: 1;
-            byte_t sprite_table: 1;
-            byte_t bg_table: 1;
-            byte_t sprite_size: 1;
-            byte_t m_reserved0: 1;
-            byte_t nmi_enabled: 1;
-        };
-        byte_t value;
-    } m_reg1;
+  union {
+    struct {
+      byte_t monochrome_mode : 1;
+      byte_t bg_clip : 1;
+      byte_t spr_clip : 1;
+      byte_t bg_visible : 1;
+      byte_t spr_visible : 1;
+      byte_t color_emph : 3;
+    };
+    byte_t value;
+  } m_reg2;
 
-    union {
-        struct {
-            byte_t monochrome_mode: 1;
-            byte_t bg_clip: 1;
-            byte_t spr_clip: 1;
-            byte_t bg_visible: 1;
-            byte_t spr_visible: 1;
-            byte_t color_emph: 3;
-        };
-        byte_t value;
-    } m_reg2;
+  union {
+    struct {
+      byte_t m_reserved1 : 5;
+      byte_t lost_sprite : 1;
+      byte_t sprite0_hit : 1;
+      byte_t vblank : 1;
+    };
+    byte_t value;
+  } m_status;
+  byte_t m_sram_addr;
+  byte_t m_vram_read;
+  union {
+    struct {
+      addr_t coarse_x : 5;
+      addr_t coarse_y : 5;
+      addr_t nt_hselect : 1;
+      addr_t nt_vselect : 1;
+      addr_t fine_y : 3;
+      addr_t m_unused : 1;
+    };
+    addr_t d;
+  } m_v;
+  union {
+    struct {
+      addr_t coarse_x : 5;
+      addr_t coarse_y : 5;
+      addr_t nt_hselect : 1;
+      addr_t nt_vselect : 1;
+      addr_t fine_y : 3;
+      addr_t m_unused : 1;
+    };
+    addr_t d;
+  } m_t;
+  byte_t m_x;
+  byte_t m_tx;
+  byte_t m_latch;
+  bool m_flip_flop;
+  bool m_vram_locked;
 
-    union {
-        struct {
-            byte_t m_reserved1:5;
-            byte_t lost_sprite:1;
-            byte_t sprite0_hit:1;
-            byte_t vblank:1;
-        };
-        byte_t value;
-    } m_status;
-    byte_t m_sram_addr;
-    byte_t m_vram_read;
-    union {
-        struct {
-            addr_t coarse_x: 5;
-            addr_t coarse_y: 5;
-            addr_t nt_hselect: 1;
-            addr_t nt_vselect: 1;
-            addr_t fine_y: 3;
-            addr_t m_unused: 1;
-        };
-        addr_t d;
-    } m_v;
-    union {
-        struct {
-            addr_t coarse_x: 5;
-            addr_t coarse_y: 5;
-            addr_t nt_hselect: 1;
-            addr_t nt_vselect: 1;
-            addr_t fine_y: 3;
-            addr_t m_unused: 1;
-        };
-        addr_t d;
-    } m_t;
-    byte_t m_x;
-    byte_t m_tx;
-    byte_t m_latch;
-    bool m_flip_flop;
-    bool m_vram_locked;
+  std::vector<int> m_sprites;
 
-    std::vector<int> m_sprites;
+  byte_t m_bgp0;  /* Plane 0 of background */
+  byte_t m_bgp1;  /* Plane 1 of background */
+  byte_t m_bgpal; /* background palette */
 
-    byte_t m_bgp0; /* Plane 0 of background */
-    byte_t m_bgp1; /* Plane 1 of background */
-    byte_t m_bgpal; /* background palette */
+  bvec m_sram; /* Sprite memory */
+  bvec m_blk0; /* Name Table 0 */
+  bvec m_blk1; /* Name Table 1 */
 
-    bvec m_sram; /* Sprite memory */
-    bvec m_blk0; /* Name Table 0 */
-    bvec m_blk1; /* Name Table 1 */
+  IOPort *m_mirror;
 
-    IOPort *m_mirror;
-
-    AddressBus16 *m_cpu_bus;
-    AddressBus16 *m_ppu_bus;
-    AddressBus8 *m_sprite_bus;
+  AddressBus16 *m_cpu_bus;
+  AddressBus16 *m_ppu_bus;
+  AddressBus8 *m_sprite_bus;
 };
 
 typedef std::unique_ptr<NESMapper> mapper_ptr;
 mapper_ptr load_cartridge(NES *nes, const std::string &rom);
 
-class NES: public Machine
-{
-public:
-    NES(void);
-    virtual ~NES(void);
+class NES : public Machine {
+ public:
+  NES(void);
+  virtual ~NES(void);
 
-    virtual void load_rom(const std::string &rom);
+  virtual void load_rom(const std::string &rom);
 
-    uint8_t latch_read(offset_t offset);
-    void latch_write(offset_t offset, uint8_t value);
+  uint8_t latch_read(offset_t offset);
+  void latch_write(offset_t offset, uint8_t value);
 
-    AddressBus16 *cpu_bus(void) {
-        return &m_cpu_bus;
-    }
+  AddressBus16 *cpu_bus(void) { return &m_cpu_bus; }
 
-    AddressBus16 *ppu_bus(void) {
-        return &m_ppu_bus;
-    }
+  AddressBus16 *ppu_bus(void) { return &m_ppu_bus; }
 
-    AddressBus8 *sprite_bus(void) {
-        return &m_sprite_bus;
-    }
+  AddressBus8 *sprite_bus(void) { return &m_sprite_bus; }
 
-private:
-    static const std::vector<std::string> ports;
+ private:
+  static const std::vector<std::string> ports;
 
-    std::unique_ptr<M6502Cpu> m_cpu;
-    std::unique_ptr<NESPPU> m_ppu;
-    mapper_ptr m_mapper;
-    RamDevice m_ram;
+  std::unique_ptr<M6502Cpu> m_cpu;
+  std::unique_ptr<NESPPU> m_ppu;
+  mapper_ptr m_mapper;
+  RamDevice m_ram;
 
-    AddressBus16 m_cpu_bus;
-    AddressBus16 m_ppu_bus;
-    AddressBus8 m_sprite_bus;
+  AddressBus16 m_cpu_bus;
+  AddressBus16 m_ppu_bus;
+  AddressBus8 m_sprite_bus;
 
-    int m_joy1_shift;
-    int m_joy2_shift;
+  int m_joy1_shift;
+  int m_joy2_shift;
 };
-
 };

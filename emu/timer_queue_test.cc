@@ -30,41 +30,37 @@
 
 using namespace EMU;
 
-TEST(TimerQueueTest, periodic)
-{
-    TimerQueue queue;
-    int foo = 0;
+TEST(TimerQueueTest, periodic) {
+  TimerQueue queue;
+  int foo = 0;
 
-    queue.add_periodic(Time(usec(200)), [&]() { foo++; });
+  queue.add_periodic(Time(usec(200)), [&]() { foo++; });
 
-    queue.run(Time(usec(150)));
-    EXPECT_EQ(0, foo);
+  queue.run(Time(usec(150)));
+  EXPECT_EQ(0, foo);
 
-    queue.run(Time(usec(150)));
-    EXPECT_EQ(1, foo);
+  queue.run(Time(usec(150)));
+  EXPECT_EQ(1, foo);
 
-    queue.run(Time(usec(150)));
-    EXPECT_EQ(2, foo);
+  queue.run(Time(usec(150)));
+  EXPECT_EQ(2, foo);
 
-    queue.run(Time(usec(2000)));
-    EXPECT_EQ(12, foo);
+  queue.run(Time(usec(2000)));
+  EXPECT_EQ(12, foo);
 }
 
-TEST(TimerQueueTest, single)
-{
-    TimerQueue queue;
-    int foo = 0;
+TEST(TimerQueueTest, single) {
+  TimerQueue queue;
+  int foo = 0;
 
-    queue.add_timeout(Time(usec(200)), [&]() { foo++; });
+  queue.add_timeout(Time(usec(200)), [&]() { foo++; });
 
-    queue.run(Time(usec(150)));
-    EXPECT_EQ(0, foo);
+  queue.run(Time(usec(150)));
+  EXPECT_EQ(0, foo);
 
-    queue.run(Time(usec(150)));
-    EXPECT_EQ(1, foo);
+  queue.run(Time(usec(150)));
+  EXPECT_EQ(1, foo);
 
-    queue.run(Time(usec(150)));
-    EXPECT_EQ(1, foo);
+  queue.run(Time(usec(150)));
+  EXPECT_EQ(1, foo);
 }
-
-

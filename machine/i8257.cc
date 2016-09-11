@@ -29,74 +29,64 @@
 
 using namespace EMU;
 
-I8257::I8257(Machine *machine, const std::string &name, unsigned hertz, AddressBus16 *bus):
-    ClockedDevice(machine, name, hertz),
-    _flip_flop(0),
-    _bus(bus)
-{
+I8257::I8257(Machine *machine, const std::string &name, unsigned hertz,
+             AddressBus16 *bus)
+    : ClockedDevice(machine, name, hertz), _flip_flop(0), _bus(bus) {}
+
+I8257::~I8257(void) {}
+
+void I8257::execute(void) {
+  while (true) {
+    add_icycles(100);
+  }
 }
 
-I8257::~I8257(void)
-{
+void I8257::write_cb(offset_t offset, byte_t value) {
+  switch (offset) {
+    case 0x00:
+    case 0x02:
+    case 0x04:
+    case 0x06:
+      set_byte(_channels[offset >> 1].address, _flip_flop, value);
+      _flip_flop = !_flip_flop;
+      break;
+    case 0x01:
+    case 0x03:
+    case 0x05:
+    case 0x07:
+      set_byte(_channels[offset >> 1].count, _flip_flop, value);
+      _flip_flop = !_flip_flop;
+      break;
+    case 0x08:
+      _mode.val = value;
+      break;
+    default:
+      throw DeviceFault(name(), "Invalid write");
+  }
 }
 
-void
-I8257::execute(void)
-{
-    while (true) {
-        add_icycles(100);
+byte_t I8257::read_cb(offset_t offset) {
+  switch (offset) {
+    case 0x09:
+      return _status;
+  }
+  throw DeviceFault(name(), "Invalid read");
+}
+
+void I8257::dma(void) {
+  Channel *rd = NULL;
+  Channel *wr = NULL;
+  for (int i = 0; i < 4; i++) {
+    if (bit_isset(_mode.val, i)) {
+      if (rd == NULL && (_channels[i].count.d & 0x4000))
+        rd = &_channels[i];
+      else if (wr == NULL && (_channels[i].count.d & 0x8000))
+        wr = &_channels[i];
     }
+    if (rd && wr) break;
+  }
+  if (!rd || !wr) return;
+
+  for (unsigned i = 0; i < (rd->count.d & 0x3fff); i++)
+    _bus->write(wr->address.d + i, _bus->read(rd->address.d + i));
 }
-
-void
-I8257::write_cb(offset_t offset, byte_t value)
-{
-    switch (offset) {
-        case 0x00: case 0x02: case 0x04: case 0x06:
-            set_byte(_channels[offset >> 1].address, _flip_flop, value);
-            _flip_flop = !_flip_flop;
-            break;
-        case 0x01: case 0x03: case 0x05: case 0x07:
-            set_byte(_channels[offset >> 1].count, _flip_flop, value);
-            _flip_flop = !_flip_flop;
-            break;
-        case 0x08:
-            _mode.val = value;
-            break;
-        default:
-            throw DeviceFault(name(), "Invalid write");
-    }
-}
-
-byte_t
-I8257::read_cb(offset_t offset)
-{
-    switch (offset) {
-        case 0x09:
-            return _status;
-    }
-    throw DeviceFault(name(), "Invalid read");
-}
-
-void
-I8257::dma(void)
-{
-    Channel *rd = NULL;
-    Channel *wr = NULL;
-    for (int i = 0; i < 4; i++) {
-        if (bit_isset(_mode.val, i)) {
-            if (rd == NULL && (_channels[i].count.d & 0x4000))
-                rd = &_channels[i];
-            else if (wr == NULL && (_channels[i].count.d & 0x8000))
-                wr = &_channels[i];
-        }
-        if (rd && wr)
-            break;
-    }
-    if (!rd || !wr)
-        return;
-
-    for (unsigned i = 0; i < (rd->count.d & 0x3fff); i++)
-        _bus->write(wr->address.d + i, _bus->read(rd->address.d + i));
-}
-

@@ -2,9 +2,9 @@
  * Copyright (c) 2016, Dan Sledz
  */
 
-#include "emu/emu.h"
-#include "emu/device.h"
 #include "cpu/z80/z80.h"
+#include "emu/device.h"
+#include "emu/emu.h"
 
 #include "machine/sbc/m6850.h"
 
@@ -14,29 +14,25 @@ using namespace Device;
 
 namespace Arcade {
 
-class SingleBoardZ80: public Machine
-{
-public:
-    SingleBoardZ80(const std::string &rom);
-    virtual ~SingleBoardZ80(void);
+class SingleBoardZ80 : public Machine {
+ public:
+  SingleBoardZ80(const std::string &rom);
+  virtual ~SingleBoardZ80(void);
 
-private:
+ private:
+  byte_t io_read(offset_t offset);
+  void io_write(offset_t offset, byte_t value);
 
-    byte_t io_read(offset_t offset);
-    void io_write(offset_t offset, byte_t value);
+ private:
+  void init_bus();
 
-private:
+  Z80Cpu_ptr m_cpu;
+  AddressBus16_ptr m_bus;
+  RamDevice m_ram;
 
-    void init_bus();
+ public:
+  M6850_ptr m_acia;
 
-    Z80Cpu_ptr m_cpu;
-    AddressBus16_ptr m_bus;
-    RamDevice m_ram;
-
-public:
-    M6850_ptr m_acia;
-
-    bool m_acia_irq;
+  bool m_acia_irq;
 };
-
 };

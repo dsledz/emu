@@ -32,60 +32,42 @@ using namespace EMU;
 
 namespace CPU3 {
 
-template<class _bus_type, class _state_type, typename latch_func,
-    typename op_func>
-class Cpu: public ClockedDevice {
-    typedef _bus_type bus_type;
-    typedef _state_type state_type;
-    typedef typename bus_type::addr_type addr_type;
-    typedef typename bus_type::data_type data_type;
+template <class _bus_type, class _state_type, typename latch_func,
+          typename op_func>
+class Cpu : public ClockedDevice {
+  typedef _bus_type bus_type;
+  typedef _state_type state_type;
+  typedef typename bus_type::addr_type addr_type;
+  typedef typename bus_type::data_type data_type;
 
-    Cpu(Machine *machine, const std::string &name, unsigned hertz,
-        bus_type *bus):
-        ClockedDevice(machine, name, hertz),
-        m_bus(bus)
-    {
+  Cpu(Machine *machine, const std::string &name, unsigned hertz, bus_type *bus)
+      : ClockedDevice(machine, name, hertz), m_bus(bus) {}
+  virtual ~Cpu(void) {}
+  Cpu(const Cpu &cpu) = delete;
+
+  void execute(void) {
+    while (true) {
+      OpFunc(state(), bus());
     }
-    virtual ~Cpu(void)
-    {
-    }
-    Cpu(const Cpu &cpu) = delete;
+  }
 
-    void execute(void)
-    {
-        while (true) {
-            OpFunc(state(), bus());
-        }
-    }
+  virtual void line(Line line, LineState state) { Device::line(line, state); }
 
-    virtual void line(Line line, LineState state)
-    {
-        Device::line(line, state);
-    }
+  bus_type *bus(void) { return m_bus; }
 
-    bus_type *bus(void) {
-        return m_bus;
-    }
+  state_type *state(void) { return &m_state; }
 
-    state_type *state(void) {
-        return &m_state;
-    }
+  data_type bus_read(addr_type addr) {
+    data_type tmp = m_bus->read(addr);
+    return tmp;
+  }
 
-    data_type bus_read(addr_type addr) {
-        data_type tmp = m_bus->read(addr);
-        return tmp;
-    }
+  void bus_write(addr_type addr, data_type value) { m_bus->write(addr, value); }
 
-    void bus_write(addr_type addr, data_type value) {
-        m_bus->write(addr, value);
-    }
-
-protected:
-
-    bus_type *m_bus;
-    addr_type m_address;
-    data_type m_data;
-    state_type m_state;
+ protected:
+  bus_type *m_bus;
+  addr_type m_address;
+  data_type m_data;
+  state_type m_state;
 };
-
 };

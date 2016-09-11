@@ -25,9 +25,9 @@
 #pragma once
 
 #include "core/bits.h"
-#include "emu/emu.h"
 #include "cpu/lib/cpu2.h"
 #include "cpu/z80/z80_state.h"
+#include "emu/emu.h"
 
 using namespace Core;
 using namespace EMU;
@@ -37,45 +37,38 @@ using namespace Z80;
 namespace Z80v2 {
 
 enum Z80Arg {
-    ArgRegB  = 0,
-    ArgRegC  = 1,
-    ArgRegD  = 2,
-    ArgRegE  = 3,
-    ArgRegH  = 4,
-    ArgRegL  = 5,
-    ArgRegHL = 6,
-    ArgRegA  = 7
+  ArgRegB = 0,
+  ArgRegC = 1,
+  ArgRegD = 2,
+  ArgRegE = 3,
+  ArgRegH = 4,
+  ArgRegL = 5,
+  ArgRegHL = 6,
+  ArgRegA = 7
 };
 
-enum Z80Arg16 {
-    RegBC = 0,
-    RegDE = 1,
-    RegHL = 2,
-    RegIX = 3,
-    RegIY = 4
-};
+enum Z80Arg16 { RegBC = 0, RegDE = 1, RegHL = 2, RegIX = 3, RegIY = 4 };
 
 typedef std::unique_ptr<Z80Bus> Z80Bus_ptr;
 
-class Z80Cpu: public Cpu<Z80Bus, Z80State, Z80Opcode>
-{
-public:
-    Z80Cpu(Machine *machine, const std::string &name, unsigned hertz,
-           state_type *state);
-    ~Z80Cpu();
-    Z80Cpu(const Z80Cpu &rhs) = delete;
+class Z80Cpu : public Cpu<Z80Bus, Z80State, Z80Opcode> {
+ public:
+  Z80Cpu(Machine *machine, const std::string &name, unsigned hertz,
+         state_type *state);
+  ~Z80Cpu();
+  Z80Cpu(const Z80Cpu &rhs) = delete;
 
-    virtual void execute(void);
+  virtual void execute(void);
 
-    void set_data(byte_t data) {
-        // XXX: Horrible hack for IM2 and pacman
-        m_state->data = data;
-    }
+  void set_data(byte_t data) {
+    // XXX: Horrible hack for IM2 and pacman
+    m_state->data = data;
+  }
 
-private:
-    void interrupt(addr_t addr);
+ private:
+  void interrupt(addr_t addr);
 
-    std::string Log(Z80State *state);
+  std::string Log(Z80State *state);
 };
 
 typedef std::unique_ptr<Z80Cpu> Z80Cpu_ptr;

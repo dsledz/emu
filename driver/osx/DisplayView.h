@@ -2,7 +2,7 @@
 #import <QuartzCore/CVDisplayLink.h>
 
 @interface DisplayView : NSOpenGLView {
-    CVDisplayLinkRef displayLink;
+  CVDisplayLinkRef displayLink;
 }
 
 - (IBAction)doOpen:(id)pId;
@@ -14,19 +14,16 @@
 @end
 
 @interface DebugView : NSView {
-
 }
 
 @end
 
 @interface CPUView : NSView {
-
 }
 
 @end
 
-@interface CPURegisterField: NSForm {
-
+@interface CPURegisterField : NSForm {
 }
 
 @end

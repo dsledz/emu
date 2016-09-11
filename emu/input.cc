@@ -27,59 +27,41 @@
 
 using namespace EMU;
 
-InputMap::InputMap(void)
-{
+InputMap::InputMap(void) {}
+
+InputMap::~InputMap(void) {}
+
+void InputMap::add_input(InputKey in, input_fn fn) {
+  std::pair<InputKey, input_fn> value(in, fn);
+  if (_input_map.find(in) != _input_map.end()) throw DuplicateInput(in);
+  _input_map.insert(value);
 }
 
-InputMap::~InputMap(void)
-{
+void InputMap::add(const InputSignal &signal) {
+  if (signal.active_high) {
+    add_input(signal.key, [=](LineState state) {
+      IOPort *port = signal.port;
+      bit_set(port->value, signal.bit, state == LineState::Assert);
+    });
+  } else {
+    add_input(signal.key, [=](LineState state) {
+      IOPort *port = signal.port;
+      bit_set(port->value, signal.bit, state == LineState::Clear);
+    });
+  }
 }
 
-void
-InputMap::add_input(InputKey in, input_fn fn)
-{
-    std::pair<InputKey, input_fn> value (in, fn);
-    if (_input_map.find(in) != _input_map.end())
-        throw DuplicateInput(in);
-    _input_map.insert(value);
+void InputMap::depress(InputKey in) {
+  auto it = _input_map.find(in);
+  if (it != _input_map.end()) it->second(LineState::Assert);
 }
 
-void
-InputMap::add(const InputSignal &signal)
-{
-    if (signal.active_high) {
-        add_input(signal.key, [=](LineState state) {
-            IOPort *port = signal.port;
-            bit_set(port->value, signal.bit, state == LineState::Assert);
-        });
-    } else {
-        add_input(signal.key, [=](LineState state) {
-            IOPort *port = signal.port;
-            bit_set(port->value, signal.bit, state == LineState::Clear);
-        });
-    }
+void InputMap::release(InputKey in) {
+  auto it = _input_map.find(in);
+  if (it != _input_map.end()) it->second(LineState::Clear);
 }
 
-void
-InputMap::depress(InputKey in)
-{
-    auto it = _input_map.find(in);
-    if (it != _input_map.end())
-        it->second(LineState::Assert);
-}
-
-void
-InputMap::release(InputKey in)
-{
-    auto it = _input_map.find(in);
-    if (it != _input_map.end())
-        it->second(LineState::Clear);
-}
-
-void
-InputMap::pulse(InputKey in)
-{
-    auto it = _input_map.find(in);
-    if (it != _input_map.end())
-        it->second(LineState::Pulse);
+void InputMap::pulse(InputKey in) {
+  auto it = _input_map.find(in);
+  if (it != _input_map.end()) it->second(LineState::Pulse);
 }

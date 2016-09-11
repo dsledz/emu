@@ -30,72 +30,65 @@
 #include "emu/device.h"
 #include "emu/io.h"
 
-#include <fstream>
 #include <sys/stat.h>
+#include <fstream>
 
 namespace EMU {
 
 void read_rom(const std::string &name, bvec &rom);
 
-struct RomException: public CoreException {
-    RomException(const std::string &path):
-        CoreException("Missing rom: "),
-        path(path)
-    {
-        msg += path;
-    }
-    std::string path;
+struct RomException : public CoreException {
+  RomException(const std::string &path)
+      : CoreException("Missing rom: "), path(path) {
+    msg += path;
+  }
+  std::string path;
 };
 
 class Rom {
-public:
-    Rom(void);
-    Rom(const std::string &path);
-    ~Rom(void);
+ public:
+  Rom(void);
+  Rom(const std::string &path);
+  ~Rom(void);
 
-    uint8_t read8(offset_t offset) const;
-    size_t size(void);
-    uint8_t *direct(offset_t offset);
-    const uint8_t *direct(offset_t offset) const;
+  uint8_t read8(offset_t offset) const;
+  size_t size(void);
+  uint8_t *direct(offset_t offset);
+  const uint8_t *direct(offset_t offset) const;
 
-    void append(const bvec &data);
-    bvec::const_iterator cbegin() const {
-        return _rom.cbegin();
-    }
-    bvec::const_iterator cend() const {
-        return _rom.cend();
-    }
+  void append(const bvec &data);
+  bvec::const_iterator cbegin() const { return _rom.cbegin(); }
+  bvec::const_iterator cend() const { return _rom.cend(); }
 
-private:
-    bvec _rom;
+ private:
+  bvec _rom;
 };
 
 struct RomRegion {
-    RomRegion(const std::string &name, std::initializer_list<std::string> roms):
-        name(name), roms(roms) { }
+  RomRegion(const std::string &name, std::initializer_list<std::string> roms)
+      : name(name), roms(roms) {}
 
-    std::string name;
+  std::string name;
 
-    std::list<std::string> roms;
+  std::list<std::string> roms;
 };
 
 struct RomDefinition {
-    RomDefinition(const std::string &name): name(name) { }
+  RomDefinition(const std::string &name) : name(name) {}
 
-    std::string name;
-    std::list<RomRegion> regions;
+  std::string name;
+  std::list<RomRegion> regions;
 };
 
 class RomSet {
-public:
-    RomSet(const std::string &path);
-    RomSet(const RomDefinition &definition);
-    ~RomSet(void);
+ public:
+  RomSet(const std::string &path);
+  RomSet(const RomDefinition &definition);
+  ~RomSet(void);
 
-    Rom *rom(const std::string &name);
+  Rom *rom(const std::string &name);
 
-private:
-    std::unordered_map<std::string, Rom> _roms;
+ private:
+  std::unordered_map<std::string, Rom> _roms;
 };
-
 };

@@ -51,35 +51,30 @@ TEST(GalagaTest, run10)
 }
 #endif
 
-TEST(GalagaTest, run100)
-{
-    Arcade::Galaga machine("");
-    /* 10 seconds of runtime */
-    unsigned steps = 6000 * 10;
-    for (unsigned i = 0; i < steps; i++) {
-        machine.run();
-    }
+TEST(GalagaTest, run100) {
+  Arcade::Galaga machine("");
+  /* 10 seconds of runtime */
+  unsigned steps = 6000 * 10;
+  for (unsigned i = 0; i < steps; i++) {
+    machine.run();
+  }
 }
 
-TEST(GalagaTest, input)
-{
-    Arcade::Galaga machine("");
+TEST(GalagaTest, input) {
+  Arcade::Galaga machine("");
 
-    unsigned steps = 6000 * 6;
-    for (unsigned i = 0; i < steps; i++) {
-        machine.run();
-    }
-    machine.send_input(InputKey::Coin1, true);
-    for (unsigned i = 0; i < 1000; i++) {
-        machine.run();
-    }
-    machine.send_input(InputKey::Coin1, false);
-    for (unsigned i = 0; i < 1000; i++) {
-        machine.run();
-    }
+  unsigned steps = 6000 * 6;
+  for (unsigned i = 0; i < steps; i++) {
+    machine.run();
+  }
+  machine.send_input(InputKey::Coin1, true);
+  for (unsigned i = 0; i < 1000; i++) {
+    machine.run();
+  }
+  machine.send_input(InputKey::Coin1, false);
+  for (unsigned i = 0; i < 1000; i++) {
+    machine.run();
+  }
 }
 
-TEST(GalagaTest, load)
-{
-    Arcade::Galaga machine("");
-}
+TEST(GalagaTest, load) { Arcade::Galaga machine(""); }

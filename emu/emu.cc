@@ -28,4 +28,3 @@
 using namespace EMU;
 
 const Time EMU::time_zero = Time(sec(0));
-

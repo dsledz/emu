@@ -28,53 +28,47 @@
 #include "emu/emu.h"
 using namespace EMU;
 
-TEST(PageTest, simple_page)
-{
-    Page<uint16_t, uint8_t, 256> page(
-            {PageFlags::Read, PageFlags::Write, PageFlags::Auto});
-    uint8_t data1 = 30;
-    uint8_t data2 = 30;
-    uint16_t offset1 = 5;
+TEST(PageTest, simple_page) {
+  Page<uint16_t, uint8_t, 256> page(
+      {PageFlags::Read, PageFlags::Write, PageFlags::Auto});
+  uint8_t data1 = 30;
+  uint8_t data2 = 30;
+  uint16_t offset1 = 5;
 
-    page.write(offset1, data1);
-    data2 = page.read(offset1);
+  page.write(offset1, data1);
+  data2 = page.read(offset1);
 
-    EXPECT_EQ(data1, data2);
+  EXPECT_EQ(data1, data2);
 }
 
-TEST(PageTest, bounds_checking)
-{
-    Page<uint16_t, uint8_t, 256> page(
-            {PageFlags::Read, PageFlags::Write, PageFlags::Auto});
-    uint8_t data1 = 30;
-    uint8_t data2 = 30;
-    uint16_t offset1 = 255;
+TEST(PageTest, bounds_checking) {
+  Page<uint16_t, uint8_t, 256> page(
+      {PageFlags::Read, PageFlags::Write, PageFlags::Auto});
+  uint8_t data1 = 30;
+  uint8_t data2 = 30;
+  uint16_t offset1 = 255;
 
-    page.write(offset1, data1);
-    data2 = page.read(offset1);
+  page.write(offset1, data1);
+  data2 = page.read(offset1);
 
-    EXPECT_EQ(data1, data2);
+  EXPECT_EQ(data1, data2);
 }
 
-TEST(PageTest, prot_wr)
-{
-    Page<uint16_t, uint8_t, 256> page(
-            {PageFlags::Read, PageFlags::Auto});
-    uint8_t data1 = 30;
-    uint16_t offset1 = 256;
+TEST(PageTest, prot_wr) {
+  Page<uint16_t, uint8_t, 256> page({PageFlags::Read, PageFlags::Auto});
+  uint8_t data1 = 30;
+  uint16_t offset1 = 256;
 
-    EXPECT_THROW(page.write(offset1, data1), EMU::PageException);
+  EXPECT_THROW(page.write(offset1, data1), EMU::PageException);
 }
 
-TEST(PageTest, add_entry)
-{
-    bvec ram;
-    ram.resize(0x8000);
-    IOBus16x8 bus;
+TEST(PageTest, add_entry) {
+  bvec ram;
+  ram.resize(0x8000);
+  IOBus16x8 bus;
 
-    bus.add(0x0000, ram);
+  bus.add(0x0000, ram);
 
-    bus.write(0x2000, 50);
-    EXPECT_EQ(50, bus.read(0x2000));
+  bus.write(0x2000, 50);
+  EXPECT_EQ(50, bus.read(0x2000));
 }
-

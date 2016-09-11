@@ -32,74 +32,67 @@
 
 #include <vector>
 
-template<typename T>
+template <typename T>
 class ExecPolicy {
-public:
-    //    typedefs
-    typedef T value_type;
-    typedef value_type* pointer;
-    typedef const value_type* const_pointer;
-    typedef value_type& reference;
-    typedef const value_type& const_reference;
-    typedef std::size_t size_type;
-    typedef std::ptrdiff_t difference_type;
+ public:
+  //    typedefs
+  typedef T value_type;
+  typedef value_type* pointer;
+  typedef const value_type* const_pointer;
+  typedef value_type& reference;
+  typedef const value_type& const_reference;
+  typedef std::size_t size_type;
+  typedef std::ptrdiff_t difference_type;
 
-public:
-    template<typename U>
-    struct rebind {
-        typedef ExecPolicy<U> other;
-    };
+ public:
+  template <typename U>
+  struct rebind {
+    typedef ExecPolicy<U> other;
+  };
 
-public:
-
-    //    memory allocation
-    inline pointer allocate(size_type cnt,
-          typename std::allocator<void>::const_pointer = 0) {
+ public:
+  //    memory allocation
+  inline pointer allocate(size_type cnt,
+                          typename std::allocator<void>::const_pointer = 0) {
 #ifdef WIN32
-		return reinterpret_cast<T*>(VirtualAllocEx(
-			GetCurrentProcess(),
-			NULL,
-			sizeof(T) * cnt,
-			MEM_COMMIT,
-			PAGE_EXECUTE_READWRITE)
-			);
+    return reinterpret_cast<T*>(VirtualAllocEx(GetCurrentProcess(), NULL,
+                                               sizeof(T) * cnt, MEM_COMMIT,
+                                               PAGE_EXECUTE_READWRITE));
 #else
-        return reinterpret_cast<T*>(mmap(0, sizeof(T) * cnt,
-            PROT_READ|PROT_WRITE|PROT_EXEC, MAP_ANON|MAP_PRIVATE, -1, 0));
+    return reinterpret_cast<T*>(mmap(0, sizeof(T) * cnt,
+                                     PROT_READ | PROT_WRITE | PROT_EXEC,
+                                     MAP_ANON | MAP_PRIVATE, -1, 0));
 #endif
-    }
-    inline void deallocate(pointer p, size_type cnt) {
+  }
+  inline void deallocate(pointer p, size_type cnt) {
 #ifdef WIN32
-		VirtualFreeEx(GetCurrentProcess(),
-			p,
-			sizeof(T) * cnt,
-			MEM_DECOMMIT);
+    VirtualFreeEx(GetCurrentProcess(), p, sizeof(T) * cnt, MEM_DECOMMIT);
 #else
-        munmap(p, sizeof(T) * cnt);
+    munmap(p, sizeof(T) * cnt);
 #endif
-    }
+  }
 
-    //    size
-    inline size_type max_size() const {
-        return (std::numeric_limits<size_type>::max)() / sizeof(T);
-    }
+  //    size
+  inline size_type max_size() const {
+    return (std::numeric_limits<size_type>::max)() / sizeof(T);
+  }
 
-private:
-};    //    end of class ExecPolicy
+ private:
+};  //    end of class ExecPolicy
 
 //    determines if memory from another allocator
 //    can be deallocated from this one
-template<typename T>
+template <typename T>
 inline bool operator==(ExecPolicy<T> const&, ExecPolicy<T> const&) {
-    return true;
+  return true;
 }
-template<typename T, typename T2>
+template <typename T, typename T2>
 inline bool operator==(ExecPolicy<T> const&, ExecPolicy<T2> const&) {
-    return false;
+  return false;
 }
-template<typename T, typename OtherAllocator>
+template <typename T, typename OtherAllocator>
 inline bool operator==(ExecPolicy<T> const&, OtherAllocator const&) {
-    return false;
+  return false;
 }
 
 #ifdef WIN32
@@ -107,5 +100,3 @@ typedef std::vector<uint8_t> exec_buf_t;
 #else
 typedef std::vector<uint8_t, ExecPolicy<uint8_t> > exec_buf_t;
 #endif
-
-

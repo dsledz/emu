@@ -23,99 +23,85 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "emu/test.h"
 #include "cpu/lib/cpu3.h"
+#include "emu/test.h"
 
 using namespace EMU;
 using namespace EMUTest;
 using namespace CPU3;
 
 enum TestOpcode {
-    Unknown = -1,
-    TestSTA,
-    TestLDA,
-    TestSTB,
-    TestLDB,
-    TestADD,
-    TestSUB
+  Unknown = -1,
+  TestSTA,
+  TestLDA,
+  TestSTB,
+  TestLDB,
+  TestADD,
+  TestSUB
 };
 
 enum Phase {
-    OpRead = 0,
-    OperandLow,
-    OperandHigh,
-    Offset,
-    SourceResult,
+  OpRead = 0,
+  OperandLow,
+  OperandHigh,
+  Offset,
+  SourceResult,
 };
 
 struct TestState {
-    bool     WriteEnabled;
-    Phase    CurrentPhase;
-    /* Internal Registers */
-    reg16_t  EA;
-    reg8_t   ARG;
-    reg8_t   Opcode;
+  bool WriteEnabled;
+  Phase CurrentPhase;
+  /* Internal Registers */
+  reg16_t EA;
+  reg8_t ARG;
+  reg8_t Opcode;
 
-    /* Register File */
-    reg16_t  PC;
-    reg8_t   A;
-    reg8_t   B;
+  /* Register File */
+  reg16_t PC;
+  reg8_t A;
+  reg8_t B;
 };
 
-static void
-WriteFunc(AddressBus16 *bus, uint16_t address, uint8_t data)
-{
-    WriteFunc(address, data);
+static void WriteFunc(AddressBus16 *bus, uint16_t address, uint8_t data) {
+  WriteFunc(address, data);
 }
 
-static uint8_t
-ReadFunc(AddressBus16 *bus, uint16_t address)
-{
-    return ReadFunc(address);
+static uint8_t ReadFunc(AddressBus16 *bus, uint16_t address) {
+  return ReadFunc(address);
 }
 
-static void
-OpFunc(struct TestState *state, AddressBus16 *bus)
-{
-    switch (state->ARG) {
+static void OpFunc(struct TestState *state, AddressBus16 *bus) {
+  switch (state->ARG) {
     case TestSTA:
-        state->ARG = ReadFunc(bus, state->PC);
-        state->EA = state->ARG;
-        state->PC++;
-        state->ARG = ReadFunc(bus, state->PC);
-        state->EA |= state->ARG << 8;
-        state->ARG = state->A;
-        state->PC++;
-        WriteFunc(bus, state->EA, state->ARG);
-        state->PC++;
-        break;
+      state->ARG = ReadFunc(bus, state->PC);
+      state->EA = state->ARG;
+      state->PC++;
+      state->ARG = ReadFunc(bus, state->PC);
+      state->EA |= state->ARG << 8;
+      state->ARG = state->A;
+      state->PC++;
+      WriteFunc(bus, state->EA, state->ARG);
+      state->PC++;
+      break;
     case TestLDA:
-        state->ARG = ReadFunc(bus, state->PC);
-        state->EA = state->ARG;
-        state->PC++;
-        state->ARG = ReadFunc(bus, state->PC);
-        state->EA = state->ARG << 8;
-        state->PC++;
-        state->A = ReadFunc(bus, state->EA);
-        state->PC++;
-        break;
-    }
+      state->ARG = ReadFunc(bus, state->PC);
+      state->EA = state->ARG;
+      state->PC++;
+      state->ARG = ReadFunc(bus, state->PC);
+      state->EA = state->ARG << 8;
+      state->PC++;
+      state->A = ReadFunc(bus, state->EA);
+      state->PC++;
+      break;
+  }
 }
 
-class TestCpu: public Cpu<AddressBus16, TestState, uint8_t, OpFunc> {
-public:
-    TestCpu(Machine *machine, const std::string &name, unsigned hertz,
-            AddressBus16 *bus):
-        Cpu(machine, name, hertz, bus)
-    {
-    }
-    virtual ~TestCpu(void)
-    {
-    }
+class TestCpu : public Cpu<AddressBus16, TestState, uint8_t, OpFunc> {
+ public:
+  TestCpu(Machine *machine, const std::string &name, unsigned hertz,
+          AddressBus16 *bus)
+      : Cpu(machine, name, hertz, bus) {}
+  virtual ~TestCpu(void) {}
 };
 
-TEST(CpuTest, constructor)
-{
-    TestMachine<TestCpu> machine;
-}
-
+TEST(CpuTest, constructor) { TestMachine<TestCpu> machine; }

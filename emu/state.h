@@ -32,63 +32,53 @@
 namespace EMU {
 
 class SaveState {
-public:
-    SaveState(bvec &data): data(data), pos(0) {
-        data.resize(0);
-    }
+ public:
+  SaveState(bvec &data) : data(data), pos(0) { data.resize(0); }
 
-    ~SaveState(void) { }
+  ~SaveState(void) {}
 
-    bvec &data;
-    size_t pos;
+  bvec &data;
+  size_t pos;
 };
 
 class LoadState {
-public:
-    LoadState(const bvec &data): data(data), pos(0) { }
+ public:
+  LoadState(const bvec &data) : data(data), pos(0) {}
 
-    const bvec &data;
-    size_t pos;
+  const bvec &data;
+  size_t pos;
 };
 
-template<typename T> static inline
-SaveState & operator << (SaveState & state, const T & d)
-{
-    state.data.resize(state.pos + sizeof(d));
-    memcpy(&state.data[state.pos], &d, sizeof(d));
-    state.pos += sizeof(d);
-    return state;
+template <typename T>
+static inline SaveState &operator<<(SaveState &state, const T &d) {
+  state.data.resize(state.pos + sizeof(d));
+  memcpy(&state.data[state.pos], &d, sizeof(d));
+  state.pos += sizeof(d);
+  return state;
 }
 
-static inline
-SaveState & operator <<(SaveState &state, const bvec & d)
-{
-    size_t size = d.size();
-    state << size;
-    state.data.resize(state.pos + d.size());
-    memcpy(&state.data[state.pos], d.data(), d.size());
-    state.pos += d.size();
-    return state;
+static inline SaveState &operator<<(SaveState &state, const bvec &d) {
+  size_t size = d.size();
+  state << size;
+  state.data.resize(state.pos + d.size());
+  memcpy(&state.data[state.pos], d.data(), d.size());
+  state.pos += d.size();
+  return state;
 }
 
-template<typename T> static inline
-LoadState & operator >>(LoadState & state, T & d)
-{
-    memcpy(&d, &state.data[state.pos], sizeof(d));
-    state.pos += sizeof(d);
-    return state;
+template <typename T>
+static inline LoadState &operator>>(LoadState &state, T &d) {
+  memcpy(&d, &state.data[state.pos], sizeof(d));
+  state.pos += sizeof(d);
+  return state;
 }
 
-static inline
-LoadState & operator >>(LoadState & state, bvec & d)
-{
-    size_t size;
-    state >> size;
-    d.resize(size);
-    memcpy(d.data(), &state.data[state.pos], size);
-    state.pos += size;
-    return state;
+static inline LoadState &operator>>(LoadState &state, bvec &d) {
+  size_t size;
+  state >> size;
+  d.resize(size);
+  memcpy(d.data(), &state.data[state.pos], size);
+  state.pos += size;
+  return state;
 }
-
-
 };

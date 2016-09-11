@@ -28,4 +28,3 @@
 using namespace Core;
 
 Debug Core::log(std::cout);
-

@@ -26,25 +26,22 @@
 
 #include "core/bits.h"
 #include "core/exception.h"
-#include "emu/timing.h"
 #include "emu/device.h"
-#include "emu/video.h"
 #include "emu/dipswitch.h"
 #include "emu/options.h"
+#include "emu/timing.h"
+#include "emu/video.h"
 
 using namespace Core;
 
 namespace EMU {
 
-struct KeyError: public CoreException {
-    KeyError(const std::string &key):
-        CoreException("Missing Key: "),
-        key(key)
-    {
-        msg += key;
-    }
+struct KeyError : public CoreException {
+  KeyError(const std::string &key) : CoreException("Missing Key: "), key(key) {
+    msg += key;
+  }
 
-    std::string key;
+  std::string key;
 };
 
 /**
@@ -55,157 +52,141 @@ struct KeyError: public CoreException {
  * IOPorts
  */
 class Machine {
-public:
-    /**
-     * Initialize the machine with a master clock rate of @a hertz
-     */
-    Machine(void);
-    virtual ~Machine(void);
+ public:
+  /**
+   * Initialize the machine with a master clock rate of @a hertz
+   */
+  Machine(void);
+  virtual ~Machine(void);
 
-    void poweron(void);
-    void poweroff(void);
+  void poweron(void);
+  void poweroff(void);
 
-    virtual void load_rom(const std::string &rom);
+  virtual void load_rom(const std::string &rom);
 
-    /* Public functions */
-    void set_switch(const std::string &name, const std::string &value);
-    void send_input(InputKey key, bool pressed);
-    void reset(void);
-    void run(void);
-    void run_forward(EmuTime delta);
-    void run_until(EmuTime target);
+  /* Public functions */
+  void set_switch(const std::string &name, const std::string &value);
+  void send_input(InputKey key, bool pressed);
+  void reset(void);
+  void run(void);
+  void run_forward(EmuTime delta);
+  void run_until(EmuTime target);
 
-    /* FrameBuffer */
-    void set_frame_buffer(FrameBuffer *screen);
-    /* Debugger */
-    void set_debugger(Debugger *debugger);
-    Debugger *get_debugger(void) {
-        return m_debugger;
-    }
+  /* FrameBuffer */
+  void set_frame_buffer(FrameBuffer *screen);
+  /* Debugger */
+  void set_debugger(Debugger *debugger);
+  Debugger *get_debugger(void) { return m_debugger; }
 
-    void add_device(Device *dev);
-    void remove_device(Device *dev);
+  void add_device(Device *dev);
+  void remove_device(Device *dev);
 
-    void add_clock(EmuClockBase *clock) {
-        m_sim_clock.add_clock(clock);
-    }
-    void remove_clock(EmuClockBase *clock) {
-        m_sim_clock.remove_clock(clock);
-    }
+  void add_clock(EmuClockBase *clock) { m_sim_clock.add_clock(clock); }
+  void remove_clock(EmuClockBase *clock) { m_sim_clock.remove_clock(clock); }
 
-    /**
-     * Declare an IO port with the name of @a name.
-     * Ports 
-     * IO lines can be used to communicate between
-     * different devices in a mailbox manner.
-     */
-    void add_ioport(const std::string &name);
-    IOPort *ioport(const std::string &name);
-    byte_t read_ioport(const std::string &name);
-    byte_t read_ioport(IOPort *port);
-    void write_ioport(const std::string &name, byte_t value);
-    void write_ioport(IOPort *port, byte_t value);
+  /**
+   * Declare an IO port with the name of @a name.
+   * Ports
+   * IO lines can be used to communicate between
+   * different devices in a mailbox manner.
+   */
+  void add_ioport(const std::string &name);
+  IOPort *ioport(const std::string &name);
+  byte_t read_ioport(const std::string &name);
+  byte_t read_ioport(IOPort *port);
+  void write_ioport(const std::string &name, byte_t value);
+  void write_ioport(IOPort *port, byte_t value);
 
-    /**
-     * Manage dipswitches
-     */
-    dipswitch_ptr add_switch(const std::string &name,
-        const std::string &port, byte_t mask, byte_t def);
-    void reset_switches(void);
+  /**
+   * Manage dipswitches
+   */
+  dipswitch_ptr add_switch(const std::string &name, const std::string &port,
+                           byte_t mask, byte_t def);
+  void reset_switches(void);
 
-    void add_input(const InputSignal &signal);
+  void add_input(const InputSignal &signal);
 
-    /**
-     * Set an line on the device @a name.
-     */
-    void set_line(const std::string &name, Line line, LineState state);
-    void set_line(Device *dev, Line line, LineState state);
+  /**
+   * Set an line on the device @a name.
+   */
+  void set_line(const std::string &name, Line line, LineState state);
+  void set_line(Device *dev, Line line, LineState state);
 
-    void add_screen(short width, short height,
-        FrameBuffer::Rotation rotation = FrameBuffer::ROT0);
-    FrameBuffer *screen(void);
+  void add_screen(short width, short height,
+                  FrameBuffer::Rotation rotation = FrameBuffer::ROT0);
+  FrameBuffer *screen(void);
 
-    short get_screen_width(void) {
-        return m_screen_width;
-    }
+  short get_screen_width(void) { return m_screen_width; }
 
-    short get_screen_height(void) {
-        return m_screen_height;
-    }
+  short get_screen_height(void) { return m_screen_height; }
 
-    void set_time(EmuTime now);
+  void set_time(EmuTime now);
 
-    TaskScheduler *get_scheduler(void) {
-        return &m_scheduler;
-    }
+  TaskScheduler *get_scheduler(void) { return &m_scheduler; }
 
-protected:
+ protected:
+  void log(LogLevel level, const std::string fmt, ...);
 
-    void log(LogLevel level, const std::string fmt, ...);
+ private:
+  Device *dev(const std::string &name);
 
-private:
-    Device *dev(const std::string &name);
+  TaskScheduler m_scheduler;
+  EmuSimClock m_sim_clock;
+  InputMap m_input;
+  std::list<Device *> m_devs;
+  std::map<std::string, dipswitch_ptr> m_switches;
+  std::map<std::string, IOPort> m_ports;
 
-    TaskScheduler m_scheduler;
-    EmuSimClock m_sim_clock;
-    InputMap m_input;
-    std::list<Device *> m_devs;
-    std::map<std::string, dipswitch_ptr> m_switches;
-    std::map<std::string, IOPort> m_ports;
-
-    Debugger *m_debugger;
-    FrameBuffer *m_screen;
-    short m_screen_width;
-    short m_screen_height;
-    FrameBuffer::Rotation m_screen_rot;
+  Debugger *m_debugger;
+  FrameBuffer *m_screen;
+  short m_screen_width;
+  short m_screen_height;
+  FrameBuffer::Rotation m_screen_rot;
 };
 
 typedef std::unique_ptr<Machine> machine_ptr;
 
-typedef std::function<machine_ptr (Options *opts)> machine_create_fn;
+typedef std::function<machine_ptr(Options *opts)> machine_create_fn;
 
 struct MachineInformation {
-    std::string name;
-    std::string year;
-    std::string extension;
-    bool cartridge;
+  std::string name;
+  std::string year;
+  std::string extension;
+  bool cartridge;
 };
 
 struct MachineDefinition {
-    MachineDefinition(
-        const std::string &name,
-        const MachineInformation &info,
-        machine_create_fn fn);
-    ~MachineDefinition(void);
+  MachineDefinition(const std::string &name, const MachineInformation &info,
+                    machine_create_fn fn);
+  ~MachineDefinition(void);
 
-    void add(void);
+  void add(void);
 
-    std::string name;
-    MachineInformation info;
-    machine_create_fn fn;
+  std::string name;
+  MachineInformation info;
+  machine_create_fn fn;
 };
 
 class MachineLoader {
-public:
-    MachineLoader();
-    ~MachineLoader();
+ public:
+  MachineLoader();
+  ~MachineLoader();
 
-    void add_machine(struct MachineDefinition *definition);
+  void add_machine(struct MachineDefinition *definition);
 
-    const struct MachineDefinition *find(const std::string &name);
-    std::list<MachineDefinition *>::const_iterator start();
-    std::list<MachineDefinition *>::const_iterator end();
+  const struct MachineDefinition *find(const std::string &name);
+  std::list<MachineDefinition *>::const_iterator start();
+  std::list<MachineDefinition *>::const_iterator end();
 
-    machine_ptr load(Options *opts);
+  machine_ptr load(Options *opts);
 
-private:
-    std::list<MachineDefinition *> m_machines;
+ private:
+  std::list<MachineDefinition *> m_machines;
 };
 
-MachineLoader * loader(void);
+MachineLoader *loader(void);
 
 #define FORCE_UNDEFINED_SYMBOL(x) \
-    extern MachineDefinition x; \
-    void * __ ## x ## _fp = (void *)&x;
-
+  extern MachineDefinition x;     \
+  void *__##x##_fp = (void *)&x;
 };

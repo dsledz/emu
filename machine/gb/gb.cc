@@ -32,186 +32,175 @@
 using namespace EMU;
 using namespace GBMachine;
 
-class GBJoypad: public Device {
-    enum GBKey {
-        A = 0,
-        B = 1,
-        Select = 2,
-        Start = 3,
-        Right = 4,
-        Left = 5,
-        Up = 6,
-        Down = 7,
-        Size = 8,
-    };
+class GBJoypad : public Device {
+  enum GBKey {
+    A = 0,
+    B = 1,
+    Select = 2,
+    Start = 3,
+    Right = 4,
+    Left = 5,
+    Up = 6,
+    Down = 7,
+    Size = 8,
+  };
 
-    enum KeysReg {
-        ButtonsSelect = 5,
-        ArrowSelect   = 4,
-        DownOrSelect  = 3,
-        UpOrSelect    = 2,
-        LeftOrB       = 1,
-        RightOrA      = 0,
-    };
+  enum KeysReg {
+    ButtonsSelect = 5,
+    ArrowSelect = 4,
+    DownOrSelect = 3,
+    UpOrSelect = 2,
+    LeftOrB = 1,
+    RightOrA = 0,
+  };
 
-public:
-    GBJoypad(Gameboy *gb):
-        Device(gb, "joypad"),
-        m_value(0x00)
-    {
-        gb->add_ioport("IN0");
+ public:
+  GBJoypad(Gameboy *gb) : Device(gb, "joypad"), m_value(0x00) {
+    gb->add_ioport("IN0");
 
-        m_port = gb->ioport("IN0");
-        gb->write_ioport(m_port, 0xFF);
-        gb->add_input(InputSignal(InputKey::Joy1Left, m_port, GBKey::Left,
-                                  false));
-        gb->add_input(InputSignal(InputKey::Joy1Right, m_port, GBKey::Right,
-                                  false));
-        gb->add_input(InputSignal(InputKey::Joy1Up, m_port, GBKey::Up,
-                                  false));
-        gb->add_input(InputSignal(InputKey::Joy1Down,  m_port, GBKey::Down,
-                                  false));
-        gb->add_input(InputSignal(InputKey::Joy1Btn1,  m_port, GBKey::A,
-                                  false));
-        gb->add_input(InputSignal(InputKey::Joy1Btn2,  m_port, GBKey::B,
-                                  false));
-        gb->add_input(InputSignal(InputKey::Select1, m_port, GBKey::Select,
-                                  false));
-        gb->add_input(InputSignal(InputKey::Start1, m_port, GBKey::Start,
-                                  false));
+    m_port = gb->ioport("IN0");
+    gb->write_ioport(m_port, 0xFF);
+    gb->add_input(InputSignal(InputKey::Joy1Left, m_port, GBKey::Left, false));
+    gb->add_input(
+        InputSignal(InputKey::Joy1Right, m_port, GBKey::Right, false));
+    gb->add_input(InputSignal(InputKey::Joy1Up, m_port, GBKey::Up, false));
+    gb->add_input(InputSignal(InputKey::Joy1Down, m_port, GBKey::Down, false));
+    gb->add_input(InputSignal(InputKey::Joy1Btn1, m_port, GBKey::A, false));
+    gb->add_input(InputSignal(InputKey::Joy1Btn2, m_port, GBKey::B, false));
+    gb->add_input(InputSignal(InputKey::Select1, m_port, GBKey::Select, false));
+    gb->add_input(InputSignal(InputKey::Start1, m_port, GBKey::Start, false));
 
-        gb->bus()->add(GBReg::KEYS,
-            [&](offset_t offset) -> byte_t {
-                return m_value;
-            },
-            [&](offset_t offset, byte_t arg) {
-                byte_t keys = machine()->read_ioport("IN0");
-                if (bit_isset(arg, ButtonsSelect))
-                    arg = (arg & 0xF0) | ((keys & 0xF0) >> 4);
-                if (bit_isset(arg, ArrowSelect))
-                    arg = (arg & 0xF0) | (keys & 0x0F);
-                m_value = arg;
-            });
-    }
-    virtual ~GBJoypad(void) {
-    }
+    gb->bus()->add(GBReg::KEYS,
+                   [&](offset_t offset) -> byte_t { return m_value; },
+                   [&](offset_t offset, byte_t arg) {
+                     byte_t keys = machine()->read_ioport("IN0");
+                     if (bit_isset(arg, ButtonsSelect))
+                       arg = (arg & 0xF0) | ((keys & 0xF0) >> 4);
+                     if (bit_isset(arg, ArrowSelect))
+                       arg = (arg & 0xF0) | (keys & 0x0F);
+                     m_value = arg;
+                   });
+  }
+  virtual ~GBJoypad(void) {}
 
-private:
-    IOPort *m_port;
-    byte_t m_value;
+ private:
+  IOPort *m_port;
+  byte_t m_value;
 };
 
-class GBSerialIO: public Device {
-public:
-    GBSerialIO(Gameboy *gameboy):
-        Device(gameboy, "serial") {
-        gameboy->bus()->add(GBReg::SB, &m_sb);
-        gameboy->bus()->add(GBReg::SC, &m_sc);
-    }
-    virtual ~GBSerialIO(void) {
-    }
-private:
-    uint8_t m_sb;
-    uint8_t m_sc;
+class GBSerialIO : public Device {
+ public:
+  GBSerialIO(Gameboy *gameboy) : Device(gameboy, "serial") {
+    gameboy->bus()->add(GBReg::SB, &m_sb);
+    gameboy->bus()->add(GBReg::SC, &m_sc);
+  }
+  virtual ~GBSerialIO(void) {}
+
+ private:
+  uint8_t m_sb;
+  uint8_t m_sc;
 };
 
-class GBTimer: public ClockedDevice {
-public:
-    GBTimer(Gameboy *gameboy, unsigned hertz):
-        ClockedDevice(gameboy, "timer", hertz)
-    {
-        gameboy->bus()->add(GBReg::TIMA, &m_tima);
-        gameboy->bus()->add(GBReg::TMA, &m_tma);
-        gameboy->bus()->add(GBReg::TAC, &m_tac);
-        gameboy->bus()->add(GBReg::DIV, &m_div);
+class GBTimer : public ClockedDevice {
+ public:
+  GBTimer(Gameboy *gameboy, unsigned hertz)
+      : ClockedDevice(gameboy, "timer", hertz) {
+    gameboy->bus()->add(GBReg::TIMA, &m_tima);
+    gameboy->bus()->add(GBReg::TMA, &m_tma);
+    gameboy->bus()->add(GBReg::TAC, &m_tac);
+    gameboy->bus()->add(GBReg::DIV, &m_div);
+  }
+  virtual ~GBTimer(void) {}
+
+  virtual void execute(void) {
+    unsigned delta = 64;
+    add_icycles(delta);
+    m_cycles += delta;
+    m_dcycles += delta;
+    m_tcycles += delta;
+
+    if (m_dcycles > 256) {
+      m_dcycles -= 256;
+      m_div++;
+      // Divider register triggered
     }
-    virtual ~GBTimer(void) {
+    if (m_tac & 0x04) {
+      unsigned limit = 1024;
+      switch (m_tac & 0x3) {
+        case 0:
+          limit = 1024;
+          break;
+        case 1:
+          limit = 16;
+          break;
+        case 2:
+          limit = 64;
+          break;
+        case 3:
+          limit = 256;
+          break;
+      }
+      if (m_tcycles > limit) {
+        m_tcycles -= limit;
+        if (m_tima == 0xff) {
+          machine()->set_line("cpu", make_irq_line(GBInterrupt::Timeout),
+                              LineState::Pulse);
+          // Reset the overflow
+          m_tima = m_tma;
+        } else
+          m_tima++;
+      }
     }
+  }
 
-    virtual void execute(void) {
-        unsigned delta = 64;
-        add_icycles(delta);
-        m_cycles += delta;
-        m_dcycles += delta;
-        m_tcycles += delta;
-
-        if (m_dcycles > 256) {
-            m_dcycles -= 256;
-            m_div++;
-            // Divider register triggered
-        }
-        if (m_tac & 0x04) {
-            unsigned limit = 1024;
-            switch (m_tac & 0x3) {
-            case 0: limit = 1024; break;
-            case 1: limit = 16; break;
-            case 2: limit = 64; break;
-            case 3: limit = 256; break;
-            }
-            if (m_tcycles > limit) {
-                m_tcycles -= limit;
-                if (m_tima == 0xff) {
-                    machine()->set_line("cpu",
-                        make_irq_line(GBInterrupt::Timeout), LineState::Pulse);
-                    // Reset the overflow
-                    m_tima = m_tma;
-                } else
-                    m_tima++;
-            }
-        }
+  virtual void set_line(Line line, LineState state) {
+    switch (line) {
+      case Line::RESET:
+        reset();
+      default:
+        break;
     }
+  }
 
-    virtual void set_line(Line line, LineState state) {
-        switch (line) {
-        case Line::RESET:
-            reset();
-        default:
-            break;
-        }
-    }
+  virtual void reset(void) {
+    m_cycles = 0;
+    m_dcycles = 0;
+    m_tcycles = 0;
+    m_tima = 0;
+    m_tma = 0;
+    m_tac = 0;
+  }
 
-    virtual void reset(void) {
-        m_cycles = 0;
-        m_dcycles = 0;
-        m_tcycles = 0;
-        m_tima = 0;
-        m_tma = 0;
-        m_tac = 0;
-    }
-
-private:
-
-    unsigned m_cycles;
-    unsigned m_dcycles;
-    unsigned m_tcycles;
-    byte_t m_div;
-    byte_t m_tima;
-    byte_t m_tma;
-    byte_t m_tac;
+ private:
+  unsigned m_cycles;
+  unsigned m_dcycles;
+  unsigned m_tcycles;
+  byte_t m_div;
+  byte_t m_tima;
+  byte_t m_tma;
+  byte_t m_tac;
 };
 
-Gameboy::Gameboy(const std::string &rom_name):
-    Machine()
-{
-    add_screen(160, 144);
+Gameboy::Gameboy(const std::string &rom_name) : Machine() {
+  add_screen(160, 144);
 
-    m_bus = AddressBus16_ptr(new AddressBus16());
+  m_bus = AddressBus16_ptr(new AddressBus16());
 
-    m_cpu = std::unique_ptr<LR35902Cpu>(
-        new LR35902Cpu(this, "cpu", 4194304, m_bus.get()));
+  m_cpu = std::unique_ptr<LR35902Cpu>(
+      new LR35902Cpu(this, "cpu", 4194304, m_bus.get()));
 
-    m_timer = Device_ptr(new GBTimer(this, 4194304));
-    m_serial = Device_ptr(new GBSerialIO(this));
-    m_joypad = Device_ptr(new GBJoypad(this));
-    m_gfx = std::unique_ptr<GBGraphics>(new GBGraphics(this, 4194304));
+  m_timer = Device_ptr(new GBTimer(this, 4194304));
+  m_serial = Device_ptr(new GBSerialIO(this));
+  m_joypad = Device_ptr(new GBJoypad(this));
+  m_gfx = std::unique_ptr<GBGraphics>(new GBGraphics(this, 4194304));
 
-    m_mbc = std::unique_ptr<GBMBC>(new GBMBC(this));
-    m_mbc->load_rom(rom_name);
+  m_mbc = std::unique_ptr<GBMBC>(new GBMBC(this));
+  m_mbc->load_rom(rom_name);
 
-    m_ram = std::unique_ptr<RamDevice>(new RamDevice(this, "ram", 0x2000));
-    /* XXX: Ram isn't mirrored */
-    m_bus->add(0xC000, m_ram.get());
-    m_bus->add(0xE000, m_ram.get());
+  m_ram = std::unique_ptr<RamDevice>(new RamDevice(this, "ram", 0x2000));
+  /* XXX: Ram isn't mirrored */
+  m_bus->add(0xC000, m_ram.get());
+  m_bus->add(0xE000, m_ram.get());
 
 #if 0
     m_hiram = std::unique_ptr<RamDevice>(new RamDevice(this, "hiram", 0x80));
@@ -225,22 +214,12 @@ Gameboy::Gameboy(const std::string &rom_name):
 #endif
 }
 
-Gameboy::~Gameboy(void)
-{
+Gameboy::~Gameboy(void) {}
 
-}
-
-MachineInformation gb_info {
-    "Gameboy",
-    "1989",
-    "gb",
-    true,
+MachineInformation gb_info{
+    "Gameboy", "1989", "gb", true,
 };
 
-MachineDefinition gb(
-    "gb",
-    gb_info,
-    [](Options *opts) -> machine_ptr {
-        return machine_ptr(new Gameboy(opts->rom));
-    });
-
+MachineDefinition gb("gb", gb_info, [](Options *opts) -> machine_ptr {
+  return machine_ptr(new Gameboy(opts->rom));
+});

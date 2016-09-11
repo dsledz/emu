@@ -25,11 +25,8 @@
 #pragma once
 
 #include "core/bits.h"
-#include "emu/emu.h"
 #include "cpu/lib/cpu.h"
 #include "cpu/lib/jit.h"
+#include "emu/emu.h"
 
-namespace Z80v3 {
-
-
-};
+namespace Z80v3 {};

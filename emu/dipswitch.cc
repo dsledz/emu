@@ -31,38 +31,23 @@
 using namespace EMU;
 
 Dipswitch::Dipswitch(const std::string &name, const std::string &port,
-                     byte_t mask, byte_t def):
-    _name(name),
-    _port(port),
-    _mask(mask),
-    _def(def)
-{
+                     byte_t mask, byte_t def)
+    : _name(name), _port(port), _mask(mask), _def(def) {}
+
+Dipswitch::~Dipswitch(void) {}
+
+void Dipswitch::add_option(const std::string &name, byte_t value) {
+  _options.insert(make_pair(name, value));
 }
 
-Dipswitch::~Dipswitch(void)
-{
+void Dipswitch::select(Machine *machine, const std::string &value) {
+  auto it = _options.find(value);
+  if (it == _options.end()) throw DipswitchValueException(value);
+  IOPort *port = machine->ioport(_port);
+  bit_setmask(port->value, _mask, it->second);
 }
 
-void
-Dipswitch::add_option(const std::string &name, byte_t value)
-{
-    _options.insert(make_pair(name, value));
+void Dipswitch::set_default(Machine *machine) {
+  IOPort *port = machine->ioport(_port);
+  bit_setmask(port->value, _mask, _def);
 }
-
-void
-Dipswitch::select(Machine *machine, const std::string &value)
-{
-    auto it = _options.find(value);
-    if (it == _options.end())
-        throw DipswitchValueException(value);
-    IOPort *port = machine->ioport(_port);
-    bit_setmask(port->value, _mask, it->second);
-}
-
-void
-Dipswitch::set_default(Machine *machine)
-{
-    IOPort *port = machine->ioport(_port);
-    bit_setmask(port->value, _mask, _def);
-}
-

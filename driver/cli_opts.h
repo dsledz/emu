@@ -29,36 +29,30 @@ using namespace Core;
 
 namespace Driver {
 
-class CLIOptions: public Options
-{
-public:
-    CLIOptions(int argc, char **argv):
-        Options()
-    {
-        static struct option opts[] = {
-            {"log",    required_argument, 0, 'l'},
-            {"driver", required_argument, 0, 'd'},
-            {"rom",    required_argument, 0, 'r'},
-            {0, 0, 0, 0}
-        };
-        int idx = 0;
-        char c;
-        while ((c = getopt_long(argc, argv, "l:d:r:", opts, &idx)) != -1) {
-            switch (c) {
-            case 'l':
-                log_level = optarg;
-                break;
-            case 'd':
-                driver = optarg;
-                break;
-            case 'r':
-                rom = optarg;
-                break;
-            default:
-                break;
-            }
-        }
+class CLIOptions : public Options {
+ public:
+  CLIOptions(int argc, char **argv) : Options() {
+    static struct option opts[] = {{"log", required_argument, 0, 'l'},
+                                   {"driver", required_argument, 0, 'd'},
+                                   {"rom", required_argument, 0, 'r'},
+                                   {0, 0, 0, 0}};
+    int idx = 0;
+    char c;
+    while ((c = getopt_long(argc, argv, "l:d:r:", opts, &idx)) != -1) {
+      switch (c) {
+        case 'l':
+          log_level = optarg;
+          break;
+        case 'd':
+          driver = optarg;
+          break;
+        case 'r':
+          rom = optarg;
+          break;
+        default:
+          break;
+      }
     }
+  }
 };
-
 };

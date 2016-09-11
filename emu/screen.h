@@ -29,68 +29,64 @@
 
 namespace EMU {
 
-class ScreenDevice: public ClockedDevice
-{
-public:
-    ScreenDevice(Machine *machine, const std::string &name, unsigned hertz,
-        unsigned width, unsigned height, unsigned hbstart, unsigned hbend,
-        unsigned vbstart, unsigned vbend);
+class ScreenDevice : public ClockedDevice {
+ public:
+  ScreenDevice(Machine *machine, const std::string &name, unsigned hertz,
+               unsigned width, unsigned height, unsigned hbstart,
+               unsigned hbend, unsigned vbstart, unsigned vbend);
 
-    virtual void execute(void);
+  virtual void execute(void);
 
-    unsigned visible_width(void) const;
-    unsigned visible_height(void) const;
+  unsigned visible_width(void) const;
+  unsigned visible_height(void) const;
 
-    typedef std::function<void (void)> scanline_fn;
-    void register_callback(unsigned scanline, scanline_fn fn);
+  typedef std::function<void(void)> scanline_fn;
+  void register_callback(unsigned scanline, scanline_fn fn);
 
-protected:
-    enum class HState {
-        HStart,
-        HDraw,
-        HBlank,
-        HEnd,
-    };
+ protected:
+  enum class HState {
+    HStart,
+    HDraw,
+    HBlank,
+    HEnd,
+  };
 
-    enum class VState {
-        VStart,
-        VDraw,
-        VBlank,
-        VEnd,
-    };
+  enum class VState {
+    VStart,
+    VDraw,
+    VBlank,
+    VEnd,
+  };
 
-    virtual void do_hstart(void) { }
-    virtual void do_hdraw(void) { }
-    virtual void do_hblank(void) { }
-    virtual void do_hend(void) { }
-    virtual void do_vstart(void) { }
-    virtual void do_vdraw(void) { }
-    virtual void do_vblank(void) { }
-    virtual void do_vend(void) { }
+  virtual void do_hstart(void) {}
+  virtual void do_hdraw(void) {}
+  virtual void do_hblank(void) {}
+  virtual void do_hend(void) {}
+  virtual void do_vstart(void) {}
+  virtual void do_vdraw(void) {}
+  virtual void do_vblank(void) {}
+  virtual void do_vend(void) {}
 
-    HState m_hstate;
-    unsigned m_hpos;
-    VState m_vstate;
-    unsigned m_vpos;
+  HState m_hstate;
+  unsigned m_hpos;
+  VState m_vstate;
+  unsigned m_vpos;
 
-private:
+ private:
+  HState next_hstate(unsigned *cycles_out);
+  VState next_vstate(void);
+  void set_hstate(HState state);
+  void set_vstate(VState state);
 
-    HState next_hstate(unsigned *cycles_out);
-    VState next_vstate(void);
-    void set_hstate(HState state);
-    void set_vstate(VState state);
+  unsigned m_width;
+  unsigned m_height;
+  unsigned m_hbstart;
+  unsigned m_hbend;
+  unsigned m_vbstart;
+  unsigned m_vbend;
+  unsigned m_hvisible;
+  unsigned m_vvisible;
 
-    unsigned m_width;
-    unsigned m_height;
-    unsigned m_hbstart;
-    unsigned m_hbend;
-    unsigned m_vbstart;
-    unsigned m_vbend;
-    unsigned m_hvisible;
-    unsigned m_vvisible;
-
-    std::unordered_map<unsigned, scanline_fn> m_callbacks;
+  std::unordered_map<unsigned, scanline_fn> m_callbacks;
 };
-
 };
-

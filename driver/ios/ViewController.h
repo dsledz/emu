@@ -6,10 +6,9 @@
 //  Copyright (c) 2013 Dan Sledz. All rights reserved.
 //
 
-#import <UIKit/UIKit.h>
 #import <GLKit/GLKit.h>
+#import <UIKit/UIKit.h>
 
 @interface ViewController : GLKViewController
 
 @end
-

@@ -23,8 +23,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "opts.h"
 #include "driver/emulator.h"
+#include "opts.h"
 
 #include <future>
 #include <mutex>
@@ -42,231 +42,193 @@
 #include <GL/glext.h>
 #endif
 
-
 using namespace EMU;
 
 struct Vec3 {
-    Vec3(void) = default;
-    ~Vec3(void) = default;
-    Vec3(float x, float y, float z): x(x), y(y), z(z) { }
-    float x=0.0, y=0.0, z=0.0;
+  Vec3(void) = default;
+  ~Vec3(void) = default;
+  Vec3(float x, float y, float z) : x(x), y(y), z(z) {}
+  float x = 0.0, y = 0.0, z = 0.0;
 };
 
 struct Vec2 {
-    Vec2(void) = default;
-    ~Vec2(void) = default;
-    Vec2(float x, float y): x(x), y(y) { }
-    float x=0.0, y=0.0;
+  Vec2(void) = default;
+  ~Vec2(void) = default;
+  Vec2(float x, float y) : x(x), y(y) {}
+  float x = 0.0, y = 0.0;
 };
 
 struct TextureVertex {
-    TextureVertex(void) = default;
-    ~TextureVertex(void) = default;
-    Vec3     vert;
-    Vec2     tex;
+  TextureVertex(void) = default;
+  ~TextureVertex(void) = default;
+  Vec3 vert;
+  Vec2 tex;
 };
 
-template<class destructor>
-struct ScopedObject
-{
-    ScopedObject(void): value(0)
-    {
+template <class destructor>
+struct ScopedObject {
+  ScopedObject(void) : value(0) {}
+  ScopedObject(GLuint value) : value(value) {
+    if (value == 0) {
+      /* XXX: Throw an error */
     }
-    ScopedObject(GLuint value): value(value)
-    {
-        if (value == 0) {
-            /* XXX: Throw an error */
-        }
-    }
-    ScopedObject(const ScopedObject &obj) = delete;
+  }
+  ScopedObject(const ScopedObject &obj) = delete;
 
-    ~ScopedObject(void) {
-        if (value != 0)
-            destructor()(value);
-    }
+  ~ScopedObject(void) {
+    if (value != 0) destructor()(value);
+  }
 
-    const operator GLuint () const {
-        return value;
-    }
+  const operator GLuint() const { return value; }
 
-    GLuint release() {
-        GLuint tmp = value;
-        value = 0;
-        return tmp;
-    }
+  GLuint release() {
+    GLuint tmp = value;
+    value = 0;
+    return tmp;
+  }
 
-    GLuint value;
+  GLuint value;
 };
 
 struct shader_cleanup {
-    void operator()(GLuint value) {
-        glDeleteShader(value);
-    }
+  void operator()(GLuint value) { glDeleteShader(value); }
 };
 typedef ScopedObject<shader_cleanup> scoped_shader;
 
 struct program_cleanup {
-    void operator()(GLuint value) {
-        glDeleteProgram(value);
-    };
+  void operator()(GLuint value) { glDeleteProgram(value); };
 };
 typedef ScopedObject<program_cleanup> scoped_program;
 
 struct texture_cleanup {
-    void operator()(GLuint value) {
-        glDeleteTextures(1, &value);
-    }
+  void operator()(GLuint value) { glDeleteTextures(1, &value); }
 };
 typedef ScopedObject<texture_cleanup> scoped_texture;
 
 /* XXX: Grab GLError() */
-struct OpenGLError: public CoreException
-{
-    OpenGLError(void): CoreException("OpenGL Error: ")
-    {
-        std::stringstream ss;
-        ss << glGetError();
-        msg += ss.str();
-    }
+struct OpenGLError : public CoreException {
+  OpenGLError(void) : CoreException("OpenGL Error: ") {
+    std::stringstream ss;
+    ss << glGetError();
+    msg += ss.str();
+  }
 };
 
 /**
  * OpenGL Shader (Vertex or Fragment)
  */
-class Shader
-{
-public:
-    Shader(GLenum type, const std::string &source);
-    ~Shader(void);
+class Shader {
+ public:
+  Shader(GLenum type, const std::string &source);
+  ~Shader(void);
 
-    void attach(GLuint program);
+  void attach(GLuint program);
 
-    const operator GLuint() const {
-        return _shader;
-    }
+  const operator GLuint() const { return _shader; }
 
-private:
-    scoped_shader _shader;
-    GLuint _program;
+ private:
+  scoped_shader _shader;
+  GLuint _program;
 };
 
-class ShaderProgram
-{
-public:
-    ShaderProgram(void);
-    ~ShaderProgram(void);
+class ShaderProgram {
+ public:
+  ShaderProgram(void);
+  ~ShaderProgram(void);
 
-    void build(const std::string &frag_source, const std::string &vert_source,
-               const std::vector<std::pair<std::string, GLuint> > &attribs);
+  void build(const std::string &frag_source, const std::string &vert_source,
+             const std::vector<std::pair<std::string, GLuint> > &attribs);
 
-    const operator GLuint() const {
-        return _program;
-    }
+  const operator GLuint() const { return _program; }
 
-private:
-    scoped_program _program;
+ private:
+  scoped_program _program;
 };
 
-class GfxTransform
-{
-public:
-    GfxTransform(void) { }
-    virtual ~GfxTransform(void) { }
+class GfxTransform {
+ public:
+  GfxTransform(void) {}
+  virtual ~GfxTransform(void) {}
 
-    short width(void) {
-        return _width;
-    }
+  short width(void) { return _width; }
 
-    short height(void) {
-        return _height;
-    }
+  short height(void) { return _height; }
 
-    short pitch(void) {
-        return _pitch;
-    }
+  short pitch(void) { return _pitch; }
 
-    void *fb(void) {
-        return _fb.data();
-    }
+  void *fb(void) { return _fb.data(); }
 
-    virtual void resize(short width, short height) = 0;
-    virtual void render(FrameBuffer *screen) = 0;
+  virtual void resize(short width, short height) = 0;
+  virtual void render(FrameBuffer *screen) = 0;
 
-protected:
-    void init_fb(short width, short height) {
-        _width = width;
-        _height = height;
-        _pitch = _width * sizeof(uint32_t);
-        _fb.resize(_pitch * _height);
-    }
+ protected:
+  void init_fb(short width, short height) {
+    _width = width;
+    _height = height;
+    _pitch = _width * sizeof(uint32_t);
+    _fb.resize(_pitch * _height);
+  }
 
-private:
-
-    short _width;
-    short _height;
-    short _pitch;
-    bvec _fb;
+ private:
+  short _width;
+  short _height;
+  short _pitch;
+  bvec _fb;
 };
 
 enum class GfxScale {
-    None = 0,
-    Scale2x = 1,
-    Nearest2x = 2,
-    Scaneline2x = 3,
+  None = 0,
+  Scale2x = 1,
+  Nearest2x = 2,
+  Scaneline2x = 3,
 };
 
 typedef std::unique_ptr<GfxTransform> gfx_transform_ptr;
 gfx_transform_ptr get_transform(GfxScale scale);
 
-class GLSLFrameBuffer: public FrameBuffer
-{
-public:
+class GLSLFrameBuffer : public FrameBuffer {
+ public:
+  GLSLFrameBuffer(void);
+  virtual ~GLSLFrameBuffer(void);
 
-    GLSLFrameBuffer(void);
-    virtual ~GLSLFrameBuffer(void);
+  virtual void resize(short width, short height);
+  virtual void render(void);
+  virtual void flip(void);
 
-    virtual void resize(short width, short height);
-    virtual void render(void);
-    virtual void flip(void);
+  void render_screen(float *modelview);
 
-    void render_screen(float *modelview);
+  void init(void);
 
-    void init(void);
+ private:
+  std::unique_ptr<GfxTransform> _transform;
+  GfxScale _scale;
 
-private:
-
-    std::unique_ptr<GfxTransform> _transform;
-    GfxScale _scale;
-
-    ShaderProgram _program;
-    GLuint _screen_buffer;
-    GLuint _var_Position;
-    GLuint _var_TexCoordIn;
-    GLuint _var_Texture;
-    GLuint _var_Projection;
-    GLuint _var_Modelview;
+  ShaderProgram _program;
+  GLuint _screen_buffer;
+  GLuint _var_Position;
+  GLuint _var_TexCoordIn;
+  GLuint _var_Texture;
+  GLuint _var_Projection;
+  GLuint _var_Modelview;
 };
 
 typedef std::lock_guard<std::mutex> mtx_lock;
 
 #if OPENGL_LEGACY
 
-class GLFrameBuffer: public FrameBuffer
-{
-public:
+class GLFrameBuffer : public FrameBuffer {
+ public:
+  GLFrameBuffer(void);
+  virtual ~GLFrameBuffer(void);
 
-    GLFrameBuffer(void);
-    virtual ~GLFrameBuffer(void);
+  virtual void resize(short width, short height);
+  virtual void render(void);
+  virtual void flip(void);
 
-    virtual void resize(short width, short height);
-    virtual void render(void);
-    virtual void flip(void);
+  void init(void);
 
-    void init(void);
-private:
-
-    std::unique_ptr<GfxTransform> _transform;
-    GfxScale _scale;
+ private:
+  std::unique_ptr<GfxTransform> _transform;
+  GfxScale _scale;
 };
 #endif
-

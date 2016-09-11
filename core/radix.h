@@ -33,107 +33,92 @@
 
 #define MASK(width) ((1 << width) - 1)
 
-template<class Val, typename addr_type, int width>
+template <class Val, typename addr_type, int width>
 class RadixTree {
-private:
-    struct Leaf {
-        Leaf(void): key(MASK(width)), mask(0x0000), value(Val()) { }
-        Leaf(addr_type key, addr_type mask, const Val &value):
-            key(key), mask(mask), value(value) { }
+ private:
+  struct Leaf {
+    Leaf(void) : key(MASK(width)), mask(0x0000), value(Val()) {}
+    Leaf(addr_type key, addr_type mask, const Val &value)
+        : key(key), mask(mask), value(value) {}
 
-        bool match(addr_type value) {
-            return ((mask & value) == key);
-        }
+    bool match(addr_type value) { return ((mask & value) == key); }
 
-        addr_type  key;
-        addr_type  mask;
-        Val        value;
-    };
-    struct Inner {
-        Inner(Leaf *leaf):
-            depth(0), leaf(leaf), zero(NULL), one(NULL) { }
-        Inner(int depth, addr_type key):
-            depth(depth), key(key), leaf(NULL), zero(NULL), one(NULL) { }
-        ~Inner(void) {
-            if (leaf != NULL)
-                delete leaf;
-            if (zero != NULL)
-                delete zero;
-            if (one != NULL)
-                delete one;
-        }
-
-        bool match(addr_type value) {
-            for (int d = width - 1; d > depth; d--)
-                if (bit_isset(value, d) != bit_isset(key, d))
-                    return false;
-            return true;
-        }
-
-        int         depth;
-        addr_type   key;
-        Leaf       *leaf;
-        Inner      *zero;
-        Inner      *one;
-    };
-
-public:
-    RadixTree(void): _head(NULL) {
-        _head = new Inner(width - 1, 0);
-    }
-    ~RadixTree(void) {
-        if (_head != NULL)
-            delete _head;
-        _head = NULL;
+    addr_type key;
+    addr_type mask;
+    Val value;
+  };
+  struct Inner {
+    Inner(Leaf *leaf) : depth(0), leaf(leaf), zero(NULL), one(NULL) {}
+    Inner(int depth, addr_type key)
+        : depth(depth), key(key), leaf(NULL), zero(NULL), one(NULL) {}
+    ~Inner(void) {
+      if (leaf != NULL) delete leaf;
+      if (zero != NULL) delete zero;
+      if (one != NULL) delete one;
     }
 
-    Val &find(addr_type key) {
-        Inner *ele = _head;
-        while (ele != NULL && ele->leaf == NULL) {
-            if (bit_isset(key, ele->depth))
-                ele = ele->one;
-            else
-                ele = ele->zero;
-        }
-        if (ele != NULL && ele->leaf != NULL && ele->leaf->match(key))
-            return ele->leaf->value;
-        else
-            throw Core::BusError(key);
+    bool match(addr_type value) {
+      for (int d = width - 1; d > depth; d--)
+        if (bit_isset(value, d) != bit_isset(key, d)) return false;
+      return true;
     }
 
-    void add(addr_type key, addr_type keymask, const Val &val) {
-        Inner **ele = &_head;
-        int depth = (*ele)->depth;
-        addr_type mask = 0;
-        bool set = true;
-        // Make sure the prefix is correct
-        for (int d = depth; d > 0; d--) {
-            if (!set && bit_isset(keymask, d))
-                throw Core::BusError(key);
-            set = bit_isset(keymask, d);
-        }
-        // Locate the Correct inner object for the element
-        while (bit_isset(keymask, depth)) {
-            mask |= bit_isset(key, depth) << depth;
-            if (*ele == NULL)
-                *ele = new Inner(depth, mask);
-            else if ((*ele)->leaf != NULL)
-                throw Core::BusError(key);
-            if (bit_isset(key, depth))
-                ele = &(*ele)->one;
-            else
-                ele = &(*ele)->zero;
-            depth--;
-        }
-        *ele = new Inner(new Leaf(key, keymask, val));
-    }
+    int depth;
+    addr_type key;
+    Leaf *leaf;
+    Inner *zero;
+    Inner *one;
+  };
 
-    void add(addr_type key, const Val &val) {
-        add(key, MASK(width), val);
-    }
+ public:
+  RadixTree(void) : _head(NULL) { _head = new Inner(width - 1, 0); }
+  ~RadixTree(void) {
+    if (_head != NULL) delete _head;
+    _head = NULL;
+  }
 
-private:
-    Inner *_head;
+  Val &find(addr_type key) {
+    Inner *ele = _head;
+    while (ele != NULL && ele->leaf == NULL) {
+      if (bit_isset(key, ele->depth))
+        ele = ele->one;
+      else
+        ele = ele->zero;
+    }
+    if (ele != NULL && ele->leaf != NULL && ele->leaf->match(key))
+      return ele->leaf->value;
+    else
+      throw Core::BusError(key);
+  }
+
+  void add(addr_type key, addr_type keymask, const Val &val) {
+    Inner **ele = &_head;
+    int depth = (*ele)->depth;
+    addr_type mask = 0;
+    bool set = true;
+    // Make sure the prefix is correct
+    for (int d = depth; d > 0; d--) {
+      if (!set && bit_isset(keymask, d)) throw Core::BusError(key);
+      set = bit_isset(keymask, d);
+    }
+    // Locate the Correct inner object for the element
+    while (bit_isset(keymask, depth)) {
+      mask |= bit_isset(key, depth) << depth;
+      if (*ele == NULL)
+        *ele = new Inner(depth, mask);
+      else if ((*ele)->leaf != NULL)
+        throw Core::BusError(key);
+      if (bit_isset(key, depth))
+        ele = &(*ele)->one;
+      else
+        ele = &(*ele)->zero;
+      depth--;
+    }
+    *ele = new Inner(new Leaf(key, keymask, val));
+  }
+
+  void add(addr_type key, const Val &val) { add(key, MASK(width), val); }
+
+ private:
+  Inner *_head;
 };
-
-

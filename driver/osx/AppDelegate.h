@@ -10,24 +10,24 @@
 
 struct emu_state;
 
-@interface MyWindowController: NSWindowController {
+@interface MyWindowController : NSWindowController {
 }
 
 @end
 
-@interface AppDelegate : NSObject <NSApplicationDelegate> {
-    MyWindowController *controller;
+@interface AppDelegate : NSObject<NSApplicationDelegate> {
+  MyWindowController *controller;
 }
 
-@property (assign) IBOutlet NSWindow *window;
+@property(assign) IBOutlet NSWindow *window;
 
 + (NSString *)openDialog;
 
 @end
 
-@interface MyWindow: NSWindow {
+@interface MyWindow : NSWindow {
 }
 
-@property (assign) IBOutlet NSString *rom;
+@property(assign) IBOutlet NSString *rom;
 
 @end

@@ -33,33 +33,27 @@ using namespace M6809;
 
 typedef TestMachine<M6809Cpu, 0x0000> M6809Machine;
 
-TEST(M6809Test, constructor)
-{
-    M6809Machine machine;
+TEST(M6809Test, constructor) { M6809Machine machine; }
+
+TEST(M6809Test, opcode_9B) {
+  M6809Machine machine;
+
+  LOAD2(0x9B, 0x01);
+
+  machine.cpu.test_step();
+
+  EXPECT_EQ(1, machine.cpu.state()->D.b.l);
 }
 
-TEST(M6809Test, opcode_9B)
-{
-    M6809Machine machine;
+TEST(M6809Test, opcode_CB) {
+  M6809Machine machine;
 
-    LOAD2(0x9B, 0x01);
+  LOAD2(0xDB, 0x01);
+  LOAD2(0xDB, 0x02);
 
-    machine.cpu.test_step();
+  machine.cpu.test_step();
+  EXPECT_EQ(1, machine.cpu.state()->D.b.h);
 
-    EXPECT_EQ(1, machine.cpu.state()->D.b.l);
+  machine.cpu.test_step();
+  EXPECT_EQ(0xDC, machine.cpu.state()->D.b.h);
 }
-
-TEST(M6809Test, opcode_CB)
-{
-    M6809Machine machine;
-
-    LOAD2(0xDB, 0x01);
-    LOAD2(0xDB, 0x02);
-
-    machine.cpu.test_step();
-    EXPECT_EQ(1, machine.cpu.state()->D.b.h);
-
-    machine.cpu.test_step();
-    EXPECT_EQ(0xDC, machine.cpu.state()->D.b.h);
-}
-

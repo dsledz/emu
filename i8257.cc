@@ -31,35 +31,33 @@ using namespace EMU;
 /* XXX: This seems wrong */
 namespace EMU {
 
-class I8257: public CpuDevice
-{
-    I8257(Machine *machine, const std::string &name, unsigned hertz);
-    virtual ~I8257(void);
+class I8257 : public CpuDevice {
+  I8257(Machine *machine, const std::string &name, unsigned hertz);
+  virtual ~I8257(void);
 
-    void write_cb(offset_t offset, byte_t value);
-    byte_t read_cb(offset_t offset);
+  void write_cb(offset_t offset, byte_t value);
+  byte_t read_cb(offset_t offset);
 
-private:
-    struct Channel {
-        reg16_t    address;
-        reg16_t    count;
-    } _channels[4];
+ private:
+  struct Channel {
+    reg16_t address;
+    reg16_t count;
+  } _channels[4];
 
-    enum ModeSet {
-        DMA0     = 0x00,
-        DMA1     = 0x02,
-        DMA2     = 0x04,
-        DMA3     = 0x08,
-        RPRIO    = 0x10,
-        EXTWR    = 0x20,
-        TCSTOP   = 0x40,
-        AUTOLOAD = 0x80,
-    };
+  enum ModeSet {
+    DMA0 = 0x00,
+    DMA1 = 0x02,
+    DMA2 = 0x04,
+    DMA3 = 0x08,
+    RPRIO = 0x10,
+    EXTWR = 0x20,
+    TCSTOP = 0x40,
+    AUTOLOAD = 0x80,
+  };
 
-    int _last_channel;
-    int _flip_flop;
-    byte_t _mode;
-    byte_t _status;
+  int _last_channel;
+  int _flip_flop;
+  byte_t _mode;
+  byte_t _status;
 };
-
 };

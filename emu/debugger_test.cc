@@ -28,57 +28,50 @@
 #include "emu/emu.h"
 using namespace EMU;
 
-class DebuggableDevice: public Debuggable
-{
-public:
-    DebuggableDevice(): Debuggable("test") {
-        add_debug_var("A", regA);
-        add_debug_var("B", regB);
-    }
-    ~DebuggableDevice() { }
+class DebuggableDevice : public Debuggable {
+ public:
+  DebuggableDevice() : Debuggable("test") {
+    add_debug_var("A", regA);
+    add_debug_var("B", regB);
+  }
+  ~DebuggableDevice() {}
 
-public:
-    uint8_t regA;
-    uint8_t regB;
+ public:
+  uint8_t regA;
+  uint8_t regB;
 };
 
-TEST(DebuggerTest, test)
-{
-    DebuggableDevice device;
+TEST(DebuggerTest, test) {
+  DebuggableDevice device;
 
-    device.regA = 60;
-    device.regB = 10;
+  device.regA = 60;
+  device.regB = 10;
 
-    EXPECT_EQ("60", device.read_register("A"));
+  EXPECT_EQ("60", device.read_register("A"));
 
-    debug_vars_t variables = device.read_registers();
-    auto first = variables.front();
-    EXPECT_EQ(std::make_pair(std::string("A"), std::string("60")), first);
+  debug_vars_t variables = device.read_registers();
+  auto first = variables.front();
+  EXPECT_EQ(std::make_pair(std::string("A"), std::string("60")), first);
 }
 
-class TestMachine: public Machine
-{
-public:
-    TestMachine(void):
-        Machine(),
-        ram(this, "ram", 0x10000) {
-    }
-    ~TestMachine(void) { }
-private:
-    RamDevice ram;
+class TestMachine : public Machine {
+ public:
+  TestMachine(void) : Machine(), ram(this, "ram", 0x10000) {}
+  ~TestMachine(void) {}
+
+ private:
+  RamDevice ram;
 };
 
-TEST(DebuggerTest, test_machine)
-{
-    Debugger debugger;
-    TestMachine machine;
+TEST(DebuggerTest, test_machine) {
+  Debugger debugger;
+  TestMachine machine;
 
-    machine.set_debugger(&debugger);
+  machine.set_debugger(&debugger);
 
-    Debugger *d = machine.get_debugger();
+  Debugger *d = machine.get_debugger();
 
-    Debuggable *ram = d->get_debuggable("ram");
+  Debuggable *ram = d->get_debuggable("ram");
 
-    EXPECT_EQ(ram->read_register("foo"), "Unknown");
+  EXPECT_EQ(ram->read_register("foo"), "Unknown");
 }
-

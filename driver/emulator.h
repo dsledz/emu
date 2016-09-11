@@ -28,44 +28,42 @@
 
 namespace EMU {
 
-class Emulator
-{
-public:
-    enum class EmuState {
-        Running,
-        Paused,
-        Stopped,
-    };
+class Emulator {
+ public:
+  enum class EmuState {
+    Running,
+    Paused,
+    Stopped,
+  };
 
-    Emulator(const Options &options);
-    virtual ~Emulator(void);
+  Emulator(const Options &options);
+  virtual ~Emulator(void);
 
-    virtual void start(void) = 0;
-    virtual void stop(void);
-    virtual void pause(void);
-    virtual void reset(void);
-    virtual void render(void);
-    virtual void key_event(InputKey key, bool pressed);
+  virtual void start(void) = 0;
+  virtual void stop(void);
+  virtual void pause(void);
+  virtual void reset(void);
+  virtual void render(void);
+  virtual void key_event(InputKey key, bool pressed);
 
-    Machine *machine(void);
-    const Options *options(void);
+  Machine *machine(void);
+  const Options *options(void);
 
-    void do_execute(void);
-protected:
+  void do_execute(void);
 
-    EmuState get_state(void);
-    void set_state(EmuState state);
+ protected:
+  EmuState get_state(void);
+  void set_state(EmuState state);
 
-private:
-    std::mutex mtx;
-    std::condition_variable cv;
-    std::future<void> task;
+ private:
+  std::mutex mtx;
+  std::condition_variable cv;
+  std::future<void> task;
 
-    TaskScheduler m_scheduler;
-    RealTimeClock _clock;
-    Emulator::EmuState _state;
-    Options _options;
-    machine_ptr _machine;
+  TaskScheduler m_scheduler;
+  RealTimeClock _clock;
+  Emulator::EmuState _state;
+  Options _options;
+  machine_ptr _machine;
 };
-
 };

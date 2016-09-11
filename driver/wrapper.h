@@ -24,80 +24,68 @@
  */
 #pragma once
 
-#include <sys/types.h>
 #include <stdint.h>
+#include <sys/types.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 enum emu_key {
-    EMU_KEY_NONE = 0,
-    EMU_KEY_JOY1UP,
-    EMU_KEY_JOY1DOWN,
-    EMU_KEY_JOY1LEFT,
-    EMU_KEY_JOY1RIGHT,
-    EMU_KEY_JOY1BTN1,
-    EMU_KEY_JOY1BTN2,
-    EMU_KEY_JOY1SELECT,
-    EMU_KEY_JOY1START,
-    EMU_KEY_COIN1,
+  EMU_KEY_NONE = 0,
+  EMU_KEY_JOY1UP,
+  EMU_KEY_JOY1DOWN,
+  EMU_KEY_JOY1LEFT,
+  EMU_KEY_JOY1RIGHT,
+  EMU_KEY_JOY1BTN1,
+  EMU_KEY_JOY1BTN2,
+  EMU_KEY_JOY1SELECT,
+  EMU_KEY_JOY1START,
+  EMU_KEY_COIN1,
 };
 
 struct emu_key_info {
-    enum emu_key key;
-    const char *name;
+  enum emu_key key;
+  const char *name;
 };
 
 struct emu_event {
-    enum emu_key key;
-    bool pressed;
+  enum emu_key key;
+  bool pressed;
 };
 
 struct emu;
 
-struct emu *
-emu_new(void);
+struct emu *emu_new(void);
 
-void
-emu_free(struct emu *state);
+void emu_free(struct emu *state);
 
-const char *
-emu_error(struct emu *state);
+const char *emu_error(struct emu *state);
 
 struct emu_machine {
-    const char *name;
-    const char *driver;
-    const char *extension;
-    struct emu_machine *next;
+  const char *name;
+  const char *driver;
+  const char *extension;
+  struct emu_machine *next;
 };
 
-struct emu_machine *
-emu_list_enum(struct emu *state);
+struct emu_machine *emu_list_enum(struct emu *state);
 
-void
-emu_list_free(struct emu_machine *m);
+void emu_list_free(struct emu_machine *m);
 
-int
-emu_machine_load(struct emu *state, const char *machine, const char *rom);
+int emu_machine_load(struct emu *state, const char *machine, const char *rom);
 
-int
-emu_machine_start(struct emu *state);
+int emu_machine_start(struct emu *state);
 
-int
-emu_machine_pause(struct emu *state);
+int emu_machine_pause(struct emu *state);
 
-int
-emu_machine_stop(struct emu *state);
+int emu_machine_stop(struct emu *state);
 
-int
-emu_machine_reset(struct emu *state);
+int emu_machine_reset(struct emu *state);
 
-int
-emu_machine_render(struct emu *state);
+int emu_machine_render(struct emu *state);
 
-int
-emu_send_event(struct emu *state, const struct emu_event *event);
+int emu_send_event(struct emu *state, const struct emu_event *event);
 
 #ifdef __cplusplus
 };

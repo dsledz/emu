@@ -24,4 +24,3 @@
  */
 
 #include "cpu/lib/cpu.h"
-

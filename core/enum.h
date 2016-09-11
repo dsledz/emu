@@ -26,91 +26,62 @@
 
 namespace Core {
 
-template<typename T, typename I>
-static inline bool enum_isset(I arg, T bit)
-{
-    I n = static_cast<typename std::underlying_type<T>::type>(bit);
-    return (arg & (1 << n));
+template <typename T, typename I>
+static inline bool enum_isset(I arg, T bit) {
+  I n = static_cast<typename std::underlying_type<T>::type>(bit);
+  return (arg & (1 << n));
 }
 
-template< typename T >
-class Enum
-{
-public:
-   class Iterator
-   {
+template <typename T>
+class Enum {
+ public:
+  class Iterator {
    public:
-      Iterator( int value ) :
-         m_value( value )
-      { }
+    Iterator(int value) : m_value(value) {}
 
-      T operator*( void ) const
-      {
-         return (T)m_value;
-      }
+    T operator*(void)const { return (T)m_value; }
 
-      void operator++( void )
-      {
-         ++m_value;
-      }
+    void operator++(void) { ++m_value; }
 
-      bool operator!=( Iterator rhs )
-      {
-         return m_value != rhs.m_value;
-      }
+    bool operator!=(Iterator rhs) { return m_value != rhs.m_value; }
 
    private:
-      int m_value;
-   };
-
+    int m_value;
+  };
 };
 
-template< typename T >
-typename Enum<T>::Iterator begin( Enum<T> )
-{
-   return typename Enum<T>::Iterator( (int)T::First );
+template <typename T>
+typename Enum<T>::Iterator begin(Enum<T>) {
+  return typename Enum<T>::Iterator((int)T::First);
 }
 
-template< typename T >
-typename Enum<T>::Iterator end( Enum<T> )
-{
-   return typename Enum<T>::Iterator( ((int)T::Last) + 1 );
+template <typename T>
+typename Enum<T>::Iterator end(Enum<T>) {
+  return typename Enum<T>::Iterator(((int)T::Last) + 1);
 }
 
-template< typename T>
-class BitField
-{
-public:
+template <typename T>
+class BitField {
+ public:
+  typedef typename std::underlying_type<T>::type field_type;
 
-    typedef typename std::underlying_type<T>::type field_type;
+  BitField() : m_value(0) {}
 
-    BitField():m_value(0) { }
+  BitField(std::initializer_list<T> l) {
+    for (auto b : l) m_value |= static_cast<field_type>(b);
+  }
 
-    BitField(std::initializer_list<T> l) {
-        for (auto b : l)
-            m_value |= static_cast<field_type>(b);
-    }
+  ~BitField() {}
 
-    ~BitField() { }
+  bool is_set(T t) { return m_value & static_cast<field_type>(t); }
 
-    bool is_set(T t) {
-        return m_value & static_cast<field_type>(t);
-    }
+  bool is_clear(T t) { return !is_set(t); }
 
-    bool is_clear(T t) {
-        return !is_set(t);
-    }
+  void clear(T t) { m_value &= ~static_cast<field_type>(t); }
 
-    void clear(T t) {
-        m_value &= ~static_cast<field_type>(t);
-    }
+  void set(T t) { m_value |= static_cast<field_type>(t); }
 
-    void set(T t) {
-        m_value |= static_cast<field_type>(t);
-    }
-
-private:
-    field_type m_value;
+ private:
+  field_type m_value;
 };
-
 }

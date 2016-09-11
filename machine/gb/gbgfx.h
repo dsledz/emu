@@ -43,115 +43,113 @@ namespace GBMachine {
 #define DISPLAY_LINES 144
 
 enum VideoReg {
-    LCDC = 0xFF40,
-    STAT = 0xFF41,
-    SCY  = 0xFF42,
-    SCX  = 0xFF43,
-    LY   = 0xFF44,
-    LYC  = 0xFF45,
-    BGP  = 0xFF47,
-    OBP0 = 0xFF48,
-    OBP1 = 0xFF49,
-    WY   = 0xFF4A,
-    WX   = 0xFF4B,
+  LCDC = 0xFF40,
+  STAT = 0xFF41,
+  SCY = 0xFF42,
+  SCX = 0xFF43,
+  LY = 0xFF44,
+  LYC = 0xFF45,
+  BGP = 0xFF47,
+  OBP0 = 0xFF48,
+  OBP1 = 0xFF49,
+  WY = 0xFF4A,
+  WX = 0xFF4B,
 };
 
 enum Oam {
-    OamY = 0,
-    OamX = 1,
-    OamPattern = 2,
-    OamFlags = 3,
+  OamY = 0,
+  OamX = 1,
+  OamPattern = 2,
+  OamFlags = 3,
 };
 
 enum VMem {
-    ObjTiles = 0x0000,
-    BGTiles  = 0x0800,
-    TileMap0 = 0x1800,
-    TileMap1 = 0x1C00,
+  ObjTiles = 0x0000,
+  BGTiles = 0x0800,
+  TileMap0 = 0x1800,
+  TileMap1 = 0x1C00,
 };
 
 enum LCDCBits {
-    BGDisplay = 0,
-    OBJDisplay = 1,
-    OBJSize = 2,
-    BGTileMap = 3,
-    BGTileData = 4,
-    WindowDisplay = 5,
-    WindowTileMap = 6,
-    LCDEnabled = 7,
+  BGDisplay = 0,
+  OBJDisplay = 1,
+  OBJSize = 2,
+  BGTileMap = 3,
+  BGTileData = 4,
+  WindowDisplay = 5,
+  WindowTileMap = 6,
+  LCDEnabled = 7,
 };
 
 enum OAMFlags {
-    SpritePalette = 4,
-    SpriteFlipX = 5,
-    SpriteFlipY = 6,
-    SpritePriority = 7,
+  SpritePalette = 4,
+  SpriteFlipX = 5,
+  SpriteFlipY = 6,
+  SpritePriority = 7,
 };
 
 enum LCDMode {
-    HBlankMode  = 0,
-    VBlankMode  = 1,
-    OAMMode     = 2,
-    ActiveMode  = 3,
+  HBlankMode = 0,
+  VBlankMode = 1,
+  OAMMode = 2,
+  ActiveMode = 3,
 };
 
 enum STATBits {
-    LYCInterrupt = 6,
-    Mode10Int    = 5,
-    Mode01Int    = 4,
-    Mode00Int    = 3,
-    Coincidence  = 2,
-    LCDModeBit1  = 1,
-    LCDModeBit0  = 0
+  LYCInterrupt = 6,
+  Mode10Int = 5,
+  Mode01Int = 4,
+  Mode00Int = 3,
+  Coincidence = 2,
+  LCDModeBit1 = 1,
+  LCDModeBit0 = 0
 };
 
-class GBGraphics: public ClockedDevice {
-public:
-    GBGraphics(Gameboy *gameboy, unsigned hertz);
-    virtual ~GBGraphics(void);
+class GBGraphics : public ClockedDevice {
+ public:
+  GBGraphics(Gameboy *gameboy, unsigned hertz);
+  virtual ~GBGraphics(void);
 
-    virtual void save(SaveState &state) { }
-    virtual void load(LoadState &state) { }
-    virtual void execute(void);
-    virtual void line(Line line, LineState state) { }
+  virtual void save(SaveState &state) {}
+  virtual void load(LoadState &state) {}
+  virtual void execute(void);
+  virtual void line(Line line, LineState state) {}
 
-private:
+ private:
+  byte_t vram_read(offset_t offset);
+  void vram_write(offset_t offset, byte_t value);
+  void dma_write(offset_t offset, byte_t value);
+  void palette_write(ColorPalette<4> *pal, byte_t *pal_data, offset_t offset,
+                     byte_t value);
 
-    byte_t vram_read(offset_t offset);
-    void vram_write(offset_t offset, byte_t value);
-    void dma_write(offset_t offset, byte_t value);
-    void palette_write(ColorPalette<4> *pal, byte_t *pal_data,
-                       offset_t offset, byte_t value);
+  GfxObject<8, 8> *get_obj(int idx);
 
-    GfxObject<8,8> *get_obj(int idx);
+  typedef std::function<GfxObject<8, 8> *(int idx)> obj_cb;
+  obj_cb m_tilemap0;
+  obj_cb m_tilemap1;
 
-    typedef std::function<GfxObject<8,8> *(int idx)> obj_cb;
-    obj_cb m_tilemap0;
-    obj_cb m_tilemap1;
+  void draw_scanline(int sy);
 
-    void draw_scanline(int sy);
+  AddressBus16 *m_bus;
 
-    AddressBus16 *m_bus;
+  RamDevice m_vram;
+  RamDevice m_oam;
 
-    RamDevice m_vram;
-    RamDevice m_oam;
+  byte_t m_lcdc;
+  byte_t m_stat;
+  byte_t m_scy;
+  byte_t m_scx;
+  byte_t m_ly;
+  byte_t m_lyc;
+  byte_t m_bgp;
+  byte_t m_obp0;
+  byte_t m_obp1;
+  byte_t m_wy;
+  byte_t m_wx;
 
-    byte_t m_lcdc;
-    byte_t m_stat;
-    byte_t m_scy;
-    byte_t m_scx;
-    byte_t m_ly;
-    byte_t m_lyc;
-    byte_t m_bgp;
-    byte_t m_obp0;
-    byte_t m_obp1;
-    byte_t m_wy;
-    byte_t m_wx;
+  ColorPalette<4> m_global_pal, m_obj0_pal, m_obj1_pal, m_bg_pal;
+  GfxObject<8, 8> m_objs[384];
 
-    ColorPalette<4> m_global_pal, m_obj0_pal, m_obj1_pal, m_bg_pal;
-    GfxObject<8,8> m_objs[384];
-
-    unsigned m_fcycles;
+  unsigned m_fcycles;
 };
-
 };

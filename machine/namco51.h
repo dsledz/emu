@@ -33,45 +33,43 @@ namespace Device {
 /**
  * Namco 51xx device. Used as an IO board.
  */
-class Namco51: public IODevice
-{
-public:
-    Namco51(Machine *machine);
-    virtual ~Namco51(void);
+class Namco51 : public IODevice {
+ public:
+  Namco51(Machine *machine);
+  virtual ~Namco51(void);
 
-    virtual void write8(offset_t offset, uint8_t value);
-    virtual uint8_t read8(offset_t offset);
-    virtual uint8_t *direct(offset_t offset);
+  virtual void write8(offset_t offset, uint8_t value);
+  virtual uint8_t read8(offset_t offset);
+  virtual uint8_t *direct(offset_t offset);
 
-private:
-    uint8_t read_port(const std::string &port);
+ private:
+  uint8_t read_port(const std::string &port);
 
-    enum class Command {
-        Nop0 = 0,
-        Coinage = 1,
-        Credit = 2,
-        DisableRemap = 3,
-        EnableRemap = 4,
-        SwitchMode = 5,
-        Nop6 = 6,
-        Nop7 = 7
-    };
+  enum class Command {
+    Nop0 = 0,
+    Coinage = 1,
+    Credit = 2,
+    DisableRemap = 3,
+    EnableRemap = 4,
+    SwitchMode = 5,
+    Nop6 = 6,
+    Nop7 = 7
+  };
 
-    enum class Mode {
-        Unknown = 0,
-        Switch = 1,
-        Credit = 2,
-    };
+  enum class Mode {
+    Unknown = 0,
+    Switch = 1,
+    Credit = 2,
+  };
 
-    Mode m_mode;
-    bool m_remap;
-    int m_credits;
-    int m_coinage_bytes;
-    int m_read_count;
-    int m_last_coin;
-    int m_last_joy;
+  Mode m_mode;
+  bool m_remap;
+  int m_credits;
+  int m_coinage_bytes;
+  int m_read_count;
+  int m_last_coin;
+  int m_last_joy;
 };
 
 typedef std::unique_ptr<Namco51> Namco51_ptr;
-
 };

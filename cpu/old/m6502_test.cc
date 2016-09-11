@@ -30,89 +30,76 @@
 using namespace EMU;
 using namespace M6502;
 
-class m6502Machine: public Machine
-{
-public:
-    m6502Machine(void):
-        Machine(),
+class m6502Machine : public Machine {
+ public:
+  m6502Machine(void)
+      : Machine(),
         bus(),
         cpu(this, "cpu", 1000000, &bus),
         ram(this, "ram", 0x2000),
-        irq_vec(this, "irq", 0x0008)
-    {
-        bus.add(0x0000, 0x1FFF,
-            READ_CB(RamDevice::read8, &ram),
+        irq_vec(this, "irq", 0x0008) {
+    bus.add(0x0000, 0x1FFF, READ_CB(RamDevice::read8, &ram),
             WRITE_CB(RamDevice::write8, &ram));
-        bus.add(0xFFF8, 0xFFFF,
-            READ_CB(RamDevice::read8, &irq_vec),
+    bus.add(0xFFF8, 0xFFFF, READ_CB(RamDevice::read8, &irq_vec),
             WRITE_CB(RamDevice::write8, &irq_vec));
 
-        irq_vec.write8(0x0006, 0x0000);
-        irq_vec.write8(0x0007, 0x0010);
+    irq_vec.write8(0x0006, 0x0000);
+    irq_vec.write8(0x0007, 0x0010);
 
-        /* Our PC starts at 0x0000, but don't want to put code in the zpg */
-        ram.write8(0x0000, 0x4C);
-        ram.write8(0x0001, 0x00);
-        ram.write8(0x0002, 0x10);
-    }
-    ~m6502Machine(void)
-    {
-    }
+    /* Our PC starts at 0x0000, but don't want to put code in the zpg */
+    ram.write8(0x0000, 0x4C);
+    ram.write8(0x0001, 0x00);
+    ram.write8(0x0002, 0x10);
+  }
+  ~m6502Machine(void) {}
 
-    AddressBus16 bus;
-    M6502Cpu cpu;
-    RamDevice ram;
-    RamDevice irq_vec;
+  AddressBus16 bus;
+  M6502Cpu cpu;
+  RamDevice ram;
+  RamDevice irq_vec;
 };
 
-TEST(M6502Test, constructor)
-{
-    m6502Machine machine;
+TEST(M6502Test, constructor) { m6502Machine machine; }
+
+#define LOAD1(op) machine.ram.write8(pc++, op);
+#define LOAD2(op, arg)          \
+  machine.ram.write8(pc++, op); \
+  machine.ram.write8(pc++, arg);
+#define LOAD3(op, arg1, arg2)     \
+  machine.ram.write8(pc++, op);   \
+  machine.ram.write8(pc++, arg1); \
+  machine.ram.write8(pc++, arg2);
+
+TEST(M6502Test, opcode_ea) {
+  m6502Machine machine;
+  addr_t pc = 0x1000;
+
+  /* NOP */
+  LOAD1(0xea);
+
+  machine.cpu.execute();
 }
 
-#define LOAD1(op) \
-    machine.ram.write8(pc++, op);
-#define LOAD2(op, arg) \
-    machine.ram.write8(pc++, op); \
-    machine.ram.write8(pc++, arg);
-#define LOAD3(op, arg1, arg2) \
-    machine.ram.write8(pc++, op); \
-    machine.ram.write8(pc++, arg1); \
-    machine.ram.write8(pc++, arg2);
+TEST(M6502Test, immediate) {
+  m6502Machine machine;
+  addr_t pc = 0x1000;
 
-TEST(M6502Test, opcode_ea)
-{
-    m6502Machine machine;
-    addr_t pc = 0x1000;
+  /* LDA # */
+  LOAD2(0xA9, 0x10);
+  /* ORA # */
+  LOAD2(0x09, 0x01);
+  /* STA 0+0x10 */
+  LOAD2(0x85, 0x10);
+  /* LDX # */
+  LOAD2(0xA2, 0x50);
+  /* STA 0+0x10+X */
+  LOAD2(0x95, 0x10);
+  /* STA x,ind (0x005F,0x0060) -> 0x1100*/
+  LOAD2(0x81, 0x0F)
 
-    /* NOP */
-    LOAD1(0xea);
+  machine.cpu.execute();
 
-    machine.cpu.execute();
-}
-
-
-TEST(M6502Test, immediate)
-{
-    m6502Machine machine;
-    addr_t pc = 0x1000;
-
-    /* LDA # */
-    LOAD2(0xA9, 0x10);
-    /* ORA # */
-    LOAD2(0x09, 0x01);
-    /* STA 0+0x10 */
-    LOAD2(0x85, 0x10);
-    /* LDX # */
-    LOAD2(0xA2, 0x50);
-    /* STA 0+0x10+X */
-    LOAD2(0x95, 0x10);
-    /* STA x,ind (0x005F,0x0060) -> 0x1100*/
-    LOAD2(0x81, 0x0F)
-
-    machine.cpu.execute();
-
-    EXPECT_EQ(0x11, machine.bus.read(0x0010));
-    EXPECT_EQ(0x11, machine.bus.read(0x0060));
-    EXPECT_EQ(0x11, machine.bus.read(0x1100));
+  EXPECT_EQ(0x11, machine.bus.read(0x0010));
+  EXPECT_EQ(0x11, machine.bus.read(0x0060));
+  EXPECT_EQ(0x11, machine.bus.read(0x1100));
 }

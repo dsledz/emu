@@ -24,9 +24,9 @@
  */
 #pragma once
 
-#include "emu/emu.h"
 #include "cpu/lib/cpu.h"
 #include "cpu/lib/jit.h"
+#include "emu/emu.h"
 
 using namespace EMU;
 using namespace CPU;
@@ -37,61 +37,64 @@ namespace M6502v2 {
 #ifdef WIN32
 #pragma pack(push, 1)
 #endif
-struct M6502State
-{
-    M6502State(void) {
-        reset();
-    }
+struct M6502State {
+  M6502State(void) { reset(); }
 
-    inline uint8_t bus_read(uint16_t addr) {
-        return bus->read(addr);
-    }
-    inline void bus_write(uint16_t addr, uint8_t value) {
-        bus->write(addr, value);
-    }
-    uint8_t get_flags(uint16_t flags) {
-        F.C = bit_isset(flags, Flags::CF);
-        F.Z = bit_isset(flags, Flags::ZF);
-        F.V = bit_isset(flags, Flags::OF);
-        F.N = bit_isset(flags, Flags::SF);
+  inline uint8_t bus_read(uint16_t addr) { return bus->read(addr); }
+  inline void bus_write(uint16_t addr, uint8_t value) {
+    bus->write(addr, value);
+  }
+  uint8_t get_flags(uint16_t flags) {
+    F.C = bit_isset(flags, Flags::CF);
+    F.Z = bit_isset(flags, Flags::ZF);
+    F.V = bit_isset(flags, Flags::OF);
+    F.N = bit_isset(flags, Flags::SF);
 
-        return SR;
-    }
-    void reset(void) {
-        A = 0; SP = 0; X = 0; Y = 0; SR = 0; ZPG = 0;
-        PC = 0; NativeFlags = 0; EA = 0; ARG = 0;
-        clock_divider = 1;
-    }
+    return SR;
+  }
+  void reset(void) {
+    A = 0;
+    SP = 0;
+    X = 0;
+    Y = 0;
+    SR = 0;
+    ZPG = 0;
+    PC = 0;
+    NativeFlags = 0;
+    EA = 0;
+    ARG = 0;
+    clock_divider = 1;
+  }
 
-    reg8_t A;
-    reg8_t SP;
-    reg8_t X;
-    reg8_t Y;
-    union {
-        byte_t SR;
-        struct {
-            byte_t C:1;
-            byte_t Z:1;
-            byte_t I:1;
-            byte_t D:1;
-            byte_t B:1; /* XXX: Break flag */
-            byte_t E:1;
-            byte_t V:1;
-            byte_t N:1;
-        } F;
-    };
-    byte_t ZPG;
-    reg16_t PC;
+  reg8_t A;
+  reg8_t SP;
+  reg8_t X;
+  reg8_t Y;
+  union {
+    byte_t SR;
+    struct {
+      byte_t C : 1;
+      byte_t Z : 1;
+      byte_t I : 1;
+      byte_t D : 1;
+      byte_t B : 1; /* XXX: Break flag */
+      byte_t E : 1;
+      byte_t V : 1;
+      byte_t N : 1;
+    } F;
+  };
+  byte_t ZPG;
+  reg16_t PC;
 
-    reg16_t NativeFlags;
+  reg16_t NativeFlags;
 
-    reg16_t EA;  /* %r8 */
-    reg8_t  ARG; /* %rdx */
+  reg16_t EA; /* %r8 */
+  reg8_t ARG; /* %rdx */
 
-    byte_t mmu_map[8];
-    int clock_divider;
-    AddressBus16 *bus;
-    uint8_t icycles;
+  byte_t mmu_map[8];
+  int clock_divider;
+  AddressBus16 *bus;
+  uint8_t icycles;
 }
 #ifdef WIN32
 ;
@@ -104,35 +107,30 @@ class M6502Cpu;
 
 typedef CpuTraits<uint16_t, uint8_t> M6502Traits;
 
-class M6502Cpu: public Cpu<AddressBus16, M6502Traits, M6502State, uint8_t>
-{
-public:
-    M6502Cpu(Machine *machine, const std::string &name, unsigned hertz,
-             bus_type *bus);
-    virtual ~M6502Cpu(void);
-    M6502Cpu(const M6502Cpu &cpu) = delete;
+class M6502Cpu : public Cpu<AddressBus16, M6502Traits, M6502State, uint8_t> {
+ public:
+  M6502Cpu(Machine *machine, const std::string &name, unsigned hertz,
+           bus_type *bus);
+  virtual ~M6502Cpu(void);
+  M6502Cpu(const M6502Cpu &cpu) = delete;
 
-    virtual void line(Line line, LineState state);
-    virtual void reset(void);
+  virtual void line(Line line, LineState state);
+  virtual void reset(void);
 
-    M6502State *get_state(void) {
-        return &m_state;
-    }
+  M6502State *get_state(void) { return &m_state; }
 
-    virtual void log_op(const Opcode *op, uint16_t pc, const uint8_t *instr);
+  virtual void log_op(const Opcode *op, uint16_t pc, const uint8_t *instr);
 
-    void test_step(void);
-    virtual void execute(void);
-    virtual std::string dasm(addr_type addr);
+  void test_step(void);
+  virtual void execute(void);
+  virtual std::string dasm(addr_type addr);
 
-protected:
+ protected:
+  void step(void);
+  virtual bool Interrupt(void);
 
-    void step(void);
-    virtual bool Interrupt(void);
-
-    LineState m_nmi_line;
-    LineState m_irq_line;
-    LineState m_reset_line;
+  LineState m_nmi_line;
+  LineState m_irq_line;
+  LineState m_reset_line;
 };
-
 };

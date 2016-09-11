@@ -29,178 +29,146 @@ using namespace TG16Machine;
 /* XXX wrong */
 #define MASTER_CLOCK 21477270
 
-TG16::TG16(const std::string &rom):
-    Machine(),
-    m_cpu_bus(),
-    m_ram(this, "ram", 0x2000),
-    m_vdc(this, MASTER_CLOCK),
-    m_psg(this)
-{
-    IF_LOG(Info)
-        std::cout << "Loading: " << rom << std::endl;
-    bvec rom_data;
+TG16::TG16(const std::string &rom)
+    : Machine(),
+      m_cpu_bus(),
+      m_ram(this, "ram", 0x2000),
+      m_vdc(this, MASTER_CLOCK),
+      m_psg(this) {
+  IF_LOG(Info)
+  std::cout << "Loading: " << rom << std::endl;
+  bvec rom_data;
 
-    EMU::read_rom(rom, rom_data);
-    offset_t rom_offset = rom_data.size() % 8192;
+  EMU::read_rom(rom, rom_data);
+  offset_t rom_offset = rom_data.size() % 8192;
 
-    if (rom_data.at(rom_offset + 0x1FFF) < 0xe0)
-        throw RomException("Encrypted Rom");
-    if (rom_data.size() - rom_offset == 0x60000) {
-        /* TODO: rewrite rom accordingly */
-        /*
-        int bank = offset >> 17;
-        offset &= 0x1FFFF;
-        switch (bank) {
-        case 0:
-        case 2:
-            return m_rom.at(offset + m_rom_offset);
-        case 1:
-        case 3:
-            return m_rom.at(0x20000 + offset + m_rom_offset);
-        default:
-            return m_rom.at(0x40000 + offset + m_rom_offset);
-        }
-        */
-        throw RomException("Unsupported ROM format");
-    } else if (rom_data.size() - rom_offset > 0x100000) {
-        throw RomException("Unsupported ROM size");
-    } else {
-        m_rom.assign(0x100000, 0);
-        memcpy(&m_rom.front(), &rom_data[rom_offset], rom_data.size() - rom_offset);
+  if (rom_data.at(rom_offset + 0x1FFF) < 0xe0)
+    throw RomException("Encrypted Rom");
+  if (rom_data.size() - rom_offset == 0x60000) {
+    /* TODO: rewrite rom accordingly */
+    /*
+    int bank = offset >> 17;
+    offset &= 0x1FFFF;
+    switch (bank) {
+    case 0:
+    case 2:
+        return m_rom.at(offset + m_rom_offset);
+    case 1:
+    case 3:
+        return m_rom.at(0x20000 + offset + m_rom_offset);
+    default:
+        return m_rom.at(0x40000 + offset + m_rom_offset);
     }
+    */
+    throw RomException("Unsupported ROM format");
+  } else if (rom_data.size() - rom_offset > 0x100000) {
+    throw RomException("Unsupported ROM size");
+  } else {
+    m_rom.assign(0x100000, 0);
+    memcpy(&m_rom.front(), &rom_data[rom_offset], rom_data.size() - rom_offset);
+  }
 
-    init_joypad();
+  init_joypad();
 
-    /* XXX: Is this screen correct? */
-    add_screen(256, 240);
+  /* XXX: Is this screen correct? */
+  add_screen(256, 240);
 
-    m_cpu = std::unique_ptr<M6502v2::HuC6280Cpu>(
-        new M6502v2::HuC6280Cpu(this, "cpu", MASTER_CLOCK/3, &m_cpu_bus));
+  m_cpu = std::unique_ptr<M6502v2::HuC6280Cpu>(
+      new M6502v2::HuC6280Cpu(this, "cpu", MASTER_CLOCK / 3, &m_cpu_bus));
 
-    m_cpu_bus.add(0x000000, m_rom);
+  m_cpu_bus.add(0x000000, m_rom);
 
-    m_cpu_bus.add(0x1F0000, &m_ram);
+  m_cpu_bus.add(0x1F0000, &m_ram);
 
-    m_cpu_bus.add(0x1FE000, 0x1FE3FF,
-        READ_CB(VDC::read, &m_vdc),
-        WRITE_CB(VDC::write, &m_vdc));
+  m_cpu_bus.add(0x1FE000, 0x1FE3FF, READ_CB(VDC::read, &m_vdc),
+                WRITE_CB(VDC::write, &m_vdc));
 
-    m_cpu_bus.add(0x1FE400, 0x1FE7FF,
-        READ_CB(VDC::vce_read, &m_vdc),
-        WRITE_CB(VDC::vce_write, &m_vdc));
+  m_cpu_bus.add(0x1FE400, 0x1FE7FF, READ_CB(VDC::vce_read, &m_vdc),
+                WRITE_CB(VDC::vce_write, &m_vdc));
 
-    m_cpu_bus.add(0x1FE800, 0x1FEBFF,
-        READ_CB(PSG::read, &m_psg),
-        WRITE_CB(PSG::write, &m_psg));
+  m_cpu_bus.add(0x1FE800, 0x1FEBFF, READ_CB(PSG::read, &m_psg),
+                WRITE_CB(PSG::write, &m_psg));
 
-    m_cpu_bus.add(0x1FEC00, 0x1FEFFF,
-        READ_CB(M6502v2::HuC6280Cpu::timer_read, m_cpu.get()),
-        WRITE_CB(M6502v2::HuC6280Cpu::timer_write, m_cpu.get()));
+  m_cpu_bus.add(0x1FEC00, 0x1FEFFF,
+                READ_CB(M6502v2::HuC6280Cpu::timer_read, m_cpu.get()),
+                WRITE_CB(M6502v2::HuC6280Cpu::timer_write, m_cpu.get()));
 
-    m_cpu_bus.add(0x1FF000, 0x1FF3FF,
-        READ_CB(TG16::joypad_read, this),
-        WRITE_CB(TG16::joypad_write, this));
+  m_cpu_bus.add(0x1FF000, 0x1FF3FF, READ_CB(TG16::joypad_read, this),
+                WRITE_CB(TG16::joypad_write, this));
 
-    m_cpu_bus.add(0x1FF400, 0x1FF7FF,
-        READ_CB(M6502v2::HuC6280Cpu::irq_read, m_cpu.get()),
-        WRITE_CB(M6502v2::HuC6280Cpu::irq_write, m_cpu.get()));
+  m_cpu_bus.add(0x1FF400, 0x1FF7FF,
+                READ_CB(M6502v2::HuC6280Cpu::irq_read, m_cpu.get()),
+                WRITE_CB(M6502v2::HuC6280Cpu::irq_write, m_cpu.get()));
 }
 
-TG16::~TG16(void)
-{
-}
+TG16::~TG16(void) {}
 
 enum TG16Key {
-    I = 0,
-    II = 1,
-    Select = 2,
-    Run = 3,
-    Up = 4,
-    Right = 5,
-    Down = 6,
-    Left = 7,
-    Size = 8
+  I = 0,
+  II = 1,
+  Select = 2,
+  Run = 3,
+  Up = 4,
+  Right = 5,
+  Down = 6,
+  Left = 7,
+  Size = 8
 };
 
-void
-TG16::init_joypad(void)
-{
-    IOPort *port = NULL;
+void TG16::init_joypad(void) {
+  IOPort *port = NULL;
 
-    add_ioport("JOYPAD1");
-    port = ioport("JOYPAD1");
-    add_input(InputSignal(InputKey::Joy1Btn2,  port, TG16Key::II, false));
-    add_input(InputSignal(InputKey::Joy1Btn1,  port, TG16Key::I, false));
-    add_input(InputSignal(InputKey::Select1,   port, TG16Key::Select, false));
-    add_input(InputSignal(InputKey::Start1,    port, TG16Key::Run, false));
-    add_input(InputSignal(InputKey::Joy1Up,    port, TG16Key::Up, false));
-    add_input(InputSignal(InputKey::Joy1Down,  port, TG16Key::Down, false));
-    add_input(InputSignal(InputKey::Joy1Left,  port, TG16Key::Left, false));
-    add_input(InputSignal(InputKey::Joy1Right, port, TG16Key::Right, false));
-    m_joypad_data = 0;
-    m_joypad = 0;
+  add_ioport("JOYPAD1");
+  port = ioport("JOYPAD1");
+  add_input(InputSignal(InputKey::Joy1Btn2, port, TG16Key::II, false));
+  add_input(InputSignal(InputKey::Joy1Btn1, port, TG16Key::I, false));
+  add_input(InputSignal(InputKey::Select1, port, TG16Key::Select, false));
+  add_input(InputSignal(InputKey::Start1, port, TG16Key::Run, false));
+  add_input(InputSignal(InputKey::Joy1Up, port, TG16Key::Up, false));
+  add_input(InputSignal(InputKey::Joy1Down, port, TG16Key::Down, false));
+  add_input(InputSignal(InputKey::Joy1Left, port, TG16Key::Left, false));
+  add_input(InputSignal(InputKey::Joy1Right, port, TG16Key::Right, false));
+  m_joypad_data = 0;
+  m_joypad = 0;
 }
 
-byte_t
-TG16::joypad_read(offset_t offset)
-{
-    byte_t result = 0xFF;
-    if (m_joypad == 0) {
-        result = read_ioport("JOYPAD1");
-    }
+byte_t TG16::joypad_read(offset_t offset) {
+  byte_t result = 0xFF;
+  if (m_joypad == 0) {
+    result = read_ioport("JOYPAD1");
+  }
 
-    /* XXX: Is this correct? */
-    if (m_joypad_data)
-        result >>= 4;
+  /* XXX: Is this correct? */
+  if (m_joypad_data) result >>= 4;
 
-    result = (result & 0x0F) | 0x30;
+  result = (result & 0x0F) | 0x30;
 
-    return result;
+  return result;
 }
 
-void
-TG16::joypad_write(offset_t offset, byte_t value)
-{
-    if (!m_joypad_data && bit_isset(value, 0))
-        m_joypad = (m_joypad + 1) % 8;
+void TG16::joypad_write(offset_t offset, byte_t value) {
+  if (!m_joypad_data && bit_isset(value, 0)) m_joypad = (m_joypad + 1) % 8;
 
-    m_joypad_data = bit_isset(value, 0);
+  m_joypad_data = bit_isset(value, 0);
 
-    if (bit_isset(value, 1))
-        m_joypad = 0;
+  if (bit_isset(value, 1)) m_joypad = 0;
 }
 
-PSG::PSG(TG16 *tg16):
-    Device(tg16, "psg")
-{
-}
+PSG::PSG(TG16 *tg16) : Device(tg16, "psg") {}
 
-PSG::~PSG(void)
-{
-}
+PSG::~PSG(void) {}
 
-byte_t
-PSG::read(offset_t offset)
-{
-    return 0;
-}
+byte_t PSG::read(offset_t offset) { return 0; }
 
-void
-PSG::write(offset_t offset, byte_t value)
-{
-}
+void PSG::write(offset_t offset, byte_t value) {}
 
-MachineInformation tg16_info {
+MachineInformation tg16_info{
     .name = "TurboGrafx-16",
     .year = "1989",
     .cartridge = true,
     .extension = "pce",
 };
 
-MachineDefinition tg16(
-    "tg16",
-    tg16_info,
-    [](Options *opts) -> machine_ptr {
-        return machine_ptr(new TG16Machine::TG16(opts->rom));
-    });
-
+MachineDefinition tg16("tg16", tg16_info, [](Options *opts) -> machine_ptr {
+  return machine_ptr(new TG16Machine::TG16(opts->rom));
+});
