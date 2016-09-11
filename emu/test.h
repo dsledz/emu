@@ -72,4 +72,13 @@ class TestMachine : public Machine {
   machine.write8(arg1);             \
   machine.write8(arg2);             \
   machine.write8(arg3);
+
+EMU::EmuTime get_runtime(const std::string &test_name) {
+  const char *env = getenv(test_name.c_str());
+  EmuTime runtime = sec(60);
+  if (env != NULL) {
+    runtime = sec(atoi(env));
+  }
+  return runtime;
+}
 };

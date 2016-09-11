@@ -86,13 +86,9 @@ class Zexall : public Machine {
 
 TEST(Zexall_test, test) {
   Zexall zex;
-  const char *z80_runtime = getenv("Z80_RUNTIME");
-  EmuTime runtime = sec(60);
+  EmuTime runtime = get_runtime("Z80_RUNTIME");
 
   Core::log.set_level(LogLevel::Debug);
-  if (z80_runtime != NULL) {
-    runtime = sec(atoi(z80_runtime));
-  }
 
   // Run the first few seconds of the rom
   zex.poweron();
