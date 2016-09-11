@@ -24,6 +24,10 @@
  */
 #pragma once
 
+#include  <type_traits>
+
+#include "core/bits.h"
+
 namespace Core {
 
 template <typename T, typename I>
@@ -67,7 +71,7 @@ class BitField {
 
   BitField() : m_value(0) {}
 
-  BitField(std::initializer_list<T> l) {
+  BitField(std::initializer_list<T> l) : m_value(0) {
     for (auto b : l) m_value |= static_cast<field_type>(b);
   }
 

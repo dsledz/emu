@@ -79,7 +79,7 @@ class MemoryMap {
     entry_list &list = m_entries[bucket(key)];
     for (auto it = list.begin(); it != list.end(); it++)
       if (it->match(key)) return it->value;
-    abort();
+    throw Core::BusError(key);
   }
 
   const size_t bucket(addr_type key) {
@@ -286,16 +286,12 @@ class IOBus {
 
   inline data_type read(addr_type addr) {
     auto *page = m_page_table.page(addr);
-    return page->read(addr % m_page_table.page_size);
+    return page->read(addr);
   }
 
   inline void write(addr_type addr, data_type data) {
     auto *page = m_page_table.page(addr);
-
-    if (unlikely(page->m_flags.is_clear(PageFlags::Write)))
-      page->m_page_fault(addr, data);
-    else
-      page->write(addr % m_page_table.page_size, data);
+    page->write(addr, data);
   }
 
   void add(addr_type start, addr_type end, read_fn read, write_fn write) {

@@ -67,7 +67,9 @@ class Page {
   typedef std::function<void(offset_t, data_type)> write_fn;
   typedef std::function<void(offset_t, data_type)> page_fault_fn;
   struct DefaultPageFault {
-    void operator()(offset_t offset, data_type data) { abort(); }
+    void operator()(offset_t offset, data_type data) {
+      throw PageException(offset);
+    }
   };
   struct DefaultRead {
     data_type operator()(offset_t offset) { return 0; }
@@ -157,17 +159,21 @@ class Page {
 
   inline void set(data_type *ptr) { m_page = ptr; }
 
-  inline void write(addr_type offset, data_type data) {
+  inline void write(addr_type addr, data_type data) {
+    const offset_t offset = addr % page_size;
     auto it = m_port_list.begin();
     for (; it != m_port_list.end() && !it->match(offset); it++) {
     }
     if (it != m_port_list.end())
       it->write(offset, data);
+    else if (unlikely(m_flags.is_clear(PageFlags::Write)))
+      m_page_fault(addr, data);
     else
       m_page[offset] = data;
   }
 
-  inline data_type read(addr_type offset) {
+  inline data_type read(addr_type addr) {
+    const offset_t offset = addr % page_size;
     auto it = m_port_list.begin();
     for (; it != m_port_list.end() && !it->match(offset); it++) {
     }
