@@ -310,10 +310,10 @@ class NESMapperMMC3 : public NESMapper {
 
   void page_fault(offset_t offset, byte_t value) {
     switch (offset) {
-      case 0x0000:
+      case 0x8000:
         m_command = value;
         break;
-      case 0x0001: {
+      case 0x8001: {
         int bank = 0;
         switch (m_command & 0x07) {
           case 0:
@@ -346,25 +346,25 @@ class NESMapperMMC3 : public NESMapper {
         }
         break;
       }
-      case 0x2000:
+      case 0xA000:
         machine()->write_ioport("MIRRORING", bit_isset(value, 0)
                                                  ? TwoScreenHMirroring
                                                  : TwoScreenVMirroring);
         break;
-      case 0x2001:
+      case 0xA001:
         /* XXX: SRAM */
         break;
-      case 0x4000:
+      case 0xC000:
         m_irq_reload = value - 1;
         break;
-      case 0x4001:
+      case 0xC001:
         m_irq_counter = 0;
         break;
-      case 0x6000:
+      case 0xE000:
         m_irq_enable = false;
         machine()->set_line("cpu", Line::INT0, LineState::Clear);
         break;
-      case 0x6001:
+      case 0xE001:
         m_irq_enable = true;
         break;
     }

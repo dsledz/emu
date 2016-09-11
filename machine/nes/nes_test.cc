@@ -23,24 +23,26 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "emu/emu.h"
 #include "gtest/gtest.h"
 
+#include "emu/emu.h"
+#include "emu/test.h"
 #include "machine/nes/nes.h"
 
 using namespace EMU;
+using namespace EMUTest;
 using namespace NESMachine;
 
 TEST(NesTest, mario3) {
   NES machine;
+  EmuTime runtime = get_runtime("NES_RUNTIME");
 
   machine.load_rom("mario3.nes");
   FrameBuffer fb;
 
-  Core::log.set_level(LogLevel::Trace);
+  Core::log.set_level(LogLevel::Info);
   machine.reset();
   machine.set_frame_buffer(&fb);
   machine.poweron();
-
-  while (true) machine.run();
+  machine.run_forward(runtime);
 }
