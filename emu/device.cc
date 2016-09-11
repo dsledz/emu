@@ -30,15 +30,11 @@ using namespace Core;
 using namespace EMU;
 
 Device::Device(Machine *machine, const std::string &name)
-    : Device(machine, name, DEFAULT_HERTZ) {}
-
-Device::Device(Machine *machine, const std::string &name, unsigned hertz)
     : Debuggable(name),
       m_name(name),
       m_machine(machine),
       m_status(DeviceStatus::Off),
       m_target_status(DeviceStatus::Off),
-      m_hertz(hertz),
       m_cv(),
       m_mtx(),
       m_channel(),
@@ -170,27 +166,19 @@ void Device::idle(void) {
 }
 
 IODevice::IODevice(Machine *machine, const std::string &name, size_t size)
-    : Device(machine, name, DEFAULT_HERTZ), m_size(size) {}
+    : Device(machine, name), m_size(size) {}
 
 IODevice::~IODevice(void) {}
 
 size_t IODevice::size(void) { return m_size; }
 
-MappedDevice::MappedDevice(Machine *machine, const std::string &name,
-                           size_t size)
-    : Device(machine, name, DEFAULT_HERTZ), m_mem() {
-  m_mem.resize(size);
-}
-
-MappedDevice::~MappedDevice(void) {}
-
-size_t MappedDevice::size(void) { return m_mem.size(); }
-
-bool MappedDevice::read_only(void) { return false; }
-
 ClockedDevice::ClockedDevice(Machine *machine, const std::string &name,
                              unsigned hertz)
-    : Device(machine, name, hertz), EmuClockBase(Device::m_name), m_avail(0) {
+    : Device(machine, name),
+      EmuClockBase(Device::m_name),
+      m_hertz(hertz),
+      m_used(0),
+      m_avail(0) {
   m_machine->add_clock(this);
 }
 

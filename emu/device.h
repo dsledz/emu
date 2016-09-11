@@ -91,7 +91,6 @@ typedef std::shared_ptr<EmuDeviceChannel> EmuDeviceChannel_ptr;
 class Device : public Debuggable {
  public:
   Device(Machine *machine, const std::string &name);
-  Device(Machine *machine, const std::string &name, unsigned hertz);
   virtual ~Device(void);
 
   virtual EmuClockBase *clock(void) { return NULL; }
@@ -122,7 +121,6 @@ class Device : public Debuggable {
   Machine *m_machine;           /* ro */
   DeviceStatus m_status;        /* (m) */
   DeviceStatus m_target_status; /* (p) */
-  unsigned m_hertz;
   std::condition_variable m_cv; /* ? */
   std::mutex m_mtx;             /* ? */
   EmuDeviceChannel m_channel;   /* ? */
@@ -144,19 +142,6 @@ class IODevice : public Device {
 
  protected:
   size_t m_size;
-};
-
-class MappedDevice : public Device {
- public:
-  MappedDevice(Machine *machine, const std::string &name, size_t size);
-  virtual ~MappedDevice(void);
-
-  size_t size(void);
-  virtual bool read_only();
-  byte_t &at8(offset_t offset);
-
- protected:
-  bvec m_mem;
 };
 
 class ClockedDevice : public Device, public EmuClockBase {
@@ -192,6 +177,7 @@ class ClockedDevice : public Device, public EmuClockBase {
     m_used = Cycles(0);
   }
 
+  unsigned m_hertz;
   Cycles m_used;
   Cycles m_avail;
 };

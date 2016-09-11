@@ -44,5 +44,4 @@ class RamDevice : public IODevice {
   bvec m_ram;
 };
 
-typedef MappedDevice MappedRamDevice;
 };
