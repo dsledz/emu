@@ -130,7 +130,7 @@ class GBGraphics : public ClockedDevice {
 
   void draw_scanline(int sy);
 
-  AddressBus16 *m_bus;
+  AddressBus16x8 *m_bus;
 
   RamDevice m_vram;
   RamDevice m_oam;

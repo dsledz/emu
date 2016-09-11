@@ -37,7 +37,7 @@ namespace Arcade {
 class DonkeyKongGfx : public ScreenDevice {
  public:
   DonkeyKongGfx(Machine *machine, const std::string &name, unsigned hertz,
-                AddressBus16 *bus);
+                AddressBus16x8 *bus);
   ~DonkeyKongGfx(void);
 
   void init(RomSet *romset);
@@ -62,7 +62,7 @@ class DonkeyKongGfx : public ScreenDevice {
 
   RamDevice vram;
 
-  AddressBus16 *m_bus;
+  AddressBus16x8 *m_bus;
 
   std::function<void(void)> m_vblank_cb;
 
@@ -94,7 +94,7 @@ class DonkeyKong : public Machine {
   I8257_ptr m_i8257;
   DonkeyKongGfx_ptr m_gfx;
 
-  AddressBus16_ptr m_bus;
+  AddressBus16x8_ptr m_bus;
 
   /* Lines */
   bool m_nmi_mask;

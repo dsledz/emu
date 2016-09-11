@@ -35,7 +35,7 @@ namespace M6502 {
 class M6502Cpu : public ClockedDevice {
  public:
   M6502Cpu(Machine *machine, const std::string &name, unsigned clock,
-           AddressBus16 *bus);
+           AddressBus16x8 *bus);
   virtual ~M6502Cpu(void);
 
   virtual void execute(void);
@@ -72,7 +72,7 @@ class M6502Cpu : public ClockedDevice {
   reg16_t _rEA;
   reg8_t _rTmp;
 
-  AddressBus16 *_bus;
+  AddressBus16x8 *_bus;
 
   Cycles _icycles;
   void _add_icycles(unsigned cycles) { _icycles += cycles; }
@@ -377,7 +377,7 @@ class M6502Cpu : public ClockedDevice {
 class n2A03Cpu : public M6502Cpu {
  public:
   n2A03Cpu(Machine *machine, const std::string &name, unsigned clock,
-           AddressBus16 *bus);
+           AddressBus16x8 *bus);
   ~n2A03Cpu(void);
 
   virtual void execute(void);
@@ -407,7 +407,7 @@ class n2A03Cpu : public M6502Cpu {
 class m65c02Cpu : public M6502Cpu {
  public:
   m65c02Cpu(Machine *machine, const std::string &name, unsigned clock,
-            AddressBus16 *bus);
+            AddressBus16x8 *bus);
   virtual ~m65c02Cpu(void);
 
   virtual void execute(void);
@@ -496,7 +496,7 @@ class m65c02Cpu : public M6502Cpu {
 class hu6280Cpu : public m65c02Cpu {
  public:
   hu6280Cpu(Machine *machine, const std::string &name, unsigned clock,
-            AddressBus21 *bus);
+            AddressBus21x8 *bus);
   virtual ~hu6280Cpu(void);
 
   virtual void execute(void);
@@ -685,8 +685,8 @@ class hu6280Cpu : public m65c02Cpu {
   Cycles dispatch(void);
   void reset(void);
 
-  AddressBus21 *_data_bus;
-  AddressBus16 _mmu;
+  AddressBus21x8 *_data_bus;
+  AddressBus16x8 _mmu;
   byte_t _mmu_map[8];
   int _clock_div;
 

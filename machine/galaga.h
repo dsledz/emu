@@ -39,7 +39,7 @@ namespace Arcade {
 class GalagaGfx : public ScreenDevice {
  public:
   GalagaGfx(Machine *machine, const std::string &name, unsigned hertz,
-            AddressBus16 *bus);
+            AddressBus16x8 *bus);
   ~GalagaGfx(void);
 
   uint8_t vmem_read(offset_t offset);
@@ -59,7 +59,7 @@ class GalagaGfx : public ScreenDevice {
   void draw_bg(FrameBuffer *screen);
   void draw_sprites(FrameBuffer *screen);
 
-  AddressBus16 *m_bus;
+  AddressBus16x8 *m_bus;
 
   /* Graphic Data */
   ColorMap<32, RGBColor> m_colors;
@@ -100,7 +100,7 @@ class Galaga : public Machine {
   Namco06_ptr m_namco06;
   GalagaGfx_ptr m_gfx;
 
-  AddressBus16_ptr m_bus;
+  AddressBus16x8_ptr m_bus;
 
   /* Interrupt lines */
   bool m_main_irq;

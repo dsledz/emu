@@ -47,7 +47,7 @@ TEST(Z80Test, opcode_dd)
 class Zexall : public Machine {
  public:
   Zexall(void)
-      : bus(new AddressBus16()),
+      : bus(new AddressBus16x8()),
         cpu(new Z80Cpu(this, "cpu", 1000000, bus.get())),
         rom("zex.bin"),
         m_data(0),
@@ -78,7 +78,7 @@ class Zexall : public Machine {
     m_req = value;
   }
 
-  std::unique_ptr<AddressBus16> bus;
+  std::unique_ptr<AddressBus16x8> bus;
   std::unique_ptr<Z80Cpu> cpu;
   Rom rom;
   byte_t m_data, m_req, m_req_last, m_ack;
@@ -86,11 +86,16 @@ class Zexall : public Machine {
 
 TEST(Zexall_test, test) {
   Zexall zex;
+  const char *z80_runtime = getenv("Z80_RUNTIME");
+  EmuTime runtime = sec(60);
 
   Core::log.set_level(LogLevel::Debug);
+  if (z80_runtime != NULL) {
+    runtime = sec(atoi(z80_runtime));
+  }
 
   // Run the first few seconds of the rom
   zex.poweron();
   zex.reset();
-  zex.run_forward(sec(6000));
+  zex.run_forward(runtime);
 }

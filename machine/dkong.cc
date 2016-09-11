@@ -51,7 +51,7 @@ DonkeyKong::DonkeyKong(const std::string &rom)
   unsigned hertz = 18432000;
   add_screen(224, 256, FrameBuffer::ROT90);
 
-  m_bus = AddressBus16_ptr(new AddressBus16());
+  m_bus = AddressBus16x8_ptr(new AddressBus16x8());
 
   init_switches();
   reset_switches();

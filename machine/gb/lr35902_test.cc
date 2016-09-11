@@ -52,7 +52,7 @@ class LR35902Test : public ::testing::Test {
   }
 
   Machine machine;
-  AddressBus16 bus;
+  AddressBus16x8 bus;
   LR35902Cpu cpu;
   bvec ram;
   addr_t pc;

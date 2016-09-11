@@ -205,9 +205,9 @@ class NESPPU : public ScreenDevice {
 
   IOPort *m_mirror;
 
-  AddressBus16 *m_cpu_bus;
-  AddressBus16 *m_ppu_bus;
-  AddressBus8 *m_sprite_bus;
+  AddressBus16x8 *m_cpu_bus;
+  AddressBus16x8 *m_ppu_bus;
+  AddressBus8x8 *m_sprite_bus;
 };
 
 typedef std::unique_ptr<NESMapper> mapper_ptr;
@@ -223,11 +223,11 @@ class NES : public Machine {
   uint8_t latch_read(offset_t offset);
   void latch_write(offset_t offset, uint8_t value);
 
-  AddressBus16 *cpu_bus(void) { return &m_cpu_bus; }
+  AddressBus16x8 *cpu_bus(void) { return &m_cpu_bus; }
 
-  AddressBus16 *ppu_bus(void) { return &m_ppu_bus; }
+  AddressBus16x8 *ppu_bus(void) { return &m_ppu_bus; }
 
-  AddressBus8 *sprite_bus(void) { return &m_sprite_bus; }
+  AddressBus8x8 *sprite_bus(void) { return &m_sprite_bus; }
 
  private:
   static const std::vector<std::string> ports;
@@ -237,9 +237,9 @@ class NES : public Machine {
   mapper_ptr m_mapper;
   RamDevice m_ram;
 
-  AddressBus16 m_cpu_bus;
-  AddressBus16 m_ppu_bus;
-  AddressBus8 m_sprite_bus;
+  AddressBus16x8 m_cpu_bus;
+  AddressBus16x8 m_ppu_bus;
+  AddressBus8x8 m_sprite_bus;
 
   int m_joy1_shift;
   int m_joy2_shift;

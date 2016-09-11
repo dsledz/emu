@@ -30,7 +30,7 @@
 using namespace EMU;
 
 I8257::I8257(Machine *machine, const std::string &name, unsigned hertz,
-             AddressBus16 *bus)
+             AddressBus16x8 *bus)
     : ClockedDevice(machine, name, hertz), _flip_flop(0), _bus(bus) {}
 
 I8257::~I8257(void) {}

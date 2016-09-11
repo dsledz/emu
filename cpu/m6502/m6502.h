@@ -93,7 +93,7 @@ struct M6502State {
 
   byte_t mmu_map[8];
   int clock_divider;
-  AddressBus16 *bus;
+  AddressBus16x8 *bus;
   uint8_t icycles;
 }
 #ifdef WIN32
@@ -107,7 +107,7 @@ class M6502Cpu;
 
 typedef CpuTraits<uint16_t, uint8_t> M6502Traits;
 
-class M6502Cpu : public Cpu<AddressBus16, M6502Traits, M6502State, uint8_t> {
+class M6502Cpu : public Cpu<AddressBus16x8, M6502Traits, M6502State, uint8_t> {
  public:
   M6502Cpu(Machine *machine, const std::string &name, unsigned hertz,
            bus_type *bus);

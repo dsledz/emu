@@ -34,7 +34,7 @@ namespace EMU {
 class I8257 : public ClockedDevice {
  public:
   I8257(Machine *machine, const std::string &name, unsigned hertz,
-        AddressBus16 *bus);
+        AddressBus16x8 *bus);
   virtual ~I8257(void);
 
   virtual void execute(void);
@@ -67,7 +67,7 @@ class I8257 : public ClockedDevice {
   int _last_channel;
   int _flip_flop;
   byte_t _status;
-  AddressBus16 *_bus;
+  AddressBus16x8 *_bus;
 };
 
 typedef std::unique_ptr<I8257> I8257_ptr;

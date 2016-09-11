@@ -43,8 +43,8 @@ enum Z80Arg {
 
 enum Z80Arg16 { RegBC = 0, RegDE = 1, RegHL = 2, RegIX = 3, RegIY = 4 };
 
-typedef AddressBus16 Z80Bus;
-typedef AddressBus8 Z80IOBus;
+typedef AddressBus16x8 Z80Bus;
+typedef AddressBus8x8 Z80IOBus;
 
 struct Z80State;
 

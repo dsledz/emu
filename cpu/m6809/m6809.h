@@ -185,10 +185,10 @@ struct M6809Opcode {
   std::function<void(void)> operation;
 };
 
-class M6809Cpu : public CPU::Cpu<AddressBus16, M6809State, uint16_t> {
+class M6809Cpu : public CPU::Cpu<AddressBus16x8, M6809State, uint16_t> {
  public:
   M6809Cpu(Machine *machine, const std::string &name, unsigned hertz,
-           AddressBus16 *bus);
+           AddressBus16x8 *bus);
   ~M6809Cpu(void);
   M6809Cpu(const M6809Cpu &cpu) = delete;
 

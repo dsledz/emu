@@ -32,7 +32,7 @@ using namespace Z80;
 using namespace Arcade;
 
 PacmanGfx::PacmanGfx(Machine *machine, const std::string &name, unsigned hertz,
-                     AddressBus16 *bus)
+                     AddressBus16x8 *bus)
     : ScreenDevice(machine, name, hertz, 384, 264, 256, 0, 240, 16),
       m_vram(machine, "vram", 0x400),
       m_cram(machine, "cram", 0x400) {}

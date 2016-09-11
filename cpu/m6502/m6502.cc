@@ -41,7 +41,7 @@ using namespace std::placeholders;
   }
 
 M6502Cpu::M6502Cpu(Machine *machine, const std::string &name, unsigned hertz,
-                   AddressBus16 *bus)
+                   AddressBus16x8 *bus)
     : Cpu(machine, name, hertz, bus),
       m_nmi_line(LineState::Clear),
       m_irq_line(LineState::Clear),

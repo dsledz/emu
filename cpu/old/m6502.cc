@@ -31,7 +31,7 @@ using namespace EMU;
 using namespace M6502;
 
 M6502Cpu::M6502Cpu(Machine *machine, const std::string &name, unsigned hertz,
-                   AddressBus16 *bus)
+                   AddressBus16x8 *bus)
     : ClockedDevice(machine, name, hertz),
       _rPC(),
       _rA(),

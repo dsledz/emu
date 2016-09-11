@@ -113,7 +113,7 @@ struct Registers {
 class LR35902Cpu : public ClockedDevice {
  public:
   LR35902Cpu(Machine *machine, const std::string &name, unsigned hertz,
-             AddressBus16 *bus);
+             AddressBus16x8 *bus);
   ~LR35902Cpu(void);
   LR35902Cpu(const LR35902Cpu &cpu) = delete;
 
@@ -232,7 +232,7 @@ class LR35902Cpu : public ClockedDevice {
   }
 
  private:
-  AddressBus16 *_bus;
+  AddressBus16x8 *_bus;
   Registers _R;
   IME _ime;
   State _state;

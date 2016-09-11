@@ -41,7 +41,7 @@ using namespace std::placeholders;
   }
 
 M65c02Cpu::M65c02Cpu(Machine *machine, const std::string &name, unsigned hertz,
-                     AddressBus16 *bus)
+                     AddressBus16x8 *bus)
     : M6502Cpu(machine, name, hertz, bus) {
   Opcode opcodes[] = {
       OPCODE(0x00, 1, 7, "BRK", Inherent, BRK),

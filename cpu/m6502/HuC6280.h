@@ -97,7 +97,7 @@ struct HuC6280State {
 
   byte_t mmu_map[8];
   int clock_divider;
-  AddressBus21 *bus;
+  AddressBus21x8 *bus;
   uint8_t icycles;
 }
 #ifdef WIN32
@@ -108,10 +108,10 @@ __attribute__((packed));
 #endif
 
 class HuC6280Cpu
-    : public Cpu<AddressBus21, M6502Traits, HuC6280State, uint8_t> {
+    : public Cpu<AddressBus21x8, M6502Traits, HuC6280State, uint8_t> {
  public:
   HuC6280Cpu(Machine *machine, const std::string &name, unsigned clock,
-             AddressBus21 *bus);
+             AddressBus21x8 *bus);
   virtual ~HuC6280Cpu(void);
 
   virtual void reset(void);

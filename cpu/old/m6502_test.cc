@@ -53,7 +53,7 @@ class m6502Machine : public Machine {
   }
   ~m6502Machine(void) {}
 
-  AddressBus16 bus;
+  AddressBus16x8 bus;
   M6502Cpu cpu;
   RamDevice ram;
   RamDevice irq_vec;

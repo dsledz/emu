@@ -254,24 +254,15 @@ class DataBus {
   MemoryMap<IOPort, addr_type, addr_width, 5> m_map;
 };
 
-#if 0
-typedef DataBus<uint32_t, 21, byte_t> AddressBus21;
-typedef DataBus<uint16_t, 16, byte_t> AddressBus16;
-typedef DataBus<uint16_t, 8, byte_t>  AddressBus8;
-typedef DataBus<uint16_t, 16, uint16_t> AddressBus16x16;
-typedef DataBus<uint8_t, 8, byte_t> DataBus8x8;
-typedef std::unique_ptr<AddressBus16> AddressBus16_ptr;
-#endif
-
 /**
  * Page-based bus
  */
-template <typename _addr_type, typename _data_type, int addr_width>
+template <typename _addr_type, typename _data_type, int addr_width, int page_shift>
 class IOBus {
  public:
   typedef _addr_type addr_type;
   typedef _data_type data_type;
-  typedef PageTable<addr_type, data_type, addr_width, 5> page_table_type;
+  typedef PageTable<addr_type, data_type, addr_width, addr_width - page_shift> page_table_type;
   typedef typename page_table_type::page_type page_type;
   typedef typename page_type::read_fn read_fn;
   typedef typename page_type::write_fn write_fn;
@@ -348,21 +339,10 @@ class IOBus {
   page_table_type m_page_table;
 };
 
-typedef IOBus<uint16_t, uint8_t, 16> IOBus16x8;
-typedef IOBus<uint32_t, byte_t, 21> IOBus21;
-typedef IOBus<uint16_t, byte_t, 16> IOBus16;
-typedef IOBus<uint16_t, byte_t, 8> IOBus8;
-typedef IOBus<uint16_t, uint16_t, 16> IOBus16x16;
-typedef IOBus<uint8_t, byte_t, 8> IOBus8x8;
-typedef std::unique_ptr<IOBus16> IOBus16_ptr;
+typedef IOBus<uint16_t, uint8_t, 16, 10> AddressBus16x8;
+typedef IOBus<uint32_t, byte_t, 21, 10> AddressBus21x8;
+typedef IOBus<uint16_t, uint16_t, 16, 10> AddressBus16x16;
+typedef IOBus<uint8_t, byte_t, 8, 4> AddressBus8x8;
+typedef std::unique_ptr<AddressBus16x8> AddressBus16x8_ptr;
 
-#if 1
-typedef IOBus<uint16_t, uint8_t, 16> AddressBus16x8;
-typedef IOBus<uint32_t, byte_t, 21> AddressBus21;
-typedef IOBus<uint16_t, byte_t, 16> AddressBus16;
-typedef IOBus<uint16_t, byte_t, 8> AddressBus8;
-typedef IOBus<uint16_t, uint16_t, 16> AddressBus16x16;
-typedef IOBus<uint8_t, byte_t, 8> AddressBus8x8;
-typedef std::unique_ptr<AddressBus16> AddressBus16_ptr;
-#endif
 };

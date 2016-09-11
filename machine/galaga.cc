@@ -70,7 +70,7 @@ Galaga::Galaga(const std::string &rom)
 
   add_screen(224, 288, FrameBuffer::ROT90);
 
-  m_bus = AddressBus16_ptr(new AddressBus16());
+  m_bus = AddressBus16x8_ptr(new AddressBus16x8());
 
   init_switches();
   reset_switches();
@@ -150,10 +150,10 @@ void Galaga::latch_write(offset_t offset, byte_t value) {
 void Galaga::init_bus(void) {
   /* Dipswitches */
   m_bus->add(0x6800, 0x6807, READ_CB(Galaga::dips_read, this),
-             AddressBus16::DefaultWrite());
+             AddressBus16x8::DefaultWrite());
   /* XXX: Sound */
   m_bus->add(0x6808, 0x681F);
-  m_bus->add(0x6820, 0x6827, AddressBus16::DefaultRead(),
+  m_bus->add(0x6820, 0x6827, AddressBus16x8::DefaultRead(),
              WRITE_CB(Galaga::latch_write, this));
   /* XXX: Watchdog */
   m_bus->add(0x6830, 0x6830);

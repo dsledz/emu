@@ -60,7 +60,7 @@ Pacman::Pacman(const std::string &rom)
     : Machine(), m_hertz(18432000), m_ram(this, "ram", 0x800) {
   add_screen(224, 288, FrameBuffer::ROT90);
 
-  m_bus = AddressBus16_ptr(new AddressBus16());
+  m_bus = AddressBus16x8_ptr(new AddressBus16x8());
 
   if (rom == "pacman") {
     m_roms = std::unique_ptr<RomSet>(new RomSet(pacman_rom()));
@@ -102,8 +102,8 @@ void Pacman::init_bus(void) {
   m_bus->add(0x4000, &m_gfx->vram());
   m_bus->add(0x4400, &m_gfx->cram());
 
-  m_bus->add(0x4800, 0x4bff, AddressBus16::DefaultRead(),
-             AddressBus16::DefaultWrite());
+  m_bus->add(0x4800, 0x4bff, AddressBus16x8::DefaultRead(),
+             AddressBus16x8::DefaultWrite());
 
   m_bus->add(0x4C00, 0x4fef, READ_CB(Pacman::ram_read, this),
              WRITE_CB(Pacman::ram_write, this));
@@ -120,8 +120,8 @@ void Pacman::init_bus(void) {
   m_bus->add(0x5060, 0x506f, READ_CB(PacmanGfx::spr_coord_read, m_gfx.get()),
              WRITE_CB(PacmanGfx::spr_coord_write, m_gfx.get()));
 
-  m_bus->add(0x5070, 0x507f, AddressBus16::DefaultRead(),
-             AddressBus16::DefaultWrite());
+  m_bus->add(0x5070, 0x507f, AddressBus16x8::DefaultRead(),
+             AddressBus16x8::DefaultWrite());
 
   m_bus->add(0x5080, 0x5080, READ_CB(Pacman::dsw1_read, this),
              WRITE_CB(Pacman::dsw1_write, this));
@@ -144,8 +144,8 @@ void Pacman::init_bus(void) {
              WRITE_CB(Pacman::ram_write, this));
 
   // Pacman waits for an interrupt before setting the stack pointer
-  m_bus->add(0xFFFD, 0xFFFF, AddressBus16::DefaultRead(),
-             AddressBus16::DefaultWrite());
+  m_bus->add(0xFFFD, 0xFFFF, AddressBus16x8::DefaultRead(),
+             AddressBus16x8::DefaultWrite());
 }
 
 void Pacman::init_controls(void) {

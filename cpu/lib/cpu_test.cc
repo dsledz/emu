@@ -31,15 +31,15 @@ using namespace EMUTest;
 using namespace CPU;
 
 struct TestState {
-  AddressBus16 *bus;
+  AddressBus16x8 *bus;
 };
 
 typedef CpuTraits<uint16_t, uint8_t> TestTraits;
 
-class TestCpu : public Cpu<AddressBus16, TestTraits, TestState, uint8_t> {
+class TestCpu : public Cpu<AddressBus16x8, TestTraits, TestState, uint8_t> {
  public:
   TestCpu(Machine *machine, const std::string &name, unsigned hertz,
-          AddressBus16 *bus)
+          AddressBus16x8 *bus)
       : Cpu(machine, name, hertz, bus) {}
   virtual ~TestCpu(void) {}
 

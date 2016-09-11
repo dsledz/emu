@@ -63,10 +63,10 @@ class Gameboy : public Machine {
   Gameboy(const std::string &name);
   virtual ~Gameboy(void);
 
-  AddressBus16 *bus(void) { return m_bus.get(); }
+  AddressBus16x8 *bus(void) { return m_bus.get(); }
 
  private:
-  AddressBus16_ptr m_bus;
+  AddressBus16x8_ptr m_bus;
 
   std::unique_ptr<LR35902Cpu> m_cpu;
   std::unique_ptr<GBGraphics> m_gfx;

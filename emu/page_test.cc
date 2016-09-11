@@ -65,7 +65,7 @@ TEST(PageTest, prot_wr) {
 TEST(PageTest, add_entry) {
   bvec ram;
   ram.resize(0x8000);
-  IOBus16x8 bus;
+  AddressBus16x8 bus;
 
   bus.add(0x0000, ram);
 

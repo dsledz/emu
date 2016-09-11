@@ -31,7 +31,7 @@ using namespace CPU;
 using namespace M6809;
 
 M6809Cpu::M6809Cpu(Machine *machine, const std::string &name, unsigned hertz,
-                   AddressBus16 *bus)
+                   AddressBus16x8 *bus)
     : Cpu(machine, name, hertz, bus) {
   build_table();
 }

@@ -212,7 +212,7 @@ class TG16 : public Machine {
   void joypad_write(offset_t offset, byte_t value);
 
   std::unique_ptr<M6502v2::HuC6280Cpu> m_cpu;
-  AddressBus21 m_cpu_bus;
+  AddressBus21x8 m_cpu_bus;
   RamDevice m_ram;
   VDC m_vdc;
   PSG m_psg;

@@ -21,7 +21,7 @@ SingleBoardZ80::SingleBoardZ80(const std::string &rom)
     : Machine(), m_ram(this, "ram", 0xD000), m_acia_irq(false) {
   unsigned hertz = 7372800;
 
-  m_bus = AddressBus16_ptr(new AddressBus16());
+  m_bus = AddressBus16x8_ptr(new AddressBus16x8());
 
   m_acia = M6850_ptr(new M6850(this, "m6850", hertz));
 

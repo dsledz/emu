@@ -33,8 +33,8 @@ using namespace Z80v2;
 class Zexall2 : public Machine {
  public:
   Zexall2(void)
-      : bus(new AddressBus16()),
-        io(new AddressBus8()),
+      : bus(new AddressBus16x8()),
+        io(new AddressBus8x8()),
         state(),
         cpu(new Z80Cpu(this, "cpu", 1000000, &state)),
         rom("zex.bin"),
@@ -72,8 +72,8 @@ class Zexall2 : public Machine {
     m_req = value;
   }
 
-  std::unique_ptr<AddressBus16> bus;
-  std::unique_ptr<AddressBus8> io;
+  std::unique_ptr<AddressBus16x8> bus;
+  std::unique_ptr<AddressBus8x8> io;
   Z80State state;
   std::unique_ptr<Z80Cpu> cpu;
   Rom rom;
@@ -83,11 +83,16 @@ class Zexall2 : public Machine {
 
 TEST(Zexall2_test, test) {
   Zexall2 zex;
+  const char *z80_runtime = getenv("Z80_RUNTIME");
+  EmuTime runtime = sec(60);
 
   Core::log.set_level(LogLevel::Debug);
+  if (z80_runtime != NULL) {
+    runtime = sec(atoi(z80_runtime));
+  }
 
   // Run the first few seconds of the rom
   zex.poweron();
   zex.reset();
-  zex.run_forward(sec(6000));
+  zex.run_forward(runtime);
 }

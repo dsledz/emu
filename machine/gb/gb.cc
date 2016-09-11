@@ -184,7 +184,7 @@ class GBTimer : public ClockedDevice {
 Gameboy::Gameboy(const std::string &rom_name) : Machine() {
   add_screen(160, 144);
 
-  m_bus = AddressBus16_ptr(new AddressBus16());
+  m_bus = AddressBus16x8_ptr(new AddressBus16x8());
 
   m_cpu = std::unique_ptr<LR35902Cpu>(
       new LR35902Cpu(this, "cpu", 4194304, m_bus.get()));

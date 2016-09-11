@@ -62,15 +62,15 @@ struct TestState {
   reg8_t B;
 };
 
-static void WriteFunc(AddressBus16 *bus, uint16_t address, uint8_t data) {
+static void WriteFunc(AddressBus16x8 *bus, uint16_t address, uint8_t data) {
   WriteFunc(address, data);
 }
 
-static uint8_t ReadFunc(AddressBus16 *bus, uint16_t address) {
+static uint8_t ReadFunc(AddressBus16x8 *bus, uint16_t address) {
   return ReadFunc(address);
 }
 
-static void OpFunc(struct TestState *state, AddressBus16 *bus) {
+static void OpFunc(struct TestState *state, AddressBus16x8 *bus) {
   switch (state->ARG) {
     case TestSTA:
       state->ARG = ReadFunc(bus, state->PC);
@@ -99,7 +99,7 @@ static void OpFunc(struct TestState *state, AddressBus16 *bus) {
 class TestCpu : public Cpu<AddressBus16, TestState, uint8_t, OpFunc> {
  public:
   TestCpu(Machine *machine, const std::string &name, unsigned hertz,
-          AddressBus16 *bus)
+          AddressBus16x8 *bus)
       : Cpu(machine, name, hertz, bus) {}
   virtual ~TestCpu(void) {}
 };

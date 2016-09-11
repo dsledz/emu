@@ -38,7 +38,7 @@ namespace Arcade {
 class PacmanGfx : public ScreenDevice {
  public:
   PacmanGfx(Machine *machine, const std::string &name, unsigned hertz,
-            AddressBus16 *bus);
+            AddressBus16x8 *bus);
   ~PacmanGfx(void);
 
   RamDevice &vram() { return m_vram; }
@@ -84,7 +84,7 @@ class PacmanGfx : public ScreenDevice {
 
   RamDevice m_vram;
   RamDevice m_cram;
-  AddressBus16 *_bus;
+  AddressBus16x8 *_bus;
 
   void init_sprite(GfxObject<16, 16> *obj, byte_t *b);
   void init_tile(GfxObject<8, 8> *obj, byte_t *b);
@@ -154,7 +154,7 @@ class Pacman : public Machine {
   unsigned m_hertz;
 
   Z80Cpu_ptr m_cpu;
-  AddressBus16_ptr m_bus;
+  AddressBus16x8_ptr m_bus;
   RamDevice m_ram;
   std::unique_ptr<RomSet> m_roms;
   PacmanGfx_ptr m_gfx;

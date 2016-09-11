@@ -32,7 +32,7 @@ using namespace Z80;
 using namespace Arcade;
 
 GalagaGfx::GalagaGfx(Machine *machine, const std::string &name, unsigned hertz,
-                     AddressBus16 *bus)
+                     AddressBus16x8 *bus)
     : ScreenDevice(machine, name, hertz, 384, 264, 256, 0, 240, 16),
       vram(machine, "vram", 0x0800),
       m_bus(bus) {}

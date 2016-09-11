@@ -56,18 +56,18 @@ GBGraphics::GBGraphics(Gameboy *gameboy, unsigned hertz)
   m_bus->add(VideoReg::SCY, &m_scy);
   m_bus->add(VideoReg::SCX, &m_scx);
   m_bus->add(VideoReg::LY, &m_ly);
-  m_bus->add(GBReg::DMA, AddressBus16::DefaultRead(),
+  m_bus->add(GBReg::DMA, AddressBus16x8::DefaultRead(),
              [&](offset_t offset, byte_t arg) {
                addr_t src_addr = (addr_t)arg << 8;
                for (unsigned i = 0; i < 160; i++)
                  m_oam.write8(i, m_bus->read(src_addr + i));
              });
   m_bus->add(VideoReg::LYC, &m_lyc);
-  m_bus->add(VideoReg::BGP, AddressBus16::DataRead(&m_bgp),
+  m_bus->add(VideoReg::BGP, AddressBus16x8::DataRead(&m_bgp),
              WRITE_CB(GBGraphics::palette_write, this, &m_bg_pal, &m_bgp));
-  m_bus->add(VideoReg::OBP0, AddressBus16::DataRead(&m_obp0),
+  m_bus->add(VideoReg::OBP0, AddressBus16x8::DataRead(&m_obp0),
              WRITE_CB(GBGraphics::palette_write, this, &m_obj0_pal, &m_obp0));
-  m_bus->add(VideoReg::OBP1, AddressBus16::DataRead(&m_obp1),
+  m_bus->add(VideoReg::OBP1, AddressBus16x8::DataRead(&m_obp1),
              WRITE_CB(GBGraphics::palette_write, this, &m_obj1_pal, &m_obp1));
   m_bus->add(VideoReg::WY, &m_wy);
   m_bus->add(VideoReg::WX, &m_wx);

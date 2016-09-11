@@ -48,7 +48,7 @@ enum class Reg {
 class Z80Cpu : public EMU::ClockedDevice {
  public:
   Z80Cpu(Machine *machine, const std::string &name, unsigned hertz,
-         AddressBus16 *bus);
+         AddressBus16x8 *bus);
   ~Z80Cpu(void);
   Z80Cpu(const Z80Cpu &cpu) = delete;
 
@@ -128,7 +128,7 @@ class Z80Cpu : public EMU::ClockedDevice {
   bvec _rom;
 
   /* Address Bus */
-  AddressBus16 *_bus;
+  AddressBus16x8 *_bus;
 
   inline void _add_icycles(unsigned cycles) { _icycles += Cycles(cycles); }
 

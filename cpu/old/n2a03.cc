@@ -31,7 +31,7 @@ using namespace EMU;
 using namespace M6502;
 
 n2A03Cpu::n2A03Cpu(Machine *machine, const std::string &name, unsigned hertz,
-                   AddressBus16 *bus)
+                   AddressBus16x8 *bus)
     : M6502Cpu(machine, name, hertz, bus) {}
 
 n2A03Cpu::~n2A03Cpu(void) {}
