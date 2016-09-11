@@ -133,10 +133,10 @@ class Cpu : public ClockedDevice {
 
   virtual std::string dasm(addr_type addr) { return "NOP"; }
 
-  virtual void log_op(const Opcode *op, uint16_t pc, const uint8_t *instr) {
+  virtual void log_op(state_type *state, const Opcode *op, uint16_t pc,
+                      const uint8_t *instr) {
     std::stringstream os;
-    os << std::setw(8) << name() << ":" << Hex(pc) << ":" << Hex(op->code)
-       << ":" << op->name << " ";
+    os << Hex(pc) << ":" << Hex(op->code) << ":" << op->name;
     DEVICE_TRACE(os.str());
   }
 
@@ -160,7 +160,7 @@ class Cpu : public ClockedDevice {
     cycles = (op->cycles + m_state.icycles) * m_state.clock_divider;
     add_icycles(cycles);
 
-    IF_LOG(Trace) { log_op(op, pc, instr); }
+    IF_LOG(Trace) { log_op(&m_state, op, pc, instr); }
     return cycles;
   }
 

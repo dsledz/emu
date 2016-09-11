@@ -119,7 +119,8 @@ class M6502Cpu : public Cpu<AddressBus16x8, M6502Traits, M6502State, uint8_t> {
 
   M6502State *get_state(void) { return &m_state; }
 
-  virtual void log_op(const Opcode *op, uint16_t pc, const uint8_t *instr);
+  virtual void log_op(M6502State *state, const Opcode *op, uint16_t pc,
+                      const uint8_t *instr);
 
   void test_step(void);
   virtual void execute(void);

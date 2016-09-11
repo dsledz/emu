@@ -303,19 +303,31 @@ void M6502Cpu::execute(void) {
   }
 }
 
-void M6502Cpu::log_op(const Opcode *op, uint16_t pc, const uint8_t *instr) {
+void M6502Cpu::log_op(M6502State *state, const Opcode *opcode, uint16_t pc, const uint8_t *instr) {
   std::stringstream os;
-  os << std::setw(8) << name() << ":" << Hex(pc) << ":" << Hex(op->code) << ":"
-     << op->name << " ";
-#if 0
-    if (op->bytes == 2)
-        os << Hex(instr[1]);
-    else if (op->bytes == 3)
-        os << Hex(instr[1] | (instr[2] << 8));
-    else
-#endif
-  os << std::setw(8) << " ";
-  os << "CPU:";
+  const std::string &str = opcode->name;
+  os << Hex(pc) << ":";
+  os << Hex(opcode->code) << ":";
+  const std::string &delimiters = " ,";
+  auto lastPos = str.find_first_not_of(delimiters, 0);
+  auto pos = str.find_first_of(delimiters, lastPos);
+  std::stringstream op;
+  while (std::string::npos != pos || std::string::npos != lastPos) {
+    std::string it = str.substr(lastPos, pos - lastPos);
+    op << " ";
+    if (it == "zpg") {
+      op << Hex(state->EA.b.l);
+    } else if (it == "abs") {
+      op << Hex(state->EA);
+    } else if (it == "#") {
+      op << Hex(state->ARG);
+    } else
+      op << it;
+    lastPos = str.find_first_not_of(delimiters, pos);
+    pos = str.find_first_of(delimiters, lastPos);
+  }
+  os << std::setfill(' ') << std::left << std::setw(20) << op.str();
+  os << "  CPU:";
   os << " PC: " << Hex(m_state.PC);
   os << " A: " << Hex(m_state.A);
   os << " X: " << Hex(m_state.X);
@@ -324,6 +336,7 @@ void M6502Cpu::log_op(const Opcode *op, uint16_t pc, const uint8_t *instr) {
   os << " S: " << Hex(m_state.SP);
   os << " EA: " << Hex(m_state.EA);
   os << " ARG: " << Hex(m_state.ARG);
+
   DEVICE_TRACE(os.str());
 }
 

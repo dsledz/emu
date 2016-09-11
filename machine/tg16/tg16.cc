@@ -34,9 +34,9 @@ TG16::TG16(const std::string &rom)
       m_cpu_bus(),
       m_ram(this, "ram", 0x2000),
       m_vdc(this, MASTER_CLOCK),
-      m_psg(this) {
-  IF_LOG(Info)
-  std::cout << "Loading: " << rom << std::endl;
+      m_psg(this),
+      m_rom(0x100000) {
+  LOG_INFO("Loading: ", rom);
   bvec rom_data;
 
   EMU::read_rom(rom, rom_data);
@@ -45,26 +45,21 @@ TG16::TG16(const std::string &rom)
   if (rom_data.at(rom_offset + 0x1FFF) < 0xe0)
     throw RomException("Encrypted Rom");
   if (rom_data.size() - rom_offset == 0x60000) {
-    /* TODO: rewrite rom accordingly */
-    /*
-    int bank = offset >> 17;
-    offset &= 0x1FFFF;
-    switch (bank) {
-    case 0:
-    case 2:
-        return m_rom.at(offset + m_rom_offset);
-    case 1:
-    case 3:
-        return m_rom.at(0x20000 + offset + m_rom_offset);
-    default:
-        return m_rom.at(0x40000 + offset + m_rom_offset);
-    }
-    */
-    throw RomException("Unsupported ROM format");
+    /* int bank = offset >> 17; */
+    /* 0 & 2 -> 0x00000 */
+    memcpy(&m_rom[0x00000], &rom_data[rom_offset], 0x20000);
+    memcpy(&m_rom[0x40000], &rom_data[rom_offset], 0x20000);
+    /* 1 & 3 -> 0x20000 */
+    memcpy(&m_rom[0x20000], &rom_data[rom_offset + 0x20000], 0x20000);
+    memcpy(&m_rom[0x60000], &rom_data[rom_offset + 0x20000], 0x20000);
+    /* rest -> 0x40000 */
+    memcpy(&m_rom[0x80000], &rom_data[rom_offset + 0x40000], 0x20000);
+    memcpy(&m_rom[0xA0000], &rom_data[rom_offset + 0x40000], 0x20000);
+    memcpy(&m_rom[0xC0000], &rom_data[rom_offset + 0x40000], 0x20000);
+    memcpy(&m_rom[0x0000], &rom_data[rom_offset + 0x40000], 0x20000);
   } else if (rom_data.size() - rom_offset > 0x100000) {
     throw RomException("Unsupported ROM size");
   } else {
-    m_rom.assign(0x100000, 0);
     memcpy(&m_rom.front(), &rom_data[rom_offset], rom_data.size() - rom_offset);
   }
 

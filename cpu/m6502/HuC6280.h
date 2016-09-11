@@ -58,7 +58,7 @@ struct HuC6280State {
   }
   void reset(void) {
     A = 0;
-    SP = 0;
+    SP = 0xff;
     X = 0;
     Y = 0;
     SR = 0;
@@ -118,6 +118,11 @@ class HuC6280Cpu
   virtual bool Interrupt(void);
   virtual void line(Line line, LineState state);
   virtual void execute(void);
+
+  HuC6280State *get_state(void) { return &m_state; }
+
+  virtual void log_op(HuC6280State *state, const Opcode *op, uint16_t pc,
+                      const uint8_t *instr);
 
   byte_t irq_read(offset_t offset);
   void irq_write(offset_t offset, byte_t value);
