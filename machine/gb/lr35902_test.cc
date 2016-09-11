@@ -38,22 +38,34 @@ using namespace GBMachine;
   ram[pc++] = arg1;             \
   ram[pc++] = arg2;
 
+class LR35902CpuTest : public LR35902Cpu
+{
+public:
+ LR35902CpuTest(Machine *machine, const std::string &name, unsigned hertz,
+                AddressBus16x8 *bus):
+     LR35902Cpu(machine, name, hertz, bus) { }
+ virtual ~LR35902CpuTest() { }
+
+ void step_once(void) {
+   dispatch();
+ }
+};
+
 class LR35902Test : public ::testing::Test {
  public:
   LR35902Test(void)
       : machine(),
         bus(),
         cpu(&machine, "test", 1000000, &bus),
-        ram(0x2000),
+        ram(0xE000),
         pc(0x100) {
-    bus.add(0x0000, 0xE000,
-            [&](offset_t offset) -> byte_t { return ram[offset]; },
-            [&](offset_t offset, byte_t data) { ram[offset] = data; });
+    Core::log.set_level(LogLevel::Trace);
+    bus.add(0x0000, ram);
   }
 
   Machine machine;
   AddressBus16x8 bus;
-  LR35902Cpu cpu;
+  LR35902CpuTest cpu;
   bvec ram;
   addr_t pc;
 };
@@ -62,12 +74,12 @@ TEST_F(LR35902Test, Constructor) {}
 
 TEST_F(LR35902Test, opcode_0x00) {
   LOAD(0x00);
-  cpu.execute();
+  cpu.step_once();
 }
 
 TEST_F(LR35902Test, opcode_0x01) {
   LOAD2(0x1, 0x12, 0x34);
-  cpu.execute();
+  cpu.step_once();
 
   EXPECT_EQ(0x34, cpu.fetch(Register::B));
   EXPECT_EQ(0x12, cpu.fetch(Register::C));

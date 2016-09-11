@@ -25,13 +25,20 @@
 #include "gtest/gtest.h"
 
 #include "emu/emu.h"
-
+#include "emu/test.h"
 #include "machine/gb/gb.h"
 
 using namespace EMU;
+using namespace EMUTest;
 
 TEST(GameboyTest, run) {
   GBMachine::Gameboy machine("tetris.gb");
+  EmuTime runtime = get_runtime("GB_RUNTIME");
 
-  for (unsigned i = 0; i < 6000; i++) machine.run();
+  FrameBuffer fb;
+
+  machine.reset();
+  machine.set_frame_buffer(&fb);
+  machine.poweron();
+  machine.run_forward(runtime);
 }

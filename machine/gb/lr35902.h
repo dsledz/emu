@@ -114,7 +114,7 @@ class LR35902Cpu : public ClockedDevice {
  public:
   LR35902Cpu(Machine *machine, const std::string &name, unsigned hertz,
              AddressBus16x8 *bus);
-  ~LR35902Cpu(void);
+  virtual ~LR35902Cpu(void);
   LR35902Cpu(const LR35902Cpu &cpu) = delete;
 
   virtual void save(SaveState &state);
