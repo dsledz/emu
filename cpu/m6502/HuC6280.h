@@ -37,15 +37,15 @@ struct HuC6280State {
   HuC6280State(void) { reset(); }
 
   inline uint8_t bus_read(uint16_t addr) {
-    uint16_t offset = addr;
+    offset_t offset = addr;
     const int bank = (offset & 0xE000) >> 13;
-    offset = (offset & 0x1FFF) | (mmu_map[bank] << 13);
+    offset = (offset & 0x1FFF) | ((offset_t)mmu_map[bank] << 13);
     return bus->read(offset);
   }
   inline void bus_write(uint16_t addr, uint8_t value) {
-    uint16_t offset = addr;
+    offset_t offset = addr;
     const int bank = (offset & 0xE000) >> 13;
-    offset = (offset & 0x1FFF) | (mmu_map[bank] << 13);
+    offset = (offset & 0x1FFF) | ((offset_t)mmu_map[bank] << 13);
     bus->write(offset, value);
   }
   uint8_t get_flags(uint16_t flags) {
@@ -62,7 +62,7 @@ struct HuC6280State {
     X = 0;
     Y = 0;
     SR = 0;
-    ZPG = 0;
+    ZPG = 0x20;
     PC = 0;
     NativeFlags = 0;
     EA = 0;

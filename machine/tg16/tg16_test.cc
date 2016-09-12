@@ -26,20 +26,23 @@
 #include "gtest/gtest.h"
 
 #include "emu/emu.h"
+#include "emu/test.h"
 
 #include "machine/tg16/tg16.h"
 
 using namespace EMU;
+using namespace EMUTest;
 using namespace TG16Machine;
 
 TEST(TG16Test, create) {
   TG16 machine("bonks.pce");
+  EmuTime runtime = get_runtime("Z80_RUNTIME");
   FrameBuffer fb;
 
-  Core::log.set_level(LogLevel::Trace);
+  Core::log.set_level(LogLevel::Info);
   machine.reset();
   machine.set_frame_buffer(&fb);
   machine.poweron();
 
-  while (true) machine.run();
+  machine.run_forward(runtime);
 }

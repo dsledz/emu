@@ -202,6 +202,9 @@ class PSG : public Device {
 
 class TG16 : public Machine {
  public:
+
+  typedef M6502v2::HuC6280Cpu cpu_type;
+
   TG16(const std::string &rom);
   virtual ~TG16(void);
 
@@ -211,7 +214,7 @@ class TG16 : public Machine {
   byte_t joypad_read(offset_t offset);
   void joypad_write(offset_t offset, byte_t value);
 
-  std::unique_ptr<M6502v2::HuC6280Cpu> m_cpu;
+  std::unique_ptr<cpu_type> m_cpu;
   AddressBus21x8 m_cpu_bus;
   RamDevice m_ram;
   VDC m_vdc;

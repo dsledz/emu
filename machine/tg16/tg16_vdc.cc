@@ -62,6 +62,7 @@ byte_t VDC::status_read(offset_t offset) {
 void VDC::status_write(offset_t offset, byte_t value) {
   m_reg_idx = 0x1F & value;
   if (m_reg_idx & 0x10) m_reg_idx &= 0x13;
+  DEVICE_TRACE("new reg: ", m_reg_idx);
 }
 
 uint8_t vram_inc[] = {1, 32, 64, 128};
@@ -77,7 +78,8 @@ byte_t VDC::data_read(offset_t offset) {
       break;
     }
     default:
-      throw DeviceFault(name(), "data_read");
+      DEVICE_ERROR("Invalid reg read:", m_reg_idx);
+      throw DeviceFault(name(), stringfn("invalid register read: ", m_reg_idx));
       break;
   }
   return result;
@@ -90,9 +92,7 @@ void VDC::data_write(offset_t offset, byte_t value) {
 
   switch (m_reg_idx) {
     default:
-      IF_LOG(Trace)
-      std::cout << "VDC: " << Hex(m_reg_idx) << " <- "
-                << Hex(m_reg[m_reg_idx].d) << std::endl;
+      DEVICE_TRACE("read: ", Hex(m_reg_idx), ": ", Hex(m_reg[m_reg_idx].d));
       break;
     case VxR: {
       set_byte(m_vram.at(m_reg[MAWR].d & 0x7FFF), b, value);
@@ -110,8 +110,8 @@ void VDC::data_write(offset_t offset, byte_t value) {
       m_satb_write = true;
       break;
     case LENR:
-      DEVICE_INFO("DMA");
       if (b == 1) {
+        DEVICE_DEBUG("DMA start, length: ", m_reg[LENR].d);
         /* XXX: Cycles are wrong */
         for (uint16_t i = 0; i < m_reg[LENR].d; i++)
           m_vram[m_reg[DESR].d + i] = m_vram[m_reg[SOUR].d + i];
@@ -218,12 +218,8 @@ void VDC::step(void) {
       m_bgvtile &= (bit_isset(m_reg[MWR].d, 6) ? 0x3F : 0x1F);
       m_bgvidx = m_reg[BYR].d % 8;
 
-      IF_LOG(Debug) {
-        std::cout << "Screen Start: ";
-        std::cout << " BYR: " << Hex(m_reg[BYR]);
-        std::cout << " BXR: " << Hex(m_reg[BXR]);
-        std::cout << std::endl;
-      }
+      DEVICE_DEBUG("Screen Start: ", " BYR: ", Hex(m_reg[BYR]), " BXR: ",
+                   Hex(m_reg[BXR]));
     } else if (m_vpos > VBEND && m_vpos < VBSTART) {
       /* XXX: Scanline interrupt */
       if ((m_vpos - VBEND + 63 == m_reg[RCR].d) && bit_isset(m_reg[CR].d, 2)) {
@@ -318,8 +314,7 @@ byte_t VDC::vce_read(offset_t offset) {
 }
 
 void VDC::vce_write(offset_t offset, byte_t value) {
-  IF_LOG(Debug)
-  std::cout << "VCE:" << Hex(offset) << ": " << Hex(value) << std::endl;
+  DEVICE_DEBUG("write: ", Hex(offset), ": ", Hex(value));
 
   switch (offset % 8) {
     case 0:

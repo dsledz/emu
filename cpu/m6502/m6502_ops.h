@@ -23,14 +23,14 @@ static inline uint8_t pc_read(_state_type *state) {
 
 template <class _state_type>
 static inline void push(_state_type *state, uint8_t value) {
-  state->bus_write((state->ZPG << 8) + 0x0100 + state->SP, value);
+  state->bus_write(((uint16_t)state->ZPG << 8) + 0x0100 + state->SP, value);
   state->SP--;
 }
 
 template <class _state_type>
 static inline uint8_t pop(_state_type *state) {
   state->SP++;
-  return state->bus_read((state->ZPG << 8) + 0x0100 + state->SP);
+  return state->bus_read(((uint16_t)state->ZPG << 8) + 0x0100 + state->SP);
 }
 
 template <class _state_type>
