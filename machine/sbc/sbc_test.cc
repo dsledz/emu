@@ -3,30 +3,31 @@
  * All rights reserved.
  */
 
-#include "emu/emu.h"
 #include "gtest/gtest.h"
+
+#include "emu/emu.h"
+#include "emu/test.h"
 
 #include "machine/sbc/sbc.h"
 
 using namespace EMU;
+using namespace EMUTest;
 
 TEST(SBCTest, run100) {
-  // Core::log.set_level(Core::LogLevel::Trace);
-
   Arcade::SingleBoardZ80 machine("");
+  EmuTime runtime = sec(10);
 
+  Core::log.set_level(LogLevel::Info);
   machine.poweron();
 
   machine.m_acia->debug_write('\r');
-
-  for (unsigned i = 0;; i++) {
-    machine.set_time(Time(usec(i * 10)));
+  while (machine.now() < runtime) {
+    machine.run_forward(msec(1));
     auto b = machine.m_acia->debug_read();
     if (b.first) {
       std::cout << (char)b.second;
       std::cout.flush();
-    } else
-      usleep(30);
+    }
   }
 
   machine.poweroff();

@@ -28,6 +28,7 @@ void M6850::reset(void) {
 void M6850::execute(void) {
   while (true) {
     bool interrupt = false;
+    bool notify = false;
 
     /* Update our clock */
     switch (m_reg.CR & 0x03) {
@@ -50,6 +51,7 @@ void M6850::execute(void) {
       if (m_send == 0) {
         LOG_DEBUG(m_reg.TDR);
         m_reg.SR |= 0x02; /* Transmit Data Register Empty */
+        notify = true;
       }
     } else if (m_recv > 0) {
       m_recv--;
@@ -59,14 +61,15 @@ void M6850::execute(void) {
           m_reg.SR |= 0x80;
           interrupt = true;
         }
+        notify = true;
       }
     }
     if (interrupt) {
-      /* XXX: Can yield */
       machine()->set_line("cpu", Line::INT0, LineState::Assert);
       /* XXX: Return from the context switch */
     }
-    Task::yield();
+    if (interrupt || notify)
+      Task::yield();
   }
 }
 

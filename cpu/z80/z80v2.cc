@@ -453,6 +453,7 @@ Z80Cpu::Z80Cpu(Machine *machine, const std::string &name, unsigned hertz,
 Z80Cpu::~Z80Cpu(void) {}
 
 void Z80Cpu::interrupt(addr_t addr) {
+  DEVICE_DEBUG("Interrupt: ", Hex(addr));
   PUSH(m_state, m_state->PC.b.h, m_state->PC.b.l);
   m_state->PC.d = addr;
   m_state->iff2 = m_state->iff1;
