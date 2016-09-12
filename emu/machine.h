@@ -121,6 +121,7 @@ class Machine {
   short get_screen_height(void) { return m_screen_height; }
 
   void set_time(EmuTime now);
+  EmuTime now(void);
 
   TaskScheduler *get_scheduler(void) { return &m_scheduler; }
 
