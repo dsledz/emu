@@ -12,6 +12,7 @@ SwitchContext:
     mov %r15, 56(%rdi)
     mov %rsp, 64(%rdi)
     mov %rbp, 72(%rdi)
+    mov %rbx, 80(%rdi)
 
     /* Restore the current registers */
     mov  0(%rsi), %r8
@@ -24,5 +25,6 @@ SwitchContext:
     mov 56(%rsi), %r15
     mov 64(%rsi), %rsp
     mov 72(%rsi), %rbp
+    mov 80(%rsi), %rbx
 
     ret

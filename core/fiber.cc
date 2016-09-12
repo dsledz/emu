@@ -32,7 +32,8 @@ ThreadContext::~ThreadContext(void) {
   /* XXX: Assert we're not on that stack */
 }
 
-void ThreadContext::switch_context(ThreadContext *saved_ctx) {
+void __attribute__((noinline))
+ThreadContext::switch_context(ThreadContext *saved_ctx) {
   // Swap our registers On return, we'll be in the other context
   // and our return stack will change.
   SwitchContext(&saved_ctx->m_registers, &m_registers);
@@ -98,19 +99,10 @@ Task::State FiberTask::run(void) {
         return m_state;
     }
   }
-  // TODO: Avoid optimization
-  if (false) {
-    const Task &self = *this;
-    LOG_DEBUG("FiberTask switch: ", self);
-  }
+  LOG_DEBUG("FiberTask switch_to:   ", *this);
   // Switch to our context and run.
   m_our_ctx.switch_context(&m_thread_ctx);
-  asm volatile("" : : : "memory");
-  // TODO: Avoid optimization
-  if (false) {
-    const Task &self = *this;
-    LOG_DEBUG("FiberTask swapped: ", self);
-  }
+  LOG_DEBUG("FiberTask switch_from: ", *this);
   // We've returned from our context.
   {
     lock_mtx lock(m_mtx);

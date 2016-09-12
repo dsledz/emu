@@ -42,6 +42,7 @@ struct ThreadRegisters {
   uint64_t r15;
   uint64_t rsp;
   uint64_t rbp;
+  uint64_t rbx;
 };
 
 class ThreadContext {
