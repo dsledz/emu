@@ -70,15 +70,21 @@ void FiberTask::run_internal(void) {
     lock_mtx lock(m_mtx);
     m_state = State::Running;
   }
-  LOG_DEBUG("FiberTask execute: ", *this);
+  LOG_DEBUG(*this, ": execute");
   State new_state = State::Finished;
-  m_func();
+  try {
+    m_func();
+  } catch (CoreException &e) {
+    LOG_INFO(*this, ": exception escaped:", e.what());
+    new_state = State::Dead;
+    abort();
+  }
   {
     lock_mtx lock(m_mtx);
     m_state = new_state;
     m_cv.notify_all();
   }
-  LOG_DEBUG("FiberTask : ", *this);
+  LOG_DEBUG(*this, ": finished");
 }
 
 bool FiberTask::nonblocking(void) { return true; }
@@ -99,10 +105,10 @@ Task::State FiberTask::run(void) {
         return m_state;
     }
   }
-  LOG_DEBUG("FiberTask switch_to:   ", *this);
+  LOG_DEBUG(*this, ": switch_to");
   // Switch to our context and run.
   m_our_ctx.switch_context(&m_thread_ctx);
-  LOG_DEBUG("FiberTask switch_from: ", *this);
+  LOG_DEBUG(*this, ": switch_from ", m_state);
   // We've returned from our context.
   {
     lock_mtx lock(m_mtx);
@@ -112,7 +118,7 @@ Task::State FiberTask::run(void) {
 
 void FiberTask::cancel(void) {
   lock_mtx lock(m_mtx);
-  LOG_DEBUG("Canceling fiber task: ", *this);
+  LOG_DEBUG(*this, ": cancel");
   if (m_state == State::Suspended) {
     m_state = State::Canceled;
     m_thread->schedule(this);
@@ -123,7 +129,7 @@ void FiberTask::cancel(void) {
 
 void FiberTask::suspend(void) {
   lock_mtx lock(m_mtx);
-  LOG_DEBUG("FiberTask waiting: ", *this);
+  LOG_DEBUG(*this, ": waiting ");
   if (m_state == State::Running) m_state = State::Suspended;
   while (m_state != State::Queued && !finished(m_state)) {
     unlock_mtx unlock(m_mtx);
@@ -131,7 +137,7 @@ void FiberTask::suspend(void) {
     m_thread_ctx.switch_context(&m_our_ctx);
     /* Return from the thread context. */
   }
-  LOG_DEBUG("FiberTask resumed: ", *this);
+  LOG_DEBUG(*this, ": resumed");
   if (m_state == State::Queued) m_state = State::Running;
   if (finished(m_state)) throw TaskCanceled("Finished");
 }
@@ -140,7 +146,7 @@ void FiberTask::yield_internal(void) {
   /* Put us on the runnable list */
   {
     lock_mtx lock(m_mtx);
-    LOG_DEBUG("FiberTask yield: ", *this);
+    LOG_DEBUG(*this, ": yield");
     m_state = State::Queued;
     m_thread->schedule(this);
   }
@@ -150,7 +156,7 @@ void FiberTask::yield_internal(void) {
 void FiberTask::wake(void) {
   /* Put us on the runnable list */
   lock_mtx lock(m_mtx);
-  LOG_DEBUG("FiberTask wake: ", *this);
+  LOG_DEBUG(*this, ": wake");
   if (m_state == State::Suspended) {
     m_state = State::Queued;
     m_thread->schedule(this);

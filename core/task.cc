@@ -57,6 +57,19 @@ Thread::Thread(TaskChannel_ptr channel)
 
 Thread::~Thread(void) { assert(m_state == ThreadState::Dead); }
 
+std::ostream &Core::operator<<(std::ostream &os, const Task::State state) {
+  switch (state) {
+    case Task::State::Created: os << "created"; break;
+    case Task::State::Queued: os << "queued"; break;
+    case Task::State::Running: os << "running"; break;
+    case Task::State::Suspended: os << "suspended"; break;
+    case Task::State::Finished: os << "finished"; break;
+    case Task::State::Canceled: os << "canceled"; break;
+    case Task::State::Dead: os << "dead"; break;
+  }
+  return os;
+}
+
 std::ostream &Core::operator<<(std::ostream &os, const Task &t) {
   os << t.name() << "(" << t.id() << ")";
   return os;

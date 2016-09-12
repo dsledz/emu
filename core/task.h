@@ -135,6 +135,8 @@ class Task {
   static uint64_t next_id(void);
 };
 
+std::ostream &operator<<(std::ostream &os, const Task::State state);
+
 std::ostream &operator<<(std::ostream &os, const Task &t);
 
 class ThreadTask : public Task {

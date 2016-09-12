@@ -50,8 +50,12 @@ Machine *Device::machine(void) { return m_machine; }
 const std::string &Device::name(void) { return m_name; }
 
 void Device::task_fn(void) {
-  wait(DeviceStatus::Running);
-  while (m_target_status != DeviceStatus::Off) execute();
+  try {
+    wait(DeviceStatus::Running);
+    while (m_target_status != DeviceStatus::Off) execute();
+  } catch (CoreException &e) {
+    DEVICE_INFO("Device exception: ", e.what());
+  }
   {
     lock_mtx lock(m_mtx);
     m_status = DeviceStatus::Off;
