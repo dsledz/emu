@@ -37,7 +37,11 @@ using namespace Core;
 
 class SDLException : public Core::CoreException {
  public:
-  SDLException() : CoreException("SDL exception") {}
+  SDLException() : CoreException("SDL Exception: ") {
+    msg += std::string(SDL_GetError());
+  }
+
+  std::string sdl_error;
 };
 
 struct SDL_KeycodeHash {
@@ -150,6 +154,10 @@ class SDLEmulator : public Emulator {
 
 extern "C" int main(int argc, char **argv) {
   try {
+    glutInit(&argc, argv);
+    glutCreateWindow("GLEW Test");
+    GLenum err = glewInit();
+    if (GLEW_OK != err) abort();
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0) throw SDLException();
 
     Driver::CLIOptions opts(argc, argv);

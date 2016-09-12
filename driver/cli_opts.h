@@ -24,8 +24,10 @@
  */
 
 #include <getopt.h>
+#include "emu/emu.h"
 
 using namespace Core;
+using namespace EMU;
 
 namespace Driver {
 

@@ -38,8 +38,8 @@
 #include <OpenGL/gl.h>
 #endif
 #else
-#include <GL/gl.h>
-#include <GL/glext.h>
+#include <GL/glew.h>
+#include <GL/glut.h>
 #endif
 
 using namespace EMU;

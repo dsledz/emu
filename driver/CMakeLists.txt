@@ -1,3 +1,4 @@
+find_package(GLEW REQUIRED)
 find_package(OpenGL REQUIRED)
 
 add_library(driver
@@ -12,8 +13,8 @@ target_link_libraries(driver
 
 include_directories(${OPENGL_INCLUDE_DIR})
 
-if (BUILD_OSX)
     message("Building OSX support.")
+if (BUILD_OSX)
     add_subdirectory(osx)
 endif (BUILD_OSX)
 
