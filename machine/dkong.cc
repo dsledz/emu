@@ -49,7 +49,7 @@ RomDefinition dkong_rom(void) {
 DonkeyKong::DonkeyKong(const std::string &rom)
     : Machine(), m_ram(this, "ram", 0x1000), m_nmi_mask(false) {
   unsigned hertz = 18432000;
-  add_screen(224, 256, FrameBuffer::ROT90);
+  add_screen(224, 256, GfxScale::None, FrameBuffer::ROT90);
 
   m_bus = AddressBus16x8_ptr(new AddressBus16x8());
 

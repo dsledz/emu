@@ -27,30 +27,17 @@
 
 using namespace EMU;
 
-FrameBuffer::FrameBuffer(Rotation rot) : m_rot(rot) { resize(0, 0); }
-
-FrameBuffer::FrameBuffer(short width, short height, Rotation rot) : m_rot(rot) {
-  resize(width, height);
-}
+FrameBuffer::FrameBuffer(short width, short height, GfxScale scale,
+                         Rotation rot)
+    : m_width(width),
+      m_pitch(width * sizeof(RGBColor)),
+      m_height(height),
+      m_rot(rot),
+      m_transform(get_transform(scale, m_width, m_height)),
+      m_data(m_pitch * m_height),
+      m_empty() {}
 
 FrameBuffer::~FrameBuffer(void) {}
-
-void FrameBuffer::set_rotation(Rotation rot) { m_rot = rot; }
-
-void FrameBuffer::resize(short width, short height) {
-  do_resize(width, height);
-}
-
-void FrameBuffer::render(void) {}
-
-void FrameBuffer::flip(void) {}
-
-void FrameBuffer::do_resize(short width, short height) {
-  m_width = width;
-  m_height = height;
-  m_pitch = width * sizeof(uint32_t);
-  m_data.resize(m_width * m_height);
-}
 
 void FrameBuffer::set(int x, int y, RGBColor color) {
   int sy, sx;
@@ -106,4 +93,146 @@ const RGBColor FrameBuffer::get(int x, int y) const {
 
 void FrameBuffer::clear(void) {
   std::fill(m_data.begin(), m_data.end(), m_empty);
+}
+
+class GfxTransformNone : public GfxTransform {
+ public:
+  GfxTransformNone(short width, short height) : GfxTransform(width, height) {}
+  virtual ~GfxTransformNone(void) {}
+
+  virtual void render(FrameBuffer *screen) {
+    const byte_t *src = screen->fb();
+    byte_t *dest = reinterpret_cast<byte_t *>(fb());
+    const short dest_pitch = pitch();
+
+    for (int y = 0; y < screen->height(); y++)
+      memcpy(&dest[y * dest_pitch], &src[y * screen->pitch()], screen->pitch());
+  }
+};
+
+class GfxTransformScanline2x : public GfxTransform {
+ public:
+  GfxTransformScanline2x(short width, short height)
+      : GfxTransform(width * 2, height * 2) { }
+  virtual ~GfxTransformScanline2x(void) {}
+
+  virtual void render(FrameBuffer *screen) {
+    const byte_t *src = screen->fb();
+    byte_t *dest = reinterpret_cast<byte_t *>(fb());
+    const short dest_pitch = pitch();
+
+    for (int y = 0; y < screen->height(); y++) {
+      unsigned *d0 = reinterpret_cast<unsigned *>(dest);
+      dest += dest_pitch;
+      unsigned *d1 = reinterpret_cast<unsigned *>(dest);
+      dest += dest_pitch;
+      const unsigned *s = reinterpret_cast<const unsigned *>(src);
+      for (int x = 1; x < screen->width() - 1; x++) {
+        d0[x * 2] = s[x];
+        d0[x * 2 + 1] = s[x];
+        d1[x * 2] = d1[x * 2 + 1] = 0xff000000;
+      }
+      src += screen->pitch();
+    }
+  }
+};
+
+class GfxTransform2x : public GfxTransform {
+ public:
+  GfxTransform2x(short width, short height)
+      : GfxTransform(width * 2, height * 2) {}
+  virtual ~GfxTransform2x(void) {}
+
+  virtual void render(FrameBuffer *screen) {
+    const byte_t *src = screen->fb();
+    byte_t *dest = reinterpret_cast<byte_t *>(fb());
+    const short dest_pitch = pitch();
+
+    for (int y = 0; y < screen->height(); y++) {
+      unsigned *d0 = reinterpret_cast<unsigned *>(dest);
+      dest += dest_pitch;
+      unsigned *d1 = reinterpret_cast<unsigned *>(dest);
+      dest += dest_pitch;
+      const unsigned *s = reinterpret_cast<const unsigned *>(src);
+      for (int x = 1; x < screen->width() - 1; x++) {
+        d0[x * 2] = s[x];
+        d0[x * 2 + 1] = s[x];
+        d1[x * 2] = s[x];
+        d1[x * 2 + 1] = s[x];
+      }
+      src += screen->pitch();
+    }
+  }
+};
+
+class GfxTransformScale2x : public GfxTransform {
+ public:
+  GfxTransformScale2x(short width, short height)
+      : GfxTransform(width * 2, height * 2) {}
+  virtual ~GfxTransformScale2x(void) {}
+
+  virtual void render(FrameBuffer *screen) {
+    const byte_t *src = screen->fb();
+    byte_t *dest = reinterpret_cast<byte_t *>(fb());
+    const short dest_pitch = pitch();
+
+    const unsigned *sl = reinterpret_cast<const unsigned *>(src);
+    const unsigned *s, *sh;
+
+    for (int y = 0; y < screen->height(); y++) {
+      int x = 0;
+      unsigned *d0 = reinterpret_cast<unsigned *>(dest);
+      dest += dest_pitch;
+      unsigned *d1 = reinterpret_cast<unsigned *>(dest);
+      dest += dest_pitch;
+      s = reinterpret_cast<const unsigned *>(src);
+      if (y < screen->height() - 1)
+        sh = reinterpret_cast<const unsigned *>(src + screen->pitch());
+      d0[x * 2] = s[x];
+      d0[x * 2 + 1] = s[x];
+      d1[x * 2] = s[x];
+      d1[x * 2 + 1] = s[x];
+      for (x = 1; x < screen->width() - 1; x++) {
+        d0[x * 2] = s[x];
+        d0[x * 2 + 1] = s[x];
+        d1[x * 2] = s[x];
+        d1[x * 2 + 1] = s[x];
+        if (s[x - 1] == sl[x] && s[x - 1] != sh[x] && sl[x] != s[x + 1])
+          d0[x * 2] = sl[x];
+        if (sl[x] == s[x + 1] && sl[x] != s[x - 1] && s[x + 1] != sh[x])
+          d0[x * 2 + 1] = s[x + 1];
+        if (sh[x] == s[x - 1] && s[x + 1] != sl[x] && s[x - 1] != sl[x])
+          d1[x * 2] = s[x - 1];
+        if (s[x + 1] == sh[x] && s[x + 1] != sl[x] && sh[x] != s[x - 1])
+          d1[x * 2 + 1] = sh[x];
+      }
+      d0[x * 2] = s[x];
+      d0[x * 2 + 1] = s[x];
+      d1[x * 2] = s[x];
+      d1[x * 2 + 1] = s[x];
+      sl = s;
+      src += screen->pitch();
+    }
+  }
+};
+
+GfxTransform_ptr EMU::get_transform(GfxScale scale, short width, short height) {
+  GfxTransform_ptr transform;
+
+  switch (scale) {
+    case GfxScale::None:
+      transform = GfxTransform_ptr(new GfxTransformNone(width, height));
+      break;
+    case GfxScale::Scaneline2x:
+      transform = GfxTransform_ptr(new GfxTransformScanline2x(width, height));
+      break;
+    case GfxScale::Nearest2x:
+      transform = GfxTransform_ptr(new GfxTransform2x(width, height));
+      break;
+    case GfxScale::Scale2x:
+      transform = GfxTransform_ptr(new GfxTransformScale2x(width, height));
+      break;
+  }
+
+  return transform;
 }

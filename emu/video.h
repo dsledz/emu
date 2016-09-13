@@ -90,6 +90,45 @@ struct GfxObject {
   std::array<entry_t, width * height> data;
 };
 
+class FrameBuffer;
+
+/* Gfx Transform function */
+class GfxTransform {
+ public:
+  GfxTransform(short width, short height)
+      : m_width(width),
+        m_height(height),
+        m_pitch(m_width * sizeof(RGBColor)),
+        m_data(m_pitch * m_height) { }
+  virtual ~GfxTransform(void) {}
+
+  inline short width(void) { return m_width; }
+
+  inline short height(void) { return m_height; }
+
+  inline short pitch(void) { return m_pitch; }
+
+  inline void *fb(void) { return m_data.data(); }
+
+  virtual void render(FrameBuffer *screen) = 0;
+
+ private:
+  short m_width;
+  short m_height;
+  short m_pitch;
+  bvec m_data;
+};
+
+enum class GfxScale {
+  None = 0,
+  Scale2x = 1,
+  Nearest2x = 2,
+  Scaneline2x = 3,
+};
+
+typedef std::unique_ptr<GfxTransform> GfxTransform_ptr;
+GfxTransform_ptr get_transform(GfxScale scale, short width, short height);
+
 /**
  * Emulated Screen Abstraction.
  *
@@ -100,16 +139,12 @@ struct GfxObject {
 class FrameBuffer {
  public:
   enum Rotation { ROT0 = 0, ROT90 = 1, ROT180 = 2, ROT270 = 3 };
-  FrameBuffer(Rotation rot = ROT0);
 
-  FrameBuffer(short width, short height, Rotation rot = ROT0);
+  FrameBuffer(short width, short height, GfxScale scale = GfxScale::None,
+              Rotation rot = ROT0);
   virtual ~FrameBuffer(void);
 
-  void set_rotation(Rotation rot);
-
-  virtual void resize(short width, short height);
-  virtual void render(void);
-  virtual void flip(void);
+  void flip(void) { m_transform->render(this); }
 
   void set(int x, int y, RGBColor color);
   const RGBColor get(int x, int y) const;
@@ -126,18 +161,22 @@ class FrameBuffer {
     return reinterpret_cast<const byte_t *>(m_data.data());
   }
 
- protected:
-  void do_resize(short width, short height);
+  inline GfxTransform *transform(void) {
+    return m_transform.get();
+  }
 
  private:
   short m_width;  /* Width of the screen */
   short m_pitch;  /* Line pitch */
   short m_height; /* Height of the screen */
   Rotation m_rot;
+  GfxTransform_ptr m_transform;
 
   std::vector<RGBColor> m_data;
   RGBColor m_empty;
 };
+
+typedef std::unique_ptr<FrameBuffer> FrameBuffer_ptr;
 
 template <class gfx, class palette>
 static inline void draw_gfx(FrameBuffer *screen, palette *pal, gfx *obj, int sx,

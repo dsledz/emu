@@ -49,16 +49,15 @@ class SFMLEmulator : public Emulator {
     m_window = std::unique_ptr<sf::Window>(new sf::Window(
         vm, "OpenGL", sf::Style::Default, sf::ContextSettings(32)));
     m_window->setVerticalSyncEnabled(true);
-
-    m_fb = std::unique_ptr<GLFrameBuffer>(new GLFrameBuffer());
-    machine()->set_frame_buffer(m_fb.get());
-    m_fb->init();
-
     poll_events();
   }
 
   virtual void start(void) {
     machine()->load_rom(options()->rom);
+
+    m_fb = std::unique_ptr<GLRender>(new GLRender(machine()->screen()));
+    m_fb->init();
+
     machine()->reset();
 
     set_state(EmuState::Running);
@@ -99,7 +98,7 @@ class SFMLEmulator : public Emulator {
   }
 
   std::unique_ptr<sf::Window> m_window;
-  std::unique_ptr<GLFrameBuffer> m_fb;
+  std::unique_ptr<GLRender> m_fb;
 
   std::future<void> task;
 };

@@ -145,63 +145,17 @@ class ShaderProgram {
   scoped_program _program;
 };
 
-class GfxTransform {
+class GLSLRender {
  public:
-  GfxTransform(void) {}
-  virtual ~GfxTransform(void) {}
+  GLSLRender(FrameBuffer *fb);
+  virtual ~GLSLRender(void);
 
-  short width(void) { return _width; }
-
-  short height(void) { return _height; }
-
-  short pitch(void) { return _pitch; }
-
-  void *fb(void) { return _fb.data(); }
-
-  virtual void resize(short width, short height) = 0;
-  virtual void render(FrameBuffer *screen) = 0;
-
- protected:
-  void init_fb(short width, short height) {
-    _width = width;
-    _height = height;
-    _pitch = _width * sizeof(uint32_t);
-    _fb.resize(_pitch * _height);
-  }
-
- private:
-  short _width;
-  short _height;
-  short _pitch;
-  bvec _fb;
-};
-
-enum class GfxScale {
-  None = 0,
-  Scale2x = 1,
-  Nearest2x = 2,
-  Scaneline2x = 3,
-};
-
-typedef std::unique_ptr<GfxTransform> gfx_transform_ptr;
-gfx_transform_ptr get_transform(GfxScale scale);
-
-class GLSLFrameBuffer : public FrameBuffer {
- public:
-  GLSLFrameBuffer(void);
-  virtual ~GLSLFrameBuffer(void);
-
-  virtual void resize(short width, short height);
-  virtual void render(void);
-  virtual void flip(void);
-
-  void render_screen(float *modelview);
+  void render(void);
 
   void init(void);
 
  private:
-  std::unique_ptr<GfxTransform> _transform;
-  GfxScale _scale;
+  FrameBuffer *m_fb;
 
   ShaderProgram _program;
   GLuint _screen_buffer;
@@ -216,19 +170,17 @@ typedef std::lock_guard<std::mutex> mtx_lock;
 
 #if OPENGL_LEGACY
 
-class GLFrameBuffer : public FrameBuffer {
+class GLRender {
  public:
-  GLFrameBuffer(void);
-  virtual ~GLFrameBuffer(void);
+  GLRender(FrameBuffer *fb);
+  virtual ~GLRender(void);
 
-  virtual void resize(short width, short height);
-  virtual void render(void);
-  virtual void flip(void);
+  void render(void);
 
   void init(void);
 
  private:
-  std::unique_ptr<GfxTransform> _transform;
-  GfxScale _scale;
+  FrameBuffer *m_fb;
+  GfxScale m_scale;
 };
 #endif

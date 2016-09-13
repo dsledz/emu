@@ -35,11 +35,7 @@ Machine::Machine(void)
       m_switches(),
       m_ports(),
       m_debugger(),
-      m_default_fb(),
-      m_fb(&m_default_fb),
-      m_screen_width(0),
-      m_screen_height(0),
-      m_screen_rot(FrameBuffer::ROT0) {}
+      m_fb(nullptr) {}
 
 Machine::~Machine(void) {
   /* Make sure all devices are disconnected */
@@ -106,7 +102,7 @@ Device *Machine::dev(const std::string &name) {
   throw KeyError(name);
 }
 
-FrameBuffer *Machine::screen(void) { return m_fb; }
+FrameBuffer *Machine::screen(void) { return m_fb.get(); }
 
 void Machine::add_ioport(const std::string &name) {
   m_ports.insert(make_pair(name, IOPort()));
@@ -174,22 +170,9 @@ void Machine::set_line(Device *dev, Line line, LineState state) {
   dev->line(line, state);
 }
 
-void Machine::add_screen(short width, short height,
+void Machine::add_screen(short width, short height, GfxScale scale,
                          FrameBuffer::Rotation rotation) {
-  m_screen_width = width;
-  m_screen_height = height;
-  m_screen_rot = rotation;
-  if (m_fb != NULL) {
-    m_fb->set_rotation(m_screen_rot);
-    m_fb->resize(m_screen_width, m_screen_height);
-  }
-}
-
-void Machine::set_frame_buffer(FrameBuffer *screen) {
-  /* XXX: Not exception safe */
-  m_fb = screen;
-  m_fb->set_rotation(m_screen_rot);
-  m_fb->resize(m_screen_width, m_screen_height);
+  m_fb = FrameBuffer_ptr(new FrameBuffer(width, height, GfxScale::None, rotation));
 }
 
 void Machine::set_debugger(Debugger *debugger) {

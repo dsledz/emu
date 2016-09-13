@@ -112,13 +112,14 @@ class Machine {
   void set_line(const std::string &name, Line line, LineState state);
   void set_line(Device *dev, Line line, LineState state);
 
-  void add_screen(short width, short height,
+  void add_screen(short width, short height, GfxScale scale = GfxScale::None,
                   FrameBuffer::Rotation rotation = FrameBuffer::ROT0);
+
   FrameBuffer *screen(void);
 
-  short get_screen_width(void) { return m_screen_width; }
+  short get_screen_width(void) { return m_fb ? m_fb->width() : 0; }
 
-  short get_screen_height(void) { return m_screen_height; }
+  short get_screen_height(void) { return m_fb ? m_fb->height() : 0; }
 
   void set_time(EmuTime now);
   EmuTime now(void);
@@ -139,11 +140,7 @@ class Machine {
   std::map<std::string, IOPort> m_ports;
 
   Debugger *m_debugger;
-  FrameBuffer m_default_fb;
-  FrameBuffer *m_fb;
-  short m_screen_width;
-  short m_screen_height;
-  FrameBuffer::Rotation m_screen_rot;
+  FrameBuffer_ptr m_fb;
 };
 
 typedef std::unique_ptr<Machine> machine_ptr;

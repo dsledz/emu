@@ -68,7 +68,7 @@ Galaga::Galaga(const std::string &rom)
       m_snd_nmi(false) {
   unsigned hertz = 18432000;
 
-  add_screen(224, 288, FrameBuffer::ROT90);
+  add_screen(224, 288, GfxScale::None, FrameBuffer::ROT90);
 
   m_bus = AddressBus16x8_ptr(new AddressBus16x8());
 

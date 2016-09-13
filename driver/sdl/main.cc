@@ -86,16 +86,16 @@ class SDLEmulator : public Emulator {
 
     SDL_GL_SetSwapInterval(1);
 
-    m_frame_buffer = std::unique_ptr<GLFrameBuffer>(new GLFrameBuffer());
-    machine()->set_frame_buffer(m_frame_buffer.get());
-    m_frame_buffer->init();
-
     SDL_Event event;
     while (SDL_PollEvent(&event)) on_event(&event);
   }
 
   virtual void start(void) {
     machine()->load_rom(options()->rom);
+
+    m_fb = std::unique_ptr<GLRender>(new GLRender(machine()->screen()));
+    m_fb->init();
+
     machine()->reset();
 
     set_state(EmuState::Running);
@@ -103,7 +103,7 @@ class SDLEmulator : public Emulator {
 
     while (get_state() == EmuState::Running) {
       glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
-      m_frame_buffer->render();
+      m_fb->render();
       SDL_GL_SwapWindow(m_window);
 
       SDL_Event event;
@@ -147,7 +147,7 @@ class SDLEmulator : public Emulator {
   SDL_Window *m_window;
   SDL_GLContext m_glcontext;
   GLint m_fbo;
-  std::unique_ptr<GLFrameBuffer> m_frame_buffer;
+  std::unique_ptr<GLRender> m_fb;
 
   std::future<void> task;
 };

@@ -29,20 +29,17 @@
 
 using namespace EMU;
 
-#define GL_SCREEN GLFrameBuffer
+#define GL_SCREEN GLRender
 
 class OSXEmulator : public Emulator {
  public:
-  OSXEmulator(const Options &options) : Emulator(options) {
-    _screen = std::unique_ptr<GL_SCREEN>(new GL_SCREEN());
-    machine()->set_frame_buffer(_screen.get());
-
-    _screen->init();
-  }
+  OSXEmulator(const Options &options) : Emulator(options) { }
 
   virtual ~OSXEmulator(void) {}
 
   void load(void) {
+    _screen = std::unique_ptr<GL_SCREEN>(new GL_SCREEN(machine()->screen()));
+    _screen->init();
     machine()->load_rom(options()->rom);
     machine()->reset();
 
