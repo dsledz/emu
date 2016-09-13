@@ -23,6 +23,7 @@ target_link_libraries(machine
 
 if (BUILD_TESTING)
     add_executable(machine-check
+        dkong_test.cc
         galaga_test.cc)
     target_link_libraries(machine-check
         machine

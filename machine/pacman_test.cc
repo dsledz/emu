@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013, Dan Sledz * All rights reserved.
+ * Copyright (c) 2016, Dan Sledz
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,17 +26,19 @@
 #include "gtest/gtest.h"
 
 #include "emu/emu.h"
-#include "emu/test.h"
-#include "machine/gb/gb.h"
+
+#include "machine/pacman.h"
 
 using namespace EMU;
-using namespace EMUTest;
 
-TEST(GameboyTest, run) {
-  GBMachine::Gameboy machine("tetris.gb");
-  EmuTime runtime = get_runtime("GB_RUNTIME");
 
-  machine.reset();
+TEST(PacmanTest, run100) {
+  Arcade::Pacman machine("pacman");
+
+  Core::log.set_level(LogLevel::Debug);
   machine.poweron();
-  machine.run_forward(runtime);
+  machine.reset();
+  machine.run_forward(sec(10));
 }
+
+TEST(PacmanTest, load) { Arcade::Pacman machine(""); }

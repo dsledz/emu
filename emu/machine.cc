@@ -35,7 +35,8 @@ Machine::Machine(void)
       m_switches(),
       m_ports(),
       m_debugger(),
-      m_screen(NULL),
+      m_default_fb(),
+      m_fb(&m_default_fb),
       m_screen_width(0),
       m_screen_height(0),
       m_screen_rot(FrameBuffer::ROT0) {}
@@ -105,7 +106,7 @@ Device *Machine::dev(const std::string &name) {
   throw KeyError(name);
 }
 
-FrameBuffer *Machine::screen(void) { return m_screen; }
+FrameBuffer *Machine::screen(void) { return m_fb; }
 
 void Machine::add_ioport(const std::string &name) {
   m_ports.insert(make_pair(name, IOPort()));
@@ -178,17 +179,17 @@ void Machine::add_screen(short width, short height,
   m_screen_width = width;
   m_screen_height = height;
   m_screen_rot = rotation;
-  if (m_screen != NULL) {
-    m_screen->set_rotation(m_screen_rot);
-    m_screen->resize(m_screen_width, m_screen_height);
+  if (m_fb != NULL) {
+    m_fb->set_rotation(m_screen_rot);
+    m_fb->resize(m_screen_width, m_screen_height);
   }
 }
 
 void Machine::set_frame_buffer(FrameBuffer *screen) {
   /* XXX: Not exception safe */
-  m_screen = screen;
-  m_screen->set_rotation(m_screen_rot);
-  m_screen->resize(m_screen_width, m_screen_height);
+  m_fb = screen;
+  m_fb->set_rotation(m_screen_rot);
+  m_fb->resize(m_screen_width, m_screen_height);
 }
 
 void Machine::set_debugger(Debugger *debugger) {

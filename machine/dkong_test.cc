@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013, Dan Sledz * All rights reserved.
+ * Copyright (c) 2016, Dan Sledz
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,17 +26,31 @@
 #include "gtest/gtest.h"
 
 #include "emu/emu.h"
-#include "emu/test.h"
-#include "machine/gb/gb.h"
+
+#include "machine/dkong.h"
 
 using namespace EMU;
-using namespace EMUTest;
 
-TEST(GameboyTest, run) {
-  GBMachine::Gameboy machine("tetris.gb");
-  EmuTime runtime = get_runtime("GB_RUNTIME");
 
-  machine.reset();
+TEST(DonkeyKongTest, run100) {
+  Arcade::DonkeyKong machine("");
+
   machine.poweron();
-  machine.run_forward(runtime);
+  machine.reset();
+  machine.run_forward(sec(10));
 }
+
+TEST(DonkeyKongTest, input) {
+  Arcade::DonkeyKong machine("");
+
+  machine.poweron();
+  machine.reset();
+
+  machine.run_forward(sec(5));
+  machine.send_input(InputKey::Coin1, true);
+  machine.run_forward(sec(1));
+  machine.send_input(InputKey::Coin1, false);
+  machine.run_forward(sec(1));
+}
+
+TEST(DonkeyKongTest, load) { Arcade::DonkeyKong machine(""); }

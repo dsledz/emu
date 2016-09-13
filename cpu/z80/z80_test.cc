@@ -85,13 +85,13 @@ class Zexall : public Machine {
 };
 
 TEST(Zexall_test, test) {
-  Zexall zex;
+  Zexall machine;
   EmuTime runtime = get_runtime("Z80_RUNTIME");
 
   Core::log.set_level(LogLevel::Debug);
 
   // Run the first few seconds of the rom
-  zex.poweron();
-  zex.reset();
-  zex.run_forward(runtime);
+  machine.poweron();
+  machine.reset();
+  machine.run_forward(runtime);
 }

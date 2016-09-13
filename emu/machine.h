@@ -139,7 +139,8 @@ class Machine {
   std::map<std::string, IOPort> m_ports;
 
   Debugger *m_debugger;
-  FrameBuffer *m_screen;
+  FrameBuffer m_default_fb;
+  FrameBuffer *m_fb;
   short m_screen_width;
   short m_screen_height;
   FrameBuffer::Rotation m_screen_rot;

@@ -38,11 +38,9 @@ TEST(NesTest, mario3) {
   EmuTime runtime = get_runtime("NES_RUNTIME");
 
   machine.load_rom("mario3.nes");
-  FrameBuffer fb;
 
   Core::log.set_level(LogLevel::Info);
   machine.reset();
-  machine.set_frame_buffer(&fb);
   machine.poweron();
   machine.run_forward(runtime);
 }

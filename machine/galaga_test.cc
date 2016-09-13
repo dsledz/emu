@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013, Dan Sledz * All rights reserved.
+ * Copyright (c) 2013, Dan Sledz
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,51 +31,25 @@
 
 using namespace EMU;
 
-#if 0
-TEST(GalagaTest, run10)
-{
-    Arcade::Galaga machine("");
-    bool press = false;
-    /* 10 seconds of runtime */
-    unsigned steps = 6000 * 10;
-    for (unsigned i = 0; i < steps; i++) {
-        machine.run();
-    }
-    machine.add_timer(Time(msec(100)), [&]() {
-            press = !press;
-            machine.send_input(InputKey::Start1, press);
-        },
-        true);
-    for (unsigned i = 0; i < steps*2; i++) {
-        machine.run();
-    }
-}
-#endif
 
 TEST(GalagaTest, run100) {
   Arcade::Galaga machine("");
-  /* 10 seconds of runtime */
-  unsigned steps = 6000 * 10;
-  for (unsigned i = 0; i < steps; i++) {
-    machine.run();
-  }
+
+  machine.poweron();
+  machine.reset();
+  machine.run_forward(sec(10));
 }
 
 TEST(GalagaTest, input) {
   Arcade::Galaga machine("");
 
-  unsigned steps = 6000 * 6;
-  for (unsigned i = 0; i < steps; i++) {
-    machine.run();
-  }
+  machine.poweron();
+  machine.reset();
+  machine.run_forward(sec(5));
   machine.send_input(InputKey::Coin1, true);
-  for (unsigned i = 0; i < 1000; i++) {
-    machine.run();
-  }
+  machine.run_forward(sec(1));
   machine.send_input(InputKey::Coin1, false);
-  for (unsigned i = 0; i < 1000; i++) {
-    machine.run();
-  }
+  machine.run_forward(sec(1));
 }
 
 TEST(GalagaTest, load) { Arcade::Galaga machine(""); }
