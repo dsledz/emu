@@ -73,7 +73,7 @@ class SDLEmulator : public Emulator {
 
     m_window = SDL_CreateWindow(
         "Emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        machine()->get_screen_width() * 2, machine()->get_screen_height() * 2,
+        machine()->fb()->width() * 2, machine()->fb()->height() * 2,
         SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
     if (m_window == NULL) throw SDLException();
 

@@ -220,14 +220,14 @@ machine_ptr MachineLoader::load(Options *opts) {
   for (auto it = m_machines.begin(); it != m_machines.end(); it++) {
     if ((*it)->name == opts->driver) return (*it)->fn(opts);
   }
-  throw KeyError(opts->driver);
+  throw DriverError(opts->driver);
 }
 
 const struct MachineDefinition *MachineLoader::find(const std::string &name) {
   for (auto it = m_machines.begin(); it != m_machines.end(); it++) {
     if ((*it)->name == name) return *it;
   }
-  throw KeyError(name);
+  throw DriverError(name);
 }
 
 std::list<MachineDefinition *>::const_iterator MachineLoader::start(void) {

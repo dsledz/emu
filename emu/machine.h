@@ -37,11 +37,17 @@ using namespace Core;
 namespace EMU {
 
 struct KeyError : public CoreException {
-  KeyError(const std::string &key) : CoreException("Missing Key: "), key(key) {
-    msg += key;
+  KeyError(const std::string &key)
+      : CoreException("Unknown key: ") {
+      msg += key;
   }
+};
 
-  std::string key;
+struct DriverError : public CoreException {
+  DriverError(const std::string &dev):
+      CoreException("Unknown device: ") {
+        msg += dev;
+    }
 };
 
 /**
@@ -116,10 +122,7 @@ class Machine {
                   FrameBuffer::Rotation rotation = FrameBuffer::ROT0);
 
   FrameBuffer *screen(void);
-
-  short get_screen_width(void) { return m_fb ? m_fb->width() : 0; }
-
-  short get_screen_height(void) { return m_fb ? m_fb->height() : 0; }
+  FrameBuffer *fb(void) { return m_fb.get(); }
 
   void set_time(EmuTime now);
   EmuTime now(void);

@@ -43,8 +43,8 @@ class SFMLException : public Core::CoreException {
 class SFMLEmulator : public Emulator {
  public:
   SFMLEmulator(const Options &options) : Emulator(options), m_window(nullptr) {
-    sf::VideoMode vm(machine()->get_screen_width() * 2,
-                     machine()->get_screen_height() * 2);
+    sf::VideoMode vm(machine()->fb()->width() * 2,
+                     machine()->fb()->height() * 2);
 
     m_window = std::unique_ptr<sf::Window>(new sf::Window(
         vm, "OpenGL", sf::Style::Default, sf::ContextSettings(32)));

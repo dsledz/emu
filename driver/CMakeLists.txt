@@ -11,6 +11,15 @@ target_link_libraries(driver
     cpu
     machine)
 
+if (BUILD_TESTING)
+    add_executable(emulator-check
+        emulator_test.cc)
+    target_link_libraries(emulator-check
+        driver
+        gtest gtest_main)
+    add_test(emulator-check emulator-check)
+endif (BUILD_TESTING)
+
 include_directories(${OPENGL_INCLUDE_DIR})
 
     message("Building OSX support.")

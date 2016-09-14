@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Dan Sledz
+ * Copyright (c) 2016, Dan Sledz
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -22,49 +22,38 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#pragma once
 
-#include "emu/emu.h"
+#include "gtest/gtest.h"
 
-namespace EMU {
+#include "driver/emulator.h"
 
-class Emulator {
+using namespace EMU;
+
+class TestEmulator : public Emulator {
  public:
-  enum class EmuState {
-    Running,
-    Paused,
-    Stopped,
-  };
+  TestEmulator(const Options &options) : Emulator(options) {}
 
-  Emulator(const Options &options);
-  virtual ~Emulator(void);
+  virtual void start(void) {
+    machine()->load_rom(options()->rom);
 
-  virtual void start(void) = 0;
-  virtual void stop(void);
-  virtual void pause(void);
-  virtual void reset(void);
-  virtual void render(void);
-  virtual void key_event(InputKey key, bool pressed);
+    machine()->reset();
+    set_state(EmuState::Running);
+  }
 
-  Machine *machine(void);
-  const Options *options(void);
-  FrameBuffer *fb(void);
-
-  void do_execute(void);
-
- protected:
-  EmuState get_state(void);
-  void set_state(EmuState state);
+  virtual void stop(void) {
+    Emulator::stop();
+    task.get();
+  }
 
  private:
-  std::mutex mtx;
-  std::condition_variable cv;
   std::future<void> task;
+};
 
-  TaskScheduler m_scheduler;
-  RealTimeClock m_clock;
-  Emulator::EmuState m_state;
-  Options m_options;
-  machine_ptr m_machine;
-};
-};
+TEST(EmulatorTest, galaga) {
+  Options options;
+  options.driver = "galaga";
+
+  TestEmulator emu(options);
+
+  emu.start();
+}
