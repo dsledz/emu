@@ -91,6 +91,8 @@ Pacman::Pacman(const std::string &rom)
 
 Pacman::~Pacman(void) {}
 
+void Pacman::load_rom(const std::string &rom) { }
+
 byte_t Pacman::io_read(offset_t offset) { return 0; }
 
 void Pacman::io_write(offset_t offset, byte_t value) {
