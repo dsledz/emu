@@ -102,11 +102,7 @@ void Pacman::init_bus(void) {
   m_bus->add(0x4000, &m_gfx->vram());
   m_bus->add(0x4400, &m_gfx->cram());
 
-  m_bus->add(0x4800, 0x4bff, AddressBus16x8::DefaultRead(),
-             AddressBus16x8::DefaultWrite());
-
-  m_bus->add(0x4C00, 0x4fef, READ_CB(Pacman::ram_read, this),
-             WRITE_CB(Pacman::ram_write, this));
+  m_bus->add(0x4800, &m_ram);
 
   m_bus->add(0x4ff0, 0x4fff, READ_CB(PacmanGfx::spr_read, m_gfx.get()),
              WRITE_CB(PacmanGfx::spr_write, m_gfx.get()));
@@ -140,8 +136,7 @@ void Pacman::init_bus(void) {
 
   m_bus->add(0xC400, &m_gfx->cram());
 
-  m_bus->add(0xCC00, 0xCfef, READ_CB(Pacman::ram_read, this),
-             WRITE_CB(Pacman::ram_write, this));
+  m_bus->add(0xC800, &m_ram);
 
   // Pacman waits for an interrupt before setting the stack pointer
   m_bus->add(0xFFFD, 0xFFFF, AddressBus16x8::DefaultRead(),

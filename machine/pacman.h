@@ -122,6 +122,8 @@ class Pacman : public Machine {
   Pacman(const std::string &rom);
   virtual ~Pacman(void);
 
+  virtual void load_rom(const std::string &rom);
+
  private:
   byte_t ram_read(offset_t offset) { return m_ram.read8(offset); }
   void ram_write(offset_t offset, byte_t value) {
