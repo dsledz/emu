@@ -157,6 +157,8 @@ void Device::update(DeviceUpdate &update) {
       if (m_target_status == DeviceStatus::Off)
         throw TaskCanceled("Device Off");
       break;
+    case DeviceUpdateType::None:
+      break;
     default:
       LOG_ERROR("Unhanded device update: ", update);
       assert(false);
@@ -179,7 +181,6 @@ size_t IODevice::size(void) { return m_size; }
 ClockedDevice::ClockedDevice(Machine *machine, const std::string &name,
                              unsigned hertz)
     : Device(machine, name),
-      EmuClockBase(Device::m_name),
       m_hertz(hertz),
       m_used(0),
       m_avail(0) {
@@ -189,7 +190,7 @@ ClockedDevice::ClockedDevice(Machine *machine, const std::string &name,
 ClockedDevice::~ClockedDevice(void) { m_machine->detach_clocked(this); }
 
 void ClockedDevice::wait_icycles(Cycles cycles) {
-  while (m_avail < cycles) {
+  while (m_avail <= 0) {
     time_advance();
     idle();
   }
@@ -207,14 +208,21 @@ void ClockedDevice::update(DeviceUpdate &update) {
   }
 }
 
-void ClockedDevice::time_forward(EmuTime now) {
+bool ClockedDevice::time_forward(EmuTime now) {
+  if (now <= m_current)
+    return false;
+
   m_target = now;
   m_avail = Cycles(m_target - m_current, m_hertz);
+  return true;
 }
 
-void ClockedDevice::time_set(EmuTime now) {
-  DeviceUpdate update((EmuClockUpdate(now)));
-  m_channel.put(update);
+bool ClockedDevice::time_set(EmuTime now) {
+  if (!time_forward(now))
+    return false;
+  m_channel.put(DeviceUpdate());
+  m_task.wake();
+  return true;
 }
 
 GfxDevice::GfxDevice(Machine *machine, const std::string &name, unsigned hertz)

@@ -39,7 +39,7 @@ class Clock {
  private:
   void task_fn(void);
   void update_stats(void);
-  void publish(void);
+  bool publish(void);
 
   TaskScheduler m_scheduler;
   std::list<ClockedDevice *> m_devs;

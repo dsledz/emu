@@ -96,18 +96,29 @@ struct Cycles {
 
   inline bool operator<(const struct Cycles &rhs) const { return v < rhs.v; }
 
+  inline bool operator<=(const struct Cycles &rhs) const { return v <= rhs.v; }
+
+  inline bool operator<=(int rhs) const { return v <= rhs; }
+
   inline bool operator==(const struct Cycles &rhs) const { return v == rhs.v; }
 
   int64_t v = 0;
 };
 
+inline std::ostream &operator<<(std::ostream &os, const Cycles &c) {
+  os << c.v;
+  return os;
+}
+
 typedef Time EmuTime;
 
 struct EmuClockUpdate {
   EmuClockUpdate(void) = default;
-  EmuClockUpdate(EmuTime now) : now(now) {}
+  EmuClockUpdate(EmuTime now) : EmuClockUpdate(now, false) { }
+  EmuClockUpdate(EmuTime now, bool stop) : now(now), stop(stop) {}
 
   EmuTime now;
+  bool stop;
 };
 
 class EmuClockBase {

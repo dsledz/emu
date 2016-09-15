@@ -144,12 +144,10 @@ class IODevice : public Device {
   size_t m_size;
 };
 
-class ClockedDevice : public Device, public EmuClockBase {
+class ClockedDevice : public Device {
  public:
   ClockedDevice(Machine *machine, const std::string &name, unsigned hertz);
   virtual ~ClockedDevice(void);
-
-  virtual EmuClockBase *clock(void) { return this; }
 
   inline void add_icycles(unsigned cycles) { add_icycles(Cycles(cycles)); }
 
@@ -165,8 +163,10 @@ class ClockedDevice : public Device, public EmuClockBase {
     Task::yield();
   }
 
-  void time_forward(EmuTime now);
-  virtual void time_set(EmuTime now);
+  bool time_forward(EmuTime now);
+  bool time_set(EmuTime now);
+  inline const EmuTime time_current(void) const { return m_current; }
+  inline const EmuTime time_target(void) const { return m_target; }
 
  protected:
   virtual void update(DeviceUpdate &update);
@@ -181,6 +181,9 @@ class ClockedDevice : public Device, public EmuClockBase {
   unsigned m_hertz;
   Cycles m_used;
   Cycles m_avail;
+
+  EmuTime m_target;
+  EmuTime m_current;
 };
 
 class GfxDevice : public ClockedDevice {
