@@ -26,6 +26,7 @@
 
 #include "core/bits.h"
 #include "core/exception.h"
+#include "emu/clock.h"
 #include "emu/device.h"
 #include "emu/dipswitch.h"
 #include "emu/options.h"
@@ -87,8 +88,12 @@ class Machine {
   void add_device(Device *dev);
   void remove_device(Device *dev);
 
-  void add_clock(EmuClockBase *clock) { m_sim_clock.add_clock(clock); }
-  void remove_clock(EmuClockBase *clock) { m_sim_clock.remove_clock(clock); }
+  void attach_clocked(ClockedDevice *dev) {
+    m_clock.attach_clocked(dev);
+  }
+  void detach_clocked(ClockedDevice *dev) {
+    m_clock.detach_clocked(dev);
+  }
 
   /**
    * Declare an IO port with the name of @a name.
@@ -124,10 +129,9 @@ class Machine {
   FrameBuffer *screen(void);
   FrameBuffer *fb(void) { return m_fb.get(); }
 
-  void set_time(EmuTime now);
   EmuTime now(void);
 
-  TaskScheduler *get_scheduler(void) { return &m_scheduler; }
+  TaskScheduler *get_scheduler(void) { return m_clock.sched(); }
 
  protected:
   void log(LogLevel level, const std::string fmt, ...);
@@ -135,8 +139,7 @@ class Machine {
  private:
   Device *dev(const std::string &name);
 
-  TaskScheduler m_scheduler;
-  EmuSimClock m_sim_clock;
+  Clock m_clock;
   InputMap m_input;
   std::list<Device *> m_devs;
   std::map<std::string, dipswitch_ptr> m_switches;

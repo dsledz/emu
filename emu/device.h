@@ -165,6 +165,7 @@ class ClockedDevice : public Device, public EmuClockBase {
     Task::yield();
   }
 
+  void time_forward(EmuTime now);
   virtual void time_set(EmuTime now);
 
  protected:

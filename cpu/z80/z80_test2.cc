@@ -85,10 +85,11 @@ TEST(Zexall2_test, test) {
   Zexall2 machine;
   EmuTime runtime = get_runtime("Z80_RUNTIME");
 
-  Core::log.set_level(LogLevel::Debug);
+  Core::log.set_level(LogLevel::Info);
 
   // Run the first few seconds of the rom
   machine.poweron();
   machine.reset();
   machine.run_forward(runtime);
+  machine.poweroff();
 }

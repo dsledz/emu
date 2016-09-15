@@ -28,8 +28,7 @@
 using namespace EMU;
 
 Machine::Machine(void)
-    : m_scheduler(),
-      m_sim_clock(),
+    : m_clock(),
       m_input(),
       m_devs(),
       m_switches(),
@@ -48,9 +47,7 @@ void Machine::poweron(void) {
   for (auto it = m_devs.begin(); it != m_devs.end(); it++) {
     (*it)->set_status(DeviceStatus::Running);
   }
-  for (auto it = m_devs.begin(); it != m_devs.end(); it++) {
-    m_scheduler.run_task((*it)->task());
-  }
+  m_clock.start_clocked();
 }
 
 void Machine::poweroff(void) {
@@ -60,6 +57,7 @@ void Machine::poweroff(void) {
   for (auto it = m_devs.begin(); it != m_devs.end(); it++) {
     (*it)->wait_status(DeviceStatus::Off);
   }
+  m_clock.stop_clocked();
 }
 
 void Machine::add_device(Device *dev) { m_devs.push_back(dev); }
@@ -70,30 +68,13 @@ void Machine::remove_device(Device *dev) {
   m_devs.remove(dev);
 }
 
-void Machine::set_time(EmuTime now) { m_sim_clock.set(now); }
+EmuTime Machine::now(void) { return m_clock.now(); }
 
-EmuTime Machine::now(void) {
-  return m_sim_clock.now();
-}
+void Machine::run(void) { m_clock.wait_for_delta(usec(100)); }
 
-void Machine::run(void) {
-  EmuTime t = m_sim_clock.now();
-  t += usec(100);
-  m_sim_clock.set(t);
-  m_scheduler.wait_for_idle();
-}
+void Machine::run_until(EmuTime target) { m_clock.wait_for_target(target); }
 
-void Machine::run_until(EmuTime target) {
-  m_sim_clock.set(target);
-  m_scheduler.wait_for_idle();
-}
-
-void Machine::run_forward(EmuTime delta) {
-  EmuTime t = m_sim_clock.now();
-  t += delta;
-  m_sim_clock.set(t);
-  m_scheduler.wait_for_idle();
-}
+void Machine::run_forward(EmuTime delta) { m_clock.wait_for_delta(delta); }
 
 Device *Machine::dev(const std::string &name) {
   for (auto it = m_devs.begin(); it != m_devs.end(); it++) {

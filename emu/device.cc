@@ -183,10 +183,10 @@ ClockedDevice::ClockedDevice(Machine *machine, const std::string &name,
       m_hertz(hertz),
       m_used(0),
       m_avail(0) {
-  m_machine->add_clock(this);
+  m_machine->attach_clocked(this);
 }
 
-ClockedDevice::~ClockedDevice(void) { m_machine->remove_clock(this); }
+ClockedDevice::~ClockedDevice(void) { m_machine->detach_clocked(this); }
 
 void ClockedDevice::wait_icycles(Cycles cycles) {
   while (m_avail < cycles) {
@@ -198,14 +198,18 @@ void ClockedDevice::wait_icycles(Cycles cycles) {
 void ClockedDevice::update(DeviceUpdate &update) {
   switch (update.type) {
     case DeviceUpdateType::Clock: {
-      m_target = update.clock.now;
-      m_avail = Cycles(m_target - m_current, m_hertz);
+      time_forward(update.clock.now);
       break;
     }
     default:
       Device::update(update);
       break;
   }
+}
+
+void ClockedDevice::time_forward(EmuTime now) {
+  m_target = now;
+  m_avail = Cycles(m_target - m_current, m_hertz);
 }
 
 void ClockedDevice::time_set(EmuTime now) {

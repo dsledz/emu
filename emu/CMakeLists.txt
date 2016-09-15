@@ -1,4 +1,5 @@
 add_library(emu
+    clock.cc
     device.cc
     emu.cc
     timer_queue.cc
