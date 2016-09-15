@@ -99,12 +99,12 @@ void Thread::thread_main(void) {
 }
 
 void Thread::thread_task(void) {
-  lock_mtx lock(m_mtx);
   m_state = ThreadState::Idle;
   for (;;) {
     // Grab the first task off the runnable queue
     Task *task = m_channel->try_get();
     if (task == nullptr) {
+      lock_mtx lock(m_mtx);
       m_state = ThreadState::Idle;
       m_cv.notify_all();
       try {
@@ -118,18 +118,19 @@ void Thread::thread_task(void) {
     }
     m_state = ThreadState::Running;
     m_task = task;
-    m_cv.notify_all();
     try {
-      unlock_mtx unlock(m_mtx);
       task->run();
     } catch (CoreException &e) {
       LOG_DEBUG("Task exception");
       throw e;
     }
   }
-  m_state = ThreadState::Dead;
-  m_cv.notify_all();
-  curthread = NULL;
+  {
+    lock_mtx lock(m_mtx);
+    m_state = ThreadState::Dead;
+    m_cv.notify_all();
+    curthread = NULL;
+  }
 }
 
 Thread *Thread::cur_thread(void) { return curthread; }
