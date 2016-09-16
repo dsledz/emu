@@ -26,6 +26,7 @@
 
 #include "core/bits.h"
 #include "emu/device.h"
+#include "emu/clock.h"
 
 namespace EMU {
 

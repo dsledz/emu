@@ -30,7 +30,7 @@ using namespace EMU;
 using namespace Device;
 
 Namco06::Namco06(Machine *machine, Device *parent)
-    : ClockedDevice(machine, "06xx", 1000000),
+    : ClockedDevice(machine, machine->clock(), "06xx", 1000000),
       m_reset_line(LineState::Clear),
       m_parent(parent),
       m_children(),

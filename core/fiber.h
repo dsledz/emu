@@ -47,13 +47,15 @@ struct ThreadRegisters {
 
 class ThreadContext {
  public:
-  ThreadContext(uint64_t rip);
+  ThreadContext(uint64_t rip, uint64_t rdi=0);
   ~ThreadContext(void);
 
   void switch_context(ThreadContext *new_context);
+  void initial_switch(ThreadContext *new_context);
 
  private:
   std::vector<uint8_t> m_stack;
+  uint64_t m_rdi;
   ThreadRegisters m_registers;
 };
 

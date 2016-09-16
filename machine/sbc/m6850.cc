@@ -9,7 +9,7 @@ using namespace EMU;
 using namespace Device;
 
 M6850::M6850(Machine *machine, const std::string &name, unsigned hertz)
-    : ClockedDevice(machine, name, hertz),
+    : ClockedDevice(machine, machine->clock(), name, hertz),
       m_reg(),
       m_send(0),
       m_recv(0),

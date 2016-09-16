@@ -7,9 +7,13 @@ using namespace Core;
 
 extern "C" {
 void SwitchContext(ThreadRegisters *old_ctx, ThreadRegisters *new_ctx);
+
+void InitialSwitchContext(ThreadRegisters *old_ctx, ThreadRegisters *new_ctx,
+                        uintptr_t rdi);
 };
 
-ThreadContext::ThreadContext(uint64_t rip) : m_stack(64 * 1024), m_registers() {
+ThreadContext::ThreadContext(uint64_t rip, uint64_t rdi)
+    : m_stack(64 * 1024), m_rdi(rdi), m_registers() {
   uint8_t *stack = &(*m_stack.end());
   // 128 byte red zone
   stack -= 128;
@@ -37,6 +41,13 @@ ThreadContext::switch_context(ThreadContext *saved_ctx) {
   // Swap our registers On return, we'll be in the other context
   // and our return stack will change.
   SwitchContext(&saved_ctx->m_registers, &m_registers);
+}
+
+void __attribute__((noinline))
+ThreadContext::initial_switch(ThreadContext *saved_ctx) {
+  // Swap our registers On return, we'll be in the other context
+  // and our return stack will change.
+  InitialSwitchContext(&saved_ctx->m_registers, &m_registers, m_rdi);
 }
 
 /**

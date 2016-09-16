@@ -28,7 +28,7 @@
 using namespace TG16Machine;
 
 VDC::VDC(TG16 *tg16, unsigned hertz)
-    : ClockedDevice(tg16, "vdc", hertz),
+    : ClockedDevice(tg16, tg16->clock(), "vdc", hertz),
       m_sprites(0),
       m_hpos(0),
       m_vpos(0),

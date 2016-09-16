@@ -2,6 +2,7 @@ add_library(emu
     clock.cc
     device.cc
     emu.cc
+    gfx.cc
     timer_queue.cc
     input.cc
     machine.cc

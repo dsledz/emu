@@ -94,6 +94,9 @@ class Machine {
   void detach_clocked(ClockedDevice *dev) {
     m_clock.detach_clocked(dev);
   }
+  Clock *clock() {
+    return &m_clock;
+  }
 
   /**
    * Declare an IO port with the name of @a name.

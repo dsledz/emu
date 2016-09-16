@@ -54,10 +54,10 @@ void Machine::poweroff(void) {
   for (auto it = m_devs.begin(); it != m_devs.end(); it++) {
     (*it)->set_status(DeviceStatus::Off);
   }
+  m_clock.stop_clocked();
   for (auto it = m_devs.begin(); it != m_devs.end(); it++) {
     (*it)->wait_status(DeviceStatus::Off);
   }
-  m_clock.stop_clocked();
 }
 
 void Machine::add_device(Device *dev) { m_devs.push_back(dev); }

@@ -33,7 +33,7 @@ using namespace Z80;
 
 Z80Cpu::Z80Cpu(Machine *machine, const std::string &name, unsigned hertz,
                AddressBus16x8 *bus)
-    : ClockedDevice(machine, name, hertz),
+    : ClockedDevice(machine, machine->clock(), name, hertz),
       _icycles(0),
       m_op(),
       m_R(),
