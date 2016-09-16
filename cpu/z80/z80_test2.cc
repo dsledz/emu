@@ -48,6 +48,7 @@ class Zexall2 : public Machine {
     state.Phase = CpuPhase::Interrupt;
 
     ram.assign(rom.cbegin(), rom.cend());
+    ram.resize(0x10000);
     bus->add(0x0000, ram);
 
     bus->add(0xFFFF, &m_data);

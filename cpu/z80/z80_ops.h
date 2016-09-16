@@ -40,7 +40,7 @@ ADC(Z80State *state, byte_t &dest, byte_t arg) {
   state->AF.b.f.H = bit_isset(dest ^ arg ^ result, 4);
   state->AF.b.f.X = bit_isset(result, 3);
   state->AF.b.f.V = bit_isset((dest ^ arg ^ 0x80) & (arg ^ result), 7);
-  state->AF.b.f.N = false;
+  state->AF.b.f.N = 0;
   state->AF.b.f.C = bit_isset(result, 8);
 
   dest = (byte_t)result;
@@ -56,7 +56,7 @@ ADC16(Z80State *state, uint16_t &wdest, uint16_t arg) {
   state->AF.b.f.H = bit_isset(wdest ^ arg ^ result, 12);
   state->AF.b.f.X = bit_isset(result, 11);
   state->AF.b.f.V = bit_isset((wdest ^ arg ^ 0x8000) & (arg ^ result), 15);
-  state->AF.b.f.N = false;
+  state->AF.b.f.N = 0;
   state->AF.b.f.C = bit_isset(result, 16);
 
   wdest = result;
@@ -72,7 +72,7 @@ ADD(Z80State *state, byte_t &dest, byte_t arg) {
   state->AF.b.f.H = bit_isset(dest ^ arg ^ result, 4);
   state->AF.b.f.X = bit_isset(result, 3);
   state->AF.b.f.V = bit_isset(dest ^ arg ^ result, 7);
-  state->AF.b.f.N = false;
+  state->AF.b.f.N = 0;
   state->AF.b.f.C = bit_isset(result, 8);
 
   dest = result;
@@ -95,27 +95,20 @@ static inline void __attribute__((__used__))
 AND(Z80State *state, reg8_t &dest, reg8_t arg) {
   byte_t result = dest & arg;
 
-  state->AF.b.f.S = bit_isset(result, 7);
+  state->AF.b.l = (result & 0xA4) | 0x10;
   state->AF.b.f.Z = (result & 0xff) == 0;
-  state->AF.b.f.Y = bit_isset(result, 5);
-  state->AF.b.f.H = true;
-  state->AF.b.f.X = bit_isset(result, 3);
   state->AF.b.f.V = CALC_PARITY(result);
-  state->AF.b.f.N = false;
-  state->AF.b.f.C = false;
 
   dest = result;
 }
 
 static inline void __attribute__((__used__))
 BIT_TEST(Z80State *state, byte_t value, int bit) {
-  state->AF.b.f.S = bit == 7 && bit_isset(value, bit);
+
+  state->AF.b.l = (value & (0x24 | 1 << bit));
   state->AF.b.f.Z = !bit_isset(value, bit);
-  state->AF.b.f.Y = bit == 5 && bit_isset(value, bit);
   state->AF.b.f.H = 1;
-  state->AF.b.f.X = bit == 3 && bit_isset(value, bit);
   state->AF.b.f.V = !bit_isset(value, bit);
-  state->AF.b.f.N = false;
 }
 
 static inline void __attribute__((__used__))
@@ -133,9 +126,7 @@ BIT_SET(Z80State *state, byte_t &dest, byte_t value, int bit) {
 }
 
 static inline int __attribute__((__used__)) CALC_PARITY(reg8_t reg) {
-  return (0 == (bit_isset(reg, 0) ^ bit_isset(reg, 1) ^ bit_isset(reg, 2) ^
-                bit_isset(reg, 3) ^ bit_isset(reg, 4) ^ bit_isset(reg, 5) ^
-                bit_isset(reg, 6) ^ bit_isset(reg, 7)));
+  return (0x6996 >> (reg >> 4) ^ (reg & 0xf)) & 1;
 }
 
 static inline void __attribute__((__used__))
@@ -471,7 +462,7 @@ INC(Z80State *state, reg8_t &dest) {
   state->AF.b.f.H = bit_isset(dest ^ 1 ^ result, 4);
   state->AF.b.f.X = bit_isset(result, 3);
   state->AF.b.f.V = (dest == 0x7F);
-  state->AF.b.f.N = false;
+  state->AF.b.f.N = 0;
 
   dest = static_cast<reg8_t>(result);
 }
@@ -582,14 +573,12 @@ static inline void __attribute__((__used__))
 OR(Z80State *state, reg8_t &dest, reg8_t arg) {
   byte_t result = dest | arg;
 
+  state->AF.b.l = 0;
   state->AF.b.f.S = bit_isset(result, 7);
   state->AF.b.f.Z = (result & 0xff) == 0;
   state->AF.b.f.Y = bit_isset(result, 5);
-  state->AF.b.f.H = false;
   state->AF.b.f.X = bit_isset(result, 3);
   state->AF.b.f.V = CALC_PARITY(result);
-  state->AF.b.f.N = false;
-  state->AF.b.f.C = false;
 
   dest = result;
 }
@@ -637,13 +626,12 @@ static inline void __attribute__((__used__))
 RL(Z80State *state, byte_t &dest, byte_t value) {
   byte_t result = (value << 1) | state->AF.b.f.C;
 
+  state->AF.b.l = 0;
   state->AF.b.f.S = bit_isset(result, 7);
   state->AF.b.f.Z = (result == 0);
   state->AF.b.f.Y = bit_isset(result, 5);
-  state->AF.b.f.H = false;
   state->AF.b.f.X = bit_isset(result, 3);
   state->AF.b.f.V = CALC_PARITY(result);
-  state->AF.b.f.N = false;
   state->AF.b.f.C = bit_isset(value, 7);
 
   dest = result;
@@ -663,13 +651,12 @@ static inline void __attribute__((__used__))
 RLC(Z80State *state, byte_t &dest, byte_t value) {
   byte_t result = (value << 1) | ((value & 0x80) >> 7);
 
+  state->AF.b.l = 0;
   state->AF.b.f.S = bit_isset(result, 7);
   state->AF.b.f.Z = (result == 0);
   state->AF.b.f.Y = bit_isset(result, 5);
-  state->AF.b.f.H = false;
   state->AF.b.f.X = bit_isset(result, 3);
   state->AF.b.f.V = CALC_PARITY(result);
-  state->AF.b.f.N = false;
   state->AF.b.f.C = (value & 0x80) != 0;
 
   dest = result;
@@ -692,27 +679,26 @@ static inline void __attribute__((__used__)) RLD(Z80State *state) {
                    (state->AF.b.h & 0x0F) | ((value & 0x0F) << 4));
   state->AF.b.h = (state->AF.b.h & 0xF0) | ((value & 0xF0) >> 4);
 
+  state->AF.b.l = state->AF.b.f.C;
   state->AF.b.f.S = bit_isset(state->AF.b.h, 7);
   state->AF.b.f.Z = state->AF.b.h == 0;
   state->AF.b.f.Y = bit_isset(state->AF.b.h, 5);
-  state->AF.b.f.H = false;
+  state->AF.b.f.H = 0;
   state->AF.b.f.X = bit_isset(state->AF.b.h, 3);
   state->AF.b.f.V = CALC_PARITY(state->AF.b.h);
-  state->AF.b.f.N = false;
+  state->AF.b.f.N = 0;
 }
 
 static inline void __attribute__((__used__))
 RR(Z80State *state, byte_t &dest, byte_t value) {
   byte_t result = (value >> 1) | (state->AF.b.f.C ? 0x80 : 0x00);
 
+  state->AF.b.l = value & 0x01;
   state->AF.b.f.S = bit_isset(result, 7);
   state->AF.b.f.Z = (result == 0);
   state->AF.b.f.Y = bit_isset(result, 5);
-  state->AF.b.f.H = false;
   state->AF.b.f.X = bit_isset(result, 3);
   state->AF.b.f.V = CALC_PARITY(result);
-  state->AF.b.f.N = false;
-  state->AF.b.f.C = (value & 0x01) != 0;
 
   dest = result;
 }
@@ -731,13 +717,12 @@ static inline void __attribute__((__used__))
 RRC(Z80State *state, byte_t &dest, byte_t value) {
   byte_t result = (value >> 1) | (value & 0x01 ? 0x80 : 0x00);
 
+  state->AF.b.l = 0;
   state->AF.b.f.S = bit_isset(result, 7);
   state->AF.b.f.Z = (result == 0);
   state->AF.b.f.Y = bit_isset(result, 5);
-  state->AF.b.f.H = false;
   state->AF.b.f.X = bit_isset(result, 3);
   state->AF.b.f.V = CALC_PARITY(result);
-  state->AF.b.f.N = false;
   state->AF.b.f.C = (value & 0x01) != 0;
 
   dest = result;
@@ -760,13 +745,12 @@ static inline void __attribute__((__used__)) RRD(Z80State *state) {
                    (state->AF.b.h & 0x0F) << 4 | ((value & 0xF0) >> 4));
   state->AF.b.h = (state->AF.b.h & 0xF0) | (value & 0x0F);
 
+  state->AF.b.l = state->AF.b.f.C;
   state->AF.b.f.S = bit_isset(state->AF.b.h, 7);
   state->AF.b.f.Z = state->AF.b.h == 0;
   state->AF.b.f.Y = bit_isset(state->AF.b.h, 5);
-  state->AF.b.f.H = false;
   state->AF.b.f.X = bit_isset(state->AF.b.h, 3);
   state->AF.b.f.V = CALC_PARITY(state->AF.b.h);
-  state->AF.b.f.N = false;
 }
 
 static inline void __attribute__((__used__)) RST(Z80State *state, byte_t arg) {
@@ -778,13 +762,12 @@ static inline void __attribute__((__used__))
 SLA(Z80State *state, byte_t &dest, byte_t value) {
   byte_t result = (value << 1);
 
+  state->AF.b.l = 0;
   state->AF.b.f.S = bit_isset(result, 7);
   state->AF.b.f.Z = (result == 0);
   state->AF.b.f.Y = bit_isset(result, 5);
-  state->AF.b.f.H = false;
   state->AF.b.f.X = bit_isset(result, 3);
   state->AF.b.f.V = CALC_PARITY(result);
-  state->AF.b.f.N = false;
   state->AF.b.f.C = bit_isset(value, 7);
 
   dest = result;
@@ -794,13 +777,12 @@ static inline void __attribute__((__used__))
 SRA(Z80State *state, byte_t &dest, byte_t value) {
   byte_t result = (value >> 1) | (value & 0x80);
 
+  state->AF.b.l = 0;
   state->AF.b.f.S = bit_isset(result, 7);
   state->AF.b.f.Z = (result == 0);
   state->AF.b.f.Y = bit_isset(result, 5);
-  state->AF.b.f.H = false;
   state->AF.b.f.X = bit_isset(result, 3);
   state->AF.b.f.V = CALC_PARITY(result);
-  state->AF.b.f.N = false;
   state->AF.b.f.C = bit_isset(value, 0);
 
   dest = result;
@@ -810,13 +792,12 @@ static inline void __attribute__((__used__))
 SRL(Z80State *state, byte_t &dest, byte_t value) {
   byte_t result = (value >> 1);
 
+  state->AF.b.l = 0;
   state->AF.b.f.S = bit_isset(result, 7);
   state->AF.b.f.Z = (result == 0);
   state->AF.b.f.Y = bit_isset(result, 5);
-  state->AF.b.f.H = false;
   state->AF.b.f.X = bit_isset(result, 3);
   state->AF.b.f.V = CALC_PARITY(result);
-  state->AF.b.f.N = false;
   state->AF.b.f.C = bit_isset(value, 0);
 
   dest = result;
@@ -826,13 +807,12 @@ static inline void __attribute__((__used__))
 SLL(Z80State *state, byte_t &dest, byte_t value) {
   byte_t result = (value << 1) | 0x01;
 
+  state->AF.b.l = 0;
   state->AF.b.f.S = bit_isset(result, 7);
   state->AF.b.f.Z = (result == 0);
   state->AF.b.f.Y = bit_isset(result, 5);
-  state->AF.b.f.H = false;
   state->AF.b.f.X = bit_isset(result, 3);
   state->AF.b.f.V = CALC_PARITY(result);
-  state->AF.b.f.N = false;
   state->AF.b.f.C = bit_isset(value, 7);
 
   dest = result;
@@ -842,13 +822,13 @@ static inline void __attribute__((__used__))
 SBC(Z80State *state, byte_t &dest, byte_t arg) {
   uint16_t result = dest - arg - state->AF.b.f.C;
 
+  state->AF.b.l = 0x02;
   state->AF.b.f.S = bit_isset(result, 7);
   state->AF.b.f.Z = (result & 0xff) == 0;
   state->AF.b.f.Y = bit_isset(result, 5);
   state->AF.b.f.H = bit_isset(dest ^ arg ^ result, 4);
   state->AF.b.f.X = bit_isset(result, 3);
   state->AF.b.f.V = bit_isset((result ^ dest) & (dest ^ arg), 7);
-  state->AF.b.f.N = true;
   state->AF.b.f.C = bit_isset(dest ^ arg ^ result, 8);
 
   dest = result;
@@ -858,23 +838,23 @@ static inline void __attribute__((__used__))
 SBC16(Z80State *state, uint16_t &wdest, uint16_t arg) {
   uint32_t result = wdest - arg - state->AF.b.f.C;
 
+  state->AF.b.l = 0x02;
   state->AF.b.f.S = bit_isset(result, 15);
   state->AF.b.f.Z = (result & 0xffff) == 0;
   state->AF.b.f.Y = bit_isset(result, 13);
   state->AF.b.f.H = bit_isset(wdest ^ arg ^ result, 12);
   state->AF.b.f.X = bit_isset(result, 11);
   state->AF.b.f.V = bit_isset((wdest ^ arg) & (wdest ^ result), 15);
-  state->AF.b.f.N = true;
   state->AF.b.f.C = bit_isset(result, 16);
 
   wdest = result;
 }
 
 static inline void __attribute__((__used__)) SCF(Z80State *state) {
+
+  state->AF.b.l &= 0xC4;
   state->AF.b.f.Y = bit_isset(state->AF.b.h, 5);
-  state->AF.b.f.H = 0;
   state->AF.b.f.X = bit_isset(state->AF.b.h, 3);
-  state->AF.b.f.N = 0;
   state->AF.b.f.C = 1;
 }
 
@@ -882,13 +862,13 @@ static inline void __attribute__((__used__))
 SUB(Z80State *state, byte_t &dest, byte_t arg) {
   uint16_t result = dest - arg;
 
+  state->AF.b.l = 0x2;
   state->AF.b.f.S = bit_isset(result, 7);
   state->AF.b.f.Z = (result & 0xff) == 0;
   state->AF.b.f.Y = bit_isset(result, 5);
   state->AF.b.f.H = bit_isset(dest ^ arg ^ result, 4);
   state->AF.b.f.X = bit_isset(result, 3);
   state->AF.b.f.V = bit_isset((result ^ dest) & (dest ^ arg), 7);
-  state->AF.b.f.N = true;
   state->AF.b.f.C = bit_isset(dest ^ arg ^ result, 8);
 
   dest = (byte_t)result;
@@ -898,14 +878,12 @@ static inline void __attribute__((__used__))
 XOR(Z80State *state, reg8_t &dest, byte_t arg) {
   uint8_t result = dest ^ arg;
 
+  state->AF.b.l = 0;
   state->AF.b.f.S = bit_isset(result, 7);
   state->AF.b.f.Z = (result & 0xff) == 0;
   state->AF.b.f.Y = bit_isset(result, 5);
-  state->AF.b.f.H = false;
   state->AF.b.f.X = bit_isset(result, 3);
   state->AF.b.f.V = CALC_PARITY(result);
-  state->AF.b.f.N = false;
-  state->AF.b.f.C = false;
 
   dest = result;
 }

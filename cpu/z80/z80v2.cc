@@ -463,13 +463,13 @@ void Z80Cpu::interrupt(addr_t addr) {
 
 void Z80Cpu::execute(void) {
   while (true) {
-    switch (m_state->Phase) {
-      case CpuPhase::Interrupt: {
+      {
+      {
         if (m_state->reset_line == LineState::Pulse) {
           m_state->reset();
           m_state->reset_line = LineState::Clear;
         } else if (m_state->nmi_line == LineState::Pulse) {
-          // interrupt(0x0066);
+          interrupt(0x0066);
           m_state->nmi_line = LineState::Clear;
         } else if (m_state->int0_line == LineState::Assert && m_state->iff1 &&
                    !m_state->iwait) {
@@ -499,9 +499,8 @@ void Z80Cpu::execute(void) {
           yield();
           m_state->yield = false;
         }
-        m_state->Phase = CpuPhase::Decode;
       }
-      case CpuPhase::Decode: {
+      {
         m_state->latch_pc = m_state->PC;
         m_state->latch_op = pc_read(m_state);
         if (m_state->latch_op == 0xDD) {
@@ -524,20 +523,17 @@ void Z80Cpu::execute(void) {
           m_state->prefix = Z80Prefix::NoPrefix;
           m_state->Op = &opcodes[m_state->latch_op];
         }
-        m_state->Phase = CpuPhase::Dispatch;
       }
-      case CpuPhase::Dispatch: {
+      {
         m_state->icycles = m_state->Op->cycles;
-#if 1
+#if 0
         if (m_state->prefix != Z80Prefix::EDPrefix) {
           OPCODE_SWITCH_BLOCK(m_state);
         } else
 #endif
           m_state->Op->func(m_state);
-        IF_LOG(Trace)
-        LOG_TRACE(Log(m_state));
+        IF_LOG(Trace) LOG_TRACE(Log(m_state));
         add_icycles(m_state->icycles);
-        m_state->Phase = CpuPhase::Interrupt;
       }
     }
   }
