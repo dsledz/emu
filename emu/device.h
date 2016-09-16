@@ -93,30 +93,31 @@ class Device : public Debuggable {
   Device(Machine *machine, const std::string &name);
   virtual ~Device(void);
 
-  virtual EmuClockBase *clock(void) { return NULL; }
   virtual void line(Line line, LineState state);
   virtual void reset(void);
+  virtual void initialize(void);
   virtual void execute(void);
   virtual void update(DeviceUpdate &update);
 
   void set_status(DeviceStatus status);
-  void wait_status(DeviceStatus status);
+  virtual void wait_status(DeviceStatus status);
   DeviceStatus get_status(void);
 
   /** XXX: These should be protected */
   const std::string &name(void);
   Machine *machine(void);
 
-  Task *task(void) { return &m_task; }
-
  protected:
   void log(LogLevel level, const std::string fmt, ...);
   void wait(DeviceStatus status);
-  void idle(void);
+  void wait_for_update(void);
+  void update_status(DeviceStatus status) {
+    lock_mtx lock(m_mtx);
+    m_status = status;
+    m_cv.notify_all();
+  }
 
  protected:
-  void task_fn(void);
-
   std::string m_name;           /* ro */
   Machine *m_machine;           /* ro */
   DeviceStatus m_status;        /* (m) */
@@ -124,7 +125,6 @@ class Device : public Debuggable {
   std::condition_variable m_cv; /* ? */
   std::mutex m_mtx;             /* ? */
   EmuDeviceChannel m_channel;   /* ? */
-  FiberTask m_task;
 };
 
 typedef std::unique_ptr<Device> Device_ptr;
@@ -142,63 +142,6 @@ class IODevice : public Device {
 
  protected:
   size_t m_size;
-};
-
-class ClockedDevice : public Device {
- public:
-  ClockedDevice(Machine *machine, const std::string &name, unsigned hertz);
-  virtual ~ClockedDevice(void);
-
-  inline void add_icycles(unsigned cycles) { add_icycles(Cycles(cycles)); }
-
-  inline void add_icycles(Cycles cycles) {
-    if (__builtin_expect((m_channel.available() > 0), 0)) idle();
-    if (__builtin_expect((m_avail < cycles), 0)) wait_icycles(cycles);
-    m_avail -= cycles;
-    m_used += cycles;
-  }
-
-  inline void yield(void) {
-    time_advance();
-    Task::yield();
-  }
-
-  bool time_forward(EmuTime now);
-  bool time_set(EmuTime now);
-  inline const EmuTime time_current(void) const { return m_current; }
-  inline const EmuTime time_target(void) const { return m_target; }
-
- protected:
-  virtual void update(DeviceUpdate &update);
-
- private:
-  void wait_icycles(Cycles cycles);
-  void time_advance(void) {
-    m_current += m_used.to_time(m_hertz);
-    m_used = Cycles(0);
-  }
-
-  unsigned m_hertz;
-  Cycles m_used;
-  Cycles m_avail;
-
-  EmuTime m_target;
-  EmuTime m_current;
-};
-
-class GfxDevice : public ClockedDevice {
- public:
-  GfxDevice(Machine *machine, const std::string &name, unsigned hertz);
-  virtual ~GfxDevice(void);
-
-  virtual void execute(void);
-  typedef std::function<void(void)> scanline_fn;
-
-  void register_callback(unsigned scanline, scanline_fn fn);
-
- protected:
-  unsigned m_scanline;
-  std::unordered_map<unsigned, scanline_fn> m_callbacks;
 };
 
 std::ostream &operator<<(std::ostream &os, const DeviceStatus status);

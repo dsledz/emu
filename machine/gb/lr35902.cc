@@ -148,7 +148,7 @@ uint16_t Registers::get(Register r) {
 
 LR35902Cpu::LR35902Cpu(Machine *machine, const std::string &name,
                        unsigned hertz, AddressBus16x8 *bus)
-    : ClockedDevice(machine, name, hertz),
+    : ClockedDevice(machine, machine->clock(), name, hertz),
       _bus(bus),
       _R(),
       _ime(IME::Disabled),

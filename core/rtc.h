@@ -93,7 +93,7 @@ struct Time {
     return res;
   }
 
-  inline const Time operator+(const Time &rhs) {
+  inline const Time operator+(const Time &rhs) const {
     Time res(*this);
     res += rhs;
     return res;

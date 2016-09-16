@@ -104,7 +104,7 @@ class GBSerialIO : public Device {
 class GBTimer : public ClockedDevice {
  public:
   GBTimer(Gameboy *gameboy, unsigned hertz)
-      : ClockedDevice(gameboy, "timer", hertz) {
+      : ClockedDevice(gameboy, gameboy->clock(), "timer", hertz) {
     gameboy->bus()->add(GBReg::TIMA, &m_tima);
     gameboy->bus()->add(GBReg::TMA, &m_tma);
     gameboy->bus()->add(GBReg::TAC, &m_tac);

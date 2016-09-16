@@ -1,5 +1,11 @@
 #pragma once
 
+#include "emu/clock.h"
+#include "emu/device.h"
+#include "emu/gfx.h"
+#include "emu/video.h"
+#include "emu/rom.h"
+
 namespace EMU {
 
 template <class palette_t>
@@ -102,4 +108,21 @@ class SimpleGfx {
   tile_map_t m_tiles;
   sprite_map_t m_sprites;
 };
+
+class GfxDevice : public ClockedDevice {
+ public:
+  GfxDevice(Machine *machine, Clock *clock, const std::string &name,
+            unsigned hertz);
+  virtual ~GfxDevice(void);
+
+  virtual void execute(void);
+  typedef std::function<void(void)> scanline_fn;
+
+  void register_callback(unsigned scanline, scanline_fn fn);
+
+ protected:
+  unsigned m_scanline;
+  std::unordered_map<unsigned, scanline_fn> m_callbacks;
+};
+
 };

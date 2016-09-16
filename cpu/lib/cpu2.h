@@ -98,7 +98,7 @@ class Cpu : public ClockedDevice {
 
   Cpu(Machine *machine, const std::string &name, unsigned hertz,
       state_type *state)
-      : ClockedDevice(machine, name, hertz), m_state(state) {}
+      : ClockedDevice(machine, machine->clock(), name, hertz), m_state(state) {}
   virtual ~Cpu(void) {}
   Cpu(const Cpu &cpu) = delete;
 

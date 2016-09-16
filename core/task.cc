@@ -84,6 +84,7 @@ void Thread::schedule(Task *task) { m_channel->put(task); }
 void Thread::wait_for_idle(void) {
   lock_mtx lock(m_mtx);
   for (;;) {
+    LOG_DEBUG("State: ", (int)m_state);
     if (m_state == ThreadState::Idle && m_channel->available() == 0) break;
     if (m_state == ThreadState::Dead) break;
     lock.wait(m_cv);
@@ -106,6 +107,7 @@ void Thread::thread_task(void) {
   m_state = ThreadState::Idle;
   for (;;) {
     // Grab the first task off the runnable queue
+    m_state = ThreadState::Running;
     Task *task = m_channel->try_get();
     if (task == nullptr) {
       lock_mtx lock(m_mtx);
