@@ -5,6 +5,7 @@
  */
 
 #include "emu/clock.h"
+#include "emu/machine.h"
 #include "core/bits.h"
 #include "core/exception.h"
 
@@ -14,6 +15,7 @@ using namespace Core;
 ClockedDevice::ClockedDevice(Machine *machine, Clock *clock,
                              const std::string &name, unsigned hertz)
     : Device(machine, name),
+      m_next(0),
       m_clock(clock),
       m_hertz(hertz),
       m_used(0),
@@ -68,10 +70,12 @@ void ClockedDevice::run_internal(void) {
   m_their_ctx.switch_context(&m_our_ctx);
 }
 
-Clock::Clock(void)
-    : m_scheduler(),
+Clock::Clock(Machine *machine, Hertz hertz)
+    : m_hertz(hertz),
       m_devs(),
-      m_task(&m_scheduler, std::bind(&Clock::task_fn, this), "clock"),
+      m_head(nullptr),
+      m_task(machine->get_scheduler(), std::bind(&Clock::task_fn, this),
+             "clock"),
       m_cv(),
       m_mtx(),
       m_channel(),
@@ -106,10 +110,10 @@ void Clock::task_fn(void) {
       update_stats();
       if (!publish())
         Task::yield();
-      for (auto *dev: m_runnable) {
-        dev->resume();
+      while (m_head) {
+        m_head->resume();
+        m_head = m_head->m_next;
       }
-      m_runnable.clear();
     }
     EmuClockUpdate u = m_channel.get();
     if (u.stop) {
@@ -122,20 +126,18 @@ void Clock::task_fn(void) {
 }
 
 void Clock::start_clocked(void) {
-  m_scheduler.run_task(&m_task);
+  m_task.start();
 }
 
 void Clock::stop_clocked(void) {
   LOG_TRACE("Stopping clocks");
   m_channel.put(EmuClockUpdate(time_zero, true));
   m_task.force();
-  m_scheduler.wait_for_idle();
 }
 
 void Clock::wait_for_target(EmuTime t) {
   EmuClockUpdate u(t);
   m_channel.put(u);
-  m_scheduler.wait_for_idle();
 }
 
 void Clock::update_stats(void) {
@@ -166,10 +168,11 @@ bool Clock::publish(void) {
     EmuTime diff = m_current - m_oldest;
     LOG_DEBUG("Running ", diff, " behind, (", m_oldest, " - ", m_current, ")");
   }
-  for (auto it = m_devs.begin(); it != m_devs.end(); it++) {
-    if ((*it)->time_forward(m_current)) {
-      LOG_DEBUG("Adding: ", (*it)->name());
-      m_runnable.push_back(*it);
+  for (auto *dev: m_devs) {
+    if (dev->time_forward(m_current)) {
+      LOG_DEBUG("Adding: ", dev->name());
+      dev->m_next = m_head;
+      m_head = dev;
       runnable = true;
     }
   }

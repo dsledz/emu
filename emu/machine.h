@@ -88,14 +88,16 @@ class Machine {
   void add_device(Device *dev);
   void remove_device(Device *dev);
 
+  void add_clock(Hertz hertz);
+
   void attach_clocked(ClockedDevice *dev) {
-    m_clock.attach_clocked(dev);
+    m_clock->attach_clocked(dev);
   }
   void detach_clocked(ClockedDevice *dev) {
-    m_clock.detach_clocked(dev);
+    m_clock->detach_clocked(dev);
   }
   Clock *clock() {
-    return &m_clock;
+    return m_clock.get();
   }
 
   /**
@@ -134,7 +136,7 @@ class Machine {
 
   EmuTime now(void);
 
-  TaskScheduler *get_scheduler(void) { return m_clock.sched(); }
+  TaskScheduler *get_scheduler(void) { return &m_scheduler; }
 
  protected:
   void log(LogLevel level, const std::string fmt, ...);
@@ -142,7 +144,8 @@ class Machine {
  private:
   Device *dev(const std::string &name);
 
-  Clock m_clock;
+  std::unique_ptr<Clock> m_clock;
+  TaskScheduler m_scheduler;
   InputMap m_input;
   std::list<Device *> m_devs;
   std::map<std::string, dipswitch_ptr> m_switches;

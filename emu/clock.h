@@ -16,6 +16,7 @@ using namespace Core;
 namespace EMU {
 
 class Clock;
+class Machine;
 
 class ClockedDevice : public Device {
  public:
@@ -47,6 +48,8 @@ class ClockedDevice : public Device {
   inline const EmuTime time_current(void) const { return m_current; }
   inline const EmuTime time_target(void) const { return m_target; }
 
+  ClockedDevice *m_next;
+
  protected:
   virtual void update(DeviceUpdate &update);
 
@@ -67,13 +70,12 @@ class ClockedDevice : public Device {
   EmuTime m_current;
 };
 
-
 typedef Channel<EmuClockUpdate> ClockChannel;
 typedef std::shared_ptr<ClockChannel> ClockChannel_ptr;
 
 class Clock {
  public:
-  Clock(void);
+  Clock(Machine *machine, Hertz hertz);
   virtual ~Clock(void);
 
   void attach_clocked(ClockedDevice *dev);
@@ -82,7 +84,6 @@ class Clock {
   void start_clocked(void);
   void stop_clocked(void);
 
-  TaskScheduler *sched(void) { return &m_scheduler; }
   void wait_for_target(EmuTime t);
   void wait_for_delta(EmuTime t) { wait_for_target(m_now + t); }
 
@@ -98,9 +99,10 @@ class Clock {
   void update_stats(void);
   bool publish(void);
 
-  TaskScheduler m_scheduler;
+  Hertz m_hertz;
+  Machine *m_machine;
   std::list<ClockedDevice *> m_devs;
-  std::list<ClockedDevice *> m_runnable;
+  ClockedDevice *m_head;
   FiberTask m_task;
 
   std::condition_variable m_cv; /* ? */

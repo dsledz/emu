@@ -28,13 +28,16 @@
 using namespace EMU;
 
 Machine::Machine(void)
-    : m_clock(),
+    : m_clock(nullptr),
+      m_scheduler(),
       m_input(),
       m_devs(),
       m_switches(),
       m_ports(),
       m_debugger(),
-      m_fb(nullptr) {}
+      m_fb(nullptr) {
+  add_clock(Hertz(0));
+}
 
 Machine::~Machine(void) {
   /* Make sure all devices are disconnected */
@@ -47,17 +50,22 @@ void Machine::poweron(void) {
   for (auto it = m_devs.begin(); it != m_devs.end(); it++) {
     (*it)->set_status(DeviceStatus::Running);
   }
-  m_clock.start_clocked();
+  m_clock->start_clocked();
 }
 
 void Machine::poweroff(void) {
   for (auto it = m_devs.begin(); it != m_devs.end(); it++) {
     (*it)->set_status(DeviceStatus::Off);
   }
-  m_clock.stop_clocked();
+  m_clock->stop_clocked();
+  m_scheduler.wait_for_idle();
   for (auto it = m_devs.begin(); it != m_devs.end(); it++) {
     (*it)->wait_status(DeviceStatus::Off);
   }
+}
+
+void Machine::add_clock(Hertz hertz) {
+  m_clock = std::unique_ptr<Clock>(new Clock(this, hertz));
 }
 
 void Machine::add_device(Device *dev) { m_devs.push_back(dev); }
@@ -68,13 +76,17 @@ void Machine::remove_device(Device *dev) {
   m_devs.remove(dev);
 }
 
-EmuTime Machine::now(void) { return m_clock.now(); }
+EmuTime Machine::now(void) { return m_clock->now(); }
 
-void Machine::run(void) { m_clock.wait_for_delta(usec(100)); }
+void Machine::run(void) { m_clock->wait_for_delta(usec(100)); }
 
-void Machine::run_until(EmuTime target) { m_clock.wait_for_target(target); }
+void Machine::run_until(EmuTime target) {
+  m_clock->wait_for_target(target);
+  m_scheduler.wait_for_idle();
+}
 
-void Machine::run_forward(EmuTime delta) { m_clock.wait_for_delta(delta); }
+
+void Machine::run_forward(EmuTime delta) { m_clock->wait_for_delta(delta); }
 
 Device *Machine::dev(const std::string &name) {
   for (auto it = m_devs.begin(); it != m_devs.end(); it++) {
