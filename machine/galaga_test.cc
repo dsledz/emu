@@ -26,6 +26,7 @@
 #include "gtest/gtest.h"
 
 #include "emu/emu.h"
+#include "emu/test.h"
 
 #include "machine/galaga.h"
 
@@ -33,15 +34,13 @@ using namespace EMU;
 
 
 TEST(GalagaTest, run100) {
-  Arcade::Galaga machine("");
-
-  machine.poweron();
-  machine.reset();
-  machine.run_forward(sec(10));
+  EMUTest::machine_test<Arcade::Galaga>();
 }
 
 TEST(GalagaTest, input) {
-  Arcade::Galaga machine("");
+  Arcade::Galaga machine;
+
+  machine.load_rom("galaga");
 
   machine.poweron();
   machine.reset();
@@ -50,6 +49,5 @@ TEST(GalagaTest, input) {
   machine.run_forward(sec(1));
   machine.send_input(InputKey::Coin1, false);
   machine.run_forward(sec(1));
+  machine.poweroff();
 }
-
-TEST(GalagaTest, load) { Arcade::Galaga machine(""); }

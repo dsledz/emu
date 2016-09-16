@@ -58,7 +58,7 @@ RomDefinition galagao_rom(void) {
   return rom;
 };
 
-Galaga::Galaga(const std::string &rom)
+Galaga::Galaga(void)
     : Machine(),
       ram1(this, "ram1", 0x0400),
       ram2(this, "ram2", 0x0400),
@@ -77,23 +77,11 @@ Galaga::Galaga(const std::string &rom)
 
   init_controls();
 
-  RomDefinition roms("galaga");
-  if (rom == "galagao") {
-    roms = galagao_rom();
-  } else {
-    roms = galaga_rom();
-  }
-
-  RomSet romset(roms);
-
   m_main_cpu = Z80Cpu_ptr(new Z80Cpu(this, "maincpu", hertz / 6, m_bus.get()));
-  m_main_cpu->load_rom(romset.rom("maincpu"), 0x0000);
 
   m_sub_cpu = Z80Cpu_ptr(new Z80Cpu(this, "subcpu", hertz / 6, m_bus.get()));
-  m_sub_cpu->load_rom(romset.rom("subcpu"), 0x0000);
 
   m_snd_cpu = Z80Cpu_ptr(new Z80Cpu(this, "sndcpu", hertz / 6, m_bus.get()));
-  m_snd_cpu->load_rom(romset.rom("sndcpu"), 0x0000);
 
   m_namco06 = Namco06_ptr(new Namco06(this, m_main_cpu.get()));
 
@@ -101,7 +89,6 @@ Galaga::Galaga(const std::string &rom)
   m_namco06->add_child(0, m_namco51.get());
 
   m_gfx = GalagaGfx_ptr(new GalagaGfx(this, "gfx", hertz, m_bus.get()));
-  m_gfx->init(&romset);
 
   m_gfx->register_callback(64, [&](void) {
     if (m_snd_nmi) set_line("sndcpu", Line::NMI, LineState::Pulse);
@@ -120,6 +107,23 @@ Galaga::Galaga(const std::string &rom)
 }
 
 Galaga::~Galaga(void) {}
+
+void Galaga::load_rom(const std::string &rom) {
+
+  RomDefinition roms("galaga");
+  if (rom == "galagao") {
+    roms = galagao_rom();
+  } else {
+    roms = galaga_rom();
+  }
+
+  RomSet romset(roms);
+
+  m_main_cpu->load_rom(romset.rom("maincpu"), 0x0000);
+  m_sub_cpu->load_rom(romset.rom("subcpu"), 0x0000);
+  m_snd_cpu->load_rom(romset.rom("sndcpu"), 0x0000);
+  m_gfx->init(&romset);
+}
 
 byte_t Galaga::dips_read(offset_t offset) {
   byte_t dswa = read_ioport("DSWA");
@@ -272,5 +276,5 @@ MachineInformation galaga_info{
 
 MachineDefinition galaga("galaga", galaga_info,
                          [](Options *opts) -> machine_ptr {
-                           return machine_ptr(new Arcade::Galaga(opts->rom));
+                           return machine_ptr(new Arcade::Galaga());
                          });

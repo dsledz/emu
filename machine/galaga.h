@@ -73,8 +73,10 @@ typedef std::unique_ptr<GalagaGfx> GalagaGfx_ptr;
 
 class Galaga : public Machine {
  public:
-  Galaga(const std::string &rom);
+  Galaga(void);
   virtual ~Galaga(void);
+
+  virtual void load_rom(const std::string &rom);
 
  private:
   byte_t dips_read(offset_t offset);

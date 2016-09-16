@@ -181,7 +181,7 @@ class GBTimer : public ClockedDevice {
   byte_t m_tac;
 };
 
-Gameboy::Gameboy(const std::string &rom_name) : Machine() {
+Gameboy::Gameboy(void) : Machine() {
   add_screen(160, 144);
 
   m_bus = AddressBus16x8_ptr(new AddressBus16x8());
@@ -195,7 +195,6 @@ Gameboy::Gameboy(const std::string &rom_name) : Machine() {
   m_gfx = std::unique_ptr<GBGraphics>(new GBGraphics(this, 4194304));
 
   m_mbc = std::unique_ptr<GBMBC>(new GBMBC(this));
-  m_mbc->load_rom(rom_name);
 
   m_ram = std::unique_ptr<RamDevice>(new RamDevice(this, "ram", 0x2000));
   /* XXX: Ram isn't mirrored */
@@ -216,10 +215,15 @@ Gameboy::Gameboy(const std::string &rom_name) : Machine() {
 
 Gameboy::~Gameboy(void) {}
 
+void
+Gameboy::load_rom(const std::string &rom) {
+  m_mbc->load_rom(rom);
+}
+
 MachineInformation gb_info{
     "Gameboy", "1989", "gb", true,
 };
 
 MachineDefinition gb("gb", gb_info, [](Options *opts) -> machine_ptr {
-  return machine_ptr(new Gameboy(opts->rom));
+  return machine_ptr(new Gameboy());
 });

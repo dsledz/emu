@@ -56,24 +56,16 @@ RomDefinition pacman_rom(void) {
   return rom;
 }
 
-Pacman::Pacman(const std::string &rom)
+Pacman::Pacman(void)
     : Machine(), m_hertz(18432000), m_ram(this, "ram", 0x800) {
   add_screen(224, 288, GfxScale::None, FrameBuffer::ROT90);
 
   m_bus = AddressBus16x8_ptr(new AddressBus16x8());
 
-  if (rom == "pacman") {
-    m_roms = std::unique_ptr<RomSet>(new RomSet(pacman_rom()));
-  } else {
-    throw KeyError(rom);
-  }
-
   m_cpu = Z80Cpu_ptr(new Z80Cpu(this, "maincpu", m_hertz / 6, m_bus.get()));
-  m_cpu->load_rom(m_roms->rom("maincpu"), 0x0000);
 
   m_gfx = PacmanGfx_ptr(new PacmanGfx(this, "gfx", m_hertz, m_bus.get()));
 
-  m_gfx->init(m_roms.get());
   m_gfx->set_vblank_cb([&](void) {
     if (m_irq_mask) set_line("maincpu", Line::INT0, LineState::Assert);
   });
@@ -91,7 +83,16 @@ Pacman::Pacman(const std::string &rom)
 
 Pacman::~Pacman(void) {}
 
-void Pacman::load_rom(const std::string &rom) { }
+void Pacman::load_rom(const std::string &rom) {
+  if (rom == "pacman") {
+    m_roms = std::unique_ptr<RomSet>(new RomSet(pacman_rom()));
+  } else {
+    throw KeyError(rom);
+  }
+
+  m_cpu->load_rom(m_roms->rom("maincpu"), 0x0000);
+  m_gfx->init(m_roms.get());
+}
 
 byte_t Pacman::io_read(offset_t offset) { return 0; }
 
@@ -215,7 +216,7 @@ MachineInformation pacman_info{
 };
 
 static machine_ptr pacman_create(Options *opts) {
-  return machine_ptr(new Arcade::Pacman(opts->rom));
+  return machine_ptr(new Arcade::Pacman());
 }
 
 MachineDefinition pacman("pacman", pacman_info, pacman_create);

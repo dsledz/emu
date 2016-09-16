@@ -60,10 +60,12 @@ enum GBReg {
 
 class Gameboy : public Machine {
  public:
-  Gameboy(const std::string &name);
+  Gameboy(void);
   virtual ~Gameboy(void);
 
   AddressBus16x8 *bus(void) { return m_bus.get(); }
+
+  virtual void load_rom(const std::string &rom);
 
  private:
   AddressBus16x8_ptr m_bus;

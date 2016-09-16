@@ -94,4 +94,5 @@ TEST(Zexall_test, test) {
   machine.poweron();
   machine.reset();
   machine.run_forward(runtime);
+  machine.poweroff();
 }

@@ -32,10 +32,5 @@ using namespace EMU;
 using namespace EMUTest;
 
 TEST(GameboyTest, run) {
-  GBMachine::Gameboy machine("tetris.gb");
-  EmuTime runtime = get_runtime("GB_RUNTIME");
-
-  machine.reset();
-  machine.poweron();
-  machine.run_forward(runtime);
+  machine_test<GBMachine::Gameboy>("tetris.gb");
 }

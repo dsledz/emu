@@ -26,6 +26,7 @@
 #include "gtest/gtest.h"
 
 #include "emu/emu.h"
+#include "emu/test.h"
 
 #include "machine/dkong.h"
 
@@ -33,16 +34,13 @@ using namespace EMU;
 
 
 TEST(DonkeyKongTest, run100) {
-  Arcade::DonkeyKong machine("");
-
-  machine.poweron();
-  machine.reset();
-  machine.run_forward(sec(10));
+  EMUTest::machine_test<Arcade::DonkeyKong>("");
 }
 
 TEST(DonkeyKongTest, input) {
-  Arcade::DonkeyKong machine("");
+  Arcade::DonkeyKong machine;
 
+  machine.load_rom("dkong");
   machine.poweron();
   machine.reset();
 
@@ -51,6 +49,5 @@ TEST(DonkeyKongTest, input) {
   machine.run_forward(sec(1));
   machine.send_input(InputKey::Coin1, false);
   machine.run_forward(sec(1));
+  machine.poweroff();
 }
-
-TEST(DonkeyKongTest, load) { Arcade::DonkeyKong machine(""); }

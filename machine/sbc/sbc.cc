@@ -17,7 +17,7 @@ RomDefinition sbc_rom(void) {
   return rom;
 }
 
-SingleBoardZ80::SingleBoardZ80(const std::string &rom)
+SingleBoardZ80::SingleBoardZ80(void)
     : Machine(),
       m_hertz(7372800),
       m_state(),

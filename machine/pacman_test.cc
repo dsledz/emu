@@ -39,6 +39,7 @@ TEST(PacmanTest, run100) {
   machine.poweron();
   machine.reset();
   machine.run_forward(sec(10));
+  machine.poweroff();
 }
 
 TEST(PacmanTest, load) { Arcade::Pacman machine(""); }

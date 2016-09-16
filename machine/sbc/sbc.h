@@ -16,8 +16,10 @@ namespace Arcade {
 
 class SingleBoardZ80 : public Machine {
  public:
-  SingleBoardZ80(const std::string &rom);
+  SingleBoardZ80(void);
   virtual ~SingleBoardZ80(void);
+
+  virtual void load_rom(const std::string &rom) {}
 
  private:
   byte_t io_read(offset_t offset);

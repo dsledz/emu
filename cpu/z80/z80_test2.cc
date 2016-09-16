@@ -61,6 +61,7 @@ class Zexall2 : public Machine {
   }
   ~Zexall2(void) {}
 
+  virtual void load_rom(const std::string &rom) { }
   byte_t req_read(byte_t vlaue) { return m_req; }
 
   void req_write(offset_t offset, byte_t value) {
@@ -83,14 +84,5 @@ class Zexall2 : public Machine {
 };
 
 TEST(Zexall2_test, test) {
-  Zexall2 machine;
-  EmuTime runtime = get_runtime("Z80_RUNTIME");
-
-  Core::log.set_level(LogLevel::Info);
-
-  // Run the first few seconds of the rom
-  machine.poweron();
-  machine.reset();
-  machine.run_forward(runtime);
-  machine.poweroff();
+  machine_test<Zexall2>();
 }

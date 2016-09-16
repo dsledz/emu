@@ -205,8 +205,10 @@ class TG16 : public Machine {
 
   typedef M6502v2::HuC6280Cpu cpu_type;
 
-  TG16(const std::string &rom);
+  TG16(void);
   virtual ~TG16(void);
+
+  virtual void load_rom(const std::string &rom);
 
  private:
   void init_joypad(void);

@@ -78,10 +78,13 @@ typedef std::unique_ptr<DonkeyKongGfx> DonkeyKongGfx_ptr;
 
 class DonkeyKong : public Machine {
  public:
-  DonkeyKong(const std::string &rom);
+  DonkeyKong(void);
   virtual ~DonkeyKong(void);
 
+  virtual void load_rom(const std::string &rom);
+
  private:
+
   void latch_write(offset_t offset, byte_t value);
   byte_t latch_read(offset_t offset);
 

@@ -119,7 +119,7 @@ typedef std::unique_ptr<PacmanGfx> PacmanGfx_ptr;
 
 class Pacman : public Machine {
  public:
-  Pacman(const std::string &rom);
+  Pacman(void);
   virtual ~Pacman(void);
 
   virtual void load_rom(const std::string &rom);

@@ -78,9 +78,7 @@ void Emulator::do_execute(void) {
     m_machine->run_forward(usec(100));
   } while (true);
 
-  /* XXX: workaround */
-  exit(0);
-  //_machine->poweroff();
+  m_machine->poweroff();
 }
 
 Emulator::EmuState Emulator::get_state(void) {

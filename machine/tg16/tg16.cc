@@ -29,39 +29,13 @@ using namespace TG16Machine;
 /* XXX wrong */
 #define MASTER_CLOCK 21477270
 
-TG16::TG16(const std::string &rom)
+TG16::TG16(void)
     : Machine(),
       m_cpu_bus(),
       m_ram(this, "ram", 0x2000),
       m_vdc(this, MASTER_CLOCK),
       m_psg(this),
       m_rom(0x100000) {
-  LOG_INFO("Loading: ", rom);
-  bvec rom_data;
-
-  EMU::read_rom(rom, rom_data);
-  offset_t rom_offset = rom_data.size() % 8192;
-
-  if (rom_data.at(rom_offset + 0x1FFF) < 0xe0)
-    throw RomException("Encrypted Rom");
-  if (rom_data.size() - rom_offset == 0x60000) {
-    /* int bank = offset >> 17; */
-    /* 0 & 2 -> 0x00000 */
-    memcpy(&m_rom[0x00000], &rom_data[rom_offset], 0x20000);
-    memcpy(&m_rom[0x40000], &rom_data[rom_offset], 0x20000);
-    /* 1 & 3 -> 0x20000 */
-    memcpy(&m_rom[0x20000], &rom_data[rom_offset + 0x20000], 0x20000);
-    memcpy(&m_rom[0x60000], &rom_data[rom_offset + 0x20000], 0x20000);
-    /* rest -> 0x40000 */
-    memcpy(&m_rom[0x80000], &rom_data[rom_offset + 0x40000], 0x20000);
-    memcpy(&m_rom[0xA0000], &rom_data[rom_offset + 0x40000], 0x20000);
-    memcpy(&m_rom[0xC0000], &rom_data[rom_offset + 0x40000], 0x20000);
-    memcpy(&m_rom[0xE0000], &rom_data[rom_offset + 0x40000], 0x20000);
-  } else if (rom_data.size() - rom_offset > 0x100000) {
-    throw RomException("Unsupported ROM size");
-  } else {
-    memcpy(&m_rom.front(), &rom_data[rom_offset], rom_data.size() - rom_offset);
-  }
 
   init_joypad();
 
@@ -97,6 +71,36 @@ TG16::TG16(const std::string &rom)
 }
 
 TG16::~TG16(void) {}
+
+void
+TG16::load_rom(const std::string &rom) {
+  LOG_INFO("Loading: ", rom);
+  bvec rom_data;
+
+  EMU::read_rom(rom, rom_data);
+  offset_t rom_offset = rom_data.size() % 8192;
+
+  if (rom_data.at(rom_offset + 0x1FFF) < 0xe0)
+    throw RomException("Encrypted Rom");
+  if (rom_data.size() - rom_offset == 0x60000) {
+    /* int bank = offset >> 17; */
+    /* 0 & 2 -> 0x00000 */
+    memcpy(&m_rom[0x00000], &rom_data[rom_offset], 0x20000);
+    memcpy(&m_rom[0x40000], &rom_data[rom_offset], 0x20000);
+    /* 1 & 3 -> 0x20000 */
+    memcpy(&m_rom[0x20000], &rom_data[rom_offset + 0x20000], 0x20000);
+    memcpy(&m_rom[0x60000], &rom_data[rom_offset + 0x20000], 0x20000);
+    /* rest -> 0x40000 */
+    memcpy(&m_rom[0x80000], &rom_data[rom_offset + 0x40000], 0x20000);
+    memcpy(&m_rom[0xA0000], &rom_data[rom_offset + 0x40000], 0x20000);
+    memcpy(&m_rom[0xC0000], &rom_data[rom_offset + 0x40000], 0x20000);
+    memcpy(&m_rom[0xE0000], &rom_data[rom_offset + 0x40000], 0x20000);
+  } else if (rom_data.size() - rom_offset > 0x100000) {
+    throw RomException("Unsupported ROM size");
+  } else {
+    memcpy(&m_rom.front(), &rom_data[rom_offset], rom_data.size() - rom_offset);
+  }
+}
 
 enum TG16Key {
   I = 0,
@@ -165,5 +169,5 @@ MachineInformation tg16_info{
 };
 
 MachineDefinition tg16("tg16", tg16_info, [](Options *opts) -> machine_ptr {
-  return machine_ptr(new TG16Machine::TG16(opts->rom));
+  return machine_ptr(new TG16Machine::TG16());
 });

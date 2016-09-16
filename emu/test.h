@@ -73,7 +73,7 @@ class TestMachine : public Machine {
   machine.write8(arg2);             \
   machine.write8(arg3);
 
-EMU::EmuTime get_runtime(const std::string &test_name) {
+static inline EMU::EmuTime get_runtime(const std::string &test_name) {
   const char *env = getenv(test_name.c_str());
   EmuTime runtime = sec(10);
   if (env != NULL) {
@@ -81,4 +81,23 @@ EMU::EmuTime get_runtime(const std::string &test_name) {
   }
   return runtime;
 }
+
+template<class machine_t>
+void machine_test(const std::string &rom="") {
+  machine_t machine;
+
+  machine.load_rom(rom);
+
+  EmuTime runtime = get_runtime("RUNTIME");
+
+  Core::log.set_level(LogLevel::Info);
+  machine.reset();
+  machine.poweron();
+  machine.run_forward(runtime/4);
+  machine.run_forward(runtime/4);
+  machine.run_forward(runtime/4);
+  machine.run_forward(runtime/4);
+  machine.poweroff();
+}
+
 };

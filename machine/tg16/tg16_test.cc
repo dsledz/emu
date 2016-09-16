@@ -35,12 +35,5 @@ using namespace EMUTest;
 using namespace TG16Machine;
 
 TEST(TG16Test, create) {
-  TG16 machine("bonks.pce");
-  EmuTime runtime = get_runtime("Z80_RUNTIME");
-
-  Core::log.set_level(LogLevel::Info);
-  machine.reset();
-  machine.poweron();
-
-  machine.run_forward(runtime);
+  machine_test<TG16>("bonks.pce");
 }

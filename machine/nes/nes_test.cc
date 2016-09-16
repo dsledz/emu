@@ -34,13 +34,5 @@ using namespace EMUTest;
 using namespace NESMachine;
 
 TEST(NesTest, mario3) {
-  NES machine;
-  EmuTime runtime = get_runtime("NES_RUNTIME");
-
-  machine.load_rom("mario3.nes");
-
-  Core::log.set_level(LogLevel::Info);
-  machine.reset();
-  machine.poweron();
-  machine.run_forward(runtime);
+  machine_test<NES>("mario3.nes");
 }

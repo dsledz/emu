@@ -46,7 +46,7 @@ RomDefinition dkong_rom(void) {
   return rom;
 }
 
-DonkeyKong::DonkeyKong(const std::string &rom)
+DonkeyKong::DonkeyKong(void)
     : Machine(), m_ram(this, "ram", 0x1000), m_nmi_mask(false) {
   unsigned hertz = 18432000;
   add_screen(224, 256, GfxScale::None, FrameBuffer::ROT90);
@@ -58,18 +58,11 @@ DonkeyKong::DonkeyKong(const std::string &rom)
 
   init_controls();
 
-  RomDefinition roms("dkong");
-  roms = dkong_rom();
-
-  RomSet romset(roms);
-
   m_main_cpu = Z80Cpu_ptr(new Z80Cpu(this, "maincpu", hertz / 6, m_bus.get()));
-  m_main_cpu->load_rom(romset.rom("maincpu"), 0x0000);
 
   m_i8257 = I8257_ptr(new I8257(this, "i8257", hertz / 6, m_bus.get()));
 
   m_gfx = DonkeyKongGfx_ptr(new DonkeyKongGfx(this, "gfx", hertz, m_bus.get()));
-  m_gfx->init(&romset);
 
   m_gfx->set_vblank_cb([&](void) {
     if (m_nmi_mask) set_line("maincpu", Line::NMI, LineState::Pulse);
@@ -79,6 +72,16 @@ DonkeyKong::DonkeyKong(const std::string &rom)
 }
 
 DonkeyKong::~DonkeyKong(void) {}
+
+void DonkeyKong::load_rom(const std::string &rom) {
+  RomDefinition roms("dkong");
+  roms = dkong_rom();
+
+  RomSet romset(roms);
+
+  m_main_cpu->load_rom(romset.rom("maincpu"), 0x0000);
+  m_gfx->init(&romset);
+}
 
 void DonkeyKong::init_switches(void) {
   dipswitch_ptr sw;
@@ -196,5 +199,5 @@ MachineInformation donkeykong_info{
 
 MachineDefinition dkong("dkong", donkeykong_info,
                         [](Options *opts) -> machine_ptr {
-                          return machine_ptr(new Arcade::DonkeyKong(opts->rom));
+                          return machine_ptr(new Arcade::DonkeyKong());
                         });
