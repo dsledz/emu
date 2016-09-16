@@ -75,6 +75,11 @@ class Task {
   const std::string &name(void) const { return m_name; }
 
   /**
+   * Start a task
+   */
+  void start(void);
+
+  /**
    * Task is nonblocking
    */
   virtual bool nonblocking(void) = 0;

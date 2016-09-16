@@ -41,6 +41,10 @@ Task::~Task(void) {
   m_sched->remove_task(this);
 }
 
+void Task::start(void) {
+  m_sched->run_task(this);
+}
+
 void Task::yield(void) {
   Task *cur = Thread::cur_task();
   assert(cur != NULL);
