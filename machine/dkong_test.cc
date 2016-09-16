@@ -38,6 +38,7 @@ TEST(DonkeyKongTest, run100) {
   machine.poweron();
   machine.reset();
   machine.run_forward(sec(10));
+  machine.poweroff();
 }
 
 TEST(DonkeyKongTest, input) {
@@ -51,6 +52,7 @@ TEST(DonkeyKongTest, input) {
   machine.run_forward(sec(1));
   machine.send_input(InputKey::Coin1, false);
   machine.run_forward(sec(1));
+  machine.poweroff();
 }
 
 TEST(DonkeyKongTest, load) { Arcade::DonkeyKong machine(""); }
