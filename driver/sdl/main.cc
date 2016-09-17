@@ -24,9 +24,9 @@
  */
 
 #include "emu/emu.h"
+#include "emu/emulator.h"
 
 #include "driver/cli_opts.h"
-#include "driver/emulator.h"
 #include "driver/opengl.h"
 
 #include <SDL2/SDL.h>

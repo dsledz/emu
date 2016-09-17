@@ -2,8 +2,8 @@ find_package(GLEW REQUIRED)
 find_package(OpenGL REQUIRED)
 
 add_library(driver
+    driver.cc
     wrapper.cc
-    emulator.cc
     opengl.cc)
 
 target_link_libraries(driver

@@ -23,7 +23,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "driver/emulator.h"
+#include "emu/emulator.h"
 #include "opts.h"
 
 #include <future>

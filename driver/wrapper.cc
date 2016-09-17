@@ -23,9 +23,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "driver/wrapper.h"
-#include "driver/emulator.h"
+#include "emu/emulator.h"
+
 #include "driver/opengl.h"
+#include "driver/wrapper.h"
 
 using namespace EMU;
 

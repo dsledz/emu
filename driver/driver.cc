@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Dan Sledz
+ * Copyright (c) 2013, Dan Sledz
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,37 +23,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "gtest/gtest.h"
-
 #include "emu/emulator.h"
 
 using namespace EMU;
 
-class TestEmulator : public Emulator {
- public:
-  TestEmulator(const Options &options) : Emulator(options) {}
-
-  virtual void start(void) {
-    machine()->load_rom(options()->rom);
-
-    machine()->reset();
-    set_state(EmuState::Running);
-  }
-
-  virtual void stop(void) {
-    Emulator::stop();
-    task.get();
-  }
-
- private:
-  std::future<void> task;
-};
-
-TEST(EmulatorTest, galaga) {
+std::unique_ptr<Machine> load_machine(const std::string &driver)
+{
   Options options;
-  options.driver = "galaga";
-
-  TestEmulator emu(options);
-
-  emu.start();
+  return loader()->load(&options);
 }
+
+FORCE_UNDEFINED_SYMBOL(galaga);
+FORCE_UNDEFINED_SYMBOL(gb);
+FORCE_UNDEFINED_SYMBOL(nes);
+FORCE_UNDEFINED_SYMBOL(tg16);
+FORCE_UNDEFINED_SYMBOL(pacman);
+FORCE_UNDEFINED_SYMBOL(dkong);

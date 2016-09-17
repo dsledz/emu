@@ -46,7 +46,7 @@ struct KeyError : public CoreException {
 
 struct DriverError : public CoreException {
   DriverError(const std::string &dev):
-      CoreException("Unknown device: ") {
+      CoreException("Unknown driver: ") {
         msg += dev;
     }
 };

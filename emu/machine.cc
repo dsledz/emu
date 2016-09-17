@@ -190,6 +190,7 @@ MachineLoader::MachineLoader(void) {}
 MachineLoader::~MachineLoader(void) {}
 
 void MachineLoader::add_machine(struct MachineDefinition *definition) {
+  LOG_ERROR("Found definition for: ", definition->name);
   m_machines.push_back(definition);
 }
 
