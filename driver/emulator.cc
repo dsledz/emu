@@ -75,7 +75,7 @@ void Emulator::do_execute(void) {
       while (m_state == EmuState::Paused) lock.wait(cv);
       if (m_state == EmuState::Stopped) break;
     }
-    m_machine->run_forward(usec(100));
+    m_machine->run_forward(sec(1));
   } while (true);
 
   m_machine->poweroff();

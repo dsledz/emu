@@ -134,7 +134,6 @@ void ScreenDevice::execute(void) {
     HState next = next_hstate(&cycles);
     add_icycles(cycles);
     set_hstate(next);
-    Task::yield();
   }
 }
 
