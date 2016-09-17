@@ -155,6 +155,7 @@ class Pacman : public Machine {
 
   unsigned m_hertz;
 
+  RomSet m_romset;
   Z80Cpu_ptr m_cpu;
   AddressBus16x8_ptr m_bus;
   RamDevice m_ram;

@@ -92,6 +92,7 @@ class DonkeyKong : public Machine {
   void init_switches(void);
   void init_controls(void);
 
+  RomSet m_romset;
   RamDevice m_ram;
   Z80Cpu_ptr m_main_cpu;
   I8257_ptr m_i8257;

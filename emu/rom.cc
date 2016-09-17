@@ -68,8 +68,20 @@ void Rom::append(const bvec &data) {
 
 const uint8_t *Rom::direct(offset_t offset) const { return &_rom[offset]; }
 
-#ifdef WIN32
+RomSet::RomSet(void) {}
+
 RomSet::RomSet(const std::string &path) {
+  load(path);
+}
+
+RomSet::RomSet(const RomDefinition &def) {
+  load(def);
+}
+
+RomSet::~RomSet(void) {}
+
+#ifdef WIN32
+void RomSet::load(const std::string &path) {
   HANDLE hFind;
   WIN32_FIND_DATA data;
   if ((hFind = FindFirstFile(path.c_str(), &data)) == INVALID_HANDLE_VALUE) {
@@ -87,7 +99,7 @@ RomSet::RomSet(const std::string &path) {
 }
 
 #else
-RomSet::RomSet(const std::string &path) {
+void RomSet::load(const std::string &path) {
   DIR *dir;
   struct dirent *ent;
   if ((dir = opendir(path.c_str())) == NULL) throw RomException(path.c_str());
@@ -101,7 +113,7 @@ RomSet::RomSet(const std::string &path) {
 }
 #endif
 
-RomSet::RomSet(const RomDefinition &def) {
+void RomSet::load(const RomDefinition &def) {
   for (auto it = def.regions.begin(); it != def.regions.end(); it++) {
     Rom rom;
     for (auto it2 = it->roms.begin(); it2 != it->roms.end(); it2++) {
@@ -115,8 +127,6 @@ RomSet::RomSet(const RomDefinition &def) {
     _roms.insert(make_pair(it->name, rom));
   }
 }
-
-RomSet::~RomSet(void) {}
 
 Rom *RomSet::rom(const std::string &name) {
   auto it = _roms.find(name);

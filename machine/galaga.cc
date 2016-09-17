@@ -70,25 +70,26 @@ Galaga::Galaga(void)
 
   add_screen(224, 288, GfxScale::None, FrameBuffer::ROT90);
 
-  m_bus = AddressBus16x8_ptr(new AddressBus16x8());
+  m_bus1 = AddressBus16x8_ptr(new AddressBus16x8());
+  m_main_cpu = Z80Cpu_ptr(new Z80Cpu(this, "maincpu", hertz / 6, m_bus1.get()));
+
+  m_bus2 = AddressBus16x8_ptr(new AddressBus16x8());
+  m_sub_cpu = Z80Cpu_ptr(new Z80Cpu(this, "subcpu", hertz / 6, m_bus2.get()));
+
+  m_bus3 = AddressBus16x8_ptr(new AddressBus16x8());
+  m_snd_cpu = Z80Cpu_ptr(new Z80Cpu(this, "sndcpu", hertz / 6, m_bus3.get()));
 
   init_switches();
   reset_switches();
 
   init_controls();
 
-  m_main_cpu = Z80Cpu_ptr(new Z80Cpu(this, "maincpu", hertz / 6, m_bus.get()));
-
-  m_sub_cpu = Z80Cpu_ptr(new Z80Cpu(this, "subcpu", hertz / 6, m_bus.get()));
-
-  m_snd_cpu = Z80Cpu_ptr(new Z80Cpu(this, "sndcpu", hertz / 6, m_bus.get()));
-
   m_namco06 = Namco06_ptr(new Namco06(this, m_main_cpu.get()));
 
   m_namco51 = Namco51_ptr(new Namco51(this));
   m_namco06->add_child(0, m_namco51.get());
 
-  m_gfx = GalagaGfx_ptr(new GalagaGfx(this, "gfx", hertz, m_bus.get()));
+  m_gfx = GalagaGfx_ptr(new GalagaGfx(this, "gfx", hertz, m_bus1.get()));
 
   m_gfx->register_callback(64, [&](void) {
     if (m_snd_nmi) set_line("sndcpu", Line::NMI, LineState::Pulse);
@@ -103,7 +104,9 @@ Galaga::Galaga(void)
     if (m_sub_irq) set_line("subcpu", Line::INT0, LineState::Assert);
   });
 
-  init_bus();
+  init_bus(m_bus1.get());
+  init_bus(m_bus2.get());
+  init_bus(m_bus3.get());
 }
 
 Galaga::~Galaga(void) {}
@@ -117,12 +120,12 @@ void Galaga::load_rom(const std::string &rom) {
     roms = galaga_rom();
   }
 
-  RomSet romset(roms);
+  m_romset.load(roms);
 
-  m_main_cpu->load_rom(romset.rom("maincpu"), 0x0000);
-  m_sub_cpu->load_rom(romset.rom("subcpu"), 0x0000);
-  m_snd_cpu->load_rom(romset.rom("sndcpu"), 0x0000);
-  m_gfx->init(&romset);
+  m_bus1->add(0x0000, m_romset.rom("maincpu"));
+  m_bus2->add(0x0000, m_romset.rom("subcpu"));
+  m_bus3->add(0x0000, m_romset.rom("sndcpu"));
+  m_gfx->init(&m_romset);
 }
 
 byte_t Galaga::dips_read(offset_t offset) {
@@ -151,33 +154,33 @@ void Galaga::latch_write(offset_t offset, byte_t value) {
   }
 }
 
-void Galaga::init_bus(void) {
+void Galaga::init_bus(AddressBus16x8 *bus) {
   /* Dipswitches */
-  m_bus->add(0x6800, 0x6807, READ_CB(Galaga::dips_read, this),
+  bus->add(0x6800, 0x6807, READ_CB(Galaga::dips_read, this),
              AddressBus16x8::DefaultWrite());
   /* XXX: Sound */
-  m_bus->add(0x6808, 0x681F);
-  m_bus->add(0x6820, 0x6827, AddressBus16x8::DefaultRead(),
+  bus->add(0x6808, 0x681F);
+  bus->add(0x6820, 0x6827, AddressBus16x8::DefaultRead(),
              WRITE_CB(Galaga::latch_write, this));
   /* XXX: Watchdog */
-  m_bus->add(0x6830, 0x6830);
+  bus->add(0x6830, 0x6830);
 
   /* Namco06 (and children) */
-  m_bus->add(0x7000, 0x70FF, READ_CB(Namco06::read_child, m_namco06.get()),
+  bus->add(0x7000, 0x70FF, READ_CB(Namco06::read_child, m_namco06.get()),
              WRITE_CB(Namco06::write_child, m_namco06.get()));
-  m_bus->add(0x7100, READ_CB(Namco06::read_control, m_namco06.get()),
+  bus->add(0x7100, READ_CB(Namco06::read_control, m_namco06.get()),
              WRITE_CB(Namco06::write_control, m_namco06.get()));
 
   /* Various ram */
-  m_bus->add(0x8000, 0x87FF, READ_CB(GalagaGfx::vmem_read, m_gfx.get()),
+  bus->add(0x8000, 0x87FF, READ_CB(GalagaGfx::vmem_read, m_gfx.get()),
              WRITE_CB(GalagaGfx::vmem_write, m_gfx.get()));
 
-  m_bus->add(0x8800, &ram1);
-  m_bus->add(0x9000, &ram2);
-  m_bus->add(0x9800, &ram3);
+  bus->add(0x8800, &ram1);
+  bus->add(0x9000, &ram2);
+  bus->add(0x9800, &ram3);
 
   /* XXX: Star control */
-  m_bus->add(0xA000, 0xA007);
+  bus->add(0xA000, 0xA007);
 }
 
 void Galaga::init_switches(void) {

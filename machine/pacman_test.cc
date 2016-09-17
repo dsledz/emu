@@ -26,20 +26,12 @@
 #include "gtest/gtest.h"
 
 #include "emu/emu.h"
+#include "emu/test.h"
 
 #include "machine/pacman.h"
 
 using namespace EMU;
 
-
 TEST(PacmanTest, run100) {
-  Arcade::Pacman machine("pacman");
-
-  Core::log.set_level(LogLevel::Debug);
-  machine.poweron();
-  machine.reset();
-  machine.run_forward(sec(10));
-  machine.poweroff();
+  EMUTest::machine_test<Arcade::Pacman>();
 }
-
-TEST(PacmanTest, load) { Arcade::Pacman machine(""); }

@@ -57,7 +57,7 @@ RomDefinition pacman_rom(void) {
 }
 
 Pacman::Pacman(void)
-    : Machine(), m_hertz(18432000), m_ram(this, "ram", 0x800) {
+    : Machine(), m_hertz(18432000), m_romset(), m_ram(this, "ram", 0x800) {
   add_screen(224, 288, GfxScale::None, FrameBuffer::ROT90);
 
   m_bus = AddressBus16x8_ptr(new AddressBus16x8());
@@ -84,14 +84,10 @@ Pacman::Pacman(void)
 Pacman::~Pacman(void) {}
 
 void Pacman::load_rom(const std::string &rom) {
-  if (rom == "pacman") {
-    m_roms = std::unique_ptr<RomSet>(new RomSet(pacman_rom()));
-  } else {
-    throw KeyError(rom);
-  }
+  m_romset.load(pacman_rom());
 
-  m_cpu->load_rom(m_roms->rom("maincpu"), 0x0000);
-  m_gfx->init(m_roms.get());
+  m_cpu->load_rom(m_romset.rom("maincpu"), 0x0000);
+  m_gfx->init(&m_romset);
 }
 
 byte_t Pacman::io_read(offset_t offset) { return 0; }

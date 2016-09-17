@@ -82,10 +82,13 @@ struct RomDefinition {
 
 class RomSet {
  public:
+  RomSet(void);
   RomSet(const std::string &path);
   RomSet(const RomDefinition &definition);
   ~RomSet(void);
 
+  void load(const std::string &path);
+  void load(const RomDefinition &definition);
   Rom *rom(const std::string &name);
 
  private:

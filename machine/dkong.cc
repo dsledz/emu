@@ -47,7 +47,7 @@ RomDefinition dkong_rom(void) {
 }
 
 DonkeyKong::DonkeyKong(void)
-    : Machine(), m_ram(this, "ram", 0x1000), m_nmi_mask(false) {
+    : Machine(), m_romset(), m_ram(this, "ram", 0x1000), m_nmi_mask(false) {
   unsigned hertz = 18432000;
   add_screen(224, 256, GfxScale::None, FrameBuffer::ROT90);
 
@@ -77,10 +77,10 @@ void DonkeyKong::load_rom(const std::string &rom) {
   RomDefinition roms("dkong");
   roms = dkong_rom();
 
-  RomSet romset(roms);
+  m_romset.load(roms);
 
-  m_main_cpu->load_rom(romset.rom("maincpu"), 0x0000);
-  m_gfx->init(&romset);
+  m_bus->add(0x0000, m_romset.rom("maincpu"));
+  m_gfx->init(&m_romset);
 }
 
 void DonkeyKong::init_switches(void) {

@@ -82,7 +82,7 @@ class Galaga : public Machine {
   byte_t dips_read(offset_t offset);
   void latch_write(offset_t offset, byte_t value);
 
-  void init_bus(void);
+  void init_bus(AddressBus16x8 *bus);
   void init_switches(void);
   void init_controls(void);
 
@@ -94,6 +94,7 @@ class Galaga : public Machine {
   void draw_sprites(void);
   void draw_screen(void);
 
+  RomSet m_romset;
   RamDevice ram1, ram2, ram3;
   Z80Cpu_ptr m_main_cpu;
   Z80Cpu_ptr m_sub_cpu;
@@ -102,7 +103,9 @@ class Galaga : public Machine {
   Namco06_ptr m_namco06;
   GalagaGfx_ptr m_gfx;
 
-  AddressBus16x8_ptr m_bus;
+  AddressBus16x8_ptr m_bus1;
+  AddressBus16x8_ptr m_bus2;
+  AddressBus16x8_ptr m_bus3;
 
   /* Interrupt lines */
   bool m_main_irq;
