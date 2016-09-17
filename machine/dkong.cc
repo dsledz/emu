@@ -47,7 +47,12 @@ RomDefinition dkong_rom(void) {
 }
 
 DonkeyKong::DonkeyKong(void)
-    : Machine(), m_romset(), m_ram(this, "ram", 0x1000), m_nmi_mask(false) {
+    : Machine(),
+      m_romset(),
+      m_cpu_state(),
+      m_cpu(nullptr),
+      m_ram(this, "ram", 0x1000),
+      m_nmi_mask(false) {
   unsigned hertz = 18432000;
   add_screen(224, 256, GfxScale::None, FrameBuffer::ROT90);
 
@@ -58,7 +63,8 @@ DonkeyKong::DonkeyKong(void)
 
   init_controls();
 
-  m_main_cpu = Z80Cpu_ptr(new Z80Cpu(this, "maincpu", hertz / 6, m_bus.get()));
+  m_cpu_state.bus = m_bus.get();
+  m_cpu = Z80Cpu_ptr(new Z80Cpu(this, "maincpu", hertz / 6, &m_cpu_state));
 
   m_i8257 = I8257_ptr(new I8257(this, "i8257", hertz / 6, m_bus.get()));
 

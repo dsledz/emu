@@ -96,16 +96,23 @@ class Galaga : public Machine {
 
   RomSet m_romset;
   RamDevice ram1, ram2, ram3;
+
+  Z80State m_main_cpu_state;
   Z80Cpu_ptr m_main_cpu;
+  Z80Bus_ptr m_bus1;
+
+  Z80State m_sub_cpu_state;
   Z80Cpu_ptr m_sub_cpu;
+  Z80Bus_ptr m_bus2;
+
+  Z80State m_snd_cpu_state;
   Z80Cpu_ptr m_snd_cpu;
+  Z80Bus_ptr m_bus3;
+
+  Z80IOBus_ptr m_iobus;
   Namco51_ptr m_namco51;
   Namco06_ptr m_namco06;
   GalagaGfx_ptr m_gfx;
-
-  AddressBus16x8_ptr m_bus1;
-  AddressBus16x8_ptr m_bus2;
-  AddressBus16x8_ptr m_bus3;
 
   /* Interrupt lines */
   bool m_main_irq;

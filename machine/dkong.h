@@ -93,8 +93,9 @@ class DonkeyKong : public Machine {
   void init_controls(void);
 
   RomSet m_romset;
+  Z80State m_cpu_state;
+  Z80Cpu_ptr m_cpu;
   RamDevice m_ram;
-  Z80Cpu_ptr m_main_cpu;
   I8257_ptr m_i8257;
   DonkeyKongGfx_ptr m_gfx;
 

@@ -44,7 +44,9 @@ enum Z80Arg {
 enum Z80Arg16 { RegBC = 0, RegDE = 1, RegHL = 2, RegIX = 3, RegIY = 4 };
 
 typedef AddressBus16x8 Z80Bus;
+typedef std::unique_ptr<Z80Bus> Z80Bus_ptr;
 typedef AddressBus8x8 Z80IOBus;
+typedef std::unique_ptr<Z80IOBus> Z80IOBus_ptr;
 
 struct Z80State;
 
@@ -83,6 +85,7 @@ typedef CPU2::CpuOpcode<Z80State> Z80Opcode;
 
 struct Z80State {
   Z80State(void) = default;
+  Z80State(Z80Bus *bus, Z80IOBus *io) : bus(bus), io(io) {}
 
   union {
     struct {
@@ -163,7 +166,6 @@ struct Z80State {
     AF2.d = BC2.d = DE2.d = HL2.d = 0;
   }
 
-  CPU2::CpuPhase Phase;
   uint8_t icycles;
   Z80Bus *bus;
   Z80IOBus *io;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Dan Sledz
+ * Copyright (c) 2016, Dan Sledz
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,49 +23,42 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "emu/rom.h"
-#include "emu/test.h"
-
 #include "cpu/z80/z80.h"
+#include "emu/test.h"
 
 using namespace EMU;
 using namespace EMUTest;
 using namespace Z80;
 
-#if 0
-typedef TestMachine<Z80Cpu, 0x0000> Z80Machine;
-
-TEST(Z80Test, opcode_dd)
-{
-    Z80Machine machine;
-
-    LOAD4(0xDD, 0x21, 0x34, 0x12);  /* LD IX, $1234 */
-
-}
-#endif
-
 class Zexall : public Machine {
  public:
   Zexall(void)
-      : bus(new AddressBus16x8()),
-        cpu(new Z80Cpu(this, "cpu", 1000000, bus.get())),
+      : bus(new Z80Bus()),
+        io(new Z80IOBus()),
+        state(bus.get(), io.get()),
+        cpu(new Z80Cpu(this, "cpu", 1000000, &state)),
         rom("zex.bin"),
+        ram(),
         m_data(0),
         m_req(0),
         m_req_last(0),
         m_ack(0) {
-    cpu->load_rom(&rom, 0x0000);
+
+    ram.assign(rom.cbegin(), rom.cend());
+    ram.resize(0xF000);
+    bus->add(0x0000, ram);
 
     bus->add(0xFFFF, &m_data);
     bus->add(0xFFFE, 0xFFFF, READ_CB(Zexall::req_read, this),
              WRITE_CB(Zexall::req_write, this));
     bus->add(0xFFFD, &m_ack);
 
-    cpu->io()->add(0x01, 0x01, AddressBus8x8::DefaultRead(),
-                   AddressBus8x8::DefaultWrite());
+    io->add(0x01, 0x01, AddressBus8x8::DefaultRead(),
+            AddressBus8x8::DefaultWrite());
   }
   ~Zexall(void) {}
 
+  virtual void load_rom(const std::string &rom) { }
   byte_t req_read(byte_t vlaue) { return m_req; }
 
   void req_write(offset_t offset, byte_t value) {
@@ -79,20 +72,14 @@ class Zexall : public Machine {
   }
 
   std::unique_ptr<AddressBus16x8> bus;
+  std::unique_ptr<AddressBus8x8> io;
+  Z80State state;
   std::unique_ptr<Z80Cpu> cpu;
   Rom rom;
+  bvec ram;
   byte_t m_data, m_req, m_req_last, m_ack;
 };
 
 TEST(Zexall_test, test) {
-  Zexall machine;
-  EmuTime runtime = get_runtime("Z80_RUNTIME");
-
-  Core::log.set_level(LogLevel::Debug);
-
-  // Run the first few seconds of the rom
-  machine.poweron();
-  machine.reset();
-  machine.run_forward(runtime);
-  machine.poweroff();
+  machine_test<Zexall>();
 }

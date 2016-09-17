@@ -156,10 +156,11 @@ class Pacman : public Machine {
   unsigned m_hertz;
 
   RomSet m_romset;
+  Z80State m_cpu_state;
   Z80Cpu_ptr m_cpu;
-  AddressBus16x8_ptr m_bus;
+  Z80Bus_ptr m_bus;
+  Z80IOBus_ptr m_iobus;
   RamDevice m_ram;
-  std::unique_ptr<RomSet> m_roms;
   PacmanGfx_ptr m_gfx;
 
   /* latches */

@@ -63,6 +63,16 @@ Galaga::Galaga(void)
       ram1(this, "ram1", 0x0400),
       ram2(this, "ram2", 0x0400),
       ram3(this, "ram3", 0x0400),
+      m_main_cpu_state(),
+      m_main_cpu(nullptr),
+      m_bus1(nullptr),
+      m_sub_cpu_state(),
+      m_sub_cpu(nullptr),
+      m_bus2(nullptr),
+      m_snd_cpu_state(),
+      m_snd_cpu(nullptr),
+      m_bus3(nullptr),
+      m_iobus(nullptr),
       m_main_irq(false),
       m_sub_irq(false),
       m_snd_nmi(false) {
@@ -70,14 +80,24 @@ Galaga::Galaga(void)
 
   add_screen(224, 288, GfxScale::None, FrameBuffer::ROT90);
 
-  m_bus1 = AddressBus16x8_ptr(new AddressBus16x8());
-  m_main_cpu = Z80Cpu_ptr(new Z80Cpu(this, "maincpu", hertz / 6, m_bus1.get()));
+  m_iobus = Z80IOBus_ptr(new Z80IOBus());
+  m_bus1 = Z80Bus_ptr(new Z80Bus());
+  m_main_cpu_state.bus = m_bus1.get();
+  m_main_cpu_state.io = m_iobus.get();
+  m_main_cpu =
+      Z80Cpu_ptr(new Z80Cpu(this, "maincpu", hertz / 6, &m_main_cpu_state));
 
-  m_bus2 = AddressBus16x8_ptr(new AddressBus16x8());
-  m_sub_cpu = Z80Cpu_ptr(new Z80Cpu(this, "subcpu", hertz / 6, m_bus2.get()));
+  m_bus2 = Z80Bus_ptr(new Z80Bus());
+  m_sub_cpu_state.bus = m_bus2.get();
+  m_sub_cpu_state.io = m_iobus.get();
+  m_sub_cpu =
+      Z80Cpu_ptr(new Z80Cpu(this, "subcpu", hertz / 6, &m_sub_cpu_state));
 
-  m_bus3 = AddressBus16x8_ptr(new AddressBus16x8());
-  m_snd_cpu = Z80Cpu_ptr(new Z80Cpu(this, "sndcpu", hertz / 6, m_bus3.get()));
+  m_bus3 = Z80Bus_ptr(new Z80Bus());
+  m_snd_cpu_state.bus = m_bus3.get();
+  m_snd_cpu_state.io = m_iobus.get();
+  m_snd_cpu =
+      Z80Cpu_ptr(new Z80Cpu(this, "sndcpu", hertz / 6, &m_snd_cpu_state));
 
   init_switches();
   reset_switches();
@@ -154,13 +174,13 @@ void Galaga::latch_write(offset_t offset, byte_t value) {
   }
 }
 
-void Galaga::init_bus(AddressBus16x8 *bus) {
+void Galaga::init_bus(Z80Bus *bus) {
   /* Dipswitches */
   bus->add(0x6800, 0x6807, READ_CB(Galaga::dips_read, this),
-             AddressBus16x8::DefaultWrite());
+             Z80Bus::DefaultWrite());
   /* XXX: Sound */
   bus->add(0x6808, 0x681F);
-  bus->add(0x6820, 0x6827, AddressBus16x8::DefaultRead(),
+  bus->add(0x6820, 0x6827, Z80Bus::DefaultRead(),
              WRITE_CB(Galaga::latch_write, this));
   /* XXX: Watchdog */
   bus->add(0x6830, 0x6830);

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "cpu/z80/z80v2.h"
+#include "cpu/z80/z80.h"
 
 #define OP(op, ...) void op(Z80State *state, ##__VA_ARGS__)
 
-namespace Z80v2 {
+namespace Z80 {
 
 static inline int __attribute__((__used__)) CALC_PARITY(reg8_t reg);
 static inline void __attribute__((__used__))

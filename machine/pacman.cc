@@ -57,12 +57,20 @@ RomDefinition pacman_rom(void) {
 }
 
 Pacman::Pacman(void)
-    : Machine(), m_hertz(18432000), m_romset(), m_ram(this, "ram", 0x800) {
+    : Machine(),
+      m_hertz(18432000),
+      m_romset(),
+      m_cpu_state(),
+      m_cpu(nullptr),
+      m_ram(this, "ram", 0x800) {
   add_screen(224, 288, GfxScale::None, FrameBuffer::ROT90);
 
-  m_bus = AddressBus16x8_ptr(new AddressBus16x8());
+  m_bus = Z80Bus_ptr(new Z80Bus());
+  m_iobus = Z80IOBus_ptr(new Z80IOBus());
 
-  m_cpu = Z80Cpu_ptr(new Z80Cpu(this, "maincpu", m_hertz / 6, m_bus.get()));
+  m_cpu_state.bus = m_bus.get();
+  m_cpu_state.io = m_iobus.get();
+  m_cpu = Z80Cpu_ptr(new Z80Cpu(this, "maincpu", m_hertz / 6, &m_cpu_state));
 
   m_gfx = PacmanGfx_ptr(new PacmanGfx(this, "gfx", m_hertz, m_bus.get()));
 
@@ -77,7 +85,7 @@ Pacman::Pacman(void)
   init_controls();
 
   /* Add IO ports */
-  m_cpu->io()->add(0x00, 0x0, READ_CB(Pacman::io_read, this),
+  m_iobus->add(0x00, 0x0, READ_CB(Pacman::io_read, this),
                    WRITE_CB(Pacman::io_write, this));
 }
 
@@ -86,7 +94,7 @@ Pacman::~Pacman(void) {}
 void Pacman::load_rom(const std::string &rom) {
   m_romset.load(pacman_rom());
 
-  m_cpu->load_rom(m_romset.rom("maincpu"), 0x0000);
+  m_bus->add(0x0000, m_romset.rom("maincpu"));
   m_gfx->init(&m_romset);
 }
 
