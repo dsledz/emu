@@ -23,7 +23,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "emu/emulator.h"
+#include "driver/emulator.h"
 
 using namespace EMU;
 
@@ -101,3 +101,10 @@ const Options *Emulator::options(void) { return &m_options; }
 void Emulator::key_event(InputKey key, bool pressed) {
   machine()->send_input(key, pressed);
 }
+
+FORCE_UNDEFINED_SYMBOL(galaga);
+FORCE_UNDEFINED_SYMBOL(gb);
+FORCE_UNDEFINED_SYMBOL(nes);
+FORCE_UNDEFINED_SYMBOL(tg16);
+FORCE_UNDEFINED_SYMBOL(pacman);
+FORCE_UNDEFINED_SYMBOL(dkong);

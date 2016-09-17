@@ -25,7 +25,7 @@
 
 #include "gtest/gtest.h"
 
-#include "emu/emulator.h"
+#include "driver/emulator.h"
 
 using namespace EMU;
 

@@ -2,7 +2,6 @@ add_library(emu
     clock.cc
     device.cc
     emu.cc
-    emulator.cc
     gfx.cc
     timer_queue.cc
     input.cc
@@ -18,15 +17,25 @@ target_link_libraries(emu
 
 if (BUILD_TESTING)
     add_executable(emu-check
-        debugger_test.cc
-        dipswitch_test.cc
         emu_test.cc
-        io_test.cc
-        page_test.cc
         time_test.cc
-        timer_queue_test.cc)
+        timer_queue_test.cc
+        dipswitch_test.cc
+        io_test.cc)
     target_link_libraries(emu-check
         emu
         gtest gtest_main)
     add_test(emu-check emu-check)
+    add_executable(mem-check
+        page_test.cc)
+    target_link_libraries(mem-check
+        emu
+        gtest gtest_main)
+    add_test(mem-check mem-check)
+    add_executable(debug-check
+        debugger_test.cc)
+    target_link_libraries(debug-check
+        emu
+        gtest gtest_main)
+    add_test(debug-check debug-check)
 endif (BUILD_TESTING)
