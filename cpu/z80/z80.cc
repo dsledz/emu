@@ -467,9 +467,11 @@ void Z80Cpu::execute(void) {
         if (m_state->reset_line == LineState::Pulse) {
           m_state->reset();
           m_state->reset_line = LineState::Clear;
+          m_state->halt = false;
         } else if (m_state->nmi_line == LineState::Pulse) {
           interrupt(0x0066);
           m_state->nmi_line = LineState::Clear;
+          m_state->halt = false;
         } else if (m_state->int0_line == LineState::Assert && m_state->iff1 &&
                    !m_state->iwait) {
           switch (m_state->imode) {
@@ -490,6 +492,7 @@ void Z80Cpu::execute(void) {
               interrupt(irq.d);
             }
           }
+          m_state->halt = false;
         }
 
         if (unlikely(m_state->iwait)) m_state->iwait = false;
@@ -497,6 +500,10 @@ void Z80Cpu::execute(void) {
         if (unlikely(m_state->yield)) {
           yield();
           m_state->yield = false;
+        }
+        if (m_state->halt) {
+          add_icycles(100);
+          continue;
         }
       }
       {
@@ -614,4 +621,23 @@ std::string Z80Cpu::Log(Z80State *state) {
   os << ",SP:" << Hex(state->SP.d);
 
   return os.str();
+}
+
+void Z80Cpu::line(Line line, LineState state) {
+  switch (line) {
+    case Line::RESET:
+      m_state->reset_line = state;
+      break;
+    case Line::INT0:
+      m_state->int0_line = state;
+      break;
+    case Line::NMI:
+      m_state->nmi_line = state;
+      break;
+    case Line::WAIT:
+      m_state->wait_line = state;
+      break;
+    default:
+      break;
+  }
 }

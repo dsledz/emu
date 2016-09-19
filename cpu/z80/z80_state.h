@@ -133,6 +133,7 @@ struct Z80State {
   reg8_t latch_op;
   reg16_t *vHL;
 
+  bool halt;
   bool yield;
   bool iff1;
   bool iff2;

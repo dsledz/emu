@@ -34,16 +34,10 @@ using namespace Arcade;
 GalagaGfx::GalagaGfx(Machine *machine, const std::string &name, unsigned hertz,
                      AddressBus16x8 *bus)
     : ScreenDevice(machine, name, hertz, 384, 264, 256, 0, 240, 16),
-      vram(machine, "vram", 0x0800),
+      m_vram(machine, "vram", 0x0800),
       m_bus(bus) {}
 
 GalagaGfx::~GalagaGfx(void) {}
-
-uint8_t GalagaGfx::vmem_read(offset_t offset) { return vram.read8(offset); }
-
-void GalagaGfx::vmem_write(offset_t offset, uint8_t value) {
-  vram.write8(offset, value);
-}
 
 void GalagaGfx::init_tile(GfxObject<8, 8> *t, byte_t *b) {
   int p = 0;
@@ -189,7 +183,7 @@ void GalagaGfx::draw_sprites(FrameBuffer *screen) {
 
 void GalagaGfx::draw_bg(FrameBuffer *screen) {
   /* Render the tilemap */
-  byte_t *tile_map = vram.direct(0x000);
+  byte_t *tile_map = m_vram.direct(0x000);
   for (int tx = 0; tx < 36; tx++) {
     for (int ty = 0; ty < 28; ty++) {
       int index = 0;

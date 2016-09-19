@@ -42,8 +42,7 @@ class GalagaGfx : public ScreenDevice {
             AddressBus16x8 *bus);
   ~GalagaGfx(void);
 
-  uint8_t vmem_read(offset_t offset);
-  void vmem_write(offset_t offset, uint8_t value);
+  RamDevice *vram(void) { return &m_vram; }
 
   void init(RomSet *romset);
 
@@ -51,14 +50,13 @@ class GalagaGfx : public ScreenDevice {
   virtual void do_vdraw(void);
 
  private:
-  RamDevice vram;
-
   void init_sprite(GfxObject<16, 16> *obj, byte_t *b);
   void init_tile(GfxObject<8, 8> *obj, byte_t *b);
 
   void draw_bg(FrameBuffer *screen);
   void draw_sprites(FrameBuffer *screen);
 
+  RamDevice m_vram;
   AddressBus16x8 *m_bus;
 
   /* Graphic Data */
@@ -95,7 +93,7 @@ class Galaga : public Machine {
   void draw_screen(void);
 
   RomSet m_romset;
-  RamDevice ram1, ram2, ram3;
+  RamDevice m_ram1, m_ram2, m_ram3;
 
   Z80State m_main_cpu_state;
   Z80Cpu_ptr m_main_cpu;

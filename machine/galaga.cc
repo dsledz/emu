@@ -60,9 +60,9 @@ RomDefinition galagao_rom(void) {
 
 Galaga::Galaga(void)
     : Machine(),
-      ram1(this, "ram1", 0x0400),
-      ram2(this, "ram2", 0x0400),
-      ram3(this, "ram3", 0x0400),
+      m_ram1(this, "ram1", 0x0400),
+      m_ram2(this, "ram2", 0x0400),
+      m_ram3(this, "ram3", 0x0400),
       m_main_cpu_state(),
       m_main_cpu(nullptr),
       m_bus1(nullptr),
@@ -192,12 +192,11 @@ void Galaga::init_bus(Z80Bus *bus) {
              WRITE_CB(Namco06::write_control, m_namco06.get()));
 
   /* Various ram */
-  bus->add(0x8000, 0x87FF, READ_CB(GalagaGfx::vmem_read, m_gfx.get()),
-             WRITE_CB(GalagaGfx::vmem_write, m_gfx.get()));
+  bus->add(0x8000, m_gfx->vram());
 
-  bus->add(0x8800, &ram1);
-  bus->add(0x9000, &ram2);
-  bus->add(0x9800, &ram3);
+  bus->add(0x8800, &m_ram1);
+  bus->add(0x9000, &m_ram2);
+  bus->add(0x9800, &m_ram3);
 
   /* XXX: Star control */
   bus->add(0xA000, 0xA007);

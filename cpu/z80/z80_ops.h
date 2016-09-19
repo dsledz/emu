@@ -439,7 +439,7 @@ static inline void __attribute__((__used__)) EXX(Z80State *state) {
 }
 
 static inline void __attribute__((__used__)) HALT(Z80State *state) {
-  // NYI
+  state->halt = true;
 }
 
 static inline void __attribute__((__used__)) IM(Z80State *state, byte_t arg) {

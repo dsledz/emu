@@ -44,6 +44,7 @@ class Z80Cpu : public Cpu<Z80Bus, Z80State, Z80Opcode> {
   Z80Cpu(const Z80Cpu &rhs) = delete;
 
   virtual void execute(void);
+  virtual void line(Line line, LineState state);
 
   void set_data(byte_t data) {
     // XXX: Horrible hack for IM2 and pacman
