@@ -108,7 +108,7 @@ __attribute__((packed));
 #endif
 
 class HuC6280Cpu
-    : public Cpu<AddressBus21x8, M6502Traits, HuC6280State, uint8_t> {
+    : public Cpu<AddressBus21x8, M6502Traits, HuC6280State> {
  public:
   HuC6280Cpu(Machine *machine, const std::string &name, unsigned clock,
              AddressBus21x8 *bus);

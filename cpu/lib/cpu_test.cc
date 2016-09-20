@@ -34,9 +34,9 @@ struct TestState {
   AddressBus16x8 *bus;
 };
 
-typedef CpuTraits<uint16_t, uint8_t> TestTraits;
+typedef CpuTraits<uint16_t, uint8_t, uint8_t> TestTraits;
 
-class TestCpu : public Cpu<AddressBus16x8, TestTraits, TestState, uint8_t> {
+class TestCpu : public Cpu<AddressBus16x8, TestTraits, TestState> {
  public:
   TestCpu(Machine *machine, const std::string &name, unsigned hertz,
           AddressBus16x8 *bus)

@@ -105,9 +105,9 @@ __attribute__((packed));
 
 class M6502Cpu;
 
-typedef CpuTraits<uint16_t, uint8_t> M6502Traits;
+typedef CpuTraits<uint16_t, uint8_t, uint8_t> M6502Traits;
 
-class M6502Cpu : public Cpu<AddressBus16x8, M6502Traits, M6502State, uint8_t> {
+class M6502Cpu : public Cpu<AddressBus16x8, M6502Traits, M6502State> {
  public:
   M6502Cpu(Machine *machine, const std::string &name, unsigned hertz,
            bus_type *bus);

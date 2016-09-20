@@ -77,24 +77,24 @@ struct CpuFeatureFault : public CpuFault {
   }
 };
 
-template <typename _addr_width, typename _data_width>
+template <typename _addr_width, typename _data_width, typename _opcode_type>
 struct CpuTraits {
   typedef _addr_width pc_type;
   typedef _addr_width addr_type;
   typedef _data_width data_type;
+  typedef _opcode_type opcode_type;
 };
 
-template <class _bus_type, class _cpu_traits, class _state_type,
-          typename _opcode_type>
+template <class _bus_type, class _cpu_traits, class _state_type>
 class Cpu : public ClockedDevice {
  public:
   typedef _bus_type bus_type;
   typedef _state_type state_type;
-  typedef _opcode_type opcode_type;
   typedef _cpu_traits cpu_traits;
   typedef typename cpu_traits::addr_type pc_type;
   typedef typename cpu_traits::addr_type addr_type;
   typedef typename cpu_traits::data_type data_type;
+  typedef typename cpu_traits::opcode_type opcode_type;
 
   struct Opcode {
     opcode_type code;
@@ -165,14 +165,12 @@ class Cpu : public ClockedDevice {
   }
 
   static data_type jit_bus_read(void *ctx, addr_type addr) {
-    auto *cpu =
-        static_cast<Cpu<bus_type, cpu_traits, state_type, opcode_type> *>(ctx);
+    auto *cpu = static_cast<Cpu<bus_type, cpu_traits, state_type> *>(ctx);
     return cpu->m_state.bus_read(addr);
   }
 
   static void jit_bus_write(void *ctx, addr_type addr, data_type value) {
-    auto *cpu =
-        static_cast<Cpu<bus_type, cpu_traits, state_type, opcode_type> *>(ctx);
+    auto *cpu = static_cast<Cpu<bus_type, cpu_traits, state_type> *>(ctx);
     cpu->m_state.bus_write(addr, value);
   }
 
