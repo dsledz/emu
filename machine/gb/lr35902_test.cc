@@ -54,7 +54,7 @@ public:
 class LR35902Test : public ::testing::Test {
  public:
   LR35902Test(void)
-      : machine(),
+      : machine(Hertz(4194304)),
         bus(),
         cpu(&machine, "test", 1000000, &bus),
         ram(0xE000),

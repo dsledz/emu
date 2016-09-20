@@ -54,7 +54,7 @@ TEST(MachineTest, time3) {
 }
 
 TEST(MachineTest, ioport) {
-  Machine machine;
+  Machine machine(Hertz(DEFAULT_HERTZ));
   machine.add_ioport("test1");
 
   IOPort *port = machine.ioport("test1");
@@ -68,7 +68,7 @@ TEST(MachineTest, ioport) {
 
 class TestMachine : public Machine {
  public:
-  TestMachine(void) : Machine(), dev(this) {}
+  TestMachine(void) : Machine(Hertz(DEFAULT_HERTZ)), dev(this) {}
   ~TestMachine(void) {}
 
  private:
@@ -90,7 +90,7 @@ enum NESKey {
 };
 
 TEST(MachineTest, input_map) {
-  Machine machine;
+  Machine machine(Hertz(DEFAULT_HERTZ));
   machine.add_ioport("PORT1");
   machine.add_ioport("PORT2");
 

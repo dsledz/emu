@@ -27,7 +27,7 @@
 
 using namespace EMU;
 
-Machine::Machine(void)
+Machine::Machine(Hertz hertz)
     : m_clock(nullptr),
       m_scheduler(),
       m_input(),
@@ -36,7 +36,7 @@ Machine::Machine(void)
       m_ports(),
       m_debugger(),
       m_fb(nullptr) {
-  add_clock(Hertz(0));
+  add_clock(hertz);
 }
 
 Machine::~Machine(void) {

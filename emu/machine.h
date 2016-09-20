@@ -63,7 +63,7 @@ class Machine {
   /**
    * Initialize the machine with a master clock rate of @a hertz
    */
-  Machine(void);
+  Machine(Hertz hertz);
   virtual ~Machine(void);
 
   void poweron(void);

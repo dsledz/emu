@@ -57,7 +57,7 @@ RomDefinition pacman_rom(void) {
 }
 
 Pacman::Pacman(void)
-    : Machine(),
+    : Machine(Hertz(18432000)),
       m_hertz(18432000),
       m_romset(),
       m_cpu_state(),

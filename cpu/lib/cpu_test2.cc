@@ -103,7 +103,7 @@ template <typename CpuType, unsigned initial_pc = 0x0000>
 class TestMachine2 : public Machine {
  public:
   TestMachine2(void)
-      : Machine(),
+      : Machine(Hertz(DEFAULT_HERTZ)),
         bus(),
         state(),
         cpu(this, "maincpu", 1000000, &state),

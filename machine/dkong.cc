@@ -47,7 +47,7 @@ RomDefinition dkong_rom(void) {
 }
 
 DonkeyKong::DonkeyKong(void)
-    : Machine(),
+    : Machine(Hertz(18432000)),
       m_romset(),
       m_cpu_state(),
       m_cpu(nullptr),

@@ -105,6 +105,12 @@ struct Cycles {
   int64_t v = 0;
 };
 
+struct ClockDivider {
+  ClockDivider(void) = default;
+
+  int64_t v = 0;
+};
+
 inline std::ostream &operator<<(std::ostream &os, const Cycles &c) {
   os << c.v;
   return os;

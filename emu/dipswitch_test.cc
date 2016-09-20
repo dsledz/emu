@@ -62,7 +62,7 @@ static void add_switches(Machine *machine) {
 }
 
 TEST(DipswitchTest, declare) {
-  Machine machine;
+  Machine machine(Hertz(DEFAULT_HERTZ));
 
   add_switches(&machine);
 
@@ -70,7 +70,7 @@ TEST(DipswitchTest, declare) {
 }
 
 TEST(DipswitchTest, set) {
-  Machine machine;
+  Machine machine(Hertz(DEFAULT_HERTZ));
 
   add_switches(&machine);
 

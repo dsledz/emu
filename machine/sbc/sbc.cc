@@ -18,7 +18,7 @@ RomDefinition sbc_rom(void) {
 }
 
 SingleBoardZ80::SingleBoardZ80(void)
-    : Machine(),
+    : Machine(Hertz(7372800)),
       m_hertz(7372800),
       m_state(),
       m_bus(nullptr),

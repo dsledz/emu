@@ -181,7 +181,7 @@ class GBTimer : public ClockedDevice {
   byte_t m_tac;
 };
 
-Gameboy::Gameboy(void) : Machine() {
+Gameboy::Gameboy(void) : Machine(Hertz(4194304)) {
   add_screen(160, 144);
 
   m_bus = AddressBus16x8_ptr(new AddressBus16x8());

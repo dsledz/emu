@@ -40,7 +40,7 @@ template <typename CpuType, unsigned initial_pc = 0x0000>
 class TestMachine : public Machine {
  public:
   TestMachine(void)
-      : Machine(),
+      : Machine(Hertz(DEFAULT_HERTZ)),
         bus(),
         cpu(this, "maincpu", TEST_CLOCK, &bus),
         ram(this, "ram", 0x10000),

@@ -56,7 +56,8 @@ TEST(DebuggerTest, test) {
 
 class TestMachine : public Machine {
  public:
-  TestMachine(void) : Machine(), ram(this, "ram", 0x10000) {}
+  TestMachine(void) : Machine(Hertz(DEFAULT_HERTZ)),
+    ram(this, "ram", 0x10000) {}
   ~TestMachine(void) {}
 
  private:

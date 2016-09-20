@@ -59,7 +59,7 @@ RomDefinition galagao_rom(void) {
 };
 
 Galaga::Galaga(void)
-    : Machine(),
+    : Machine(Hertz(18432000)),
       m_ram1(this, "ram1", 0x0400),
       m_ram2(this, "ram2", 0x0400),
       m_ram3(this, "ram3", 0x0400),

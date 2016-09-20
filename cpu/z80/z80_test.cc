@@ -33,7 +33,8 @@ using namespace Z80;
 class Zexall : public Machine {
  public:
   Zexall(void)
-      : bus(new Z80Bus()),
+      : Machine(Hertz(DEFAULT_HERTZ)),
+        bus(new Z80Bus()),
         io(new Z80IOBus()),
         state(bus.get(), io.get()),
         cpu(new Z80Cpu(this, "cpu", 1000000, &state)),
@@ -43,7 +44,6 @@ class Zexall : public Machine {
         m_req(0),
         m_req_last(0),
         m_ack(0) {
-
     ram.assign(rom.cbegin(), rom.cend());
     ram.resize(0xF000);
     bus->add(0x0000, ram);

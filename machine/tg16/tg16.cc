@@ -30,7 +30,7 @@ using namespace TG16Machine;
 #define MASTER_CLOCK 21477270
 
 TG16::TG16(void)
-    : Machine(),
+    : Machine(Hertz(MASTER_CLOCK)),
       m_cpu_bus(),
       m_ram(this, "ram", 0x2000),
       m_vdc(this, MASTER_CLOCK),

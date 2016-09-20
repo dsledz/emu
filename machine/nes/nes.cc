@@ -47,7 +47,10 @@ const std::vector<std::string> NES::ports = {
 };
 
 NES::NES(void)
-    : Machine(), m_ram(this, "ram", 0x0800), m_joy1_shift(0), m_joy2_shift(0) {
+    : Machine(Hertz(MASTER_CLOCK)),
+      m_ram(this, "ram", 0x0800),
+      m_joy1_shift(0),
+      m_joy2_shift(0) {
   add_screen(256, 240);
 
   for (auto it = ports.begin(); it != ports.end(); it++) add_ioport(*it);
