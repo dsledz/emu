@@ -462,86 +462,78 @@ void Z80Cpu::interrupt(addr_t addr) {
 
 void Z80Cpu::execute(void) {
   while (true) {
-      {
-      {
-        if (m_state->reset_line == LineState::Pulse) {
-          m_state->reset();
-          m_state->reset_line = LineState::Clear;
-          m_state->halt = false;
-        } else if (m_state->nmi_line == LineState::Pulse) {
-          interrupt(0x0066);
-          m_state->nmi_line = LineState::Clear;
-          m_state->halt = false;
-        } else if (m_state->int0_line == LineState::Assert && m_state->iff1 &&
-                   !m_state->iwait) {
-          switch (m_state->imode) {
-            case 0:
-              throw CpuFault(name(), "Unsupported Interrupt mode 0");
-              break;
-            case 1:
-              interrupt(0x0038);
-              break;
-            case 2: {
-              // XXX: We should do this when we read _data
-              m_state->int0_line = LineState::Clear;
-              reg16_t irq;
-              irq.b.l =
-                  m_state->bus_read(m_state, (m_state->I << 8) | m_state->data);
-              irq.b.h = m_state->bus_read(
-                  m_state, ((m_state->I << 8) | m_state->data) + 1);
-              interrupt(irq.d);
-            }
-          }
-          m_state->halt = false;
-        }
-
-        if (unlikely(m_state->iwait)) m_state->iwait = false;
-
-        if (unlikely(m_state->yield)) {
-          yield();
-          m_state->yield = false;
-        }
-        if (m_state->halt) {
-          add_icycles(100);
-          continue;
+    if (m_state->reset_line == LineState::Pulse) {
+      m_state->reset();
+      m_state->reset_line = LineState::Clear;
+      m_state->halt = false;
+    } else if (m_state->nmi_line == LineState::Pulse) {
+      interrupt(0x0066);
+      m_state->nmi_line = LineState::Clear;
+      m_state->halt = false;
+    } else if (m_state->int0_line == LineState::Assert && m_state->iff1 &&
+               !m_state->iwait) {
+      switch (m_state->imode) {
+        case 0:
+          throw CpuFault(name(), "Unsupported Interrupt mode 0");
+          break;
+        case 1:
+          interrupt(0x0038);
+          break;
+        case 2: {
+          // XXX: We should do this when we read _data
+          m_state->int0_line = LineState::Clear;
+          reg16_t irq;
+          irq.b.l =
+              m_state->bus_read(m_state, (m_state->I << 8) | m_state->data);
+          irq.b.h = m_state->bus_read(m_state,
+                                      ((m_state->I << 8) | m_state->data) + 1);
+          interrupt(irq.d);
         }
       }
-      {
-        m_state->latch_pc = m_state->PC;
-        m_state->latch_op = pc_read(m_state);
-        if (m_state->latch_op == 0xDD) {
-          m_state->vHL = &m_state->IX;
-          m_state->prefix = Z80Prefix(m_state->latch_op);
-          m_state->latch_op = pc_read(m_state);
-          m_state->Op = &opcodes[m_state->latch_op];
-        } else if (m_state->latch_op == 0xFD) {
-          m_state->vHL = &m_state->IY;
-          m_state->prefix = Z80Prefix(m_state->latch_op);
-          m_state->latch_op = pc_read(m_state);
-          m_state->Op = &opcodes[m_state->latch_op];
-        } else if (m_state->latch_op == 0xED) {
-          m_state->vHL = &m_state->HL;
-          m_state->prefix = Z80Prefix(m_state->latch_op);
-          m_state->latch_op = pc_read(m_state);
-          m_state->Op = &EDopcodes[m_state->latch_op];
-        } else {
-          m_state->vHL = &m_state->HL;
-          m_state->prefix = Z80Prefix::NoPrefix;
-          m_state->Op = &opcodes[m_state->latch_op];
-        }
-      }
-      {
-        m_state->icycles = m_state->Op->cycles;
+      m_state->halt = false;
+    }
+
+    if (unlikely(m_state->iwait)) m_state->iwait = false;
+
+    if (unlikely(m_state->yield)) {
+      yield();
+      m_state->yield = false;
+    }
+    if (m_state->halt) {
+      add_icycles(100);
+      continue;
+    }
+    m_state->latch_pc = m_state->PC;
+    m_state->latch_op = pc_read(m_state);
+    if (m_state->latch_op == 0xDD) {
+      m_state->vHL = &m_state->IX;
+      m_state->prefix = Z80Prefix(m_state->latch_op);
+      m_state->latch_op = pc_read(m_state);
+      m_state->Op = &opcodes[m_state->latch_op];
+    } else if (m_state->latch_op == 0xFD) {
+      m_state->vHL = &m_state->IY;
+      m_state->prefix = Z80Prefix(m_state->latch_op);
+      m_state->latch_op = pc_read(m_state);
+      m_state->Op = &opcodes[m_state->latch_op];
+    } else if (m_state->latch_op == 0xED) {
+      m_state->vHL = &m_state->HL;
+      m_state->prefix = Z80Prefix(m_state->latch_op);
+      m_state->latch_op = pc_read(m_state);
+      m_state->Op = &EDopcodes[m_state->latch_op];
+    } else {
+      m_state->vHL = &m_state->HL;
+      m_state->prefix = Z80Prefix::NoPrefix;
+      m_state->Op = &opcodes[m_state->latch_op];
+    }
+    m_state->icycles = m_state->Op->cycles;
 #if 0
         if (m_state->prefix != Z80Prefix::EDPrefix) {
           OPCODE_SWITCH_BLOCK(m_state);
         } else
 #endif
-          m_state->Op->func(m_state);
+        m_state->Op->func(m_state);
         IF_LOG(Trace) LOG_TRACE(Log(m_state));
         add_icycles(m_state->icycles);
-      }
-    }
   }
 }
 
