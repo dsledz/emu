@@ -23,7 +23,7 @@ SingleBoardZ80::SingleBoardZ80(void)
       m_state(),
       m_bus(nullptr),
       m_io(nullptr),
-      m_ram(this, "ram", 0xD000),
+      m_ram(this, "ram", 0xE000),
       m_romset(sbc_rom()),
       m_acia(nullptr),
       m_acia_irq(false) {
