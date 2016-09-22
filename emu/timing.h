@@ -107,6 +107,7 @@ struct Cycles {
 
 struct ClockDivider {
   ClockDivider(void) = default;
+  explicit ClockDivider(int v): v(v) {}
 
   int64_t v = 0;
 };

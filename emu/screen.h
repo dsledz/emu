@@ -74,7 +74,7 @@ class ScreenDevice : public ClockedDevice {
   unsigned m_vpos;
 
  private:
-  HState next_hstate(unsigned *cycles_out);
+  HState next_hstate(Cycles *cycles_out);
   VState next_vstate(void);
   void set_hstate(HState state);
   void set_vstate(VState state);

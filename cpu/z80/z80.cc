@@ -32,7 +32,7 @@ using namespace Z80;
   template <typename CpuState>                       \
   static inline void func_##opnum(CpuState *state);  \
   static const char *name_##opnum = name;            \
-  static const uint8_t cycles_##opnum = cycles;      \
+  static const Cycles cycles_##opnum(cycles);        \
   static const uint8_t bytes_##opnum = bytes;        \
   template <typename CpuState>                       \
   static inline void func_##opnum(CpuState *state) { \
@@ -457,7 +457,7 @@ void Z80Cpu::interrupt(addr_t addr) {
   m_state->PC.d = addr;
   m_state->iff2 = m_state->iff1;
   m_state->iff1 = false;
-  add_icycles(20);
+  add_icycles(Cycles(20));
 }
 
 void Z80Cpu::execute(void) {
@@ -500,7 +500,8 @@ void Z80Cpu::execute(void) {
       m_state->yield = false;
     }
     if (m_state->halt) {
-      add_icycles(100);
+      // TODO: Pick a real value
+      add_icycles(Cycles(100));
       continue;
     }
     m_state->latch_pc = m_state->PC;

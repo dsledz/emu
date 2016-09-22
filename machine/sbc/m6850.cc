@@ -33,13 +33,13 @@ void M6850::execute(void) {
     /* Update our clock */
     switch (m_reg.CR & 0x03) {
       case 0x00:
-        add_icycles(1);
+        add_icycles(Cycles(1));
         break;
       case 0x01:
-        add_icycles(16);
+        add_icycles(Cycles(16));
         break;
       case 0x02:
-        add_icycles(64);
+        add_icycles(Cycles(64));
         break;
       case 0x03: /* XXX: How should we handle reset? */
         break;

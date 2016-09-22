@@ -181,7 +181,7 @@ uint8_t VDC::bg_pixel(void) {
 
 void VDC::execute(void) {
   while (true) {
-    add_icycles(1000);
+    add_icycles(Cycles(1000));
     for (int i = 0; i < 1000; i++) step();
   }
 }

@@ -37,7 +37,7 @@ I8257::~I8257(void) {}
 
 void I8257::execute(void) {
   while (true) {
-    add_icycles(100);
+    add_icycles(Cycles(100));
   }
 }
 

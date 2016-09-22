@@ -51,19 +51,19 @@ unsigned ScreenDevice::visible_width(void) const { return m_hvisible; }
 
 unsigned ScreenDevice::visible_height(void) const { return m_vvisible; }
 
-ScreenDevice::HState ScreenDevice::next_hstate(unsigned *cycles_out) {
+ScreenDevice::HState ScreenDevice::next_hstate(Cycles *cycles_out) {
   switch (m_hstate) {
     case HState::HStart:
-      *cycles_out = m_hbend;
+      *cycles_out = Cycles(m_hbend);
       return HState::HDraw;
     case HState::HDraw:
-      *cycles_out = m_hbstart;
+      *cycles_out = Cycles(m_hbstart);
       return HState::HBlank;
     case HState::HBlank:
-      *cycles_out = m_width;
+      *cycles_out = Cycles(m_width);
       return HState::HEnd;
     case HState::HEnd:
-      *cycles_out = 0;
+      *cycles_out = Cycles(0);
       return HState::HStart;
   }
   assert(false);
@@ -130,7 +130,7 @@ void ScreenDevice::set_hstate(HState state) {
 void ScreenDevice::execute(void) {
   Cycles cycles_per_scanline(m_width);
   while (true) {
-    unsigned cycles = 0;
+    Cycles cycles;
     HState next = next_hstate(&cycles);
     add_icycles(cycles);
     set_hstate(next);

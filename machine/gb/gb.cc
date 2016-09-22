@@ -114,7 +114,7 @@ class GBTimer : public ClockedDevice {
 
   virtual void execute(void) {
     unsigned delta = 64;
-    add_icycles(delta);
+    add_icycles(Cycles(delta));
     m_cycles += delta;
     m_dcycles += delta;
     m_tcycles += delta;

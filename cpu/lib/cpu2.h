@@ -82,7 +82,7 @@ template <class _state_type>
 struct CpuOpcode {
   uint8_t code;
   const char *name;
-  int cycles;
+  Cycles cycles;
   int bytes;
   void (*func)(_state_type *state);
 };

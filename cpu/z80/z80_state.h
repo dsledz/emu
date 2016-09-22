@@ -167,7 +167,7 @@ struct Z80State {
     AF2.d = BC2.d = DE2.d = HL2.d = 0;
   }
 
-  uint8_t icycles;
+  Cycles icycles;
   Z80Bus *bus;
   Z80IOBus *io;
 } __attribute__((packed));
@@ -175,7 +175,7 @@ struct Z80State {
 static inline reg8_t pc_read(Z80State *state) {
   reg8_t result = state->bus->read(state->PC.d);
   state->PC.d++;
-  state->icycles++;
+  state->icycles+=1;
   return result;
 }
 

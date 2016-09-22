@@ -158,7 +158,7 @@ class Cpu : public ClockedDevice {
     op->addr_mode(&m_state);
     op->operation(&m_state);
     cycles = (op->cycles + m_state.icycles) * m_state.clock_divider;
-    add_icycles(cycles);
+    add_icycles(Cycles(cycles));
 
     IF_LOG(Trace) { log_op(&m_state, op, pc, instr); }
     return cycles;

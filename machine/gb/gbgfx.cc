@@ -189,7 +189,7 @@ void GBGraphics::draw_scanline(int y) {
 
 void GBGraphics::execute(void) {
   unsigned delta = 64;
-  add_icycles(delta);
+  add_icycles(Cycles(delta));
   m_fcycles += delta;
 
   switch (m_stat & 0x03) {

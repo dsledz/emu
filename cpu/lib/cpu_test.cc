@@ -45,7 +45,7 @@ class TestCpu : public Cpu<AddressBus16x8, TestTraits, TestState> {
 
   virtual void execute(void) {
     while (true) {
-      add_icycles(1);
+      add_icycles(Cycles(1));
     }
   }
 

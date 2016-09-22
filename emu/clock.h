@@ -24,8 +24,6 @@ class ClockedDevice : public Device {
                 unsigned hertz);
   virtual ~ClockedDevice(void);
 
-  inline void add_icycles(unsigned cycles) { add_icycles(Cycles(cycles)); }
-
   inline void add_icycles(Cycles cycles) {
     m_avail -= cycles;
     m_used += cycles;
@@ -80,6 +78,7 @@ class Clock : public Device {
   void start(void);
   void stop(void);
 
+  const Hertz hertz(void) const { return m_hertz; }
   void wait_for_target(EmuTime t);
   void wait_for_delta(EmuTime t) { wait_for_target(m_now + t); }
 
