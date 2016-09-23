@@ -76,8 +76,6 @@ Galaga::Galaga(void)
       m_main_irq(false),
       m_sub_irq(false),
       m_snd_nmi(false) {
-  unsigned hertz = 18432000;
-
   add_screen(224, 288, GfxScale::None, FrameBuffer::ROT90);
 
   m_iobus = Z80IOBus_ptr(new Z80IOBus());
@@ -85,19 +83,19 @@ Galaga::Galaga(void)
   m_main_cpu_state.bus = m_bus1.get();
   m_main_cpu_state.io = m_iobus.get();
   m_main_cpu =
-      Z80Cpu_ptr(new Z80Cpu(this, "maincpu", hertz / 6, &m_main_cpu_state));
+      Z80Cpu_ptr(new Z80Cpu(this, "maincpu", ClockDivider(6), &m_main_cpu_state));
 
   m_bus2 = Z80Bus_ptr(new Z80Bus());
   m_sub_cpu_state.bus = m_bus2.get();
   m_sub_cpu_state.io = m_iobus.get();
   m_sub_cpu =
-      Z80Cpu_ptr(new Z80Cpu(this, "subcpu", hertz / 6, &m_sub_cpu_state));
+      Z80Cpu_ptr(new Z80Cpu(this, "subcpu", ClockDivider(6), &m_sub_cpu_state));
 
   m_bus3 = Z80Bus_ptr(new Z80Bus());
   m_snd_cpu_state.bus = m_bus3.get();
   m_snd_cpu_state.io = m_iobus.get();
   m_snd_cpu =
-      Z80Cpu_ptr(new Z80Cpu(this, "sndcpu", hertz / 6, &m_snd_cpu_state));
+      Z80Cpu_ptr(new Z80Cpu(this, "sndcpu", ClockDivider(6), &m_snd_cpu_state));
 
   init_switches();
   reset_switches();
@@ -109,7 +107,8 @@ Galaga::Galaga(void)
   m_namco51 = Namco51_ptr(new Namco51(this));
   m_namco06->add_child(0, m_namco51.get());
 
-  m_gfx = GalagaGfx_ptr(new GalagaGfx(this, "gfx", hertz, m_bus1.get()));
+  m_gfx =
+      GalagaGfx_ptr(new GalagaGfx(this, "gfx", ClockDivider(1), m_bus1.get()));
 
   m_gfx->register_callback(64, [&](void) {
     if (m_snd_nmi) set_line("sndcpu", Line::NMI, LineState::Pulse);

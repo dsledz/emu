@@ -38,9 +38,9 @@ typedef CpuTraits<uint16_t, uint8_t, uint8_t> TestTraits;
 
 class TestCpu : public Cpu<AddressBus16x8, TestTraits, TestState> {
  public:
-  TestCpu(Machine *machine, const std::string &name, unsigned hertz,
+  TestCpu(Machine *machine, const std::string &name, ClockDivider divider,
           AddressBus16x8 *bus)
-      : Cpu(machine, name, hertz, bus) {}
+      : Cpu(machine, name, divider, bus) {}
   virtual ~TestCpu(void) {}
 
   virtual void execute(void) {

@@ -38,7 +38,8 @@ namespace Arcade {
 
 class GalagaGfx : public ScreenDevice {
  public:
-  GalagaGfx(Machine *machine, const std::string &name, unsigned hertz,
+  GalagaGfx(Machine *machine, const std::string &name,
+            ClockDivider divider,
             AddressBus16x8 *bus);
   ~GalagaGfx(void);
 

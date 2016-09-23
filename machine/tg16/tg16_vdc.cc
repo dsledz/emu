@@ -27,8 +27,8 @@
 
 using namespace TG16Machine;
 
-VDC::VDC(TG16 *tg16, unsigned hertz)
-    : ClockedDevice(tg16, tg16->clock(), "vdc", hertz),
+VDC::VDC(TG16 *tg16, ClockDivider divider)
+    : ClockedDevice(tg16, tg16->clock(), "vdc", divider),
       m_sprites(0),
       m_hpos(0),
       m_vpos(0),

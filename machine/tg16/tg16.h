@@ -54,7 +54,7 @@ class TG16;
 
 class VDC : public ClockedDevice {
  public:
-  VDC(TG16 *tg16, unsigned hertz);
+  VDC(TG16 *tg16, ClockDivider divider);
   virtual ~VDC(void);
 
   virtual void execute(void);

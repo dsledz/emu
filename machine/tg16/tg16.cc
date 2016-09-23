@@ -33,7 +33,7 @@ TG16::TG16(void)
     : Machine(Hertz(MASTER_CLOCK)),
       m_cpu_bus(),
       m_ram(this, "ram", 0x2000),
-      m_vdc(this, MASTER_CLOCK),
+      m_vdc(this, ClockDivider(1)),
       m_psg(this),
       m_rom(0x100000) {
 
@@ -43,7 +43,7 @@ TG16::TG16(void)
   add_screen(256, 240);
 
   m_cpu = std::unique_ptr<cpu_type>(
-      new cpu_type(this, "cpu", MASTER_CLOCK / 3, &m_cpu_bus));
+      new cpu_type(this, "cpu", ClockDivider(4), &m_cpu_bus));
 
   m_cpu_bus.add(0x000000, m_rom);
 

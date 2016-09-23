@@ -38,7 +38,7 @@ namespace Z80 {
 
 class Z80Cpu : public Cpu<Z80Bus, Z80State, Z80Opcode> {
  public:
-  Z80Cpu(Machine *machine, const std::string &name, unsigned hertz,
+  Z80Cpu(Machine *machine, const std::string &name, ClockDivider divider,
          state_type *state);
   ~Z80Cpu();
   Z80Cpu(const Z80Cpu &rhs) = delete;

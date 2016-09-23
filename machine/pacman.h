@@ -37,7 +37,7 @@ namespace Arcade {
 
 class PacmanGfx : public ScreenDevice {
  public:
-  PacmanGfx(Machine *machine, const std::string &name, unsigned hertz,
+  PacmanGfx(Machine *machine, const std::string &name, ClockDivider divider,
             AddressBus16x8 *bus);
   ~PacmanGfx(void);
 

@@ -36,7 +36,7 @@ namespace Arcade {
 
 class DonkeyKongGfx : public ScreenDevice {
  public:
-  DonkeyKongGfx(Machine *machine, const std::string &name, unsigned hertz,
+  DonkeyKongGfx(Machine *machine, const std::string &name, ClockDivider divider,
                 AddressBus16x8 *bus);
   ~DonkeyKongGfx(void);
 

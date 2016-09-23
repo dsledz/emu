@@ -33,7 +33,7 @@ struct M65c02State : public M6502State {};
 
 class M65c02Cpu : public M6502Cpu {
  public:
-  M65c02Cpu(Machine *machine, const std::string &name, unsigned hertz,
+  M65c02Cpu(Machine *machine, const std::string &name, ClockDivider divider,
             bus_type *bus);
   ~M65c02Cpu(void);
   M65c02Cpu(const M65c02Cpu &cpu) = delete;

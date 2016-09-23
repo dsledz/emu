@@ -187,7 +187,7 @@ struct M6809Opcode {
 
 class M6809Cpu : public CPU::Cpu<AddressBus16x8, M6809State, uint16_t> {
  public:
-  M6809Cpu(Machine *machine, const std::string &name, unsigned hertz,
+  M6809Cpu(Machine *machine, const std::string &name, ClockDivider divider,
            AddressBus16x8 *bus);
   ~M6809Cpu(void);
   M6809Cpu(const M6809Cpu &cpu) = delete;

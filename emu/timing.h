@@ -38,14 +38,49 @@ struct Hertz {
   unsigned v;
 };
 
+inline std::ostream &operator<<(std::ostream &os, const Hertz &h) {
+  os << h.v / 1000000 << "Mhz";
+  return os;
+}
+
+struct ClockDivider {
+  ClockDivider(void) = default;
+  explicit ClockDivider(int v): v(v) {}
+
+  int64_t v = 0;
+};
+
+inline std::ostream &operator<<(std::ostream &os, const ClockDivider &d) {
+  os << d.v;
+  return os;
+}
+
 struct Cycles {
   Cycles(void) = default;
   explicit Cycles(int64_t v) : v(v) {}
-  Cycles(const Time t, unsigned hertz): v((t.ns * hertz) / NSEC_PER_SEC) {}
-  Cycles(const Time t, Hertz hertz): v((t.ns * hertz.v) / NSEC_PER_SEC) {}
+  Cycles(const Time t, unsigned hertz)
+      : v(((t.ns / NSEC_PER_SEC) * hertz) +
+          ((t.ns % NSEC_PER_SEC) * hertz / NSEC_PER_SEC)) {
+    assert(v > 0);
+  }
+  Cycles(const Time t, Hertz hertz)
+      : v(((t.ns / NSEC_PER_SEC) * hertz.v) +
+          ((t.ns % NSEC_PER_SEC) * hertz.v / NSEC_PER_SEC)) {
+    assert(v> 0);
+  }
 
-  inline Time to_time(unsigned hertz) {
+  inline Time to_time(unsigned hertz) const {
     return Time(nsec((v * NSEC_PER_SEC) / hertz));
+  }
+
+  inline Time to_time(Hertz hertz) const {
+    return Time(nsec((v * NSEC_PER_SEC) / hertz.v));
+  }
+
+  inline Hertz to_hertz(Time t) const {
+    const Hertz hertz(v / (t.ns / NSEC_PER_SEC) +
+                      (v % (t.ns / NSEC_PER_SEC) * NSEC_PER_SEC) / t.ns);
+    return hertz;
   }
 
   inline const Cycles operator+(const struct Cycles &rhs) const {
@@ -102,12 +137,25 @@ struct Cycles {
 
   inline bool operator==(const struct Cycles &rhs) const { return v == rhs.v; }
 
-  int64_t v = 0;
-};
+  inline const struct Cycles subtract(const struct Cycles &rhs,
+                                      const struct ClockDivider divider) {
+    v -= (rhs.v * divider.v);
+    return *this;
+  }
 
-struct ClockDivider {
-  ClockDivider(void) = default;
-  explicit ClockDivider(int v): v(v) {}
+  inline const struct Cycles add(const struct Cycles &rhs,
+                                      const struct ClockDivider divider) {
+    v += (rhs.v * divider.v);
+    return *this;
+  }
+
+  inline const struct Cycles multiple(const struct ClockDivider divider) const {
+    return Cycles(v * divider.v);
+  }
+
+  inline const struct Cycles divide(const struct ClockDivider divider) const {
+    return Cycles(v / divider.v);
+  }
 
   int64_t v = 0;
 };

@@ -40,9 +40,9 @@ using namespace std::placeholders;
         std::bind(&op##_jit, _1, _2),                                       \
   }
 
-M6502Cpu::M6502Cpu(Machine *machine, const std::string &name, unsigned hertz,
-                   AddressBus16x8 *bus)
-    : Cpu(machine, name, hertz, bus),
+M6502Cpu::M6502Cpu(Machine *machine, const std::string &name,
+                   ClockDivider divider, AddressBus16x8 *bus)
+    : Cpu(machine, name, divider, bus),
       m_nmi_line(LineState::Clear),
       m_irq_line(LineState::Clear),
       m_reset_line(LineState::Clear) {

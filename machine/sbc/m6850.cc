@@ -8,8 +8,8 @@
 using namespace EMU;
 using namespace Device;
 
-M6850::M6850(Machine *machine, const std::string &name, unsigned hertz)
-    : ClockedDevice(machine, machine->clock(), name, hertz),
+M6850::M6850(Machine *machine, const std::string &name, ClockDivider divider)
+    : ClockedDevice(machine, machine->clock(), name, divider),
       m_reg(),
       m_send(0),
       m_recv(0),
@@ -68,8 +68,7 @@ void M6850::execute(void) {
       machine()->set_line("cpu", Line::INT0, LineState::Assert);
       /* XXX: Return from the context switch */
     }
-    if (interrupt || notify)
-      Task::yield();
+    if (interrupt || notify) yield();
   }
 }
 

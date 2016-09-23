@@ -43,9 +43,9 @@ using namespace std::placeholders;
 
 M65c02Cpu::~M65c02Cpu() {}
 
-M65c02Cpu::M65c02Cpu(Machine *machine, const std::string &name, unsigned hertz,
-                     AddressBus16x8 *bus)
-    : M6502Cpu(machine, name, hertz, bus) {
+M65c02Cpu::M65c02Cpu(Machine *machine, const std::string &name,
+                     ClockDivider divider, AddressBus16x8 *bus)
+    : M6502Cpu(machine, name, divider, bus) {
   Opcode opcodes[] = {
       OPCODE(0x00, 1, 7, "BRK", Inherent, BRK),
       OPCODE(0x01, 2, 6, "ORA X,ind", XIndirect, ORA),
@@ -287,8 +287,8 @@ M65c02Cpu::M65c02Cpu(Machine *machine, const std::string &name, unsigned hertz,
 }
 
 HuC6280Cpu::HuC6280Cpu(Machine *machine, const std::string &name,
-                       unsigned clock, AddressBus21x8 *bus)
-    : Cpu(machine, name, clock, bus),
+                       ClockDivider divider, AddressBus21x8 *bus)
+    : Cpu(machine, name, divider, bus),
       m_irq_status(0),
       m_irq_disable(0),
       m_timer_status(false),

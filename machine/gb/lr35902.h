@@ -112,7 +112,7 @@ struct Registers {
 
 class LR35902Cpu : public ClockedDevice {
  public:
-  LR35902Cpu(Machine *machine, const std::string &name, unsigned hertz,
+  LR35902Cpu(Machine *machine, const std::string &name, ClockDivider divider,
              AddressBus16x8 *bus);
   virtual ~LR35902Cpu(void);
   LR35902Cpu(const LR35902Cpu &cpu) = delete;

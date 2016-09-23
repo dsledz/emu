@@ -28,8 +28,8 @@
 using namespace EMU;
 using namespace NESMachine;
 
-NESPPU::NESPPU(NES *machine, const std::string &name, unsigned hertz)
-    : ScreenDevice(machine, name, hertz, 340, 261, 256, 0, 260, 20),
+NESPPU::NESPPU(NES *machine, const std::string &name, ClockDivider divider)
+    : ScreenDevice(machine, name, divider, 340, 261, 256, 0, 260, 20),
       m_color_table(0x40),
       m_palette(0x20),
       m_palette_bytes(0x20),

@@ -445,9 +445,9 @@ static Z80Opcode EDopcodes[256] = {
                             OPCODE_SWITCH16(0xF, state)                      \
   }
 
-Z80Cpu::Z80Cpu(Machine *machine, const std::string &name, unsigned hertz,
+Z80Cpu::Z80Cpu(Machine *machine, const std::string &name, ClockDivider divider,
                state_type *state)
-    : Cpu(machine, name, hertz, state) {}
+    : Cpu(machine, name, divider, state) {}
 
 Z80Cpu::~Z80Cpu(void) {}
 

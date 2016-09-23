@@ -13,7 +13,7 @@ namespace Device {
 
 class M6850 : public ClockedDevice {
  public:
-  M6850(Machine *machine, const std::string &name, unsigned hertz);
+  M6850(Machine *machine, const std::string &name, ClockDivider divider);
   virtual ~M6850(void);
 
   virtual void execute(void);

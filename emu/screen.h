@@ -32,7 +32,7 @@ namespace EMU {
 
 class ScreenDevice : public ClockedDevice {
  public:
-  ScreenDevice(Machine *machine, const std::string &name, unsigned hertz,
+  ScreenDevice(Machine *machine, const std::string &name, ClockDivider divider,
                unsigned width, unsigned height, unsigned hbstart,
                unsigned hbend, unsigned vbstart, unsigned vbend);
 

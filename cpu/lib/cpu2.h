@@ -96,9 +96,10 @@ class Cpu : public ClockedDevice {
   typedef typename bus_type::addr_type addr_type;
   typedef typename bus_type::data_type data_type;
 
-  Cpu(Machine *machine, const std::string &name, unsigned hertz,
+  Cpu(Machine *machine, const std::string &name, ClockDivider divider,
       state_type *state)
-      : ClockedDevice(machine, machine->clock(), name, hertz), m_state(state) {}
+      : ClockedDevice(machine, machine->clock(), name, divider),
+        m_state(state) {}
   virtual ~Cpu(void) {}
   Cpu(const Cpu &cpu) = delete;
 

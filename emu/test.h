@@ -42,7 +42,7 @@ class TestMachine : public Machine {
   TestMachine(void)
       : Machine(Hertz(DEFAULT_HERTZ)),
         bus(),
-        cpu(this, "maincpu", TEST_CLOCK, &bus),
+        cpu(this, "maincpu", ClockDivider(2), &bus),
         ram(this, "ram", 0x10000),
         pc(initial_pc) {
     bus.add(0x0000, &ram);
@@ -73,12 +73,13 @@ class TestMachine : public Machine {
   machine.write8(arg2);             \
   machine.write8(arg3);
 
-static inline EMU::EmuTime get_runtime(const std::string &test_name) {
-  const char *env = getenv(test_name.c_str());
+static inline EMU::EmuTime get_runtime() {
+  const char *env = getenv("RUNTIME");
   EmuTime runtime = sec(10);
   if (env != NULL) {
     runtime = sec(atoi(env));
   }
+  LOG_INFO("Running for ", runtime);
   return runtime;
 }
 
@@ -88,7 +89,7 @@ void machine_test(const std::string &rom="") {
 
   machine.load_rom(rom);
 
-  EmuTime runtime = get_runtime("RUNTIME");
+  EmuTime runtime = get_runtime();
 
   Core::log.set_level(LogLevel::Info);
   machine.reset();

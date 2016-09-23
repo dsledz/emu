@@ -40,9 +40,9 @@ using namespace std::placeholders;
         std::bind(&op##_jit, _1, _2, ##__VA_ARGS__),             \
   }
 
-M65c02Cpu::M65c02Cpu(Machine *machine, const std::string &name, unsigned hertz,
-                     AddressBus16x8 *bus)
-    : M6502Cpu(machine, name, hertz, bus) {
+M65c02Cpu::M65c02Cpu(Machine *machine, const std::string &name,
+                     ClockDivider divider, AddressBus16x8 *bus)
+    : M6502Cpu(machine, name, divider, bus) {
   Opcode opcodes[] = {
       OPCODE(0x00, 1, 7, "BRK", Inherent, BRK),
       OPCODE(0x01, 2, 6, "ORA X,ind", XIndirect, ORA),

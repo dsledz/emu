@@ -65,9 +65,9 @@ struct TestOpcode {};
 
 class TestCpu : public Cpu<ClockedBus16, TestState, TestOpcode> {
  public:
-  TestCpu(Machine *machine, const std::string &name, unsigned hertz,
+  TestCpu(Machine *machine, const std::string &name, ClockDivider divider,
           TestState *state)
-      : Cpu(machine, name, hertz, state) {}
+      : Cpu(machine, name, divider, state) {}
   ~TestCpu() {}
 
   virtual void execute(void) {
@@ -106,7 +106,7 @@ class TestMachine2 : public Machine {
       : Machine(Hertz(DEFAULT_HERTZ)),
         bus(),
         state(),
-        cpu(this, "maincpu", 1000000, &state),
+        cpu(this, "maincpu", ClockDivider(2), &state),
         ram(this, "ram", 0x10000),
         pc(initial_pc) {
     state.bus = &bus;

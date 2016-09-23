@@ -122,13 +122,13 @@ static inline std::ostream &operator<<(std::ostream &os, const Time &obj) {
     os << ns << "ns";
   else if (ns < NSEC_PER_MSEC)
     os << ns / NSEC_PER_USEC << "."
-       << (ns % NSEC_PER_USEC) / (NSEC_PER_USEC / 10) << "us";
+       << (ns % NSEC_PER_USEC) / (NSEC_PER_USEC / 1000) << "us";
   else if (ns < NSEC_PER_SEC)
     os << ns / NSEC_PER_MSEC << "."
-       << (ns % NSEC_PER_MSEC) / (NSEC_PER_MSEC / 10) << "ms";
+       << (ns % NSEC_PER_MSEC) / (NSEC_PER_MSEC / 1000) << "ms";
   else
-    os << ns / NSEC_PER_SEC << "." << (ns % NSEC_PER_SEC) / (NSEC_PER_SEC / 10)
-       << "s";
+    os << ns / NSEC_PER_SEC << "."
+       << (ns % NSEC_PER_SEC) / (NSEC_PER_SEC / 1000) << "s";
   return os;
 }
 

@@ -33,7 +33,7 @@ namespace EMU {
 
 class I8257 : public ClockedDevice {
  public:
-  I8257(Machine *machine, const std::string &name, unsigned hertz,
+  I8257(Machine *machine, const std::string &name, ClockDivider divder,
         AddressBus16x8 *bus);
   virtual ~I8257(void);
 

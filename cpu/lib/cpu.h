@@ -109,8 +109,9 @@ class Cpu : public ClockedDevice {
     std::function<bool(JITEmitter *, pc_type)> jit_op;
   };
 
-  Cpu(Machine *machine, const std::string &name, unsigned hertz, bus_type *bus)
-      : ClockedDevice(machine, machine->clock(), name, hertz), m_state() {
+  Cpu(Machine *machine, const std::string &name, ClockDivider divider,
+      bus_type *bus)
+      : ClockedDevice(machine, machine->clock(), name, divider), m_state() {
     m_state.bus = bus;
   }
   virtual ~Cpu(void) {}

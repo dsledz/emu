@@ -13,42 +13,22 @@ using namespace EMU;
 using namespace Core;
 
 ClockedDevice::ClockedDevice(Machine *machine, Clock *clock,
-                             const std::string &name, unsigned hertz)
+                             const std::string &name)
+    : ClockedDevice(machine, clock, name, ClockDivider(1)) {}
+
+ClockedDevice::ClockedDevice(Machine *machine, Clock *clock,
+                             const std::string &name, ClockDivider divider)
     : Device(machine, name),
       m_clock(clock),
-      m_hertz(hertz),
-      m_used(0),
-      m_avail(0),
+      m_divider(divider),
       m_our_ctx(reinterpret_cast<uint64_t>(&ClockedDevice::run_context),
                 reinterpret_cast<uint64_t>(this)),
-      m_their_ctx(0) {
+      m_their_ctx(0),
+      m_avail(0) {
   m_clock->attach_clocked(this);
 }
 
 ClockedDevice::~ClockedDevice(void) { m_clock->detach_clocked(this); }
-
-void ClockedDevice::update(DeviceUpdate &update) {
-  switch (update.type) {
-    case DeviceUpdateType::Clock: {
-      time_forward(update.clock.now);
-      break;
-    }
-    default:
-      Device::update(update);
-      break;
-  }
-}
-
-void ClockedDevice::time_forward(EmuTime now) {
-  if (now > m_current) {
-    m_target = now;
-    m_avail = Cycles(m_target - m_current, m_hertz);
-    /* XXX: Hack to work around rounding */
-    if (m_avail == Cycles(time_zero, m_hertz))
-      m_avail += 1;
-    resume();
-  }
-}
 
 void ClockedDevice::run_context(ClockedDevice *dev) {
     dev->run_internal();
@@ -69,11 +49,13 @@ void ClockedDevice::run_internal(void) {
 
 Clock::Clock(Machine *machine, Hertz hertz)
     : Device(machine, "clock"),
+      m_rtc(),
       m_hertz(hertz),
       m_devs(),
       m_task(machine->get_scheduler(), std::bind(&Clock::task_fn, this),
              "clock"),
       m_now(),
+      m_target(),
       m_current() {}
 
 Clock::~Clock(void) {}
@@ -97,6 +79,7 @@ void Clock::update(DeviceUpdate &update) {
       break;
     case DeviceUpdateType::Clock: {
       m_now = update.clock.now;
+      m_target = Cycles(m_now, m_hertz);
       break;
     }
   }
@@ -130,11 +113,25 @@ void Clock::initialize(void) {
 
 void Clock::execute(void) {
   wait(DeviceStatus::Running);
-  LOG_INFO("Starting clock");
+  Cycles current;
+  Cycles target;
+  DEVICE_INFO("Starting clock");
+  m_rtc.reset();
   while (m_target_status == DeviceStatus::Running) {
-    run_loop();
+    {
+      lock_mtx lock(m_mtx);
+      current = m_current;
+      target = m_target;
+    }
+    current = run_loop(current, target);
+    {
+      lock_mtx lock(m_mtx);
+      m_current = current;
+      m_cv.notify_all();
+    }
     wait_for_update();
   }
+  DEVICE_INFO("Effective hertz: ", m_current.to_hertz(m_rtc.get_delta()));
 }
 
 void Clock::start(void) {
@@ -155,42 +152,39 @@ void Clock::stop(void) {
 }
 
 void Clock::wait_for_target(EmuTime t) {
-  m_channel.put(EmuClockUpdate(t));
   {
     lock_mtx lock(m_mtx);
-    while (m_current < t)
+    m_channel.put(EmuClockUpdate(t));
+    Cycles target(t, m_hertz);
+    // XXX: We should be able to use m_target here
+    while (m_current < target)
       lock.wait(m_cv);
   }
 }
 
-void Clock::run_loop(void) {
+Cycles Clock::run_loop(Cycles current, Cycles target) {
   /* Actual Time */
-  EmuTime skew(usec(100));
-  EmuTime step(msec(1));
-  EmuTime oldest = time_zero;
-  while (oldest < m_now) {
-    oldest = time_zero;
+  const Cycles skew(40);
+  Cycles oldest(0);
+  while (current < target) {
+    /* Run any old devices */
+    current += skew;
     for (auto *dev : m_devs) {
-      EmuTime fb = dev->time_current();
-      LOG_DEBUG("Found clock: ", dev->name(), ", current: ", fb, ", target: ",
-                dev->time_target());
-      if (oldest == time_zero || fb < oldest) oldest = fb;
+      dev->cycles_forward(skew);
     }
-    if (oldest + skew > m_current) {
-      if (m_now > m_current + step)
-        m_current += step;
-      else
-        m_current = m_now;
-    } else {
-      EmuTime diff = m_current - oldest;
-      LOG_DEBUG("Running ", diff, " behind, (", oldest, " - ", m_current, ")");
-    }
-    for (auto *dev : m_devs) {
-      dev->time_forward(m_current);
-    }
+    bool once;
+    do {
+      once = false;
+      for (auto *dev : m_devs) {
+        Cycles fb = dev->cycles_left();
+        LOG_DEBUG("Found clock: ", dev->name(), ", available: ", fb);
+        if (fb > Cycles(0)) {
+          dev->resume();
+          once = true;
+        }
+      }
+    } while (once);
   }
-  {
-    lock_mtx lock(m_mtx);
-    m_cv.notify_all();
-  }
+  return current;
 }
+

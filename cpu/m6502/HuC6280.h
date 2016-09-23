@@ -110,7 +110,7 @@ __attribute__((packed));
 class HuC6280Cpu
     : public Cpu<AddressBus21x8, M6502Traits, HuC6280State> {
  public:
-  HuC6280Cpu(Machine *machine, const std::string &name, unsigned clock,
+  HuC6280Cpu(Machine *machine, const std::string &name, ClockDivider divider,
              AddressBus21x8 *bus);
   virtual ~HuC6280Cpu(void);
 

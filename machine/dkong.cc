@@ -53,7 +53,6 @@ DonkeyKong::DonkeyKong(void)
       m_cpu(nullptr),
       m_ram(this, "ram", 0x1000),
       m_nmi_mask(false) {
-  unsigned hertz = 18432000;
   add_screen(224, 256, GfxScale::None, FrameBuffer::ROT90);
 
   m_bus = AddressBus16x8_ptr(new AddressBus16x8());
@@ -64,11 +63,12 @@ DonkeyKong::DonkeyKong(void)
   init_controls();
 
   m_cpu_state.bus = m_bus.get();
-  m_cpu = Z80Cpu_ptr(new Z80Cpu(this, "maincpu", hertz / 6, &m_cpu_state));
+  m_cpu =
+      Z80Cpu_ptr(new Z80Cpu(this, "maincpu", ClockDivider(6), &m_cpu_state));
 
-  m_i8257 = I8257_ptr(new I8257(this, "i8257", hertz / 6, m_bus.get()));
+  m_i8257 = I8257_ptr(new I8257(this, "i8257", ClockDivider(6), m_bus.get()));
 
-  m_gfx = DonkeyKongGfx_ptr(new DonkeyKongGfx(this, "gfx", hertz, m_bus.get()));
+  m_gfx = DonkeyKongGfx_ptr(new DonkeyKongGfx(this, "gfx", ClockDivider(1), m_bus.get()));
 
   m_gfx->set_vblank_cb([&](void) {
     if (m_nmi_mask) set_line("maincpu", Line::NMI, LineState::Pulse);

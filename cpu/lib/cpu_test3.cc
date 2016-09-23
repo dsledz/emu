@@ -98,7 +98,7 @@ static void OpFunc(struct TestState *state, AddressBus16x8 *bus) {
 
 class TestCpu : public Cpu<AddressBus16, TestState, uint8_t, OpFunc> {
  public:
-  TestCpu(Machine *machine, const std::string &name, unsigned hertz,
+  TestCpu(Machine *machine, const std::string &name, ClockDivider divider,
           AddressBus16x8 *bus)
       : Cpu(machine, name, hertz, bus) {}
   virtual ~TestCpu(void) {}

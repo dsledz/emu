@@ -109,7 +109,7 @@ typedef CpuTraits<uint16_t, uint8_t, uint8_t> M6502Traits;
 
 class M6502Cpu : public Cpu<AddressBus16x8, M6502Traits, M6502State> {
  public:
-  M6502Cpu(Machine *machine, const std::string &name, unsigned hertz,
+  M6502Cpu(Machine *machine, const std::string &name, ClockDivider divider,
            bus_type *bus);
   virtual ~M6502Cpu(void);
   M6502Cpu(const M6502Cpu &cpu) = delete;

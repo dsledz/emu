@@ -32,7 +32,7 @@ using namespace EMU;
 namespace EMU {
 
 class I8257 : public CpuDevice {
-  I8257(Machine *machine, const std::string &name, unsigned hertz);
+  I8257(Machine *machine, const std::string &name, ClockDivider divider);
   virtual ~I8257(void);
 
   void write_cb(offset_t offset, byte_t value);

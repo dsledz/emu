@@ -11,8 +11,8 @@
 using namespace EMU;
 
 GfxDevice::GfxDevice(Machine *machine, Clock *clock, const std::string &name,
-                     unsigned hertz)
-    : ClockedDevice(machine, clock, name, hertz), m_scanline(0) {}
+                     ClockDivider divider)
+    : ClockedDevice(machine, clock, name, divider), m_scanline(0) {}
 
 GfxDevice::~GfxDevice(void) {}
 

@@ -32,8 +32,8 @@ using namespace Z80;
 using namespace Arcade;
 
 DonkeyKongGfx::DonkeyKongGfx(Machine *machine, const std::string &name,
-                             unsigned hertz, AddressBus16x8 *bus)
-    : ScreenDevice(machine, name, hertz, 384, 264, 256, 0, 240, 16),
+                             ClockDivider divider, AddressBus16x8 *bus)
+    : ScreenDevice(machine, name, divider, 384, 264, 256, 0, 240, 16),
       vram(machine, "vram", 0x0800),
       m_palette_select(0) {}
 

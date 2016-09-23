@@ -41,9 +41,9 @@ using namespace GBMachine;
 class LR35902CpuTest : public LR35902Cpu
 {
 public:
- LR35902CpuTest(Machine *machine, const std::string &name, unsigned hertz,
+ LR35902CpuTest(Machine *machine, const std::string &name, ClockDivider divider,
                 AddressBus16x8 *bus):
-     LR35902Cpu(machine, name, hertz, bus) { }
+     LR35902Cpu(machine, name, divider, bus) { }
  virtual ~LR35902CpuTest() { }
 
  void step_once(void) {
@@ -56,7 +56,7 @@ class LR35902Test : public ::testing::Test {
   LR35902Test(void)
       : machine(Hertz(4194304)),
         bus(),
-        cpu(&machine, "test", 1000000, &bus),
+        cpu(&machine, "test", ClockDivider(1), &bus),
         ram(0xE000),
         pc(0x100) {
     Core::log.set_level(LogLevel::Trace);

@@ -33,11 +33,11 @@ using namespace Z80;
 class Zexall : public Machine {
  public:
   Zexall(void)
-      : Machine(Hertz(DEFAULT_HERTZ)),
+      : Machine(Hertz(18432000)),
         bus(new Z80Bus()),
         io(new Z80IOBus()),
         state(bus.get(), io.get()),
-        cpu(new Z80Cpu(this, "cpu", 1000000, &state)),
+        cpu(new Z80Cpu(this, "cpu", ClockDivider(2), &state)),
         rom("zex.bin"),
         ram(),
         m_data(0),

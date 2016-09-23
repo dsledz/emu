@@ -92,7 +92,7 @@ class NESMapper : public Device {
 
 class NESPPU : public ScreenDevice {
  public:
-  NESPPU(NES *machine, const std::string &name, unsigned hertz);
+  NESPPU(NES *machine, const std::string &name, ClockDivider divider);
   virtual ~NESPPU(void);
 
   virtual void reset(void);

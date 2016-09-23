@@ -29,10 +29,10 @@
 using namespace EMU;
 
 ScreenDevice::ScreenDevice(Machine *machine, const std::string &name,
-                           unsigned hertz, unsigned width, unsigned height,
-                           unsigned hbstart, unsigned hbend, unsigned vbstart,
-                           unsigned vbend)
-    : ClockedDevice(machine, machine->clock(), name, hertz),
+                           ClockDivider divider, unsigned width,
+                           unsigned height, unsigned hbstart, unsigned hbend,
+                           unsigned vbstart, unsigned vbend)
+    : ClockedDevice(machine, machine->clock(), name, divider),
       m_hstate(HState::HStart),
       m_hpos(0),
       m_vstate(VState::VStart),

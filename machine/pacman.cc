@@ -70,9 +70,11 @@ Pacman::Pacman(void)
 
   m_cpu_state.bus = m_bus.get();
   m_cpu_state.io = m_iobus.get();
-  m_cpu = Z80Cpu_ptr(new Z80Cpu(this, "maincpu", m_hertz / 6, &m_cpu_state));
+  m_cpu =
+      Z80Cpu_ptr(new Z80Cpu(this, "maincpu", ClockDivider(6), &m_cpu_state));
 
-  m_gfx = PacmanGfx_ptr(new PacmanGfx(this, "gfx", m_hertz, m_bus.get()));
+  m_gfx =
+      PacmanGfx_ptr(new PacmanGfx(this, "gfx", ClockDivider(1), m_bus.get()));
 
   m_gfx->set_vblank_cb([&](void) {
     if (m_irq_mask) set_line("maincpu", Line::INT0, LineState::Assert);

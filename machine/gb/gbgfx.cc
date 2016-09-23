@@ -27,8 +27,8 @@
 
 using namespace GBMachine;
 
-GBGraphics::GBGraphics(Gameboy *gameboy, unsigned hertz)
-    : ClockedDevice(gameboy, gameboy->clock(), "gfx", hertz),
+GBGraphics::GBGraphics(Gameboy *gameboy, ClockDivider divider)
+    : ClockedDevice(gameboy, gameboy->clock(), "gfx", divider),
       m_vram(gameboy, "vram", 0x2000),
       m_oam(gameboy, "oam", 0x100),
       m_lcdc(0) {

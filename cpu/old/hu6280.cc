@@ -37,9 +37,9 @@
 using namespace EMU;
 using namespace M6502;
 
-hu6280Cpu::hu6280Cpu(Machine *machine, const std::string &name, unsigned hertz,
-                     AddressBus21x8 *bus)
-    : m65c02Cpu(machine, name, hertz, &_mmu),
+hu6280Cpu::hu6280Cpu(Machine *machine, const std::string &name,
+                     ClockDivider divider, AddressBus21x8 *bus)
+    : m65c02Cpu(machine, name, divider, &_mmu),
       _mmu_map(),
       _clock_div(1),
       _irq_status(0),

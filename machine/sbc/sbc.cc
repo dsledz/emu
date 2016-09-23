@@ -30,11 +30,11 @@ SingleBoardZ80::SingleBoardZ80(void)
 
   m_bus = AddressBus16x8_ptr(new AddressBus16x8());
   m_io = std::unique_ptr<AddressBus8x8>(new AddressBus8x8());
-  m_acia = M6850_ptr(new M6850(this, "m6850", m_hertz.v));
+  m_acia = M6850_ptr(new M6850(this, "m6850", ClockDivider(1)));
   m_state.bus = m_bus.get();
   m_state.io = m_io.get();
 
-  m_cpu = Z80Cpu_ptr(new Z80Cpu(this, "cpu", m_hertz.v, &m_state));
+  m_cpu = Z80Cpu_ptr(new Z80Cpu(this, "cpu", ClockDivider(1), &m_state));
 
   init_bus();
 }

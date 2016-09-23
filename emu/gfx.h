@@ -112,7 +112,7 @@ class SimpleGfx {
 class GfxDevice : public ClockedDevice {
  public:
   GfxDevice(Machine *machine, Clock *clock, const std::string &name,
-            unsigned hertz);
+            ClockDivider divider);
   virtual ~GfxDevice(void);
 
   virtual void execute(void);

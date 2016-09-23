@@ -103,8 +103,8 @@ class GBSerialIO : public Device {
 
 class GBTimer : public ClockedDevice {
  public:
-  GBTimer(Gameboy *gameboy, unsigned hertz)
-      : ClockedDevice(gameboy, gameboy->clock(), "timer", hertz) {
+  GBTimer(Gameboy *gameboy, ClockDivider divider)
+      : ClockedDevice(gameboy, gameboy->clock(), "timer", divider) {
     gameboy->bus()->add(GBReg::TIMA, &m_tima);
     gameboy->bus()->add(GBReg::TMA, &m_tma);
     gameboy->bus()->add(GBReg::TAC, &m_tac);
@@ -187,12 +187,12 @@ Gameboy::Gameboy(void) : Machine(Hertz(4194304)) {
   m_bus = AddressBus16x8_ptr(new AddressBus16x8());
 
   m_cpu = std::unique_ptr<LR35902Cpu>(
-      new LR35902Cpu(this, "cpu", 4194304, m_bus.get()));
+      new LR35902Cpu(this, "cpu", ClockDivider(1), m_bus.get()));
 
-  m_timer = Device_ptr(new GBTimer(this, 4194304));
+  m_timer = Device_ptr(new GBTimer(this, ClockDivider(1)));
   m_serial = Device_ptr(new GBSerialIO(this));
   m_joypad = Device_ptr(new GBJoypad(this));
-  m_gfx = std::unique_ptr<GBGraphics>(new GBGraphics(this, 4194304));
+  m_gfx = std::unique_ptr<GBGraphics>(new GBGraphics(this, ClockDivider(1)));
 
   m_mbc = std::unique_ptr<GBMBC>(new GBMBC(this));
 

@@ -107,7 +107,7 @@ enum STATBits {
 
 class GBGraphics : public ClockedDevice {
  public:
-  GBGraphics(Gameboy *gameboy, unsigned hertz);
+  GBGraphics(Gameboy *gameboy, ClockDivider divider);
   virtual ~GBGraphics(void);
 
   virtual void save(SaveState &state) {}
