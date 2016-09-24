@@ -37,17 +37,3 @@ TEST(DonkeyKongTest, run100) {
   EMUTest::machine_test<Arcade::DonkeyKong>("");
 }
 
-TEST(DonkeyKongTest, input) {
-  Arcade::DonkeyKong machine;
-
-  machine.load_rom("dkong");
-  machine.poweron();
-  machine.reset();
-
-  machine.run_forward(sec(5));
-  machine.send_input(InputKey::Coin1, true);
-  machine.run_forward(sec(1));
-  machine.send_input(InputKey::Coin1, false);
-  machine.run_forward(sec(1));
-  machine.poweroff();
-}

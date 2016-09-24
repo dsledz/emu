@@ -36,18 +36,3 @@ using namespace EMU;
 TEST(GalagaTest, run100) {
   EMUTest::machine_test<Arcade::Galaga>();
 }
-
-TEST(GalagaTest, input) {
-  Arcade::Galaga machine;
-
-  machine.load_rom("galaga");
-
-  machine.poweron();
-  machine.reset();
-  machine.run_forward(sec(5));
-  machine.send_input(InputKey::Coin1, true);
-  machine.run_forward(sec(1));
-  machine.send_input(InputKey::Coin1, false);
-  machine.run_forward(sec(1));
-  machine.poweroff();
-}
