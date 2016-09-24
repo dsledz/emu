@@ -143,12 +143,8 @@ void PacmanGfx::draw_sprites(FrameBuffer *screen) {
     auto *sprite = &m_sprites[idx];
     auto *palette = &m_palettes[pen];
     draw_gfx(screen, palette, sprite, sx, sy, flipx, flipy, m_colors[0x1f]);
-    IF_LOG(Info) {
-      std::cout << "Drawing sprite: " << Hex(off) << "(" << Hex(sx) << ","
-                << Hex(sy) << "): "
-                << "Sprite: " << Hex(idx) << " Color: " << Hex(pen)
-                << std::endl;
-    }
+    DEVICE_DEBUG("Drawing sprite: ", Hex(off), "(", Hex(sx), ",", Hex(sy),
+                 "): ", "Sprite: ", Hex(idx), " Color: ", Hex(pen));
   }
 }
 
