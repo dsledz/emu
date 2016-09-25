@@ -20,8 +20,7 @@ if (BUILD_TESTING)
         emu_test.cc
         time_test.cc
         timer_queue_test.cc
-        dipswitch_test.cc
-        io_test.cc)
+        dipswitch_test.cc)
     target_link_libraries(emu-check
         emu
         gtest gtest_main)
