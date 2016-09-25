@@ -102,13 +102,27 @@ AND(Z80State *state, reg8_t &dest, reg8_t arg) {
   dest = result;
 }
 
+
+static inline void __attribute__((__used__))
+BIT_TEST_HL(Z80State *state, byte_t value, byte_t h,int bit) {
+  state->AF.b.f.S = bit_isset(value, 7);
+  state->AF.b.f.Z = !bit_isset(value, bit);
+  state->AF.b.f.Y = bit_isset(h, 5);
+  state->AF.b.f.H = 1;
+  state->AF.b.f.X = bit_isset(h, 3);
+  state->AF.b.f.V = !bit_isset(value, bit);
+  state->AF.b.f.N = 0;
+}
+
 static inline void __attribute__((__used__))
 BIT_TEST(Z80State *state, byte_t value, int bit) {
-
-  state->AF.b.l = (value & (0x24 | 1 << bit));
+  state->AF.b.f.S = bit_isset(value, 7);
   state->AF.b.f.Z = !bit_isset(value, bit);
+  state->AF.b.f.Y = bit_isset(value, 5);
   state->AF.b.f.H = 1;
+  state->AF.b.f.X = bit_isset(value, 3);
   state->AF.b.f.V = !bit_isset(value, bit);
+  state->AF.b.f.N = 0;
 }
 
 static inline void __attribute__((__used__))
@@ -126,7 +140,7 @@ BIT_SET(Z80State *state, byte_t &dest, byte_t value, int bit) {
 }
 
 static inline int __attribute__((__used__)) CALC_PARITY(reg8_t reg) {
-  return (0x6996 >> (reg >> 4) ^ (reg & 0xf)) & 1;
+  return ((0x6996 >> ((reg ^ (reg >> 4)) & 0xf)) & 1) == 0;
 }
 
 static inline void __attribute__((__used__))
@@ -378,7 +392,11 @@ static inline void __attribute__((__used__)) DISPATCH_CB(Z80State *state) {
     (reg == Z80Arg::ArgRegHL) ? ADD_ICYCLES(state, 15) : ADD_ICYCLES(state, 8);
     STORE(state, reg, addr, dest);
   } else if ((op & 0xC0) == 0x40) {
-    BIT_TEST(state, value, bit);
+    if (reg == Z80Arg::ArgRegHL)
+      //BIT_TEST_HL(state, value, state->HL.b.h, bit);
+      BIT_TEST(state, value, bit);
+    else
+      BIT_TEST(state, value, bit);
     (reg == Z80Arg::ArgRegHL) ? ADD_ICYCLES(state, 12) : ADD_ICYCLES(state, 8);
   } else if ((op & 0xC0) == 0x80) {
     BIT_RESET(state, dest, value, bit);
