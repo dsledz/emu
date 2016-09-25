@@ -39,8 +39,7 @@ GBGraphics::GBGraphics(Gameboy *gameboy, ClockDivider divider)
   m_global_pal[2] = RGBColor(0x66, 0x66, 0x66);
   m_global_pal[3] = RGBColor(0x00, 0x00, 0x00);
 
-  m_bus->add(0x8000, 0x9FFF,
-             [&](offset_t offset) -> byte_t { return m_vram.read8(offset); },
+  m_bus->add(0x8000, m_vram.direct(0), 0x2000,
              [&](offset_t offset, byte_t value) {
                if (offset < 0x1800) {
                  auto *o = &m_objs[offset / 16];

@@ -33,56 +33,51 @@ using namespace EMU;
 using namespace GBMachine;
 
 GBMBC::GBMBC(Gameboy *gameboy)
-    : Device(gameboy, "mbc"), _rom_bank(1), _ram_bank(0) {
-  gameboy->bus()->add(0x0000, 0x1FFF,
-                      [&](offset_t offset) -> byte_t { return _rom[offset]; },
-                      [&](offset_t offset, byte_t value) { return; });
-  gameboy->bus()->add(
-      0x2000, 0x3FFF,
-      [&](offset_t offset) -> byte_t { return _rom[offset + 0x2000]; },
-      [&](offset_t offset, byte_t value) {
-        if (_type == MBC3RRB)
-          _rom_bank = value & 0x7f;
-        else
-          _rom_bank = value & 0x1f;
-        if (_rom_bank == 0 || (_rom_bank * 0x4000) > _rom_size) _rom_bank = 1;
-      });
-  gameboy->bus()->add(
-      0x4000, 0x5FFF,
-      [&](offset_t offset) -> byte_t {
-        return _rom[_rom_bank * 0x4000 + offset];
-      },
-      [&](offset_t offset, byte_t value) { _ram_bank = value & 0x03; });
-  gameboy->bus()->add(0x6000, 0x7FFF,
-                      [&](offset_t offset) -> byte_t {
-                        return _rom[_rom_bank * 0x4000 + offset + 0x2000];
-                      },
-                      [&](offset_t offset, byte_t value) { return; });
-  gameboy->bus()->add(0xA000, 0xBFFF,
-                      [&](offset_t offset) -> byte_t {
-                        return _ram[_ram_bank * 0x2000 + offset];
-                      },
-                      [&](offset_t offset, byte_t value) {
-                        _ram[_ram_bank * 0x2000 + offset] = value;
-                      });
+    : Device(gameboy, "mbc"),
+    m_bus(gameboy->bus()),
+    m_rom_bank(1),
+    m_rom_size(0),
+    m_rom(),
+    m_ram_bank(0),
+    m_ram_size(0),
+    m_ram() {
 }
 
 GBMBC::~GBMBC(void) {}
 
-void GBMBC::load_rom(const std::string &name) {
-  read_rom(name, _rom);
+void GBMBC::rom_bank(offset_t offset, byte_t value) {
+  if (offset < 0x2000)
+    return;
+  if (m_type == MBC3RRB)
+    m_rom_bank = value & 0x7f;
+  else
+    m_rom_bank = value & 0x1f;
+  if (m_rom_bank == 0 || (m_rom_bank * 0x4000) > m_rom_size) m_rom_bank = 1;
+  m_bus->add(0x4000, &m_rom[m_rom_bank * 0x4000], 0x4000,
+             PAGE_FAULT_CB(GBMBC::ram_bank, this));
+}
 
-  if ((_rom[0x0143] & 0xC0) == 0xC0) {
+void GBMBC::ram_bank(offset_t offset, byte_t value) {
+  if (offset > 0x6000)
+    return;
+  m_ram_bank = value & 0x03;
+  m_bus->add(0xA000, &m_ram[m_ram_bank * 0x2000], 0x2000, false);
+}
+
+void GBMBC::load_rom(const std::string &name) {
+  read_rom(name, m_rom);
+
+  if ((m_rom[0x0143] & 0xC0) == 0xC0) {
     std::cout << "Color Gameboy Only" << std::endl;
     throw RomException(name);
   }
 
   // Cartridge Header
-  _name.clear();
-  for (unsigned i = 0x0134; i < 0x0142; i++) _name += _rom[i];
-  _type = static_cast<Cartridge>(_rom[0x0147]);
+  m_name.clear();
+  for (unsigned i = 0x0134; i < 0x0142; i++) m_name += m_rom[i];
+  m_type = static_cast<Cartridge>(m_rom[0x0147]);
 
-  switch (_type) {
+  switch (m_type) {
     case Cartridge::RomOnly:
     case Cartridge::MBC1:
     case Cartridge::MBC1R:
@@ -94,88 +89,90 @@ void GBMBC::load_rom(const std::string &name) {
       break;
   }
 
-  switch (_rom[0x0148]) {
+  switch (m_rom[0x0148]) {
     case 0:
-      _rom_size = 32 * 1024;
+      m_rom_size = 32 * 1024;
       break;
     case 1:
-      _rom_size = 64 * 1024;
+      m_rom_size = 64 * 1024;
       break;
     case 2:
-      _rom_size = 128 * 1024;
+      m_rom_size = 128 * 1024;
       break;
     case 3:
-      _rom_size = 256 * 1024;
+      m_rom_size = 256 * 1024;
       break;
     case 4:
-      _rom_size = 512 * 1024;
+      m_rom_size = 512 * 1024;
       break;
     case 5:
-      _rom_size = 1024 * 1024;
+      m_rom_size = 1024 * 1024;
       break;
     case 6:
-      _rom_size = 2048 * 1024;
+      m_rom_size = 2048 * 1024;
       break;
     case 0x52:
-      _rom_size = 1152 * 1024;
+      m_rom_size = 1152 * 1024;
       break;
     case 0x53:
-      _rom_size = 1280 * 1024;
+      m_rom_size = 1280 * 1024;
       break;
     case 0x54:
-      _rom_size = 1536 * 1024;
+      m_rom_size = 1536 * 1024;
       break;
   }
-  if (_rom_size != _rom.size()) throw RomException(name);
+  if (m_rom_size != m_rom.size()) throw RomException(name);
 
-  switch (_rom[0x0149]) {
+  switch (m_rom[0x0149]) {
     case 0:
-      _ram_size = 2 * 1024;
+      m_ram_size = 2 * 1024;
     case 1:
-      _ram_size = 2 * 1024;
+      m_ram_size = 2 * 1024;
       break;
     case 2:
-      _ram_size = 8 * 1024;
+      m_ram_size = 8 * 1024;
       break;
     case 3:
-      _ram_size = 32 * 1024;
+      m_ram_size = 32 * 1024;
       break;
     case 4:
-      _ram_size = 128 * 1024;
+      m_ram_size = 128 * 1024;
       break;
   }
-  _ram.resize(_ram_size);
+  m_ram.resize(m_ram_size);
 
-#if 0
-    std::cout << "Cartridge Header" << std::endl;
-    std::cout << "Name: " << _name << std::endl;
-    std::cout << "MBC: " << Print(_type) << std::endl;
-    std::cout << "Rom Size: " << Print(_rom_size) << std::endl;
-#endif
+  LOG_DEBUG("Cartridge Header:", "Name: ", m_name, " MBC: ", m_type,
+            " Rom Size: ", m_rom_size);
+  reset();
 }
 
 void GBMBC::save(SaveState &state) {
-  state << _type;
-  state << _rom_bank;
-  state << _rom_size;
-  state << _rom; /*XXX: lame */
-  state << _ram_bank;
-  state << _ram_size;
-  state << _ram;
+  state << m_type;
+  state << m_rom_bank;
+  state << m_rom_size;
+  state << m_rom; /*XXX: lame */
+  state << m_ram_bank;
+  state << m_ram_size;
+  state << m_ram;
 }
 
 void GBMBC::load(LoadState &state) {
-  state >> _type;
-  state >> _rom_bank;
-  state >> _rom_size;
-  state >> _rom; /*XXX: lame */
-  state >> _ram_bank;
-  state >> _ram_size;
-  state >> _ram;
+  state >> m_type;
+  state >> m_rom_bank;
+  state >> m_rom_size;
+  state >> m_rom; /*XXX: lame */
+  state >> m_ram_bank;
+  state >> m_ram_size;
+  state >> m_ram;
+  /* XXX: Restore bus */
 }
 
 void GBMBC::reset(void) {
-  memset(&_ram[0], 0, _ram.size());
-  _ram_bank = 0;
-  _rom_bank = 1;
+  memset(&m_ram[0], 0, m_ram.size());
+  m_ram_bank = 0;
+  m_rom_bank = 1;
+  m_bus->add(0x0000, &m_rom[0], 0x4000, PAGE_FAULT_CB(GBMBC::rom_bank, this));
+  m_bus->add(0x4000, &m_rom[m_rom_bank * 0x4000], 0x4000,
+             PAGE_FAULT_CB(GBMBC::ram_bank, this));
+  m_bus->add(0xA000, &m_ram[m_ram_bank * 0x2000], 0x2000, false);
 }

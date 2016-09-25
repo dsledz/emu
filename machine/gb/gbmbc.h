@@ -56,13 +56,18 @@ class GBMBC : public Device {
   void load_rom(const std::string &name);
 
  private:
-  std::string _name;
-  Cartridge _type;
-  unsigned _rom_bank;
-  unsigned _rom_size;
-  bvec _rom;
-  unsigned _ram_bank;
-  unsigned _ram_size;
-  bvec _ram;
+
+  void rom_bank(offset_t offset, byte_t value);
+  void ram_bank(offset_t offset, byte_t value);
+
+  AddressBus16x8 * m_bus;
+  std::string m_name;
+  Cartridge m_type;
+  unsigned m_rom_bank;
+  unsigned m_rom_size;
+  bvec m_rom;
+  unsigned m_ram_bank;
+  unsigned m_ram_size;
+  bvec m_ram;
 };
 };
