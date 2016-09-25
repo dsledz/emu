@@ -42,14 +42,23 @@ class TestMachine : public Machine {
   TestMachine(void)
       : Machine(Hertz(DEFAULT_HERTZ)),
         bus(),
-        cpu(this, "maincpu", ClockDivider(2), &bus),
+        cpu(this, "maincpu", ClockDivider(1), &bus),
         ram(this, "ram", 0x10000),
         pc(initial_pc) {
     bus.add(0x0000, &ram);
 
     set_line("maincpu", Line::RESET, LineState::Pulse);
+
+    LOG_DEBUG("Starting CPU...");
+    cpu.test_start();
+    cpu.test_step();
   }
   ~TestMachine(void) {}
+
+  void cpu_step(void) {
+    //LOG_DEBUG("Stepping CPU...");
+    cpu.test_step();
+  }
 
   void write8(byte_t value) { ram.write8(pc++, value); }
 

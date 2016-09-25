@@ -220,9 +220,10 @@ class Cpu : public ClockedDevice {
     m_state.F.N = bit_isset(m_state.NativeFlags.d, Flags::SF);
 
     // Account for the extra cycles if we branched
-    add_icycles(block->cycles * m_state.clock_divider);
     if (m_state.PC.d != (block->pc + block->len))
-      add_icycles(2 * m_state.clock_divider);
+      add_icycles(Cycles((block->cycles + Cycles(2)) * m_state.clock_divider));
+    else
+      add_icycles(Cycles(block->cycles * m_state.clock_divider));
   }
 
   jit_block_ptr jit_compile(pc_type start_pc) {

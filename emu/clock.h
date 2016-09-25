@@ -32,6 +32,9 @@ class ClockedDevice : public Device {
     }
   }
 
+  void test_start(void);
+  void test_step(void);
+
   inline void start(void) { m_our_ctx.initial_switch(&m_their_ctx); }
 
   inline void resume(void) { m_our_ctx.switch_context(&m_their_ctx); }

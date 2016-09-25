@@ -47,6 +47,17 @@ void ClockedDevice::run_internal(void) {
   m_their_ctx.switch_context(&m_our_ctx);
 }
 
+void ClockedDevice::test_start(void) {
+  m_target_status = DeviceStatus::Running;
+  m_status = DeviceStatus::Running;
+  m_our_ctx.initial_switch(&m_their_ctx);
+}
+
+void ClockedDevice::test_step(void) {
+  m_avail = Cycles(1).multiple(m_divider);
+  resume();
+}
+
 Clock::Clock(Machine *machine, Hertz hertz)
     : Device(machine, "clock"),
       m_rtc(),
