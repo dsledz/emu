@@ -41,7 +41,11 @@ using namespace Z80;
 
 OPCODE(0x00, 4, 1, "NOP", );
 OPCODE(0x01, 10, 3, "LD BC,d16", LD16(state, state->BC, D16(state)));
-OPCODE(0x02, 7, 1, "LD (BC),A", LDMEM(state, state->BC.d, state->AF.b.h));
+OPCODE(0x02, 7, 1, "LD (BC),A", {
+  state->WZ.b.l = (state->BC.b.l + 1) & 0xff;
+  state->WZ.b.h = state->AF.b.h;
+  LDMEM(state, state->BC.d, state->AF.b.h);
+});
 OPCODE(0x03, 6, 1, "INC BC", INC16(state, state->BC));
 OPCODE(0x04, 4, 1, "INC B", INC(state, state->BC.b.h));
 OPCODE(0x05, 4, 1, "DEC B", DEC(state, state->BC.b.h));
@@ -49,8 +53,10 @@ OPCODE(0x06, 7, 2, "LD B, d8", LD(state, state->BC.b.h, D8(state)));
 OPCODE(0x07, 4, 1, "RLCA", RLCA(state));
 OPCODE(0x08, 4, 1, "EX AF,AF'", EX(state, state->AF.d, state->AF2.d));
 OPCODE(0x09, 11, 1, "ADD HL,BC", ADD16(state, *state->vHL, state->BC.d));
-OPCODE(0x0A, 7, 1, "LD A,(BC)",
-       LD(state, state->AF.b.h, state->bus_read(state, state->BC.d)));
+OPCODE(0x0A, 7, 1, "LD A,(BC)", {
+  LD(state, state->AF.b.h, state->bus_read(state, state->BC.d));
+  state->WZ.d = state->BC.d + 1;
+});
 OPCODE(0x0B, 6, 1, "DEC BC", DEC16(state, state->BC));
 OPCODE(0x0C, 4, 1, "INC C", INC(state, state->BC.b.l));
 OPCODE(0x0D, 4, 1, "DEC C", DEC(state, state->BC.b.l));
@@ -58,7 +64,11 @@ OPCODE(0x0E, 7, 2, "LD C, d8", LD(state, state->BC.b.l, D8(state)));
 OPCODE(0x0F, 4, 1, "RRCA", RRCA(state));
 OPCODE(0x10, 8, 1, "DJNZ r8", DJNZ(state, D8(state)));
 OPCODE(0x11, 10, 3, "LD DE,d16", LD16(state, state->DE, D16(state)));
-OPCODE(0x12, 7, 1, "LD (DE),A", LDMEM(state, state->DE.d, state->AF.b.h));
+OPCODE(0x12, 7, 1, "LD (DE),A", {
+  state->WZ.b.l = (state->DE.b.l + 1) & 0xff;
+  state->WZ.b.h = state->AF.b.h;
+  LDMEM(state, state->DE.d, state->AF.b.h);
+});
 OPCODE(0x13, 6, 1, "INC DE", INC16(state, state->DE));
 OPCODE(0x14, 4, 1, "INC D", INC(state, state->DE.b.h));
 OPCODE(0x15, 4, 1, "DEC D", DEC(state, state->DE.b.h));
@@ -66,8 +76,10 @@ OPCODE(0x16, 7, 2, "LD D, d8", LD(state, state->DE.b.h, D8(state)));
 OPCODE(0x17, 4, 1, "RLA", RLA(state));
 OPCODE(0x18, 12, 2, "JR r8", JR(state, true, D8(state)));
 OPCODE(0x19, 11, 1, "ADD HL,DE", ADD16(state, *state->vHL, state->DE.d));
-OPCODE(0x1A, 7, 1, "LD A,(DE)",
-       LD(state, state->AF.b.h, state->bus_read(state, state->DE.d)));
+OPCODE(0x1A, 7, 1, "LD A,(DE)", {
+  LD(state, state->AF.b.h, state->bus_read(state, state->DE.d));
+  state->WZ.d = state->DE.d + 1;
+});
 OPCODE(0x1B, 6, 1, "DEC DE", DEC16(state, state->DE));
 OPCODE(0x1C, 4, 1, "INC E", INC(state, state->DE.b.l));
 OPCODE(0x1D, 4, 1, "DEC E", DEC(state, state->DE.b.l));
@@ -90,8 +102,13 @@ OPCODE(0x2D, 4, 1, "DEC L", DEC(state, state->vHL->b.l));
 OPCODE(0x2E, 7, 2, "LD L, d8", LD(state, state->vHL->b.l, D8(state)));
 OPCODE(0x2F, 4, 2, "CPL", CPL(state));
 OPCODE(0x30, 7, 2, "JR NC,r8", JR(state, !state->AF.b.f.C, D8(state)));
-OPCODE(0x31, 10, 3, "LD SP,d16", LD16(state, state->SP, D16(state)));
-OPCODE(0x32, 13, 3, "LD (d16), A", LDMEM(state, D16(state), state->AF.b.h));
+OPCODE(0x31, 10, 3, "LD SP, d16", LD16(state, state->SP, D16(state)));
+OPCODE(0x32, 13, 3, "LD (d16), A", {
+  state->WZ.d = D16(state);
+  state->WZ.b.l += 1;
+  state->WZ.b.h = state->AF.b.h;
+  LDMEM(state, state->d16.d, state->AF.b.h);
+});
 OPCODE(0x33, 6, 1, "INC SP", INC16(state, state->SP));
 OPCODE(0x34, 11, 1, "INC (HL)", INCI(state, state->vHL->d));
 OPCODE(0x35, 11, 1, "DEC (HL)", DECI(state, state->vHL->d));
@@ -99,8 +116,11 @@ OPCODE(0x36, 10, 2, "LD (HL), d8", LDMEM(state, DADDR(state), D8(state)));
 OPCODE(0x37, 4, 1, "SCF", SCF(state));
 OPCODE(0x38, 7, 2, "JR C,r8", JR(state, state->AF.b.f.C, D8(state)));
 OPCODE(0x39, 11, 1, "ADD HL,SP", ADD16(state, *state->vHL, state->SP.d));
-OPCODE(0x3A, 13, 3, "LD A,(d16)",
-       LD(state, state->AF.b.h, I8(state, D16(state))));
+OPCODE(0x3A, 13, 3, "LD A,(d16)", {
+  state->WZ.d = D16(state);
+  state->WZ.d++;
+  LD(state, state->AF.b.h, I8(state, state->d16.d));
+});
 OPCODE(0x3B, 6, 1, "DEC SP", DEC16(state, state->SP));
 OPCODE(0x3C, 4, 1, "INC A", INC(state, state->AF.b.h));
 OPCODE(0x3D, 4, 1, "DEC A", DEC(state, state->AF.b.h));
@@ -253,7 +273,11 @@ OPCODE(0xCF, 11, 1, "RST 08H", RST(state, 0x08));
 OPCODE(0xD0, 5, 1, "RET NC", RET(state, !state->AF.b.f.C));
 OPCODE(0xD1, 10, 1, "POP DE", POP(state, state->DE.b.h, state->DE.b.l));
 OPCODE(0xD2, 10, 0, "JP NC", JP(state, !state->AF.b.f.C, D16(state)));
-OPCODE(0xD3, 11, 2, "OUT d8, A", OUT(state, D8(state), state->AF.b.h));
+OPCODE(0xD3, 11, 2, "OUT d8, A", {
+  state->WZ.b.l = (D8(state) + 1) & 0xff;
+  state->WZ.b.h = state->AF.b.h;
+  OUT(state, state->d8, state->AF.b.h);
+});
 OPCODE(0xD4, 10, 3, "CALL NC, d16", CALL(state, !state->AF.b.f.C, D16(state)));
 OPCODE(0xD5, 11, 1, "PUSH DE", PUSH(state, state->DE.b.h, state->DE.b.l));
 OPCODE(0xD6, 7, 2, "SUB A, d8", SUB(state, state->AF.b.h, D8(state)));
@@ -261,7 +285,11 @@ OPCODE(0xD7, 11, 1, "RST 10H", RST(state, 0x10));
 OPCODE(0xD8, 5, 1, "RET C", RET(state, state->AF.b.f.C));
 OPCODE(0xD9, 4, 1, "EXX BC DE HL", EXX(state));
 OPCODE(0xDA, 10, 3, "JP C, d16", JP(state, state->AF.b.f.C, D16(state)));
-OPCODE(0xDB, 11, 2, "IN A, d8", IN(state, state->AF.b.h, D8(state)));
+OPCODE(0xDB, 11, 2, "IN A, d8", {
+  state->WZ.b.h = state->AF.b.h;
+  state->WZ.b.l = D8(state) + 1;
+  IN(state, state->AF.b.h, state->d8);
+});
 OPCODE(0xDC, 10, 3, "CALL C, d16", CALL(state, state->AF.b.f.C, D16(state)));
 OPCODE(0xDD, 0, 0, "EXTD", DISPATCH_ED(state));
 OPCODE(0xDE, 7, 2, "SBC A, d8", SBC(state, state->AF.b.h, D8(state)));
@@ -323,9 +351,16 @@ static Z80Opcode opcodes[256] = {
 
 OPCODE(0xED00, 5, 2, "NOP", );
 OPCODE(0xED40, 12, 2, "IN B, (C)", IN(state, state->BC.b.h, state->BC.b.l));
-OPCODE(0xED41, 12, 2, "OUT (C), B", OUT(state, state->BC.b.l, state->BC.b.h));
+OPCODE(0xED41, 12, 2, "OUT (C), B", {
+  OUT(state, state->BC.b.l, state->BC.b.h);
+  state->WZ.d = state->BC.d + 1;
+});
 OPCODE(0xED42, 15, 2, "SBC HL, BC", SBC16(state, state->HL.d, state->BC.d));
-OPCODE(0xED43, 20, 4, "LD (d16), BC", LD16I(state, D16(state), state->BC.d));
+OPCODE(0xED43, 20, 4, "LD (d16), BC", {
+  state->WZ.d = D16(state);
+  state->WZ.d++;
+  LD16I(state, state->d16.d, state->BC.d);
+});
 OPCODE(0xED44, 8, 2, "NEG", NEG(state, state->AF.b.h));
 OPCODE(0xED45, 14, 2, "RET N", RETN(state));
 OPCODE(0xED47, 9, 2, "LD I, A", LD(state, state->I, state->AF.b.h));
@@ -339,7 +374,11 @@ OPCODE(0xED4F, 9, 2, "LD R, A", LD(state, state->R, state->AF.b.h));
 OPCODE(0xED50, 12, 2, "IN D, (C)", IN(state, state->DE.b.h, state->BC.b.l));
 OPCODE(0xED51, 12, 2, "OUT (C), D", OUT(state, state->BC.b.l, state->DE.b.h));
 OPCODE(0xED52, 15, 2, "SBC HL, DE", SBC16(state, state->HL.d, state->DE.d));
-OPCODE(0xED53, 20, 4, "LD (d16), DE", LD16I(state, D16(state), state->DE.d));
+OPCODE(0xED53, 20, 4, "LD (d16), DE", {
+  state->WZ.d = D16(state);
+  state->WZ.d++;
+  LD16I(state, state->d16.d, state->DE.d);
+});
 OPCODE(0xED54, 8, 2, "NEG", NEG(state, state->AF.b.h));
 OPCODE(0xED55, 14, 2, "RET N", RETN(state));
 OPCODE(0xED56, 8, 2, "IM 1", IM(state, 1));
@@ -354,7 +393,11 @@ OPCODE(0xED5F, 9, 2, "LD A, R", LD(state, state->AF.b.h, state->R));
 OPCODE(0xED60, 12, 2, "IN H, (C)", IN(state, state->HL.b.h, state->BC.b.l));
 OPCODE(0xED61, 12, 2, "OUT (C), H", OUT(state, state->BC.b.l, state->HL.b.h));
 OPCODE(0xED62, 15, 2, "SBC HL, HL", SBC16(state, state->HL.d, state->HL.d));
-OPCODE(0xED63, 20, 4, "LD (d16), HL", LD16I(state, D16(state), state->HL.d));
+OPCODE(0xED63, 20, 4, "LD (d16), HL", {
+  state->WZ.d = D16(state);
+  state->WZ.d++;
+  LD16I(state, state->d16.d, state->HL.d);
+});
 OPCODE(0xED64, 8, 2, "NEG", NEG(state, state->AF.b.h));
 OPCODE(0xED65, 14, 2, "RET N", RETN(state));
 OPCODE(0xED67, 18, 2, "RRD", RRD(state));
@@ -368,10 +411,17 @@ OPCODE(0xED6F, 18, 2, "RLD", RLD(state));
 OPCODE(0xED70, 12, 2, "IN (C)", IN(state, state->HL.b.h, state->BC.b.l));
 OPCODE(0xED71, 12, 2, "OUT (C), 0", OUT(state, state->BC.b.l, 0));
 OPCODE(0xED72, 15, 2, "SBC HL, SP", SBC16(state, state->HL.d, state->SP.d));
-OPCODE(0xED73, 20, 4, "LD (d16), SP", LD16I(state, D16(state), state->SP.d));
+OPCODE(0xED73, 20, 4, "LD (d16), SP", {
+  state->WZ.d = D16(state);
+  state->WZ.d++;
+  LD16I(state, state->d16.d, state->SP.d);
+});
 OPCODE(0xED74, 8, 2, "NEG", NEG(state, state->AF.b.h));
 OPCODE(0xED75, 14, 2, "RET N", RETN(state));
-OPCODE(0xED78, 12, 2, "IN A, (C)", IN(state, state->AF.b.h, state->BC.b.l));
+OPCODE(0xED78, 12, 2, "IN A, (C)", {
+  IN(state, state->AF.b.h, state->BC.b.l);
+  state->WZ.d = state->BC.d + 1;
+});
 OPCODE(0xED79, 12, 2, "OUT (C), A", OUT(state, state->BC.b.l, state->AF.b.h));
 OPCODE(0xED7A, 15, 2, "ADC HL, SP", ADC16(state, state->HL.d, state->SP.d));
 OPCODE(0xED7B, 20, 2, "LD SP, (d16)", LD16(state, state->SP, I16(state)));
@@ -455,6 +505,7 @@ void Z80Cpu::interrupt(addr_t addr) {
   DEVICE_DEBUG("Interrupt: ", Hex(addr));
   PUSH(m_state, m_state->PC.b.h, m_state->PC.b.l);
   m_state->PC.d = addr;
+  m_state->WZ.d = addr;
   m_state->iff2 = m_state->iff1;
   m_state->iff1 = false;
   add_icycles(Cycles(20));
@@ -467,16 +518,18 @@ void Z80Cpu::execute(void) {
       m_state->reset_line = LineState::Clear;
       m_state->halt = false;
     } else if (m_state->nmi_line == LineState::Pulse) {
-      interrupt(0x0066);
       m_state->nmi_line = LineState::Clear;
+      interrupt(0x0066);
       m_state->halt = false;
     } else if (m_state->int0_line == LineState::Assert && m_state->iff1 &&
                !m_state->iwait) {
+      DEVICE_DEBUG("Taking interrupt");
       switch (m_state->imode) {
         case 0:
           throw CpuFault(name(), "Unsupported Interrupt mode 0");
           break;
         case 1:
+          m_state->int0_line = LineState::Clear;
           interrupt(0x0038);
           break;
         case 2: {
@@ -533,7 +586,7 @@ void Z80Cpu::execute(void) {
         } else
 #endif
         m_state->Op->func(m_state);
-        IF_LOG(Trace) LOG_TRACE(Log(m_state));
+        DEVICE_TRACE(Log(m_state));
         add_icycles(m_state->icycles);
   }
 }

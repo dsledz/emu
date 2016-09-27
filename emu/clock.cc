@@ -176,20 +176,32 @@ void Clock::wait_for_target(EmuTime t) {
 Cycles Clock::run_loop(Cycles current, Cycles target) {
   /* Actual Time */
   const Cycles skew(40);
+  bool once;
   Cycles oldest(0);
   while (current < target) {
     /* Run any old devices */
     current += skew;
-    for (auto *dev : m_devs) {
-      dev->cycles_forward(skew);
-    }
-    bool once;
     do {
       once = false;
       for (auto *dev : m_devs) {
         Cycles fb = dev->cycles_left();
-        LOG_DEBUG("Found clock: ", dev->name(), ", available: ", fb);
         if (fb > Cycles(0)) {
+          LOG_DEBUG("Found clock: ", dev->name(), ", available: ", fb);
+          dev->resume();
+          once = true;
+        }
+      }
+    } while (once);
+
+    for (auto *dev : m_devs) {
+      dev->cycles_forward(skew);
+    }
+    do {
+      once = false;
+      for (auto *dev : m_devs) {
+        Cycles fb = dev->cycles_left();
+        if (fb > Cycles(0)) {
+          LOG_DEBUG("Found clock: ", dev->name(), ", available: ", fb);
           dev->resume();
           once = true;
         }

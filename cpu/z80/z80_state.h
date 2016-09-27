@@ -113,6 +113,7 @@ struct Z80State {
   reg16_t IY;
   reg16_t SP;
   reg16_t PC;
+  reg16_t WZ;
 
   reg8_t I;
   reg8_t R;
@@ -185,6 +186,7 @@ static inline void ADD_ICYCLES(Z80State *state, unsigned cycles) {
 
 static inline uint16_t D16(Z80State *state) {
   state->d16.d = pc_read(state) | (pc_read(state) << 8);
+  state->WZ = state->d16;
   return state->d16.d;
 }
 
@@ -233,6 +235,7 @@ static inline byte_t IADDR(Z80State *state) { return I8(state, DADDR(state)); }
 
 static inline uint16_t I16(Z80State *state) {
   state->d16 = pc_read(state) | (pc_read(state) << 8);
+  state->WZ.d = state->d16.d + 1;
   state->i16 = (state->bus_read(state, state->d16)) |
                (state->bus_read(state, state->d16.d + 1) << 8);
   return state->i16.d;
