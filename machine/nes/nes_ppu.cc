@@ -56,8 +56,8 @@ NESPPU::NESPPU(NES *machine, const std::string &name, ClockDivider divider)
   m_cpu_bus->add(0x2000, 0x3FFF, READ_CB(NESPPU::ppu_read, this),
                  WRITE_CB(NESPPU::ppu_write, this));
 
-  m_ppu_bus->add(0x2000, 0x3FFF, READ_CB(NESPPU::ppu_bus_read, this),
-                 WRITE_CB(NESPPU::ppu_bus_write, this));
+  m_ppu_bus->add(0x3F00, 0x3FFF, READ_CB(NESPPU::ppu_pal_read, this),
+                 WRITE_CB(NESPPU::ppu_pal_write, this));
 
   machine->sprite_bus()->add(0x00, m_sram);
 
@@ -65,6 +65,51 @@ NESPPU::NESPPU(NES *machine, const std::string &name, ClockDivider divider)
 }
 
 NESPPU::~NESPPU(void) {}
+
+void NESPPU::set_mirroring(NameTableMirroring mirror) {
+  switch (mirror) {
+    case SingleScreenBLK0:
+      m_ppu_bus->add(0x2000, &m_blk0[0], 0x0400, false);
+      m_ppu_bus->add(0x2400, &m_blk0[0], 0x0400, false);
+      m_ppu_bus->add(0x2800, &m_blk0[0], 0x0400, false);
+      m_ppu_bus->add(0x2C00, &m_blk0[0], 0x0400, false);
+      m_ppu_bus->add(0x3000, &m_blk0[0], 0x0400, false);
+      m_ppu_bus->add(0x3400, &m_blk0[0], 0x0400, false);
+      m_ppu_bus->add(0x3800, &m_blk0[0], 0x0400, false);
+      m_ppu_bus->add(0x3C00, &m_blk0[0], 0x0400, false);
+      break;
+    case SingleScreenBLK1:
+      m_ppu_bus->add(0x2000, &m_blk1[0], 0x0400, false);
+      m_ppu_bus->add(0x2400, &m_blk1[0], 0x0400, false);
+      m_ppu_bus->add(0x2800, &m_blk1[0], 0x0400, false);
+      m_ppu_bus->add(0x2C00, &m_blk1[0], 0x0400, false);
+      m_ppu_bus->add(0x3000, &m_blk1[0], 0x0400, false);
+      m_ppu_bus->add(0x3400, &m_blk1[0], 0x0400, false);
+      m_ppu_bus->add(0x3800, &m_blk1[0], 0x0400, false);
+      m_ppu_bus->add(0x3C00, &m_blk1[0], 0x0400, false);
+      break;
+    case TwoScreenVMirroring:
+      m_ppu_bus->add(0x2000, &m_blk0[0], 0x0400, false);
+      m_ppu_bus->add(0x2400, &m_blk1[0], 0x0400, false);
+      m_ppu_bus->add(0x2800, &m_blk0[0], 0x0400, false);
+      m_ppu_bus->add(0x2C00, &m_blk1[0], 0x0400, false);
+      m_ppu_bus->add(0x3000, &m_blk0[0], 0x0400, false);
+      m_ppu_bus->add(0x3400, &m_blk1[0], 0x0400, false);
+      m_ppu_bus->add(0x3800, &m_blk0[0], 0x0400, false);
+      m_ppu_bus->add(0x3C00, &m_blk1[0], 0x0400, false);
+      break;
+    case TwoScreenHMirroring:
+      m_ppu_bus->add(0x2000, &m_blk1[0], 0x0400, false);
+      m_ppu_bus->add(0x2400, &m_blk1[0], 0x0400, false);
+      m_ppu_bus->add(0x2800, &m_blk0[0], 0x0400, false);
+      m_ppu_bus->add(0x2C00, &m_blk0[0], 0x0400, false);
+      m_ppu_bus->add(0x3000, &m_blk1[0], 0x0400, false);
+      m_ppu_bus->add(0x3400, &m_blk1[0], 0x0400, false);
+      m_ppu_bus->add(0x3800, &m_blk0[0], 0x0400, false);
+      m_ppu_bus->add(0x3C00, &m_blk0[0], 0x0400, false);
+      break;
+  }
+}
 
 void NESPPU::reset(void) {
   m_reg1.value = 0;
@@ -89,9 +134,9 @@ void NESPPU::reset(void) {
 }
 
 void NESPPU::cache_bg_tile(void) {
-  int obj = ppu_nt_read(0x2000 | (m_v.d & 0xFFF)) + (m_reg1.bg_table * 256);
-  byte_t b = ppu_nt_read(0x23C0 | (m_v.d & 0x0C00) | ((m_v.d >> 4) & 0x38) |
-                         ((m_v.d >> 2) & 0x07));
+  int obj = m_ppu_bus->read(0x2000 | (m_v.d & 0xFFF)) + (m_reg1.bg_table * 256);
+  byte_t b = m_ppu_bus->read(0x23C0 | (m_v.d & 0x0C00) | ((m_v.d >> 4) & 0x38) |
+                             ((m_v.d >> 2) & 0x07));
   /* XXX: calculate */
   int bit = 0;
   if (m_v.coarse_x & 0x02) bit += 2;
@@ -290,12 +335,7 @@ byte_t NESPPU::ppu_read(offset_t offset) {
       break;
     case 7: /* 0x2006 VRAM Data */
       result = m_vram_read;
-      if (m_v.d < 0x2000)
-        m_vram_read = m_ppu_bus->read(m_v.d);
-      else {
-        m_vram_read = ppu_nt_read(m_v.d);
-        if (m_v.d >= 0x3f00) result = ppu_pal_read(m_v.d);
-      }
+      m_vram_read = m_ppu_bus->read(m_v.d);
       if (m_reg1.vram_step)
         m_v.d += 32;
       else
@@ -357,119 +397,9 @@ void NESPPU::ppu_write(offset_t offset, byte_t value) {
   }
 }
 
-byte_t NESPPU::ppu_nt_read(offset_t offset) {
-  NameTableMirroring mirror =
-      NameTableMirroring(machine()->read_ioport(m_mirror));
-  NameTable nt = NameTable((offset & 0x0C00) >> 10);
-  offset &= 0x03ff;
-  byte_t result = 0;
-  switch (nt) {
-    case NT0:
-      switch (mirror) {
-        case SingleScreenBLK1:
-          result = m_blk1[offset];
-          break;
-        case SingleScreenBLK0:
-        case TwoScreenVMirroring:
-        case TwoScreenHMirroring:
-          result = m_blk0[offset];
-          break;
-      }
-      break;
-    case NT1:
-      switch (mirror) {
-        case SingleScreenBLK1:
-        case TwoScreenVMirroring:
-          result = m_blk1[offset];
-          break;
-        case SingleScreenBLK0:
-        case TwoScreenHMirroring:
-          result = m_blk0[offset];
-          break;
-      }
-      break;
-    case NT2:
-      switch (mirror) {
-        case SingleScreenBLK1:
-        case TwoScreenHMirroring:
-          result = m_blk1[offset];
-          break;
-        case SingleScreenBLK0:
-        case TwoScreenVMirroring:
-          result = m_blk0[offset];
-          break;
-      }
-    case NT3:
-      switch (mirror) {
-        case SingleScreenBLK0:
-          result = m_blk0[offset];
-          break;
-        case SingleScreenBLK1:
-        case TwoScreenVMirroring:
-        case TwoScreenHMirroring:
-          result = m_blk1[offset];
-          break;
-      }
-      break;
-  }
-  return result;
-}
-
-void NESPPU::ppu_nt_write(offset_t offset, byte_t value) {
-  NameTableMirroring mirror =
-      NameTableMirroring(machine()->read_ioport(m_mirror));
-  NameTable nt = NameTable((offset & 0x0C00) >> 10);
-  offset &= 0x03ff;
-  switch (nt) {
-    case NT0:
-      m_blk0[offset] = value;
-      break;
-    case NT1:
-      switch (mirror) {
-        case SingleScreenBLK1:
-        case TwoScreenVMirroring:
-          m_blk1[offset] = value;
-          break;
-        case SingleScreenBLK0:
-        case TwoScreenHMirroring:
-          m_blk0[offset] = value;
-          break;
-      }
-      break;
-    case NT2:
-      switch (mirror) {
-        case SingleScreenBLK1:
-        case TwoScreenHMirroring:
-          m_blk1[offset] = value;
-          break;
-        case SingleScreenBLK0:
-        case TwoScreenVMirroring:
-          m_blk0[offset] = value;
-          break;
-      }
-    case NT3:
-      m_blk1[offset] = value;
-      break;
-  }
-}
-
 byte_t NESPPU::ppu_pal_read(offset_t offset) {
   offset &= 0x001f;
   return m_palette_bytes[offset];
-}
-
-byte_t NESPPU::ppu_bus_read(offset_t offset) {
-  if ((offset & 0x1f00) == 0x1F00)
-    return ppu_pal_read(offset);
-  else
-    return ppu_nt_read(offset);
-}
-
-void NESPPU::ppu_bus_write(offset_t offset, byte_t value) {
-  if ((offset & 0x1f00) == 0x1F00)
-    ppu_pal_write(offset, value);
-  else
-    ppu_nt_write(offset, value);
 }
 
 void NESPPU::ppu_pal_write(offset_t offset, byte_t value) {

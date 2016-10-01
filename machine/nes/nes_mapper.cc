@@ -47,7 +47,7 @@ NESMapper::NESMapper(NES *nes, const iNesHeader *header, bvec &rom)
     else
         machine->write_ioport("MIRRORING", TwoScreenVMirroring);
 #else
-  m_nes->write_ioport("MIRRORING", TwoScreenVMirroring);
+    m_nes->ppu()->set_mirroring(TwoScreenVMirroring);
 #endif
 }
 
@@ -211,7 +211,7 @@ class NESMapperMMC1 : public NESMapper {
     } else {
       switch (offset >> 13) {
         case 0: {
-          machine()->write_ioport("MIRRORING", m_shift & 0x03);
+          m_nes->ppu()->set_mirroring(NameTableMirroring(m_shift & 0x03));
           /* XXX: Remaing bits */
           break;
         }
@@ -347,9 +347,8 @@ class NESMapperMMC3 : public NESMapper {
         break;
       }
       case 0xA000:
-        machine()->write_ioport("MIRRORING", bit_isset(value, 0)
-                                                 ? TwoScreenHMirroring
-                                                 : TwoScreenVMirroring);
+        m_nes->ppu()->set_mirroring(NameTableMirroring(
+            bit_isset(value, 0) ? TwoScreenHMirroring : TwoScreenVMirroring));
         break;
       case 0xA001:
         /* XXX: SRAM */

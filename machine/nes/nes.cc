@@ -55,8 +55,8 @@ NES::NES(void)
 
   for (auto it = ports.begin(); it != ports.end(); it++) add_ioport(*it);
 
-  m_cpu = std::unique_ptr<M6502Cpu>(
-      new M6502Cpu(this, "cpu", ClockDivider(12), cpu_bus()));
+  m_cpu = std::unique_ptr<N2a03Cpu>(
+      new N2a03Cpu(this, "cpu", ClockDivider(12), cpu_bus()));
 
   m_ppu = std::unique_ptr<NESPPU>(new NESPPU(this, "ppu", ClockDivider(4)));
 

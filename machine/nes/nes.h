@@ -24,7 +24,7 @@
  */
 
 #include "emu/emu.h"
-#include "cpu/m6502/m6502.h"
+#include "cpu/m6502/n2a03.h"
 
 using namespace EMU;
 using namespace M6502;
@@ -95,6 +95,8 @@ class NESPPU : public ScreenDevice {
   int draw_bg(void);
   int draw_sprite(int color, int x, int y);
 
+  void set_mirroring(NameTableMirroring mirroring);
+
   Cycles step(void);
 
  private:
@@ -109,12 +111,6 @@ class NESPPU : public ScreenDevice {
 
   byte_t ppu_read(offset_t offset);
   void ppu_write(offset_t offset, byte_t value);
-
-  byte_t ppu_bus_read(offset_t offset);
-  void ppu_bus_write(offset_t offset, byte_t value);
-
-  byte_t ppu_nt_read(offset_t offset);
-  void ppu_nt_write(offset_t offset, byte_t value);
 
   byte_t ppu_pal_read(offset_t offset);
   void ppu_pal_write(offset_t offset, byte_t value);
@@ -224,10 +220,12 @@ class NES : public Machine {
 
   AddressBus8x8 *sprite_bus(void) { return &m_sprite_bus; }
 
+  NESPPU *ppu(void) { return m_ppu.get(); }
+
  private:
   static const std::vector<std::string> ports;
 
-  std::unique_ptr<M6502Cpu> m_cpu;
+  std::unique_ptr<N2a03Cpu> m_cpu;
   std::unique_ptr<NESPPU> m_ppu;
   mapper_ptr m_mapper;
   RamDevice m_ram;
