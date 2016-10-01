@@ -42,7 +42,8 @@ class SFMLException : public Core::CoreException {
 
 class SFMLEmulator : public Emulator {
  public:
-  SFMLEmulator(const Options &options) : Emulator(options), m_window(nullptr) {
+  SFMLEmulator(const Options &options)
+      : Emulator(options), m_window(nullptr), m_task() {
     sf::VideoMode vm(machine()->fb()->width() * 2,
                      machine()->fb()->height() * 2);
 
@@ -51,6 +52,8 @@ class SFMLEmulator : public Emulator {
     m_window->setVerticalSyncEnabled(true);
     poll_events();
   }
+
+  virtual ~SFMLEmulator() { m_task.get(); }
 
   virtual void start(void) {
     machine()->load_rom(options()->rom);
@@ -61,7 +64,7 @@ class SFMLEmulator : public Emulator {
     machine()->reset();
 
     set_state(EmuState::Running);
-    task = std::async(std::launch::async, &Emulator::do_execute, this);
+    m_task = std::async(std::launch::async, &Emulator::do_execute, this);
 
     while (get_state() == EmuState::Running) {
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -73,7 +76,6 @@ class SFMLEmulator : public Emulator {
 
   virtual void stop(void) {
     Emulator::stop();
-    task.get();
   }
 
  private:
@@ -100,7 +102,7 @@ class SFMLEmulator : public Emulator {
   std::unique_ptr<sf::Window> m_window;
   std::unique_ptr<GLRender> m_fb;
 
-  std::future<void> task;
+  std::future<void> m_task;
 };
 
 extern "C" int main(int argc, char **argv) {

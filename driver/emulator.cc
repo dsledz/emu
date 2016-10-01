@@ -30,7 +30,6 @@ using namespace EMU;
 Emulator::Emulator(const Options &options)
     : mtx(),
       cv(),
-      task(),
       m_scheduler(),
       m_clock(),
       m_options(options),

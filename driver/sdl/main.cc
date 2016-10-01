@@ -90,6 +90,8 @@ class SDLEmulator : public Emulator {
     while (SDL_PollEvent(&event)) on_event(&event);
   }
 
+  virtual ~SDLEmulator() { m_task.get(); }
+
   virtual void start(void) {
     machine()->load_rom(options()->rom);
 
@@ -99,7 +101,7 @@ class SDLEmulator : public Emulator {
     machine()->reset();
 
     set_state(EmuState::Running);
-    task = std::async(std::launch::async, &Emulator::do_execute, this);
+    m_task = std::async(std::launch::async, &Emulator::do_execute, this);
 
     while (get_state() == EmuState::Running) {
       glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
@@ -113,7 +115,6 @@ class SDLEmulator : public Emulator {
 
   virtual void stop(void) {
     Emulator::stop();
-    task.get();
   }
 
   void on_event(SDL_Event *event) {
@@ -149,7 +150,7 @@ class SDLEmulator : public Emulator {
   GLint m_fbo;
   std::unique_ptr<GLRender> m_fb;
 
-  std::future<void> task;
+  std::future<void> m_task;
 };
 
 extern "C" int main(int argc, char **argv) {

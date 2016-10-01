@@ -59,7 +59,6 @@ class Emulator {
  private:
   std::mutex mtx;
   std::condition_variable cv;
-  std::future<void> task;
 
   TaskScheduler m_scheduler;
   RealTimeClock m_clock;
