@@ -349,6 +349,270 @@ static Z80Opcode opcodes[256] = {
     OPCODE16(, 8), OPCODE16(, 9), OPCODE16(, A), OPCODE16(, B),
     OPCODE16(, C), OPCODE16(, D), OPCODE16(, E), OPCODE16(, F)};
 
+OPCODE(0xCB00, 9, 2, "RLC B", RLC(state, state->BC.b.h, state->BC.b.h));
+OPCODE(0xCB01, 9, 2, "RLC C", RLC(state, state->BC.b.l, state->BC.b.l));
+OPCODE(0xCB02, 9, 2, "RLC D", RLC(state, state->DE.b.h, state->DE.b.h));
+OPCODE(0xCB03, 9, 2, "RLC E", RLC(state, state->DE.b.l, state->DE.b.l));
+OPCODE(0xCB04, 9, 2, "RLC H", RLC(state, state->HL.b.h, state->HL.b.h));
+OPCODE(0xCB05, 9, 2, "RLC L", RLC(state, state->HL.b.l, state->HL.b.l));
+OPCODE(0xCB06, 15, 2, "RLC (HL)", WRAP_HL(state, RLC));
+OPCODE(0xCB07, 9, 2, "RLC A", RLC(state, state->AF.b.h, state->AF.b.h));
+OPCODE(0xCB08, 9, 2, "RRC B", RRC(state, state->BC.b.h, state->BC.b.h));
+OPCODE(0xCB09, 9, 2, "RRC C", RRC(state, state->BC.b.l, state->BC.b.l));
+OPCODE(0xCB0A, 9, 2, "RRC D", RRC(state, state->DE.b.h, state->DE.b.h));
+OPCODE(0xCB0B, 9, 2, "RRC E", RRC(state, state->DE.b.l, state->DE.b.l));
+OPCODE(0xCB0C, 9, 2, "RRC H", RRC(state, state->HL.b.h, state->HL.b.h));
+OPCODE(0xCB0D, 9, 2, "RRC L", RRC(state, state->HL.b.l, state->HL.b.l));
+OPCODE(0xCB0E, 15, 2, "RRC (HL)", WRAP_HL(state, RRC));
+OPCODE(0xCB0F, 9, 2, "RRC A", RRC(state, state->AF.b.h, state->AF.b.h));
+OPCODE(0xCB10, 9, 2, "RL B", RL(state, state->BC.b.h, state->BC.b.h));
+OPCODE(0xCB11, 9, 2, "RL C", RL(state, state->BC.b.l, state->BC.b.l));
+OPCODE(0xCB12, 9, 2, "RL D", RL(state, state->DE.b.h, state->DE.b.h));
+OPCODE(0xCB13, 9, 2, "RL E", RL(state, state->DE.b.l, state->DE.b.l));
+OPCODE(0xCB14, 9, 2, "RL H", RL(state, state->HL.b.h, state->HL.b.h));
+OPCODE(0xCB15, 9, 2, "RL L", RL(state, state->HL.b.l, state->HL.b.l));
+OPCODE(0xCB16, 15, 2, "RL (HL)", WRAP_HL(state, RL));
+OPCODE(0xCB17, 9, 2, "RL A", RL(state, state->AF.b.h, state->AF.b.h));
+OPCODE(0xCB18, 9, 2, "RR B", RR(state, state->BC.b.h, state->BC.b.h));
+OPCODE(0xCB19, 9, 2, "RR C", RR(state, state->BC.b.l, state->BC.b.l));
+OPCODE(0xCB1A, 9, 2, "RR D", RR(state, state->DE.b.h, state->DE.b.h));
+OPCODE(0xCB1B, 9, 2, "RR E", RR(state, state->DE.b.l, state->DE.b.l));
+OPCODE(0xCB1C, 9, 2, "RR H", RR(state, state->HL.b.h, state->HL.b.h));
+OPCODE(0xCB1D, 9, 2, "RR L", RR(state, state->HL.b.l, state->HL.b.l));
+OPCODE(0xCB1E, 15, 2, "RR (HL)", WRAP_HL(state, RR));
+OPCODE(0xCB1F, 9, 2, "RR A", RR(state, state->AF.b.h, state->AF.b.h));
+OPCODE(0xCB20, 9, 2, "SLA B", SLA(state, state->BC.b.h, state->BC.b.h));
+OPCODE(0xCB21, 9, 2, "SLA C", SLA(state, state->BC.b.l, state->BC.b.l));
+OPCODE(0xCB22, 9, 2, "SLA D", SLA(state, state->DE.b.h, state->DE.b.h));
+OPCODE(0xCB23, 9, 2, "SLA E", SLA(state, state->DE.b.l, state->DE.b.l));
+OPCODE(0xCB24, 9, 2, "SLA H", SLA(state, state->HL.b.h, state->HL.b.h));
+OPCODE(0xCB25, 9, 2, "SLA L", SLA(state, state->HL.b.l, state->HL.b.l));
+OPCODE(0xCB26, 15, 2, "SLA (HL)", WRAP_HL(state, SLA));
+OPCODE(0xCB27, 9, 2, "SLA A", SLA(state, state->AF.b.h, state->AF.b.h));
+OPCODE(0xCB28, 9, 2, "SRA B", SRA(state, state->BC.b.h, state->BC.b.h));
+OPCODE(0xCB29, 9, 2, "SRA C", SRA(state, state->BC.b.l, state->BC.b.l));
+OPCODE(0xCB2A, 9, 2, "SRA D", SRA(state, state->DE.b.h, state->DE.b.h));
+OPCODE(0xCB2B, 9, 2, "SRA E", SRA(state, state->DE.b.l, state->DE.b.l));
+OPCODE(0xCB2C, 9, 2, "SRA H", SRA(state, state->HL.b.h, state->HL.b.h));
+OPCODE(0xCB2D, 9, 2, "SRA L", SRA(state, state->HL.b.l, state->HL.b.l));
+OPCODE(0xCB2E, 15, 2, "SRA (HL)", WRAP_HL(state, SRA));
+OPCODE(0xCB2F, 9, 2, "SRA A", SRA(state, state->AF.b.h, state->AF.b.h));
+OPCODE(0xCB30, 9, 2, "SLL B", SLL(state, state->BC.b.h, state->BC.b.h));
+OPCODE(0xCB31, 9, 2, "SLL C", SLL(state, state->BC.b.l, state->BC.b.l));
+OPCODE(0xCB32, 9, 2, "SLL D", SLL(state, state->DE.b.h, state->DE.b.h));
+OPCODE(0xCB33, 9, 2, "SLL E", SLL(state, state->DE.b.l, state->DE.b.l));
+OPCODE(0xCB34, 9, 2, "SLL H", SLL(state, state->HL.b.h, state->HL.b.h));
+OPCODE(0xCB35, 9, 2, "SLL L", SLL(state, state->HL.b.l, state->HL.b.l));
+OPCODE(0xCB36, 15, 2, "SLL (HL)", WRAP_HL(state, SLL));
+OPCODE(0xCB37, 9, 2, "SLL A", SLL(state, state->AF.b.h, state->AF.b.h));
+OPCODE(0xCB38, 9, 2, "SRL B", SRL(state, state->BC.b.h, state->BC.b.h));
+OPCODE(0xCB39, 9, 2, "SRL C", SRL(state, state->BC.b.l, state->BC.b.l));
+OPCODE(0xCB3A, 9, 2, "SRL D", SRL(state, state->DE.b.h, state->DE.b.h));
+OPCODE(0xCB3B, 9, 2, "SRL E", SRL(state, state->DE.b.l, state->DE.b.l));
+OPCODE(0xCB3C, 9, 2, "SRL H", SRL(state, state->HL.b.h, state->HL.b.h));
+OPCODE(0xCB3D, 9, 2, "SRL L", SRL(state, state->HL.b.l, state->HL.b.l));
+OPCODE(0xCB3E, 15, 2, "SRL (HL)", WRAP_HL(state, SRL));
+OPCODE(0xCB3F, 9, 2, "SRL A", SRL(state, state->AF.b.h, state->AF.b.h));
+OPCODE(0xCB40, 9, 2, "BIT 0, B", BIT_TEST(state, state->BC.b.h, 0));
+OPCODE(0xCB41, 9, 2, "BIT 0, C", BIT_TEST(state, state->BC.b.l, 0));
+OPCODE(0xCB42, 9, 2, "BIT 0, D", BIT_TEST(state, state->DE.b.h, 0));
+OPCODE(0xCB43, 9, 2, "BIT 0, E", BIT_TEST(state, state->DE.b.l, 0));
+OPCODE(0xCB44, 9, 2, "BIT 0, H", BIT_TEST(state, state->HL.b.h, 0));
+OPCODE(0xCB45, 9, 2, "BIT 0, L", BIT_TEST(state, state->HL.b.l, 0));
+OPCODE(0xCB46, 15, 2, "BIT 0, (HL)", BIT_TEST_HL(state, 0));
+OPCODE(0xCB47, 9, 2, "BIT 0, A", BIT_TEST(state, state->AF.b.h, 0));
+OPCODE(0xCB48, 9, 2, "BIT 1, B", BIT_TEST(state, state->BC.b.h, 1));
+OPCODE(0xCB49, 9, 2, "BIT 1, C", BIT_TEST(state, state->BC.b.l, 1));
+OPCODE(0xCB4A, 9, 2, "BIT 1, D", BIT_TEST(state, state->DE.b.h, 1));
+OPCODE(0xCB4B, 9, 2, "BIT 1, E", BIT_TEST(state, state->DE.b.l, 1));
+OPCODE(0xCB4C, 9, 2, "BIT 1, H", BIT_TEST(state, state->HL.b.h, 1));
+OPCODE(0xCB4D, 9, 2, "BIT 1, L", BIT_TEST(state, state->HL.b.l, 1));
+OPCODE(0xCB4E, 15, 2, "BIT 1, (HL)", BIT_TEST_HL(state, 1));
+OPCODE(0xCB4F, 9, 2, "BIT 1, A", BIT_TEST(state, state->AF.b.h, 1));
+OPCODE(0xCB50, 9, 2, "BIT 2, B", BIT_TEST(state, state->BC.b.h, 2));
+OPCODE(0xCB51, 9, 2, "BIT 2, C", BIT_TEST(state, state->BC.b.l, 2));
+OPCODE(0xCB52, 9, 2, "BIT 2, D", BIT_TEST(state, state->DE.b.h, 2));
+OPCODE(0xCB53, 9, 2, "BIT 2, E", BIT_TEST(state, state->DE.b.l, 2));
+OPCODE(0xCB54, 9, 2, "BIT 2, H", BIT_TEST(state, state->HL.b.h, 2));
+OPCODE(0xCB55, 9, 2, "BIT 2, L", BIT_TEST(state, state->HL.b.l, 2));
+OPCODE(0xCB56, 15, 2, "BIT 2, (HL)", BIT_TEST_HL(state, 2));
+OPCODE(0xCB57, 9, 2, "BIT 2, A", BIT_TEST(state, state->AF.b.h, 2));
+OPCODE(0xCB58, 9, 2, "BIT 3, B", BIT_TEST(state, state->BC.b.h, 3));
+OPCODE(0xCB59, 9, 2, "BIT 3, C", BIT_TEST(state, state->BC.b.l, 3));
+OPCODE(0xCB5A, 9, 2, "BIT 3, D", BIT_TEST(state, state->DE.b.h, 3));
+OPCODE(0xCB5B, 9, 2, "BIT 3, E", BIT_TEST(state, state->DE.b.l, 3));
+OPCODE(0xCB5C, 9, 2, "BIT 3, H", BIT_TEST(state, state->HL.b.h, 3));
+OPCODE(0xCB5D, 9, 2, "BIT 3, L", BIT_TEST(state, state->HL.b.l, 3));
+OPCODE(0xCB5E, 15, 2, "BIT 3, (HL)", BIT_TEST_HL(state, 3));
+OPCODE(0xCB5F, 9, 2, "BIT 3, A", BIT_TEST(state, state->AF.b.h, 3));
+OPCODE(0xCB60, 9, 2, "BIT 4, B", BIT_TEST(state, state->BC.b.h, 4));
+OPCODE(0xCB61, 9, 2, "BIT 4, C", BIT_TEST(state, state->BC.b.l, 4));
+OPCODE(0xCB62, 9, 2, "BIT 4, D", BIT_TEST(state, state->DE.b.h, 4));
+OPCODE(0xCB63, 9, 2, "BIT 4, E", BIT_TEST(state, state->DE.b.l, 4));
+OPCODE(0xCB64, 9, 2, "BIT 4, H", BIT_TEST(state, state->HL.b.h, 4));
+OPCODE(0xCB65, 9, 2, "BIT 4, L", BIT_TEST(state, state->HL.b.l, 4));
+OPCODE(0xCB66, 15, 2, "BIT 4, (HL)", BIT_TEST_HL(state, 4));
+OPCODE(0xCB67, 9, 2, "BIT 4, A", BIT_TEST(state, state->AF.b.h, 4));
+OPCODE(0xCB68, 9, 2, "BIT 5, B", BIT_TEST(state, state->BC.b.h, 5));
+OPCODE(0xCB69, 9, 2, "BIT 5, C", BIT_TEST(state, state->BC.b.l, 5));
+OPCODE(0xCB6A, 9, 2, "BIT 5, D", BIT_TEST(state, state->DE.b.h, 5));
+OPCODE(0xCB6B, 9, 2, "BIT 5, E", BIT_TEST(state, state->DE.b.l, 5));
+OPCODE(0xCB6C, 9, 2, "BIT 5, H", BIT_TEST(state, state->HL.b.h, 5));
+OPCODE(0xCB6D, 9, 2, "BIT 5, L", BIT_TEST(state, state->HL.b.l, 5));
+OPCODE(0xCB6E, 15, 2, "BIT 5, (HL)", BIT_TEST_HL(state, 5));
+OPCODE(0xCB6F, 9, 2, "BIT 5, A", BIT_TEST(state, state->AF.b.h, 5));
+OPCODE(0xCB70, 9, 2, "BIT 6, B", BIT_TEST(state, state->BC.b.h, 6));
+OPCODE(0xCB71, 9, 2, "BIT 6, C", BIT_TEST(state, state->BC.b.l, 6));
+OPCODE(0xCB72, 9, 2, "BIT 6, D", BIT_TEST(state, state->DE.b.h, 6));
+OPCODE(0xCB73, 9, 2, "BIT 6, E", BIT_TEST(state, state->DE.b.l, 6));
+OPCODE(0xCB74, 9, 2, "BIT 6, H", BIT_TEST(state, state->HL.b.h, 6));
+OPCODE(0xCB75, 9, 2, "BIT 6, L", BIT_TEST(state, state->HL.b.l, 6));
+OPCODE(0xCB76, 15, 2, "BIT 6, (HL)", BIT_TEST_HL(state, 6));
+OPCODE(0xCB77, 9, 2, "BIT 6, A", BIT_TEST(state, state->AF.b.h, 6));
+OPCODE(0xCB78, 9, 2, "BIT 7, B", BIT_TEST(state, state->BC.b.h, 7));
+OPCODE(0xCB79, 9, 2, "BIT 7, C", BIT_TEST(state, state->BC.b.l, 7));
+OPCODE(0xCB7A, 9, 2, "BIT 7, D", BIT_TEST(state, state->DE.b.h, 7));
+OPCODE(0xCB7B, 9, 2, "BIT 7, E", BIT_TEST(state, state->DE.b.l, 7));
+OPCODE(0xCB7C, 9, 2, "BIT 7, H", BIT_TEST(state, state->HL.b.h, 7));
+OPCODE(0xCB7D, 9, 2, "BIT 7, L", BIT_TEST(state, state->HL.b.l, 7));
+OPCODE(0xCB7E, 15, 2, "BIT 7, (HL)", BIT_TEST_HL(state, 7));
+OPCODE(0xCB7F, 9, 2, "BIT 7, A", BIT_TEST(state, state->AF.b.h, 7));
+OPCODE(0xCB80, 9, 2, "RES 0, B", BIT_RESET(state, state->BC.b.h, 0));
+OPCODE(0xCB81, 9, 2, "RES 0, C", BIT_RESET(state, state->BC.b.l, 0));
+OPCODE(0xCB82, 9, 2, "RES 0, D", BIT_RESET(state, state->DE.b.h, 0));
+OPCODE(0xCB83, 9, 2, "RES 0, E", BIT_RESET(state, state->DE.b.l, 0));
+OPCODE(0xCB84, 9, 2, "RES 0, H", BIT_RESET(state, state->HL.b.h, 0));
+OPCODE(0xCB85, 9, 2, "RES 0, L", BIT_RESET(state, state->HL.b.l, 0));
+OPCODE(0xCB86, 15, 2, "RES 0, (HL)", BIT_RESET_HL(state, 0));
+OPCODE(0xCB87, 9, 2, "RES 0, A", BIT_RESET(state, state->AF.b.h, 0));
+OPCODE(0xCB88, 9, 2, "RES 1, B", BIT_RESET(state, state->BC.b.h, 1));
+OPCODE(0xCB89, 9, 2, "RES 1, C", BIT_RESET(state, state->BC.b.l, 1));
+OPCODE(0xCB8A, 9, 2, "RES 1, D", BIT_RESET(state, state->DE.b.h, 1));
+OPCODE(0xCB8B, 9, 2, "RES 1, E", BIT_RESET(state, state->DE.b.l, 1));
+OPCODE(0xCB8C, 9, 2, "RES 1, H", BIT_RESET(state, state->HL.b.h, 1));
+OPCODE(0xCB8D, 9, 2, "RES 1, L", BIT_RESET(state, state->HL.b.l, 1));
+OPCODE(0xCB8E, 15, 2, "RES 1, (HL)", BIT_RESET_HL(state, 1));
+OPCODE(0xCB8F, 9, 2, "RES 1, A", BIT_RESET(state, state->AF.b.h, 1));
+OPCODE(0xCB90, 9, 2, "RES 2, B", BIT_RESET(state, state->BC.b.h, 2));
+OPCODE(0xCB91, 9, 2, "RES 2, C", BIT_RESET(state, state->BC.b.l, 2));
+OPCODE(0xCB92, 9, 2, "RES 2, D", BIT_RESET(state, state->DE.b.h, 2));
+OPCODE(0xCB93, 9, 2, "RES 2, E", BIT_RESET(state, state->DE.b.l, 2));
+OPCODE(0xCB94, 9, 2, "RES 2, H", BIT_RESET(state, state->HL.b.h, 2));
+OPCODE(0xCB95, 9, 2, "RES 2, L", BIT_RESET(state, state->HL.b.l, 2));
+OPCODE(0xCB96, 15, 2, "RES 2, (HL)", BIT_RESET_HL(state, 2));
+OPCODE(0xCB97, 9, 2, "RES 2, A", BIT_RESET(state, state->AF.b.h, 2));
+OPCODE(0xCB98, 9, 2, "RES 3, B", BIT_RESET(state, state->BC.b.h, 3));
+OPCODE(0xCB99, 9, 2, "RES 3, C", BIT_RESET(state, state->BC.b.l, 3));
+OPCODE(0xCB9A, 9, 2, "RES 3, D", BIT_RESET(state, state->DE.b.h, 3));
+OPCODE(0xCB9B, 9, 2, "RES 3, E", BIT_RESET(state, state->DE.b.l, 3));
+OPCODE(0xCB9C, 9, 2, "RES 3, H", BIT_RESET(state, state->HL.b.h, 3));
+OPCODE(0xCB9D, 9, 2, "RES 3, L", BIT_RESET(state, state->HL.b.l, 3));
+OPCODE(0xCB9E, 15, 2, "RES 3, (HL)", BIT_RESET_HL(state, 3));
+OPCODE(0xCB9F, 9, 2, "RES 3, A", BIT_RESET(state, state->AF.b.h, 3));
+OPCODE(0xCBA0, 9, 2, "RES 4, B", BIT_RESET(state, state->BC.b.h, 4));
+OPCODE(0xCBA1, 9, 2, "RES 4, C", BIT_RESET(state, state->BC.b.l, 4));
+OPCODE(0xCBA2, 9, 2, "RES 4, D", BIT_RESET(state, state->DE.b.h, 4));
+OPCODE(0xCBA3, 9, 2, "RES 4, E", BIT_RESET(state, state->DE.b.l, 4));
+OPCODE(0xCBA4, 9, 2, "RES 4, H", BIT_RESET(state, state->HL.b.h, 4));
+OPCODE(0xCBA5, 9, 2, "RES 4, L", BIT_RESET(state, state->HL.b.l, 4));
+OPCODE(0xCBA6, 15, 2, "RES 4, (HL)", BIT_RESET_HL(state, 4));
+OPCODE(0xCBA7, 9, 2, "RES 4, A", BIT_RESET(state, state->AF.b.h, 4));
+OPCODE(0xCBA8, 9, 2, "RES 5, B", BIT_RESET(state, state->BC.b.h, 5));
+OPCODE(0xCBA9, 9, 2, "RES 5, C", BIT_RESET(state, state->BC.b.l, 5));
+OPCODE(0xCBAA, 9, 2, "RES 5, D", BIT_RESET(state, state->DE.b.h, 5));
+OPCODE(0xCBAB, 9, 2, "RES 5, E", BIT_RESET(state, state->DE.b.l, 5));
+OPCODE(0xCBAC, 9, 2, "RES 5, H", BIT_RESET(state, state->HL.b.h, 5));
+OPCODE(0xCBAD, 9, 2, "RES 5, L", BIT_RESET(state, state->HL.b.l, 5));
+OPCODE(0xCBAE, 15, 2, "RES 5, (HL)", BIT_RESET_HL(state, 5));
+OPCODE(0xCBAF, 9, 2, "RES 5, A", BIT_RESET(state, state->AF.b.h, 5));
+OPCODE(0xCBB0, 9, 2, "RES 6, B", BIT_RESET(state, state->BC.b.h, 6));
+OPCODE(0xCBB1, 9, 2, "RES 6, C", BIT_RESET(state, state->BC.b.l, 6));
+OPCODE(0xCBB2, 9, 2, "RES 6, D", BIT_RESET(state, state->DE.b.h, 6));
+OPCODE(0xCBB3, 9, 2, "RES 6, E", BIT_RESET(state, state->DE.b.l, 6));
+OPCODE(0xCBB4, 9, 2, "RES 6, H", BIT_RESET(state, state->HL.b.h, 6));
+OPCODE(0xCBB5, 9, 2, "RES 6, L", BIT_RESET(state, state->HL.b.l, 6));
+OPCODE(0xCBB6, 15, 2, "RES 6, (HL)", BIT_RESET_HL(state, 6));
+OPCODE(0xCBB7, 9, 2, "RES 6, A", BIT_RESET(state, state->AF.b.h, 6));
+OPCODE(0xCBB8, 9, 2, "RES 7, B", BIT_RESET(state, state->BC.b.h, 7));
+OPCODE(0xCBB9, 9, 2, "RES 7, C", BIT_RESET(state, state->BC.b.l, 7));
+OPCODE(0xCBBA, 9, 2, "RES 7, D", BIT_RESET(state, state->DE.b.h, 7));
+OPCODE(0xCBBB, 9, 2, "RES 7, E", BIT_RESET(state, state->DE.b.l, 7));
+OPCODE(0xCBBC, 9, 2, "RES 7, H", BIT_RESET(state, state->HL.b.h, 7));
+OPCODE(0xCBBD, 9, 2, "RES 7, L", BIT_RESET(state, state->HL.b.l, 7));
+OPCODE(0xCBBE, 15, 2, "RES 7, (HL)", BIT_RESET_HL(state, 7));
+OPCODE(0xCBBF, 9, 2, "RES 7, A", BIT_RESET(state, state->AF.b.h, 7));
+OPCODE(0xCBC0, 9, 2, "SET 0, B", BIT_SET(state, state->BC.b.h, 0));
+OPCODE(0xCBC1, 9, 2, "SET 0, C", BIT_SET(state, state->BC.b.l, 0));
+OPCODE(0xCBC2, 9, 2, "SET 0, D", BIT_SET(state, state->DE.b.h, 0));
+OPCODE(0xCBC3, 9, 2, "SET 0, E", BIT_SET(state, state->DE.b.l, 0));
+OPCODE(0xCBC4, 9, 2, "SET 0, H", BIT_SET(state, state->HL.b.h, 0));
+OPCODE(0xCBC5, 9, 2, "SET 0, L", BIT_SET(state, state->HL.b.l, 0));
+OPCODE(0xCBC6, 15, 2, "SET 0, (HL)", BIT_SET_HL(state, 0));
+OPCODE(0xCBC7, 9, 2, "SET 0, A", BIT_SET(state, state->AF.b.h, 0));
+OPCODE(0xCBC8, 9, 2, "SET 1, B", BIT_SET(state, state->BC.b.h, 1));
+OPCODE(0xCBC9, 9, 2, "SET 1, C", BIT_SET(state, state->BC.b.l, 1));
+OPCODE(0xCBCA, 9, 2, "SET 1, D", BIT_SET(state, state->DE.b.h, 1));
+OPCODE(0xCBCB, 9, 2, "SET 1, E", BIT_SET(state, state->DE.b.l, 1));
+OPCODE(0xCBCC, 9, 2, "SET 1, H", BIT_SET(state, state->HL.b.h, 1));
+OPCODE(0xCBCD, 9, 2, "SET 1, L", BIT_SET(state, state->HL.b.l, 1));
+OPCODE(0xCBCE, 15, 2, "SET 1, (HL)", BIT_SET_HL(state, 1));
+OPCODE(0xCBCF, 9, 2, "SET 1, A", BIT_SET(state, state->AF.b.h, 1));
+OPCODE(0xCBD0, 9, 2, "SET 2, B", BIT_SET(state, state->BC.b.h, 2));
+OPCODE(0xCBD1, 9, 2, "SET 2, C", BIT_SET(state, state->BC.b.l, 2));
+OPCODE(0xCBD2, 9, 2, "SET 2, D", BIT_SET(state, state->DE.b.h, 2));
+OPCODE(0xCBD3, 9, 2, "SET 2, E", BIT_SET(state, state->DE.b.l, 2));
+OPCODE(0xCBD4, 9, 2, "SET 2, H", BIT_SET(state, state->HL.b.h, 2));
+OPCODE(0xCBD5, 9, 2, "SET 2, L", BIT_SET(state, state->HL.b.l, 2));
+OPCODE(0xCBD6, 15, 2, "SET 2, (HL)", BIT_SET_HL(state, 2));
+OPCODE(0xCBD7, 9, 2, "SET 2, A", BIT_SET(state, state->AF.b.h, 2));
+OPCODE(0xCBD8, 9, 2, "SET 3, B", BIT_SET(state, state->BC.b.h, 3));
+OPCODE(0xCBD9, 9, 2, "SET 3, C", BIT_SET(state, state->BC.b.l, 3));
+OPCODE(0xCBDA, 9, 2, "SET 3, D", BIT_SET(state, state->DE.b.h, 3));
+OPCODE(0xCBDB, 9, 2, "SET 3, E", BIT_SET(state, state->DE.b.l, 3));
+OPCODE(0xCBDC, 9, 2, "SET 3, H", BIT_SET(state, state->HL.b.h, 3));
+OPCODE(0xCBDD, 9, 2, "SET 3, L", BIT_SET(state, state->HL.b.l, 3));
+OPCODE(0xCBDE, 15, 2, "SET 3, (HL)", BIT_SET_HL(state, 3));
+OPCODE(0xCBDF, 9, 2, "SET 3, A", BIT_SET(state, state->AF.b.h, 3));
+OPCODE(0xCBE0, 9, 2, "SET 4, B", BIT_SET(state, state->BC.b.h, 4));
+OPCODE(0xCBE1, 9, 2, "SET 4, C", BIT_SET(state, state->BC.b.l, 4));
+OPCODE(0xCBE2, 9, 2, "SET 4, D", BIT_SET(state, state->DE.b.h, 4));
+OPCODE(0xCBE3, 9, 2, "SET 4, E", BIT_SET(state, state->DE.b.l, 4));
+OPCODE(0xCBE4, 9, 2, "SET 4, H", BIT_SET(state, state->HL.b.h, 4));
+OPCODE(0xCBE5, 9, 2, "SET 4, L", BIT_SET(state, state->HL.b.l, 4));
+OPCODE(0xCBE6, 15, 2, "SET 4, (HL)", BIT_SET_HL(state, 4));
+OPCODE(0xCBE7, 9, 2, "SET 4, A", BIT_SET(state, state->AF.b.h, 4));
+OPCODE(0xCBE8, 9, 2, "SET 5, B", BIT_SET(state, state->BC.b.h, 5));
+OPCODE(0xCBE9, 9, 2, "SET 5, C", BIT_SET(state, state->BC.b.l, 5));
+OPCODE(0xCBEA, 9, 2, "SET 5, D", BIT_SET(state, state->DE.b.h, 5));
+OPCODE(0xCBEB, 9, 2, "SET 5, E", BIT_SET(state, state->DE.b.l, 5));
+OPCODE(0xCBEC, 9, 2, "SET 5, H", BIT_SET(state, state->HL.b.h, 5));
+OPCODE(0xCBED, 9, 2, "SET 5, L", BIT_SET(state, state->HL.b.l, 5));
+OPCODE(0xCBEE, 15, 2, "SET 5, (HL)", BIT_SET_HL(state, 5));
+OPCODE(0xCBEF, 9, 2, "SET 5, A", BIT_SET(state, state->AF.b.h, 5));
+OPCODE(0xCBF0, 9, 2, "SET 6, B", BIT_SET(state, state->BC.b.h, 6));
+OPCODE(0xCBF1, 9, 2, "SET 6, C", BIT_SET(state, state->BC.b.l, 6));
+OPCODE(0xCBF2, 9, 2, "SET 6, D", BIT_SET(state, state->DE.b.h, 6));
+OPCODE(0xCBF3, 9, 2, "SET 6, E", BIT_SET(state, state->DE.b.l, 6));
+OPCODE(0xCBF4, 9, 2, "SET 6, H", BIT_SET(state, state->HL.b.h, 6));
+OPCODE(0xCBF5, 9, 2, "SET 6, L", BIT_SET(state, state->HL.b.l, 6));
+OPCODE(0xCBF6, 15, 2, "SET 6, (HL)", BIT_SET_HL(state, 6));
+OPCODE(0xCBF7, 9, 2, "SET 6, A", BIT_SET(state, state->AF.b.h, 6));
+OPCODE(0xCBF8, 9, 2, "SET 7, B", BIT_SET(state, state->BC.b.h, 7));
+OPCODE(0xCBF9, 9, 2, "SET 7, C", BIT_SET(state, state->BC.b.l, 7));
+OPCODE(0xCBFA, 9, 2, "SET 7, D", BIT_SET(state, state->DE.b.h, 7));
+OPCODE(0xCBFB, 9, 2, "SET 7, E", BIT_SET(state, state->DE.b.l, 7));
+OPCODE(0xCBFC, 9, 2, "SET 7, H", BIT_SET(state, state->HL.b.h, 7));
+OPCODE(0xCBFD, 9, 2, "SET 7, L", BIT_SET(state, state->HL.b.l, 7));
+OPCODE(0xCBFE, 15, 2, "SET 7, (HL)", BIT_SET_HL(state, 7));
+OPCODE(0xCBFF, 9, 2, "SET 7, A", BIT_SET(state, state->AF.b.h, 7));
+
+static Z80Opcode CBopcodes[256] = {
+    OPCODE16(CB, 0), OPCODE16(CB, 1), OPCODE16(CB, 2), OPCODE16(CB, 3),
+    OPCODE16(CB, 4), OPCODE16(CB, 5), OPCODE16(CB, 6), OPCODE16(CB, 7),
+    OPCODE16(CB, 8), OPCODE16(CB, 9), OPCODE16(CB, A), OPCODE16(CB, B),
+    OPCODE16(CB, C), OPCODE16(CB, D), OPCODE16(CB, E), OPCODE16(CB, F),
+};
+
 OPCODE(0xED00, 5, 2, "NOP", );
 OPCODE(0xED40, 12, 2, "IN B, (C)", IN(state, state->BC.b.h, state->BC.b.l));
 OPCODE(0xED41, 12, 2, "OUT (C), B", {
@@ -468,31 +732,42 @@ static Z80Opcode EDopcodes[256] = {
     break;                       \
   }
 
-#define OPCODE_SWITCH16(prefix, state)                                        \
-  OPCODE_SWITCH(prefix##0, state)                                             \
-  OPCODE_SWITCH(prefix##1, state) OPCODE_SWITCH(prefix##2, state)             \
-      OPCODE_SWITCH(prefix##3, state) OPCODE_SWITCH(prefix##4, state)         \
-          OPCODE_SWITCH(prefix##5, state) OPCODE_SWITCH(prefix##6, state)     \
-              OPCODE_SWITCH(prefix##7, state) OPCODE_SWITCH(prefix##8, state) \
-                  OPCODE_SWITCH(prefix##9, state)                             \
-                      OPCODE_SWITCH(prefix##A, state)                         \
-                          OPCODE_SWITCH(prefix##B, state)                     \
-                              OPCODE_SWITCH(prefix##C, state)                 \
-                                  OPCODE_SWITCH(prefix##D, state)             \
-                                      OPCODE_SWITCH(prefix##E, state)         \
-                                          OPCODE_SWITCH(prefix##F, state)
+#define OPCODE_SWITCH16(prefix, state) \
+  OPCODE_SWITCH(prefix##0, state)      \
+  OPCODE_SWITCH(prefix##1, state)      \
+  OPCODE_SWITCH(prefix##2, state)      \
+  OPCODE_SWITCH(prefix##3, state)      \
+  OPCODE_SWITCH(prefix##4, state)      \
+  OPCODE_SWITCH(prefix##5, state)      \
+  OPCODE_SWITCH(prefix##6, state)      \
+  OPCODE_SWITCH(prefix##7, state)      \
+  OPCODE_SWITCH(prefix##8, state)      \
+  OPCODE_SWITCH(prefix##9, state)      \
+  OPCODE_SWITCH(prefix##A, state)      \
+  OPCODE_SWITCH(prefix##B, state)      \
+  OPCODE_SWITCH(prefix##C, state)      \
+  OPCODE_SWITCH(prefix##D, state)      \
+  OPCODE_SWITCH(prefix##E, state)      \
+  OPCODE_SWITCH(prefix##F, state)
 
-#define OPCODE_SWITCH_BLOCK(state)                                           \
-  switch (state->latch_op) {                                                 \
-    OPCODE_SWITCH16(0x0, state)                                              \
-    OPCODE_SWITCH16(0x1, state) OPCODE_SWITCH16(0x2, state) OPCODE_SWITCH16( \
-        0x3, state) OPCODE_SWITCH16(0x4, state) OPCODE_SWITCH16(0x5, state)  \
-        OPCODE_SWITCH16(0x6, state) OPCODE_SWITCH16(0x7, state)              \
-            OPCODE_SWITCH16(0x8, state) OPCODE_SWITCH16(0x9, state)          \
-                OPCODE_SWITCH16(0xA, state) OPCODE_SWITCH16(0xB, state)      \
-                    OPCODE_SWITCH16(0xC, state) OPCODE_SWITCH16(0xD, state)  \
-                        OPCODE_SWITCH16(0xE, state)                          \
-                            OPCODE_SWITCH16(0xF, state)                      \
+#define OPCODE_SWITCH_BLOCK(prefix, state) \
+  switch (state->latch_op) {               \
+    OPCODE_SWITCH16(prefix##0, state)  \
+    OPCODE_SWITCH16(prefix##1, state)  \
+    OPCODE_SWITCH16(prefix##2, state)  \
+    OPCODE_SWITCH16(prefix##3, state)  \
+    OPCODE_SWITCH16(prefix##4, state)  \
+    OPCODE_SWITCH16(prefix##5, state)  \
+    OPCODE_SWITCH16(prefix##6, state)  \
+    OPCODE_SWITCH16(prefix##7, state)  \
+    OPCODE_SWITCH16(prefix##8, state)  \
+    OPCODE_SWITCH16(prefix##9, state)  \
+    OPCODE_SWITCH16(prefix##A, state)  \
+    OPCODE_SWITCH16(prefix##B, state)  \
+    OPCODE_SWITCH16(prefix##C, state)  \
+    OPCODE_SWITCH16(prefix##D, state)  \
+    OPCODE_SWITCH16(prefix##E, state)  \
+    OPCODE_SWITCH16(prefix##F, state)  \
   }
 
 Z80Cpu::Z80Cpu(Machine *machine, const std::string &name, ClockDivider divider,
@@ -574,6 +849,14 @@ void Z80Cpu::execute(void) {
       m_state->prefix = Z80Prefix(m_state->latch_op);
       m_state->latch_op = pc_read(m_state);
       m_state->Op = &EDopcodes[m_state->latch_op];
+    } else if (m_state->latch_op == 0xCB) {
+      // XXX: 0xDD and 0xFD aren't capable.
+      if (m_state->prefix == Z80Prefix::NoPrefix) {
+        m_state->prefix = Z80Prefix::CBPrefix;
+        m_state->vHL = &m_state->HL;
+        m_state->latch_op = pc_read(m_state);
+        m_state->Op = &CBopcodes[m_state->latch_op];
+      }
     } else {
       m_state->vHL = &m_state->HL;
       m_state->prefix = Z80Prefix::NoPrefix;
@@ -581,13 +864,17 @@ void Z80Cpu::execute(void) {
     }
     m_state->icycles = m_state->Op->cycles;
 #if 0
-        if (m_state->prefix != Z80Prefix::EDPrefix) {
-          OPCODE_SWITCH_BLOCK(m_state);
-        } else
+    if (m_state->prefix == Z80Prefix::EDPrefix) {
+      OPCODE_SWITCH_BLOCK(0xED, m_state);
+    } else if (m_state->prefix == Z80Prefix::CBPrefix) {
+      OPCODE_SWITCH_BLOCK(0xCB, m_state);
+    } else {
+      OPCODE_SWITCH_BLOCK(0x, m_state);
+    } else
 #endif
-        m_state->Op->func(m_state);
-        DEVICE_TRACE(Log(m_state));
-        add_icycles(m_state->icycles);
+    m_state->Op->func(m_state);
+    DEVICE_TRACE(Log(m_state));
+    add_icycles(m_state->icycles);
   }
 }
 

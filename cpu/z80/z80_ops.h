@@ -102,6 +102,20 @@ AND(Z80State *state, reg8_t &dest, reg8_t arg) {
   dest = result;
 }
 
+static inline void __attribute__((__used__))
+BIT_TEST_HL(Z80State *state, int bit) {
+  byte_t value = state->bus_read(state, state->HL.d);
+  byte_t h = state->WZ.b.h;
+
+  state->AF.b.f.S = bit_isset(value, 7);
+  state->AF.b.f.Z = !bit_isset(value, bit);
+  state->AF.b.f.Y = bit_isset(h, 5);
+  state->AF.b.f.H = 1;
+  state->AF.b.f.X = bit_isset(h, 3);
+  state->AF.b.f.V = !bit_isset(value, bit);
+  state->AF.b.f.N = 0;
+}
+
 
 static inline void __attribute__((__used__))
 BIT_TEST_HL(Z80State *state, byte_t value, byte_t h,int bit) {
@@ -133,10 +147,40 @@ BIT_RESET(Z80State *state, byte_t &dest, byte_t value, int bit) {
 }
 
 static inline void __attribute__((__used__))
+BIT_RESET(Z80State *state, byte_t &dest, int bit) {
+  byte_t result = dest & ~(1 << bit);
+
+  dest = result;
+}
+
+static inline void __attribute__((__used__))
+BIT_RESET_HL(Z80State *state, int bit) {
+  byte_t value = state->bus_read(state, state->HL.d);
+  byte_t result = value & ~(1 << bit);
+
+  state->bus_write(state, state->HL.d, result);
+}
+
+static inline void __attribute__((__used__))
+BIT_SET(Z80State *state, byte_t &dest, int bit) {
+  byte_t result = dest | (1 << bit);
+
+  dest = result;
+}
+
+static inline void __attribute__((__used__))
 BIT_SET(Z80State *state, byte_t &dest, byte_t value, int bit) {
   byte_t result = value | (1 << bit);
 
   dest = result;
+}
+
+static inline void __attribute__((__used__))
+BIT_SET_HL(Z80State *state, int bit) {
+  byte_t value = state->bus_read(state, state->HL.d);
+  byte_t result = value | (1 << bit);
+
+  state->bus_write(state, state->HL.d, result);
 }
 
 static inline int __attribute__((__used__)) CALC_PARITY(reg8_t reg) {
@@ -268,7 +312,7 @@ static inline void DEC(Z80State *state, reg8_t &dest) {
   state->AF.b.f.S = bit_isset(result, 7);
   state->AF.b.f.Z = (result & 0xff) == 0;
   state->AF.b.f.Y = bit_isset(result, 5);
-  state->AF.b.f.H = bit_isset(dest ^ 1 ^ result, 4);
+  state->AF.b.f.H = bit_isset(dest ^ 0x1 ^ result, 4);
   state->AF.b.f.X = bit_isset(result, 3);
   state->AF.b.f.V = (dest == 0x80);
   state->AF.b.f.N = true;
@@ -661,6 +705,13 @@ RL(Z80State *state, byte_t &dest, byte_t value) {
   state->AF.b.f.C = bit_isset(value, 7);
 
   dest = result;
+}
+
+template <typename func>
+static inline void __attribute__((__used__)) WRAP_HL(Z80State *state, func F) {
+  byte_t value = state->bus_read(state, state->HL.d);
+  F(state, value, value);
+  state->bus_write(state, state->HL.d, value);
 }
 
 static inline void __attribute__((__used__)) RLA(Z80State *state) {
