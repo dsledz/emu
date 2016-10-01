@@ -58,28 +58,6 @@ enum Z80Prefix {
   FDPrefix = 0xFD,
 };
 
-/* Operation specific state */
-struct Z80Op {
-  Z80Op(void) : name("NONE") {}
-
-  void reset(void) {
-    prefix = Z80Prefix::NoPrefix;
-    d8 = i8 = 0;
-    pc = opcode = d16 = i16 = yield = 0;
-  }
-
-  Z80Prefix prefix;
-  uint16_t pc;
-  byte_t opcode;
-  byte_t d8;
-  byte_t i8;
-  uint16_t d16;
-  uint16_t i16;
-  int yield;
-
-  std::string name;
-};
-
 struct Z80State;
 
 typedef CPU2::CpuOpcode<Z80State> Z80Opcode;
