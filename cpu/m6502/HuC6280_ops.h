@@ -2,8 +2,8 @@
 
 #include "cpu/m6502/m6502_ops.h"
 
-namespace HuC6280v2 {
-using namespace M6502v2;
+namespace HuC6280 {
+using namespace M6502;
 
 template <class _state_type>
 static inline void op_tstart(_state_type *state, reg16_t *src, reg16_t *dest,

@@ -28,7 +28,7 @@
 #include "cpu/m6502/m65c02.h"
 #include "emu/emu.h"
 
-namespace M6502v2 {
+namespace M6502 {
 
 #ifdef WIN32
 #pragma pack(push, 1)

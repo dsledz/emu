@@ -15,9 +15,9 @@
     throw JITError(#op);                                                      \
   }
 
-namespace HuC6280v2 {
-using namespace M6502v2;
-using namespace M65C02v2;
+namespace HuC6280 {
+using namespace M6502;
+using namespace M65C02;
 
 JIT_OP_NYI(CLA);
 

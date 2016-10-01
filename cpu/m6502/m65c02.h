@@ -27,7 +27,7 @@
 #include "cpu/m6502/m6502.h"
 #include "emu/emu.h"
 
-namespace M6502v2 {
+namespace M6502 {
 
 struct M65c02State : public M6502State {};
 

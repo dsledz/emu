@@ -24,15 +24,10 @@
  */
 
 #include "emu/emu.h"
+#include "cpu/m6502/m6502.h"
 
 using namespace EMU;
-#if 1
-#include "cpu/m6502/m6502.h"
-using namespace M6502v2;
-#else
-#include "cpu/m6502.h"
 using namespace M6502;
-#endif
 
 namespace NESMachine {
 

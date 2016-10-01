@@ -203,7 +203,7 @@ class PSG : public Device {
 class TG16 : public Machine {
  public:
 
-  typedef M6502v2::HuC6280Cpu cpu_type;
+  typedef M6502::HuC6280Cpu cpu_type;
 
   TG16(void);
   virtual ~TG16(void);

@@ -28,7 +28,7 @@
 #include "cpu/m6502/m6502_ops.h"
 
 using namespace EMU;
-using namespace M6502v2;
+using namespace M6502;
 using namespace std::placeholders;
 
 #define JIT 0

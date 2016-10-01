@@ -25,7 +25,7 @@
 #define RegEAl RegIdx8::RegDL
 #define RegState RegIdx64L::RegR15
 
-namespace M6502v2 {
+namespace M6502 {
 static inline void set_flag(JITEmitter *_jit, int bit, bool value) {
   _jit->xMOV16(RegEA, RegState, 4);
   _jit->xPUSHF();
@@ -664,8 +664,8 @@ JIT_OP(TXS) {
 }
 };
 
-namespace M65C02v2 {
-using namespace M6502v2;
+namespace M65C02 {
+using namespace M6502;
 
 JIT_OP(TSB) { return true; }
 

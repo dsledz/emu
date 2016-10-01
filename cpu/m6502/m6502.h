@@ -32,7 +32,7 @@ using namespace EMU;
 using namespace CPU;
 using namespace JITx64;
 
-namespace M6502v2 {
+namespace M6502 {
 
 #ifdef WIN32
 #pragma pack(push, 1)

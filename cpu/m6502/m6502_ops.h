@@ -9,7 +9,7 @@
   template <class _state_type> \
   static inline void op(_state_type *state, ##__VA_ARGS__)
 
-namespace M6502v2 {
+namespace M6502 {
 template <class _state_type>
 static inline void set_sz(_state_type *state, byte_t result) {
   state->F.N = bit_isset(result, 7);
@@ -437,8 +437,8 @@ OP(IRQ, uint16_t addr) {
 };
 
 /* 65C02 Ops */
-namespace M65C02v2 {
-using namespace M6502v2;
+namespace M65C02 {
+using namespace M6502;
 
 ADDR(ZeroIndirect) {
   reg16_t addr;
