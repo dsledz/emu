@@ -69,6 +69,18 @@ OP(ADD, byte_t &dest, byte_t arg) {
   dest = result;
 }
 
+OP(ADD16rel, reg16_t &dest, uint8_t arg) {
+  uint32_t result = dest.d + (char)arg;
+
+  state->AF.b.f.Y = bit_isset(result, 13);
+  state->AF.b.f.H = bit_isset(dest.d ^ arg ^ result, 12);
+  state->AF.b.f.X = bit_isset(result, 11);
+  state->AF.b.f.C = (result > 0xffff) ? 1 : 0;
+  state->AF.b.f.N = 0;
+
+  dest = static_cast<reg16_t>(result);
+}
+
 OP(ADD16, reg16_t &dest, uint16_t arg) {
   uint32_t result = dest.d + arg;
 
@@ -219,7 +231,7 @@ OP(CPI) {
   state->AF.b.f.N = true;
 }
 
-void CPIR(Z80State *state) {
+OP(CPIR) {
   CPI(state);
   if (state->BC.d != 0 && !state->AF.b.f.Z) {
     state->PC.d -= 2;
@@ -273,7 +285,7 @@ OP(DAA) {
   dest = (byte_t)result;
 }
 
-static inline void DEC(Z80State *state, reg8_t &dest) {
+OP(DEC, reg8_t &dest) {
   uint16_t result = dest - 1;
 
   state->AF.b.f.S = bit_isset(result, 7);
@@ -295,7 +307,7 @@ OP(DECI, addr_t addr) {
   bus_write(state, addr, dest);
 }
 
-static inline void DEC16(Z80State *state, reg16_t &dest) {
+OP(DEC16, reg16_t &dest) {
   uint16_t result = dest.d - 1;
 
   dest = (reg16_t)result;
@@ -497,7 +509,7 @@ OP(INCI, addr_t addr) {
   bus_write(state, addr, dest);
 }
 
-static inline void INC16(Z80State *state, reg16_t &dest) {
+OP(INC16, reg16_t &dest) {
   uint16_t result = dest.d + 1;
 
   dest = (reg16_t)result;

@@ -25,19 +25,9 @@
 
 #include "cpu/z80/z80.h"
 #include "cpu/z80/z80_ops.h"
+#include "cpu/lib/cpu2_macros.h"
 
 using namespace Z80;
-
-#define OPCODE(opnum, cycles, bytes, name, code)     \
-  template <typename CpuState>                       \
-  static inline void func_##opnum(CpuState *state);  \
-  static const char *name_##opnum = name;            \
-  static const Cycles cycles_##opnum(cycles);        \
-  static const uint8_t bytes_##opnum = bytes;        \
-  template <typename CpuState>                       \
-  static inline void func_##opnum(CpuState *state) { \
-    code;                                            \
-  }
 
 OPCODE(0x00, 4, 1, "NOP", );
 OPCODE(0x01, 10, 3, "LD BC,d16", LD16(state, state->BC, D16(state)));
@@ -328,27 +318,6 @@ OPCODE(0xFD, 0, 0, "FD", DISPATCH_ED(state));
 OPCODE(0xFE, 7, 2, "CP d8", CP(state, state->AF.b.h, D8(state)));
 OPCODE(0xFF, 11, 1, "RST 38H", RST(state, 0x38));
 
-#define OPCODE_DEF(prefix, num)                                       \
-  [0x##num] = {0x##num, name_0x##prefix##num, cycles_0x##prefix##num, \
-               bytes_0x##prefix##num, func_0x##prefix##num}
-
-#define OPCODE16(prefix, num)                                 \
-  OPCODE_DEF(prefix, num##0)                                  \
-  , OPCODE_DEF(prefix, num##1), OPCODE_DEF(prefix, num##2),   \
-      OPCODE_DEF(prefix, num##3), OPCODE_DEF(prefix, num##4), \
-      OPCODE_DEF(prefix, num##5), OPCODE_DEF(prefix, num##6), \
-      OPCODE_DEF(prefix, num##7), OPCODE_DEF(prefix, num##8), \
-      OPCODE_DEF(prefix, num##9), OPCODE_DEF(prefix, num##A), \
-      OPCODE_DEF(prefix, num##B), OPCODE_DEF(prefix, num##C), \
-      OPCODE_DEF(prefix, num##D), OPCODE_DEF(prefix, num##E), \
-      OPCODE_DEF(prefix, num##F)
-
-static Z80Opcode opcodes[256] = {
-    OPCODE16(, 0), OPCODE16(, 1), OPCODE16(, 2), OPCODE16(, 3),
-    OPCODE16(, 4), OPCODE16(, 5), OPCODE16(, 6), OPCODE16(, 7),
-    OPCODE16(, 8), OPCODE16(, 9), OPCODE16(, A), OPCODE16(, B),
-    OPCODE16(, C), OPCODE16(, D), OPCODE16(, E), OPCODE16(, F)};
-
 OPCODE(0xCB00, 8, 2, "RLC B", RLC(state, state->BC.b.h, state->BC.b.h));
 OPCODE(0xCB01, 8, 2, "RLC C", RLC(state, state->BC.b.l, state->BC.b.l));
 OPCODE(0xCB02, 8, 2, "RLC D", RLC(state, state->DE.b.h, state->DE.b.h));
@@ -606,13 +575,6 @@ OPCODE(0xCBFD, 8, 2, "SET 7, L", BIT_SET(state, state->HL.b.l, 7));
 OPCODE(0xCBFE, 15, 2, "SET 7, (HL)", BIT_SET_HL(state, 7));
 OPCODE(0xCBFF, 8, 2, "SET 7, A", BIT_SET(state, state->AF.b.h, 7));
 
-static Z80Opcode CBopcodes[256] = {
-    OPCODE16(CB, 0), OPCODE16(CB, 1), OPCODE16(CB, 2), OPCODE16(CB, 3),
-    OPCODE16(CB, 4), OPCODE16(CB, 5), OPCODE16(CB, 6), OPCODE16(CB, 7),
-    OPCODE16(CB, 8), OPCODE16(CB, 9), OPCODE16(CB, A), OPCODE16(CB, B),
-    OPCODE16(CB, C), OPCODE16(CB, D), OPCODE16(CB, E), OPCODE16(CB, F),
-};
-
 OPCODE(0xED00, 5, 2, "NOP", );
 OPCODE(0xED40, 12, 2, "IN B, (C)", IN(state, state->BC.b.h, state->BC.b.l));
 OPCODE(0xED41, 12, 2, "OUT (C), B", {
@@ -701,6 +663,19 @@ OPCODE(0xEDB3, 16, 2, "OTIR", OTIR(state));
 OPCODE(0xEDB8, 16, 2, "LDDR", LDDR(state));
 OPCODE(0xEDB9, 16, 2, "CPDR", CPDR(state));
 
+static Z80Opcode opcodes[256] = {
+    OPCODE16(, 0), OPCODE16(, 1), OPCODE16(, 2), OPCODE16(, 3),
+    OPCODE16(, 4), OPCODE16(, 5), OPCODE16(, 6), OPCODE16(, 7),
+    OPCODE16(, 8), OPCODE16(, 9), OPCODE16(, A), OPCODE16(, B),
+    OPCODE16(, C), OPCODE16(, D), OPCODE16(, E), OPCODE16(, F)};
+
+static Z80Opcode CBopcodes[256] = {
+    OPCODE16(CB, 0), OPCODE16(CB, 1), OPCODE16(CB, 2), OPCODE16(CB, 3),
+    OPCODE16(CB, 4), OPCODE16(CB, 5), OPCODE16(CB, 6), OPCODE16(CB, 7),
+    OPCODE16(CB, 8), OPCODE16(CB, 9), OPCODE16(CB, A), OPCODE16(CB, B),
+    OPCODE16(CB, C), OPCODE16(CB, D), OPCODE16(CB, E), OPCODE16(CB, F),
+};
+
 static Z80Opcode EDopcodes[256] = {
     OPCODE_DEF(ED, 00), OPCODE_DEF(ED, 40), OPCODE_DEF(ED, 41),
     OPCODE_DEF(ED, 42), OPCODE_DEF(ED, 43), OPCODE_DEF(ED, 44),
@@ -725,50 +700,6 @@ static Z80Opcode EDopcodes[256] = {
     OPCODE_DEF(ED, B0), OPCODE_DEF(ED, B1), OPCODE_DEF(ED, B3),
     OPCODE_DEF(ED, B8), OPCODE_DEF(ED, B9),
 };
-
-#define OPCODE_SWITCH(prefix, op, state) \
-  case 0x##op: {                     \
-    func_##prefix##op(state);            \
-    break;                       \
-  }
-
-#define OPCODE_SWITCH16(prefix, op, state) \
-  OPCODE_SWITCH(prefix, op##0, state)      \
-  OPCODE_SWITCH(prefix, op##1, state)      \
-  OPCODE_SWITCH(prefix, op##2, state)      \
-  OPCODE_SWITCH(prefix, op##3, state)      \
-  OPCODE_SWITCH(prefix, op##4, state)      \
-  OPCODE_SWITCH(prefix, op##5, state)      \
-  OPCODE_SWITCH(prefix, op##6, state)      \
-  OPCODE_SWITCH(prefix, op##7, state)      \
-  OPCODE_SWITCH(prefix, op##8, state)      \
-  OPCODE_SWITCH(prefix, op##9, state)      \
-  OPCODE_SWITCH(prefix, op##A, state)      \
-  OPCODE_SWITCH(prefix, op##B, state)      \
-  OPCODE_SWITCH(prefix, op##C, state)      \
-  OPCODE_SWITCH(prefix, op##D, state)      \
-  OPCODE_SWITCH(prefix, op##E, state)      \
-  OPCODE_SWITCH(prefix, op##F, state)
-
-#define OPCODE_SWITCH_BLOCK(prefix, state) \
-  switch (state->latch_op) {               \
-    OPCODE_SWITCH16(prefix, 0, state)  \
-    OPCODE_SWITCH16(prefix, 1, state)  \
-    OPCODE_SWITCH16(prefix, 2, state)  \
-    OPCODE_SWITCH16(prefix, 3, state)  \
-    OPCODE_SWITCH16(prefix, 4, state)  \
-    OPCODE_SWITCH16(prefix, 5, state)  \
-    OPCODE_SWITCH16(prefix, 6, state)  \
-    OPCODE_SWITCH16(prefix, 7, state)  \
-    OPCODE_SWITCH16(prefix, 8, state)  \
-    OPCODE_SWITCH16(prefix, 9, state)  \
-    OPCODE_SWITCH16(prefix, A, state)  \
-    OPCODE_SWITCH16(prefix, B, state)  \
-    OPCODE_SWITCH16(prefix, C, state)  \
-    OPCODE_SWITCH16(prefix, D, state)  \
-    OPCODE_SWITCH16(prefix, E, state)  \
-    OPCODE_SWITCH16(prefix, F, state)  \
-  }
 
 Z80Cpu::Z80Cpu(Machine *machine, const std::string &name, ClockDivider divider,
                state_type *state)
