@@ -114,4 +114,23 @@ class Cpu : public ClockedDevice {
 
   state_type *m_state;
 };
+
+template<typename state_type>
+static inline void add_icycles(state_type *state, unsigned cycles) {
+  state->icycles += cycles;
+}
+
+template <typename state_type>
+static inline void bus_write(state_type *state,
+                             typename state_type::bus_type::addr_type addr,
+                             typename state_type::bus_type::data_type data) {
+  state->bus->write(addr, data);
+}
+
+template <typename state_type>
+static inline typename state_type::bus_type::data_type bus_read(
+    state_type *state, typename state_type::bus_type::addr_type addr) {
+  return state->bus->read(addr);
+}
+
 };

@@ -92,7 +92,7 @@ OP(AND, reg8_t &dest, reg8_t arg) {
 }
 
 OP(BIT_TEST_HL, const int bit) {
-  byte_t value = state->bus_read(state, state->HL.d);
+  byte_t value = bus_read(state, state->HL.d);
   byte_t h = state->WZ.b.h;
 
   state->AF.b.f.S = bit_isset(value, 7);
@@ -130,10 +130,10 @@ OP(BIT_RESET, byte_t &dest, const int bit) {
 }
 
 OP(BIT_RESET_HL, const int bit) {
-  byte_t value = state->bus_read(state, state->HL.d);
+  byte_t value = bus_read(state, state->HL.d);
   value &= ~(1 << bit);
 
-  state->bus_write(state, state->HL.d, value);
+  bus_write(state, state->HL.d, value);
 }
 
 OP(BIT_SET, byte_t &dest, const int bit) {
@@ -141,10 +141,10 @@ OP(BIT_SET, byte_t &dest, const int bit) {
 }
 
 OP(BIT_SET_HL, const int bit) {
-  byte_t value = state->bus_read(state, state->HL.d);
+  byte_t value = bus_read(state, state->HL.d);
   value |= (1 << bit);
 
-  state->bus_write(state, state->HL.d, value);
+  bus_write(state, state->HL.d, value);
 }
 
 static inline int __attribute__((__used__)) CALC_PARITY(reg8_t reg) {
@@ -161,7 +161,7 @@ OP(CALL, bool jump, uint16_t addr) {
     PUSH(state, state->PC.b.h, state->PC.b.l);
 
     state->PC.d = addr;
-    ADD_ICYCLES(state, 12);
+    add_icycles(state, 12);
   }
 }
 
@@ -179,7 +179,7 @@ OP(CP, byte_t dest, byte_t arg) {
 
 OP(CPD) {
   byte_t dest = state->AF.b.h;
-  byte_t arg = state->bus_read(state, state->HL.d);
+  byte_t arg = bus_read(state, state->HL.d);
   uint16_t result = dest - arg;
   state->WZ.d--;
   state->HL.d--;
@@ -198,13 +198,13 @@ OP(CPDR) {
   CPD(state);
   if (state->BC.d != 0 && !state->AF.b.f.Z) {
     state->PC.d -= 2;
-    ADD_ICYCLES(state, 5);
+    add_icycles(state, 5);
   }
 }
 
 OP(CPI) {
   byte_t dest = state->AF.b.h;
-  byte_t arg = state->bus_read(state, state->HL.d);
+  byte_t arg = bus_read(state, state->HL.d);
   uint16_t result = dest - arg;
   state->WZ.d++;
   state->HL.d++;
@@ -223,7 +223,7 @@ void CPIR(Z80State *state) {
   CPI(state);
   if (state->BC.d != 0 && !state->AF.b.f.Z) {
     state->PC.d -= 2;
-    ADD_ICYCLES(state, 5);
+    add_icycles(state, 5);
   }
 }
 
@@ -288,11 +288,11 @@ static inline void DEC(Z80State *state, reg8_t &dest) {
 }
 
 OP(DECI, addr_t addr) {
-  byte_t dest = state->bus_read(state, addr);
+  byte_t dest = bus_read(state, addr);
 
   DEC(state, dest);
 
-  state->bus_write(state, addr, dest);
+  bus_write(state, addr, dest);
 }
 
 static inline void DEC16(Z80State *state, reg16_t &dest) {
@@ -351,7 +351,7 @@ OP(STORE, Z80Arg reg, addr_t addr, byte_t value) {
       state->HL.b.l = value;
       break;
     case Z80Arg::ArgRegHL:
-      state->bus_write(state, addr, value);
+      bus_write(state, addr, value);
       break;
   }
 }
@@ -365,13 +365,13 @@ OP(DISPATCH_CB) {
       addr = DIX(state);
       op = pc_read(state);
       value = I8(state, addr);
-      ADD_ICYCLES(state, 8);
+      add_icycles(state, 8);
       break;
     case Z80Prefix::FDPrefix:
       addr = DIY(state);
       op = pc_read(state);
       value = I8(state, addr);
-      ADD_ICYCLES(state, 8);
+      add_icycles(state, 8);
       break;
     default:
       abort();
@@ -397,21 +397,21 @@ OP(DISPATCH_CB) {
     } else if ((op & 0xF8) == 0x38) {
       SRL(state, dest, value);
     }
-    (reg == Z80Arg::ArgRegHL) ? ADD_ICYCLES(state, 15) : ADD_ICYCLES(state, 8);
+    (reg == Z80Arg::ArgRegHL) ? add_icycles(state, 15) : add_icycles(state, 8);
     STORE(state, reg, addr, dest);
   } else if ((op & 0xC0) == 0x40) {
     if (reg == Z80Arg::ArgRegHL)
       BIT_TEST_HL(state, value, state->WZ.b.h, bit);
     else
       BIT_TEST(state, value, bit);
-    (reg == Z80Arg::ArgRegHL) ? ADD_ICYCLES(state, 12) : ADD_ICYCLES(state, 8);
+    (reg == Z80Arg::ArgRegHL) ? add_icycles(state, 12) : add_icycles(state, 8);
   } else if ((op & 0xC0) == 0x80) {
     BIT_RESET(state, value, bit);
-    (reg == Z80Arg::ArgRegHL) ? ADD_ICYCLES(state, 15) : ADD_ICYCLES(state, 8);
+    (reg == Z80Arg::ArgRegHL) ? add_icycles(state, 15) : add_icycles(state, 8);
     STORE(state, reg, addr, value);
   } else if ((op & 0xC0) == 0xC0) {
     BIT_SET(state, value, bit);
-    (reg == Z80Arg::ArgRegHL) ? ADD_ICYCLES(state, 15) : ADD_ICYCLES(state, 8);
+    (reg == Z80Arg::ArgRegHL) ? add_icycles(state, 15) : add_icycles(state, 8);
     STORE(state, reg, addr, value);
   }
 }
@@ -432,7 +432,7 @@ OP(DJNZ, byte_t arg) {
   if (--state->BC.b.h != 0) {
     state->PC.d += (char)arg;
     state->WZ = state->PC;
-    ADD_ICYCLES(state, 5);
+    add_icycles(state, 5);
   }
 }
 
@@ -448,10 +448,10 @@ OP(EX, uint16_t &lhs, uint16_t &rhs) {
 }
 
 OP(EXI, addr_t addr, byte_t &rh, byte_t &rl) {
-  byte_t ll = state->bus_read(state, addr);
-  byte_t lh = state->bus_read(state, addr + 1);
-  state->bus_write(state, addr, rl);
-  state->bus_write(state, addr + 1, rh);
+  byte_t ll = bus_read(state, addr);
+  byte_t lh = bus_read(state, addr + 1);
+  bus_write(state, addr, rl);
+  bus_write(state, addr + 1, rh);
   rh = lh;
   rl = ll;
 }
@@ -471,7 +471,7 @@ OP(IM, byte_t arg) {
 }
 
 OP(IN, byte_t &orig, byte_t port) {
-  orig = state->io_read(state, port);
+  orig = io_read(state, port);
   state->yield = 1;
 }
 
@@ -490,11 +490,11 @@ OP(INC, reg8_t &dest) {
 }
 
 OP(INCI, addr_t addr) {
-  byte_t dest = state->bus_read(state, addr);
+  byte_t dest = bus_read(state, addr);
 
   INC(state, dest);
 
-  state->bus_write(state, addr, dest);
+  bus_write(state, addr, dest);
 }
 
 static inline void INC16(Z80State *state, reg16_t &dest) {
@@ -507,7 +507,7 @@ OP(JR, bool jump, byte_t arg) {
   if (jump) {
     state->PC.d += (char)arg;
     state->WZ = state->PC;
-    ADD_ICYCLES(state, 4);
+    add_icycles(state, 4);
   }
 }
 
@@ -515,7 +515,7 @@ OP(JP, bool jump, uint16_t arg) {
   state->WZ.d = arg;
   if (jump) {
     state->PC.d = arg;
-    ADD_ICYCLES(state, 4);
+    add_icycles(state, 4);
   }
 }
 
@@ -530,13 +530,13 @@ OP(LD16, reg16_t &wdest, uint16_t arg) {
 }
 
 OP(LD16I, addr_t addr, uint16_t arg) {
-  state->bus_write(state, addr, arg & 0xff);
-  state->bus_write(state, addr + 1, arg >> 8);
+  bus_write(state, addr, arg & 0xff);
+  bus_write(state, addr + 1, arg >> 8);
 }
 
 OP(LDI) {
-  byte_t value = state->bus_read(state, state->HL.d++);
-  state->bus_write(state, state->DE.d++, value);
+  byte_t value = bus_read(state, state->HL.d++);
+  bus_write(state, state->DE.d++, value);
   value += state->AF.b.h;
   state->BC.d--;
   state->AF.b.f.Y = bit_isset(value, 1);
@@ -551,13 +551,13 @@ OP(LDIR) {
   if (state->BC.d != 0) {
     state->WZ.d = state->PC.d + 1;
     state->PC.d -= 2;
-    ADD_ICYCLES(state, 5);
+    add_icycles(state, 5);
   }
 }
 
 OP(LDD) {
-  byte_t value = state->bus_read(state, state->HL.d--);
-  state->bus_write(state, state->DE.d--, value);
+  byte_t value = bus_read(state, state->HL.d--);
+  bus_write(state, state->DE.d--, value);
   value += state->AF.b.h;
   state->BC.d--;
   state->AF.b.f.Y = bit_isset(value, 1);
@@ -572,12 +572,12 @@ OP(LDDR) {
   if (state->BC.d != 0) {
     state->WZ.d = state->PC.d + 1;
     state->PC.d -= 2;
-    ADD_ICYCLES(state, 5);
+    add_icycles(state, 5);
   }
 }
 
 OP(LDMEM, addr_t addr, byte_t arg) {
-  state->bus_write(state, addr, arg);
+  bus_write(state, addr, arg);
 }
 
 OP(NEG, byte_t &dest) {
@@ -601,7 +601,7 @@ OP(OR, reg8_t &dest, reg8_t arg) {
 }
 
 OP(OUT, byte_t port, byte_t value) {
-  state->io_write(state, port, value);
+  io_write(state, port, value);
   state->yield = 1;
 }
 
@@ -610,20 +610,20 @@ OP(OTIR) {
 }
 
 OP(PUSH, byte_t high, byte_t low) {
-  state->bus_write(state, --state->SP.d, high);
-  state->bus_write(state, --state->SP.d, low);
+  bus_write(state, --state->SP.d, high);
+  bus_write(state, --state->SP.d, low);
 }
 
 OP(POP, byte_t &high, byte_t &low) {
-  low = state->bus_read(state, state->SP.d++);
-  high = state->bus_read(state, state->SP.d++);
+  low = bus_read(state, state->SP.d++);
+  high = bus_read(state, state->SP.d++);
 }
 
 OP(RET, bool jump) {
   if (jump) {
     POP(state, state->PC.b.h, state->PC.b.l);
     state->WZ = state->PC;
-    ADD_ICYCLES(state, 16);
+    add_icycles(state, 16);
   }
 }
 
@@ -653,10 +653,10 @@ OP(RL, byte_t &dest, byte_t value) {
 }
 
 OP(RL_HL) {
-  byte_t value = state->bus_read(state, state->HL.d);
+  byte_t value = bus_read(state, state->HL.d);
   RL(state, value, value);
 
-  state->bus_write(state, state->HL.d, value);
+  bus_write(state, state->HL.d, value);
 }
 
 OP(RLA) {
@@ -684,11 +684,11 @@ OP(RLC, byte_t &dest, byte_t value) {
 }
 
 OP(RLC_HL) {
-  byte_t value = state->bus_read(state, state->HL.d);
+  byte_t value = bus_read(state, state->HL.d);
 
   RLC(state, value, value);
 
-  state->bus_write(state, state->HL.d, value);
+  bus_write(state, state->HL.d, value);
 }
 
 OP(RLCA) {
@@ -702,9 +702,9 @@ OP(RLCA) {
 }
 
 OP(RLD) {
-  byte_t value = state->bus_read(state, state->HL.d);
+  byte_t value = bus_read(state, state->HL.d);
 
-  state->bus_write(state, state->HL.d,
+  bus_write(state, state->HL.d,
                    (state->AF.b.h & 0x0F) | ((value & 0x0F) << 4));
   state->AF.b.h = (state->AF.b.h & 0xF0) | ((value & 0xF0) >> 4);
   state->WZ.d = state->HL.d + 1;
@@ -733,10 +733,10 @@ OP(RR, byte_t &dest, byte_t value) {
 }
 
 OP(RR_HL) {
-  byte_t value = state->bus_read(state, state->HL.d);
+  byte_t value = bus_read(state, state->HL.d);
 
   RR(state, value, value);
-  state->bus_write(state, state->HL.d, value);
+  bus_write(state, state->HL.d, value);
 }
 
 OP(RRA) {
@@ -764,10 +764,10 @@ OP(RRC, byte_t &dest, byte_t value) {
 }
 
 OP(RRC_HL) {
-  byte_t value = state->bus_read(state, state->HL.d);
+  byte_t value = bus_read(state, state->HL.d);
   RRC(state, value, value);
 
-  state->bus_write(state, state->HL.d, value);
+  bus_write(state, state->HL.d, value);
 }
 
 OP(RRCA) {
@@ -781,9 +781,9 @@ OP(RRCA) {
 }
 
 OP(RRD) {
-  byte_t value = state->bus_read(state, state->HL.d);
+  byte_t value = bus_read(state, state->HL.d);
 
-  state->bus_write(state, state->HL.d,
+  bus_write(state, state->HL.d,
                    (state->AF.b.h & 0x0F) << 4 | ((value & 0xF0) >> 4));
   state->AF.b.h = (state->AF.b.h & 0xF0) | (value & 0x0F);
   state->WZ.d = state->HL.d + 1;
@@ -817,11 +817,11 @@ OP(SLA, byte_t &dest, byte_t value) {
 }
 
 OP(SLA_HL) {
-  byte_t value = state->bus_read(state, state->HL.d);
+  byte_t value = bus_read(state, state->HL.d);
 
   SLA(state, value, value);
 
-  state->bus_write(state, state->HL.d, value);
+  bus_write(state, state->HL.d, value);
 }
 
 OP(SRA, byte_t &dest, byte_t value) {
@@ -839,11 +839,11 @@ OP(SRA, byte_t &dest, byte_t value) {
 }
 
 OP(SRA_HL) {
-  byte_t value = state->bus_read(state, state->HL.d);
+  byte_t value = bus_read(state, state->HL.d);
 
   SRA(state, value, value);
 
-  state->bus_write(state, state->HL.d, value);
+  bus_write(state, state->HL.d, value);
 }
 
 OP(SRL, byte_t &dest, byte_t value) {
@@ -861,11 +861,11 @@ OP(SRL, byte_t &dest, byte_t value) {
 }
 
 OP(SRL_HL) {
-  byte_t value = state->bus_read(state, state->HL.d);
+  byte_t value = bus_read(state, state->HL.d);
 
   SRL(state, value, value);
 
-  state->bus_write(state, state->HL.d, value);
+  bus_write(state, state->HL.d, value);
 }
 
 OP(SLL, byte_t &dest, byte_t value) {
@@ -883,11 +883,11 @@ OP(SLL, byte_t &dest, byte_t value) {
 }
 
 OP(SLL_HL) {
-  byte_t value = state->bus_read(state, state->HL.d);
+  byte_t value = bus_read(state, state->HL.d);
 
   SLL(state, value, value);
 
-  state->bus_write(state, state->HL.d, value);
+  bus_write(state, state->HL.d, value);
 }
 
 

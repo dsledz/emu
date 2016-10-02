@@ -54,7 +54,7 @@ OPCODE(0x07, 4, 1, "RLCA", RLCA(state));
 OPCODE(0x08, 4, 1, "EX AF,AF'", EX(state, state->AF.d, state->AF2.d));
 OPCODE(0x09, 11, 1, "ADD HL,BC", ADD16(state, *state->vHL, state->BC.d));
 OPCODE(0x0A, 7, 1, "LD A,(BC)", {
-  LD(state, state->AF.b.h, state->bus_read(state, state->BC.d));
+  LD(state, state->AF.b.h, bus_read(state, state->BC.d));
   state->WZ.d = state->BC.d + 1;
 });
 OPCODE(0x0B, 6, 1, "DEC BC", DEC16(state, state->BC));
@@ -77,7 +77,7 @@ OPCODE(0x17, 4, 1, "RLA", RLA(state));
 OPCODE(0x18, 12, 2, "JR r8", JR(state, true, D8(state)));
 OPCODE(0x19, 11, 1, "ADD HL,DE", ADD16(state, *state->vHL, state->DE.d));
 OPCODE(0x1A, 7, 1, "LD A,(DE)", {
-  LD(state, state->AF.b.h, state->bus_read(state, state->DE.d));
+  LD(state, state->AF.b.h, bus_read(state, state->DE.d));
   state->WZ.d = state->DE.d + 1;
 });
 OPCODE(0x1B, 6, 1, "DEC DE", DEC16(state, state->DE));
@@ -790,7 +790,7 @@ void Z80Cpu::execute(void) {
   while (true) {
     if (m_state->reset_line == LineState::Pulse) {
       DEVICE_INFO("Reset");
-      m_state->reset();
+      reset();
       m_state->reset_line = LineState::Clear;
       m_state->halt = false;
     } else if (m_state->nmi_line == LineState::Pulse) {
@@ -812,10 +812,8 @@ void Z80Cpu::execute(void) {
           // XXX: We should do this when we read _data
           m_state->int0_line = LineState::Clear;
           reg16_t irq;
-          irq.b.l =
-              m_state->bus_read(m_state, (m_state->I << 8) | m_state->data);
-          irq.b.h = m_state->bus_read(m_state,
-                                      ((m_state->I << 8) | m_state->data) + 1);
+          irq.b.l = bus_read(m_state, (m_state->I << 8) | m_state->data);
+          irq.b.h = bus_read(m_state, ((m_state->I << 8) | m_state->data) + 1);
           interrupt(irq.d);
         }
       }
