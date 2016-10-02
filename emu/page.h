@@ -168,7 +168,7 @@ class Page {
       it->write(offset, data);
     else if (unlikely(m_flags.is_clear(PageFlags::Write)))
       m_page_fault(addr, data);
-    else
+    else if (m_page)
       m_page[offset] = data;
   }
 
@@ -179,8 +179,10 @@ class Page {
     }
     if (it != m_port_list.end())
       return it->read(offset);
-    else
+    else if (m_page)
       return m_page[offset];
+    else
+      return 0;
   }
 
   page_fault_fn m_page_fault;
