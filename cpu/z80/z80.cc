@@ -777,7 +777,7 @@ Z80Cpu::Z80Cpu(Machine *machine, const std::string &name, ClockDivider divider,
 Z80Cpu::~Z80Cpu(void) {}
 
 void Z80Cpu::interrupt(addr_t addr) {
-  DEVICE_DEBUG("Interrupt: ", Hex(addr));
+  DEVICE_TRACE("Interrupt: ", Hex(addr));
   PUSH(m_state, m_state->PC.b.h, m_state->PC.b.l);
   m_state->PC.d = addr;
   m_state->WZ.d = addr;
@@ -789,6 +789,7 @@ void Z80Cpu::interrupt(addr_t addr) {
 void Z80Cpu::execute(void) {
   while (true) {
     if (m_state->reset_line == LineState::Pulse) {
+      DEVICE_INFO("Reset");
       m_state->reset();
       m_state->reset_line = LineState::Clear;
       m_state->halt = false;
@@ -798,7 +799,7 @@ void Z80Cpu::execute(void) {
       m_state->halt = false;
     } else if (m_state->int0_line == LineState::Assert && m_state->iff1 &&
                !m_state->iwait) {
-      DEVICE_DEBUG("Taking interrupt");
+      DEVICE_TRACE("Taking interrupt");
       switch (m_state->imode) {
         case 0:
           throw CpuFault(name(), "Unsupported Interrupt mode 0");
