@@ -103,7 +103,7 @@ AND(Z80State *state, reg8_t &dest, reg8_t arg) {
 }
 
 static inline void __attribute__((__used__))
-BIT_TEST_HL(Z80State *state, int bit) {
+BIT_TEST_HL(Z80State *state, const int bit) {
   byte_t value = state->bus_read(state, state->HL.d);
   byte_t h = state->WZ.b.h;
 
@@ -118,7 +118,7 @@ BIT_TEST_HL(Z80State *state, int bit) {
 
 
 static inline void __attribute__((__used__))
-BIT_TEST_HL(Z80State *state, byte_t value, byte_t h,int bit) {
+BIT_TEST_HL(Z80State *state, byte_t value, byte_t h, const int bit) {
   state->AF.b.f.S = bit_isset(value, 7);
   state->AF.b.f.Z = !bit_isset(value, bit);
   state->AF.b.f.Y = bit_isset(h, 5);
@@ -129,7 +129,7 @@ BIT_TEST_HL(Z80State *state, byte_t value, byte_t h,int bit) {
 }
 
 static inline void __attribute__((__used__))
-BIT_TEST(Z80State *state, byte_t value, int bit) {
+BIT_TEST(Z80State *state, byte_t value, const int bit) {
   state->AF.b.f.S = bit_isset(value, 7);
   state->AF.b.f.Z = !bit_isset(value, bit);
   state->AF.b.f.Y = bit_isset(value, 5);
@@ -140,47 +140,29 @@ BIT_TEST(Z80State *state, byte_t value, int bit) {
 }
 
 static inline void __attribute__((__used__))
-BIT_RESET(Z80State *state, byte_t &dest, byte_t value, int bit) {
-  byte_t result = value & ~(1 << bit);
-
-  dest = result;
+BIT_RESET(Z80State *state, byte_t &dest, const int bit) {
+  dest &= ~(1 << bit);
 }
 
 static inline void __attribute__((__used__))
-BIT_RESET(Z80State *state, byte_t &dest, int bit) {
-  byte_t result = dest & ~(1 << bit);
-
-  dest = result;
-}
-
-static inline void __attribute__((__used__))
-BIT_RESET_HL(Z80State *state, int bit) {
+BIT_RESET_HL(Z80State *state, const int bit) {
   byte_t value = state->bus_read(state, state->HL.d);
-  byte_t result = value & ~(1 << bit);
+  value &= ~(1 << bit);
 
-  state->bus_write(state, state->HL.d, result);
+  state->bus_write(state, state->HL.d, value);
 }
 
 static inline void __attribute__((__used__))
-BIT_SET(Z80State *state, byte_t &dest, int bit) {
-  byte_t result = dest | (1 << bit);
-
-  dest = result;
+BIT_SET(Z80State *state, byte_t &dest, const int bit) {
+  dest |= (1 << bit);
 }
 
 static inline void __attribute__((__used__))
-BIT_SET(Z80State *state, byte_t &dest, byte_t value, int bit) {
-  byte_t result = value | (1 << bit);
-
-  dest = result;
-}
-
-static inline void __attribute__((__used__))
-BIT_SET_HL(Z80State *state, int bit) {
+BIT_SET_HL(Z80State *state, const int bit) {
   byte_t value = state->bus_read(state, state->HL.d);
-  byte_t result = value | (1 << bit);
+  value |= (1 << bit);
 
-  state->bus_write(state, state->HL.d, result);
+  state->bus_write(state, state->HL.d, value);
 }
 
 static inline int __attribute__((__used__)) CALC_PARITY(reg8_t reg) {
@@ -409,10 +391,7 @@ static inline void __attribute__((__used__)) DISPATCH_CB(Z80State *state) {
       ADD_ICYCLES(state, 8);
       break;
     default:
-      addr = state->HL.d;
-      op = pc_read(state);
-      value = FETCH(state, Z80Arg(op & 0x07));
-      break;
+      abort();
   }
   int bit = (op & 0x38) >> 3;
   Z80Arg reg = Z80Arg(op & 0x07);
@@ -444,13 +423,13 @@ static inline void __attribute__((__used__)) DISPATCH_CB(Z80State *state) {
       BIT_TEST(state, value, bit);
     (reg == Z80Arg::ArgRegHL) ? ADD_ICYCLES(state, 12) : ADD_ICYCLES(state, 8);
   } else if ((op & 0xC0) == 0x80) {
-    BIT_RESET(state, dest, value, bit);
+    BIT_RESET(state, value, bit);
     (reg == Z80Arg::ArgRegHL) ? ADD_ICYCLES(state, 15) : ADD_ICYCLES(state, 8);
-    STORE(state, reg, addr, dest);
+    STORE(state, reg, addr, value);
   } else if ((op & 0xC0) == 0xC0) {
-    BIT_SET(state, dest, value, bit);
+    BIT_SET(state, value, bit);
     (reg == Z80Arg::ArgRegHL) ? ADD_ICYCLES(state, 15) : ADD_ICYCLES(state, 8);
-    STORE(state, reg, addr, dest);
+    STORE(state, reg, addr, value);
   }
 }
 
@@ -707,10 +686,11 @@ RL(Z80State *state, byte_t &dest, byte_t value) {
   dest = result;
 }
 
-template <typename func>
-static inline void __attribute__((__used__)) WRAP_HL(Z80State *state, func F) {
+template <typename func, typename... Args>
+static inline void __attribute__((__used__))
+WRAP_HL(Z80State *state, func F, Args... args) {
   byte_t value = state->bus_read(state, state->HL.d);
-  F(state, value, value);
+  F(state, value, value, args...);
   state->bus_write(state, state->HL.d, value);
 }
 
