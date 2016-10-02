@@ -726,48 +726,48 @@ static Z80Opcode EDopcodes[256] = {
     OPCODE_DEF(ED, B8), OPCODE_DEF(ED, B9),
 };
 
-#define OPCODE_SWITCH(op, state) \
-  case op: {                     \
-    func_##op(state);            \
+#define OPCODE_SWITCH(prefix, op, state) \
+  case 0x##op: {                     \
+    func_##prefix##op(state);            \
     break;                       \
   }
 
-#define OPCODE_SWITCH16(prefix, state) \
-  OPCODE_SWITCH(prefix##0, state)      \
-  OPCODE_SWITCH(prefix##1, state)      \
-  OPCODE_SWITCH(prefix##2, state)      \
-  OPCODE_SWITCH(prefix##3, state)      \
-  OPCODE_SWITCH(prefix##4, state)      \
-  OPCODE_SWITCH(prefix##5, state)      \
-  OPCODE_SWITCH(prefix##6, state)      \
-  OPCODE_SWITCH(prefix##7, state)      \
-  OPCODE_SWITCH(prefix##8, state)      \
-  OPCODE_SWITCH(prefix##9, state)      \
-  OPCODE_SWITCH(prefix##A, state)      \
-  OPCODE_SWITCH(prefix##B, state)      \
-  OPCODE_SWITCH(prefix##C, state)      \
-  OPCODE_SWITCH(prefix##D, state)      \
-  OPCODE_SWITCH(prefix##E, state)      \
-  OPCODE_SWITCH(prefix##F, state)
+#define OPCODE_SWITCH16(prefix, op, state) \
+  OPCODE_SWITCH(prefix, op##0, state)      \
+  OPCODE_SWITCH(prefix, op##1, state)      \
+  OPCODE_SWITCH(prefix, op##2, state)      \
+  OPCODE_SWITCH(prefix, op##3, state)      \
+  OPCODE_SWITCH(prefix, op##4, state)      \
+  OPCODE_SWITCH(prefix, op##5, state)      \
+  OPCODE_SWITCH(prefix, op##6, state)      \
+  OPCODE_SWITCH(prefix, op##7, state)      \
+  OPCODE_SWITCH(prefix, op##8, state)      \
+  OPCODE_SWITCH(prefix, op##9, state)      \
+  OPCODE_SWITCH(prefix, op##A, state)      \
+  OPCODE_SWITCH(prefix, op##B, state)      \
+  OPCODE_SWITCH(prefix, op##C, state)      \
+  OPCODE_SWITCH(prefix, op##D, state)      \
+  OPCODE_SWITCH(prefix, op##E, state)      \
+  OPCODE_SWITCH(prefix, op##F, state)
 
 #define OPCODE_SWITCH_BLOCK(prefix, state) \
   switch (state->latch_op) {               \
-    OPCODE_SWITCH16(prefix##0, state)  \
-    OPCODE_SWITCH16(prefix##1, state)  \
-    OPCODE_SWITCH16(prefix##2, state)  \
-    OPCODE_SWITCH16(prefix##3, state)  \
-    OPCODE_SWITCH16(prefix##4, state)  \
-    OPCODE_SWITCH16(prefix##5, state)  \
-    OPCODE_SWITCH16(prefix##6, state)  \
-    OPCODE_SWITCH16(prefix##7, state)  \
-    OPCODE_SWITCH16(prefix##8, state)  \
-    OPCODE_SWITCH16(prefix##9, state)  \
-    OPCODE_SWITCH16(prefix##A, state)  \
-    OPCODE_SWITCH16(prefix##B, state)  \
-    OPCODE_SWITCH16(prefix##C, state)  \
-    OPCODE_SWITCH16(prefix##D, state)  \
-    OPCODE_SWITCH16(prefix##E, state)  \
-    OPCODE_SWITCH16(prefix##F, state)  \
+    OPCODE_SWITCH16(prefix, 0, state)  \
+    OPCODE_SWITCH16(prefix, 1, state)  \
+    OPCODE_SWITCH16(prefix, 2, state)  \
+    OPCODE_SWITCH16(prefix, 3, state)  \
+    OPCODE_SWITCH16(prefix, 4, state)  \
+    OPCODE_SWITCH16(prefix, 5, state)  \
+    OPCODE_SWITCH16(prefix, 6, state)  \
+    OPCODE_SWITCH16(prefix, 7, state)  \
+    OPCODE_SWITCH16(prefix, 8, state)  \
+    OPCODE_SWITCH16(prefix, 9, state)  \
+    OPCODE_SWITCH16(prefix, A, state)  \
+    OPCODE_SWITCH16(prefix, B, state)  \
+    OPCODE_SWITCH16(prefix, C, state)  \
+    OPCODE_SWITCH16(prefix, D, state)  \
+    OPCODE_SWITCH16(prefix, E, state)  \
+    OPCODE_SWITCH16(prefix, F, state)  \
   }
 
 Z80Cpu::Z80Cpu(Machine *machine, const std::string &name, ClockDivider divider,
@@ -859,16 +859,14 @@ void Z80Cpu::execute(void) {
       m_state->Op = &opcodes[m_state->latch_op];
     }
     m_state->icycles = m_state->Op->cycles;
-#if 0
-    if (m_state->prefix == Z80Prefix::EDPrefix) {
-      OPCODE_SWITCH_BLOCK(0xED, m_state);
-    } else if (m_state->prefix == Z80Prefix::CBPrefix) {
+#if 1
+    if (m_state->prefix == Z80Prefix::CBPrefix) {
       OPCODE_SWITCH_BLOCK(0xCB, m_state);
-    } else {
+    } else if (m_state->prefix == Z80Prefix::NoPrefix) {
       OPCODE_SWITCH_BLOCK(0x, m_state);
     } else
 #endif
-    m_state->Op->func(m_state);
+      m_state->Op->func(m_state);
     DEVICE_TRACE(Log(m_state));
     add_icycles(m_state->icycles);
   }
