@@ -154,6 +154,7 @@ byte_t Galaga::dips_read(offset_t offset) {
 }
 
 void Galaga::latch_write(offset_t offset, byte_t value) {
+  offset &= 0x7;
   switch (offset) {
     case 0:
       m_main_irq = bit_isset(value, 0);
