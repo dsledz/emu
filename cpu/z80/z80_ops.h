@@ -10,6 +10,8 @@
 namespace Z80 {
 
 static inline int __attribute__((__used__)) CALC_PARITY(reg8_t reg);
+static inline int __attribute__((__used__)) CALC_OVERFLOW(reg8_t arg1, reg8_t arg2, reg8_t result);
+
 OP(PUSH, byte_t high, byte_t low);
 OP(POP, byte_t &high, byte_t &low);
 OP(RL, byte_t &dest, byte_t value);
@@ -30,7 +32,7 @@ OP(ADC, byte_t &dest, byte_t arg) {
   state->AF.b.f.Y = bit_isset(result, 5);
   state->AF.b.f.H = bit_isset(dest ^ arg ^ result, 4);
   state->AF.b.f.X = bit_isset(result, 3);
-  state->AF.b.f.V = bit_isset((dest ^ arg ^ 0x80) & (arg ^ result), 7);
+  state->AF.b.f.V = CALC_OVERFLOW(dest, arg, result);
   state->AF.b.f.N = 0;
   state->AF.b.f.C = bit_isset(result, 8);
 
@@ -60,7 +62,7 @@ OP(ADD, byte_t &dest, byte_t arg) {
   state->AF.b.f.Y = bit_isset(result, 5);
   state->AF.b.f.H = bit_isset(dest ^ arg ^ result, 4);
   state->AF.b.f.X = bit_isset(result, 3);
-  state->AF.b.f.V = bit_isset(dest ^ arg ^ result, 7);
+  state->AF.b.f.V = CALC_OVERFLOW(dest, arg, result);
   state->AF.b.f.N = 0;
   state->AF.b.f.C = bit_isset(result, 8);
 
@@ -149,6 +151,11 @@ static inline int __attribute__((__used__)) CALC_PARITY(reg8_t reg) {
   return ((0x6996 >> ((reg ^ (reg >> 4)) & 0xf)) & 1) == 0;
 }
 
+static inline int __attribute__((__used__))
+CALC_OVERFLOW(reg8_t arg1, reg8_t arg2, reg8_t result) {
+  return bit_isset((arg1 ^ arg2) & (arg1 ^ result), 7);
+}
+
 OP(CALL, bool jump, uint16_t addr) {
   if (jump) {
     PUSH(state, state->PC.b.h, state->PC.b.l);
@@ -165,7 +172,7 @@ OP(CP, byte_t dest, byte_t arg) {
   state->AF.b.f.Y = bit_isset(arg, 5);
   state->AF.b.f.H = bit_isset(arg ^ dest ^ result, 4);
   state->AF.b.f.X = bit_isset(arg, 3);
-  state->AF.b.f.V = bit_isset((result ^ dest) & (dest ^ arg), 7);
+  state->AF.b.f.V = CALC_OVERFLOW(dest, arg, result);
   state->AF.b.f.N = true;
   state->AF.b.f.C = bit_isset(dest ^ arg ^ result, 8);
 }
@@ -893,7 +900,7 @@ OP(SBC, byte_t &dest, byte_t arg) {
   state->AF.b.f.Y = bit_isset(result, 5);
   state->AF.b.f.H = bit_isset(dest ^ arg ^ result, 4);
   state->AF.b.f.X = bit_isset(result, 3);
-  state->AF.b.f.V = bit_isset((result ^ dest) & (dest ^ arg), 7);
+  state->AF.b.f.V = CALC_OVERFLOW(dest, arg, result);
   state->AF.b.f.C = bit_isset(dest ^ arg ^ result, 8);
 
   dest = result;
@@ -932,7 +939,7 @@ OP(SUB, byte_t &dest, byte_t arg) {
   state->AF.b.f.Y = bit_isset(result, 5);
   state->AF.b.f.H = bit_isset(dest ^ arg ^ result, 4);
   state->AF.b.f.X = bit_isset(result, 3);
-  state->AF.b.f.V = bit_isset((result ^ dest) & (dest ^ arg), 7);
+  state->AF.b.f.V = CALC_OVERFLOW(dest, arg, result);
   state->AF.b.f.C = bit_isset(dest ^ arg ^ result, 8);
 
   dest = (byte_t)result;
