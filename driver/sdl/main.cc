@@ -90,7 +90,10 @@ class SDLEmulator : public Emulator {
     while (SDL_PollEvent(&event)) on_event(&event);
   }
 
-  virtual ~SDLEmulator() { m_task.get(); }
+  virtual ~SDLEmulator() {
+    if (m_task.valid())
+      m_task.get();
+  }
 
   virtual void start(void) {
     machine()->load_rom(options()->rom);
