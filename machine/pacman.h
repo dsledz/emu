@@ -44,6 +44,7 @@ class PacmanGfx : public ScreenDevice {
   RamDevice &vram() { return m_vram; }
   RamDevice &cram() { return m_cram; }
   byte_t spr_read(offset_t offset) {
+    offset &= 0x0F;
     if (offset & 0x01) {
       return m_spr[offset >> 1].color;
     } else {
@@ -51,6 +52,7 @@ class PacmanGfx : public ScreenDevice {
     }
   }
   void spr_write(offset_t offset, byte_t value) {
+    offset &= 0x0F;
     if (offset & 0x01) {
       m_spr[offset >> 1].color = value;
     } else {
@@ -58,6 +60,7 @@ class PacmanGfx : public ScreenDevice {
     }
   }
   byte_t spr_coord_read(offset_t offset) {
+    offset &= 0x0F;
     if (offset & 0x01) {
       return m_spr[offset >> 1].x;
     } else {
@@ -65,6 +68,7 @@ class PacmanGfx : public ScreenDevice {
     }
   }
   void spr_coord_write(offset_t offset, byte_t value) {
+    offset &= 0x0F;
     if (offset & 0x01) {
       m_spr[offset >> 1].x = value;
     } else {
