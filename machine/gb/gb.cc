@@ -218,6 +218,7 @@ Gameboy::~Gameboy(void) {}
 void
 Gameboy::load_rom(const std::string &rom) {
   m_mbc->load_rom(rom);
+  m_mbc->reset();
 }
 
 MachineInformation gb_info{

@@ -41,6 +41,7 @@ GBGraphics::GBGraphics(Gameboy *gameboy, ClockDivider divider)
 
   m_bus->add(0x8000, m_vram.direct(0), 0x2000,
              [&](offset_t offset, byte_t value) {
+               offset &= 0x1fff;
                if (offset < 0x1800) {
                  auto *o = &m_objs[offset / 16];
                  o->dirty = true;
