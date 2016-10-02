@@ -33,9 +33,12 @@ RamDevice::RamDevice(Machine *machine, const std::string &name, size_t size)
 RamDevice::~RamDevice(void) {}
 
 void RamDevice::write8(offset_t offset, uint8_t value) {
+  offset %= m_ram.size();
   m_ram[offset] = value;
 }
 
-uint8_t RamDevice::read8(offset_t offset) { return m_ram[offset]; }
+uint8_t RamDevice::read8(offset_t offset) {
+  offset %= m_ram.size();
+  return m_ram[offset]; }
 
 uint8_t *RamDevice::direct(offset_t offset) { return &m_ram[offset]; }
