@@ -58,12 +58,10 @@ struct M6502State {
     X = 0;
     Y = 0;
     SR = 0;
-    ZPG = 0;
     PC = 0;
     NativeFlags = 0;
     EA = 0;
     ARG = 0;
-    clock_divider = 1;
   }
 
   reg8_t A;
@@ -83,7 +81,8 @@ struct M6502State {
       byte_t N : 1;
     } F;
   };
-  byte_t ZPG;
+  const byte_t ZPG = 0;
+  const byte_t clock_divider = 1;
   reg16_t PC;
 
   reg16_t NativeFlags;
@@ -91,8 +90,6 @@ struct M6502State {
   reg16_t EA; /* %r8 */
   reg8_t ARG; /* %rdx */
 
-  byte_t mmu_map[8];
-  int clock_divider;
   AddressBus16x8 *bus;
   uint8_t icycles;
 }

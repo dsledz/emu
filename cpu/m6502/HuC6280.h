@@ -62,7 +62,6 @@ struct HuC6280State {
     X = 0;
     Y = 0;
     SR = 0;
-    ZPG = 0x20;
     PC = 0;
     NativeFlags = 0;
     EA = 0;
@@ -87,7 +86,7 @@ struct HuC6280State {
       byte_t N : 1;
     } F;
   };
-  byte_t ZPG;
+  const byte_t ZPG = 0x20;
   reg16_t PC;
 
   reg16_t NativeFlags;

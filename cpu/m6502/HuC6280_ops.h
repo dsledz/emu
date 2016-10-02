@@ -55,6 +55,7 @@ OP(TDD) {
   state->A = pop(state);
   state->Y = pop(state);
 }
+
 OP(TII) {
   reg16_t src, dest, len;
   op_tstart(state, &src, &dest, &len);
@@ -65,12 +66,14 @@ OP(TII) {
     dest.d += 1;
     src.d += 1;
     len.d -= 1;
+    state->icycles += 6;
   } while (len.d != 0);
 
   state->X = pop(state);
   state->A = pop(state);
   state->Y = pop(state);
 }
+
 OP(TIN) {
   reg16_t src, dest, len;
   op_tstart(state, &src, &dest, &len);
@@ -80,12 +83,14 @@ OP(TIN) {
     state->bus_write(dest.d, value);
     src.d += 1;
     len.d -= 1;
+    state->icycles += 6;
   } while (len.d != 0);
 
   state->X = pop(state);
   state->A = pop(state);
   state->Y = pop(state);
 }
+
 OP(TAI) {
   reg16_t src, dest, len;
   op_tstart(state, &src, &dest, &len);
@@ -97,12 +102,14 @@ OP(TAI) {
     dest.d += 1;
     len.d -= 1;
     b ^= 1;
+    state->icycles += 6;
   } while (len.d != 0);
 
   state->X = pop(state);
   state->A = pop(state);
   state->Y = pop(state);
 }
+
 OP(TIA) {
   reg16_t src, dest, len;
   op_tstart(state, &src, &dest, &len);
@@ -114,6 +121,7 @@ OP(TIA) {
     src.d += 1;
     len.d -= 1;
     b ^= 1;
+    state->icycles += 6;
   } while (len.d != 0);
 
   state->X = pop(state);

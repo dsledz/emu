@@ -112,9 +112,9 @@ ADDR(Immediate) {
   state->PC.d++;
 }
 ADDR(Relative) {
-  char tmp = pc_read(state);
+  state->ARG = pc_read(state);
   state->EA = state->PC;
-  state->EA.d += tmp;
+  state->EA.d += (char)state->ARG;
 }
 
 OP(ADC) {

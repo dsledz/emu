@@ -210,7 +210,6 @@ M6502Cpu::M6502Cpu(Machine *machine, const std::string &name,
   add_debug_var("X", m_state.X);
   add_debug_var("Y", m_state.Y);
   add_debug_var("SR", m_state.SR);
-  add_debug_var("ZPG", m_state.ZPG);
   add_debug_var("PC", m_state.PC);
   add_debug_var("EA", m_state.EA);
   add_debug_var("ARG", m_state.ARG);
