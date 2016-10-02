@@ -72,7 +72,7 @@ byte_t VDC::data_read(offset_t offset) {
   byte_t result = 0;
   switch (m_reg_idx) {
     case VxR: {
-      result = get_byte(m_vram.at(m_reg[MARR].d % 0x7FFF), b);
+      result = get_byte(m_vram[m_reg[MARR].d & 0x7FFF], b);
       int inc = vram_inc[(m_reg[CR].d & 0x0C00) >> 11];
       if (b == 1) m_reg[MARR].d += inc;
       break;
@@ -89,13 +89,13 @@ void VDC::data_write(offset_t offset, byte_t value) {
   const int b = offset & 0x01;
   /* XXX: Is this correct? */
   set_byte(m_reg[m_reg_idx], b, value);
+  DEVICE_DEBUG("WRITE: ", Hex(m_reg_idx), ": ", Hex(m_reg[m_reg_idx].d));
 
   switch (m_reg_idx) {
     default:
-      DEVICE_TRACE("read: ", Hex(m_reg_idx), ": ", Hex(m_reg[m_reg_idx].d));
       break;
     case VxR: {
-      set_byte(m_vram.at(m_reg[MAWR].d & 0x7FFF), b, value);
+      set_byte(m_vram[m_reg[MAWR].d & 0x7FFF], b, value);
       if (b == 1) m_reg[MAWR].d += vram_inc[(m_reg[CR].d & 0x0C00) >> 11];
       break;
     }
@@ -156,17 +156,13 @@ void VDC::bg_cache(void) {
   const int width = bg_width[(m_reg[MWR].d >> 4) & 0x3];
   assert(m_bghtile < width);
   m_bgaddr = m_bgvtile * width + m_bghtile;
-  uint16_t bat = m_vram.at(m_bgaddr).d;
-#if 0
-    IF_LOG(Debug) {
-        LOG_DEBUG("BGTile: ", Hex(m_bgvtile), " : ", Hex(m_bghtile),
-                  " ", Hex(m_bgaddr), " : ", Hex(bat));
-    }
-#endif
+  uint16_t bat = m_vram[m_bgaddr].d;
   uint16_t address = ((bat & 0x0FFF) << 4) + m_bgvidx;
 
-  m_bgp0 = m_vram.at(address & 0x7FFF);
-  m_bgp1 = m_vram.at((address + 8) & 0x7FFF);
+  //DEVICE_TRACE("BGTile: ", Hex(m_bgvtile), " : ", Hex(m_bghtile),
+  //             " ", Hex(m_bgaddr), " : ", Hex(bat));
+  m_bgp0 = m_vram[address & 0x7FFF];
+  m_bgp1 = m_vram[(address + 8) & 0x7FFF];
   m_bgpal = (bat & 0xF000) >> 12;
 }
 
@@ -273,7 +269,7 @@ void VDC::sprite_cache(void) {
   /* 64 sprites? */
   int sy = m_vpos - VBEND;
   for (int i = 0; i < 64; i++) {
-    Sprite sprite(&m_sat.at(i * 4));
+    Sprite sprite(&m_sat[i * 4]);
     if (sprite.matchy(sy)) {
       m_sprites.push_back(sprite);
     }
@@ -336,8 +332,11 @@ void VDC::vce_write(offset_t offset, byte_t value) {
                    ((m_pal_bytes[m_pal_idx.d].d & 0x1C0) >> 6) * 32,
                    ((m_pal_bytes[m_pal_idx.d].d & 0x007) >> 0) * 32);
       m_pal_idx.d++;
+      DEVICE_DEBUG("Palette write: ", Hex(m_pal_idx), ": ",
+                   Hex(m_palette[m_pal_idx.d].v));
       break;
     default:
+      abort();
       break;
   }
 }
