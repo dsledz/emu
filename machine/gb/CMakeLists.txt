@@ -1,8 +1,7 @@
 add_library(gb
     gb.cc
     gbgfx.cc
-    gbmbc.cc
-    lr35902.cc)
+    gbmbc.cc)
 
 target_link_libraries(gb
     emu
@@ -10,8 +9,7 @@ target_link_libraries(gb
 
 if (BUILD_TESTING)
     add_executable(gb-check
-        gb_test.cc
-        lr35902_test.cc)
+        gb_test.cc)
     target_link_libraries(gb-check
         machine
         gtest gtest_main)

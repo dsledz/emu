@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Dan Sledz
+ * Copyright (c) 2016, Dan Sledz
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,62 +24,35 @@
  */
 #pragma once
 
+#include "core/bits.h"
+#include "cpu/lib/cpu2.h"
+#include "cpu/z80/z80.h"
+#include "cpu/z80/lr35902_state.h"
 #include "emu/emu.h"
 
-#include "cpu/z80/lr35902.h"
-
+using namespace Core;
 using namespace EMU;
+using namespace CPU2;
+using namespace Z80;
 using namespace LR35902;
 
-namespace GBMachine {
+namespace LR35902 {
 
-class GBGraphics;
-class GBMBC;
-
-enum GBInterrupt {
-  VBlank = 0,
-  LCDStat = 1,
-  Timeout = 2,
-  Serial = 3,
-  Joypad = 4,
-};
-
-/* XXX: Should we split this up more? */
-enum GBReg {
-  KEYS = 0xFF00,
-  SB = 0xFF01,
-  SC = 0xFF02,
-  DIV = 0xFF04,
-  TIMA = 0xFF05,
-  TMA = 0xFF06,
-  TAC = 0xFF07,
-  IF = 0xFF0F,
-  DMA = 0xFF46,
-  DMG_RESET = 0xFF50,
-  IE = 0xFFFF,
-};
-
-class Gameboy : public Machine {
+class LR35902Cpu : public Cpu<LR35902Bus, LR35902State, LR35902Opcode> {
  public:
-  Gameboy(void);
-  virtual ~Gameboy(void);
+  LR35902Cpu(Machine *machine, const std::string &name, ClockDivider divider,
+         state_type *state);
+  ~LR35902Cpu();
+  LR35902Cpu(const LR35902Cpu &rhs) = delete;
 
-  AddressBus16x8 *bus(void) { return m_bus.get(); }
-
-  virtual void load_rom(const std::string &rom);
+  virtual void execute(void);
+  virtual void line(Line line, LineState state);
 
  private:
-  AddressBus16x8_ptr m_bus;
+  void interrupt(addr_t addr);
 
-  LR35902Cpu_ptr m_cpu;
-  LR35902State m_cpu_state;
-  std::unique_ptr<GBGraphics> m_gfx;
-  std::unique_ptr<RamDevice> m_ram;
-  std::unique_ptr<GBMBC> m_mbc;
-  std::unique_ptr<RamDevice> m_hiram;
-
-  Device_ptr m_timer;
-  Device_ptr m_serial;
-  Device_ptr m_joypad;
+  std::string Log(LR35902State *state);
 };
+
+typedef std::unique_ptr<LR35902Cpu> LR35902Cpu_ptr;
 };

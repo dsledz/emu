@@ -181,13 +181,15 @@ class GBTimer : public ClockedDevice {
   byte_t m_tac;
 };
 
-Gameboy::Gameboy(void) : Machine(Hertz(4194304)) {
+Gameboy::Gameboy(void) : Machine(Hertz(4194304)),
+    m_cpu_state() {
   add_screen(160, 144);
 
   m_bus = AddressBus16x8_ptr(new AddressBus16x8());
 
+  m_cpu_state.bus = m_bus.get();
   m_cpu = std::unique_ptr<LR35902Cpu>(
-      new LR35902Cpu(this, "cpu", ClockDivider(1), m_bus.get()));
+      new LR35902Cpu(this, "cpu", ClockDivider(1), &m_cpu_state));
 
   m_timer = Device_ptr(new GBTimer(this, ClockDivider(1)));
   m_serial = Device_ptr(new GBSerialIO(this));

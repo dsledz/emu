@@ -1,5 +1,6 @@
 
 add_library(z80
+    lr35902.cc
     z80.cc)
 
 target_link_libraries(z80
