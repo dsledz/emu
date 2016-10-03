@@ -71,10 +71,9 @@ void Namco06::execute(void) {
       reset();
       m_reset_line = LineState::Clear;
     }
-    add_icycles(Cycles(20));
+    add_icycles(Cycles(1024));
     if ((m_control & 0x0F) != 0) {
       machine()->set_line(m_parent, Line::NMI, LineState::Pulse);
-      yield();
     }
   }
 }

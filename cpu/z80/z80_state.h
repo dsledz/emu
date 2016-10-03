@@ -129,7 +129,7 @@ struct Z80State {
   LineState wait_line;
 
   void reset(void) {
-    AF.d = BC.d = DE.d = HL.d = SP.d = IX.d = IY.d = 0;
+    AF.d = BC.d = DE.d = HL.d = SP.d = IX.d = IY.d = PC.d = 0;
     AF2.d = BC2.d = DE2.d = HL2.d = 0;
   }
 
