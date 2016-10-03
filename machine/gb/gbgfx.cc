@@ -189,6 +189,8 @@ void GBGraphics::draw_scanline(int y) {
 
 void GBGraphics::execute(void) {
   unsigned delta = 64;
+
+  while (true) {
   add_icycles(Cycles(delta));
   m_fcycles += delta;
 
@@ -250,5 +252,6 @@ void GBGraphics::execute(void) {
                               LineState::Pulse);
       }
       break;
+  }
   }
 }

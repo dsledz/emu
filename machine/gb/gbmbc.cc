@@ -46,8 +46,13 @@ GBMBC::GBMBC(Gameboy *gameboy)
 GBMBC::~GBMBC(void) {}
 
 void GBMBC::rom_bank(offset_t offset, byte_t value) {
-  if (offset < 0x2000)
+  if (offset < 0x2000) {
+    if (value & 0x0A)
+      m_bus->add(0xA000, &m_ram[m_ram_bank * 0x2000], 0x2000, false);
+    else
+      m_bus->remove(0xA000, 0xBFFF);
     return;
+  }
   if (m_type == MBC3RRB)
     m_rom_bank = value & 0x7f;
   else
@@ -179,5 +184,4 @@ void GBMBC::reset(void) {
   m_bus->add(0x0000, &m_rom[0], 0x4000, PAGE_FAULT_CB(GBMBC::rom_bank, this));
   m_bus->add(0x4000, &m_rom[m_rom_bank * 0x4000], 0x4000,
              PAGE_FAULT_CB(GBMBC::ram_bank, this));
-  m_bus->add(0xA000, &m_ram[m_ram_bank * 0x2000], 0x2000, false);
 }

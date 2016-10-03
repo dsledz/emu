@@ -29,6 +29,21 @@
 
 using namespace LR35902;
 
+OP(SWAP, byte_t &dest) {
+  dest = (dest >> 4) | (dest << 4);
+
+  state->AF.b.f.Z = (dest & 0xff) == 0;
+  state->AF.b.f.H = 0;
+  state->AF.b.f.N = 1;
+  state->AF.b.f.C = 0;
+}
+
+OP(SWAP_HL) {
+  byte_t value = bus_read(state, state->HL.d);
+  SWAP(state, value);
+  bus_write(state, state->HL.d, value);
+}
+
 #define OPCODE(opnum, cycles, bytes, name, code)     \
   template <typename CpuState>                       \
   static inline void func_##opnum(CpuState *state);  \
@@ -52,7 +67,7 @@ OPCODE(0x04, 4, 1, "INC B", INC(state, state->BC.b.h));
 OPCODE(0x05, 4, 1, "DEC B", DEC(state, state->BC.b.h));
 OPCODE(0x06, 8, 2, "LD B, d8", LD(state, state->BC.b.h, D8(state)));
 OPCODE(0x07, 4, 1, "RLCA", RLCA(state));
-OPCODE(0x08, 20, 3, "LD (a16), SP", {
+OPCODE(0x08, 20, 3, "LD (d16), SP", {
   state->WZ.d = D16(state);
   state->WZ.d++;
   LD16I(state, state->d16.d, state->SP.d);
@@ -282,7 +297,7 @@ OPCODE(0xDC, 10, 3, "CALL C, d16", CALL(state, state->AF.b.f.C, D16(state)));
 OPCODE(0xDD, 4, 1, "INVALID", abort());
 OPCODE(0xDE, 8, 2, "SBC A, d8", SBC(state, state->AF.b.h, D8(state)));
 OPCODE(0xDF, 11, 1, "RST 18H", RST(state, 0x18));
-OPCODE(0xE0, 12, 2, "LD (a8), A",
+OPCODE(0xE0, 12, 2, "LD (d8), A",
        LDMEM(state, pc_read(state) | 0xff00, state->AF.b.h));
 OPCODE(0xE1, 10, 1, "POP HL", POP(state, state->vHL->b.h, state->vHL->b.l));
 OPCODE(0xE2, 8, 2, "LD (C), A", LDMEM(state, state->BC.b.l | 0xff, state->AF.b.h));
@@ -293,13 +308,13 @@ OPCODE(0xE6, 8, 2, "AND d8", AND(state, state->AF.b.h, D8(state)));
 OPCODE(0xE7, 16, 1, "RST 20H", RST(state, 0x20));
 OPCODE(0xE8, 16, 2, "ADD SP, r8", ADD16rel(state, state->SP, D8(state)));
 OPCODE(0xE9, 4, 1, "JP HL", JP(state, true, state->vHL->d));
-OPCODE(0xEA, 16, 3, "LD (a16), A", LDMEM(state, D16(state), state->AF.b.h));
+OPCODE(0xEA, 16, 3, "LD (d16), A", LDMEM(state, D16(state), state->AF.b.h));
 OPCODE(0xEB, 4, 1, "INVALID", abort());
 OPCODE(0xEC, 4, 1, "INVALID", abort());
 OPCODE(0xED, 4, 1, "INVALID", abort());
 OPCODE(0xEE, 8, 1, "XOR d8", XOR(state, state->AF.b.h, D8(state)));
 OPCODE(0xEF, 11, 1, "RST 28H", RST(state, 0x28));
-OPCODE(0xF0, 12, 2, "LD A, (a8)",
+OPCODE(0xF0, 12, 2, "LD A, (d8)",
        LD(state, state->AF.b.h, I8(state, pc_read(state) | 0xff00)));
 OPCODE(0xF1, 10, 1, "POP AF", POP(state, state->AF.b.h, state->AF.b.l));
 OPCODE(0xF2, 8, 2, "LD A, (C)",
@@ -311,7 +326,7 @@ OPCODE(0xF6, 8, 2, "OR d8", OR(state, state->AF.b.h, D8(state)));
 OPCODE(0xF7, 11, 1, "RST 30H", RST(state, 0x30));
 OPCODE(0xF8, 12, 2, "LD HL,SP+r8", LD16(state, *state->vHL, state->SP.d + D8(state)));
 OPCODE(0xF9, 6, 1, "LD SP,HL", LD16(state, state->SP, state->vHL->d));
-OPCODE(0xFA, 16, 3, "LD A, (a16)",
+OPCODE(0xFA, 16, 3, "LD A, (d16)",
        LD(state, state->AF.b.h, I8(state, D16(state))));
 OPCODE(0xFB, 4, 1, "EI", EI(state));
 OPCODE(0xFC, 4, 1, "INVALID", abort());
@@ -367,14 +382,14 @@ OPCODE(0xCB2C, 8, 2, "SRA H", SRA(state, state->HL.b.h, state->HL.b.h));
 OPCODE(0xCB2D, 8, 2, "SRA L", SRA(state, state->HL.b.l, state->HL.b.l));
 OPCODE(0xCB2E, 15, 2, "SRA (HL)", SRA_HL(state));
 OPCODE(0xCB2F, 8, 2, "SRA A", SRA(state, state->AF.b.h, state->AF.b.h));
-OPCODE(0xCB30, 8, 2, "SLL B", SLL(state, state->BC.b.h, state->BC.b.h));
-OPCODE(0xCB31, 8, 2, "SLL C", SLL(state, state->BC.b.l, state->BC.b.l));
-OPCODE(0xCB32, 8, 2, "SLL D", SLL(state, state->DE.b.h, state->DE.b.h));
-OPCODE(0xCB33, 8, 2, "SLL E", SLL(state, state->DE.b.l, state->DE.b.l));
-OPCODE(0xCB34, 8, 2, "SLL H", SLL(state, state->HL.b.h, state->HL.b.h));
-OPCODE(0xCB35, 8, 2, "SLL L", SLL(state, state->HL.b.l, state->HL.b.l));
-OPCODE(0xCB36, 15, 2, "SLL (HL)", SLL_HL(state));
-OPCODE(0xCB37, 8, 2, "SLL A", SLL(state, state->AF.b.h, state->AF.b.h));
+OPCODE(0xCB30, 8, 2, "SWAP B", SWAP(state, state->BC.b.h));
+OPCODE(0xCB31, 8, 2, "SWAP C", SWAP(state, state->BC.b.l));
+OPCODE(0xCB32, 8, 2, "SWAP D", SWAP(state, state->DE.b.h));
+OPCODE(0xCB33, 8, 2, "SWAP E", SWAP(state, state->DE.b.l));
+OPCODE(0xCB34, 8, 2, "SWAP H", SWAP(state, state->HL.b.h));
+OPCODE(0xCB35, 8, 2, "SWAP L", SWAP(state, state->HL.b.l));
+OPCODE(0xCB36, 15, 2, "SWAP (HL)", SWAP_HL(state));
+OPCODE(0xCB37, 8, 2, "SWAP A", SWAP(state, state->AF.b.h));
 OPCODE(0xCB38, 8, 2, "SRL B", SRL(state, state->BC.b.h, state->BC.b.h));
 OPCODE(0xCB39, 8, 2, "SRL C", SRL(state, state->BC.b.l, state->BC.b.l));
 OPCODE(0xCB3A, 8, 2, "SRL D", SRL(state, state->DE.b.h, state->DE.b.h));
@@ -647,6 +662,7 @@ void LR35902Cpu::execute(void) {
       if (bit_isset(m_state->IF, i)) {
         if (!bit_isset(iflags, i)) continue;
         interrupt(InterruptVector[i]);
+        bit_set(m_state->IF, i, false);
         m_state->halt = false;
         break;
       }
