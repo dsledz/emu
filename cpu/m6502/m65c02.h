@@ -31,13 +31,27 @@ namespace M6502 {
 
 struct M65c02State : public M6502State {};
 
-class M65c02Cpu : public M6502Cpu {
+class M65c02Cpu
+    : public Cpu<AddressBus16x8, M6502Traits, M65c02State> {
  public:
   M65c02Cpu(Machine *machine, const std::string &name, ClockDivider divider,
             bus_type *bus);
   ~M65c02Cpu(void);
   M65c02Cpu(const M65c02Cpu &cpu) = delete;
 
-  M6502State *get_state(void) { return &m_state; }
+  virtual void reset(void);
+  virtual void line(Line line, LineState state);
+  virtual void execute(void);
+
+  M65c02State *get_state(void) { return &m_state; }
+
+  virtual void log_op(M65c02State *state, const Opcode *op, uint16_t pc,
+                      const uint8_t *instr);
+ private:
+  virtual bool Interrupt(void);
+
+  LineState m_nmi_line;
+  LineState m_irq_line;
+  LineState m_reset_line;
 };
 };
