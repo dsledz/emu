@@ -69,5 +69,6 @@ class GBMBC : public Device {
   unsigned m_ram_bank;
   unsigned m_ram_size;
   bvec m_ram;
+  bvec m_dmg;
 };
 };

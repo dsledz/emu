@@ -297,10 +297,10 @@ OPCODE(0xDC, 10, 3, "CALL C, d16", CALL(state, state->AF.b.f.C, D16(state)));
 OPCODE(0xDD, 4, 1, "INVALID", abort());
 OPCODE(0xDE, 8, 2, "SBC A, d8", SBC(state, state->AF.b.h, D8(state)));
 OPCODE(0xDF, 11, 1, "RST 18H", RST(state, 0x18));
-OPCODE(0xE0, 12, 2, "LD (d8), A",
-       LDMEM(state, pc_read(state) | 0xff00, state->AF.b.h));
+OPCODE(0xE0, 12, 2, "LD (ff+d8), A",
+       LDMEM(state, D8(state) | 0xff00, state->AF.b.h));
 OPCODE(0xE1, 10, 1, "POP HL", POP(state, state->vHL->b.h, state->vHL->b.l));
-OPCODE(0xE2, 8, 2, "LD (C), A", LDMEM(state, state->BC.b.l | 0xff, state->AF.b.h));
+OPCODE(0xE2, 8, 2, "LD (ff+C), A", LDMEM(state, state->BC.b.l | 0xff, state->AF.b.h));
 OPCODE(0xE3, 4, 1, "INVALID", abort());
 OPCODE(0xE4, 4, 1, "INVALID", abort());
 OPCODE(0xE5, 16, 1, "PUSH HL", PUSH(state, state->vHL->b.h, state->vHL->b.l));
@@ -314,10 +314,10 @@ OPCODE(0xEC, 4, 1, "INVALID", abort());
 OPCODE(0xED, 4, 1, "INVALID", abort());
 OPCODE(0xEE, 8, 1, "XOR d8", XOR(state, state->AF.b.h, D8(state)));
 OPCODE(0xEF, 11, 1, "RST 28H", RST(state, 0x28));
-OPCODE(0xF0, 12, 2, "LD A, (d8)",
-       LD(state, state->AF.b.h, I8(state, pc_read(state) | 0xff00)));
+OPCODE(0xF0, 12, 2, "LD A, (ff+d8)",
+       LD(state, state->AF.b.h, I8(state, D8(state) | 0xff00)));
 OPCODE(0xF1, 10, 1, "POP AF", POP(state, state->AF.b.h, state->AF.b.l));
-OPCODE(0xF2, 8, 2, "LD A, (C)",
+OPCODE(0xF2, 8, 2, "LD A, (ff+C)",
        LD(state, state->AF.b.h, I8(state, state->BC.b.l | 0xff00)));
 OPCODE(0xF3, 4, 1, "DI", DI(state));
 OPCODE(0xF4, 4, 1, "INVALID", abort());
@@ -657,8 +657,14 @@ addr_t InterruptVector[] = {
 
 void LR35902Cpu::execute(void) {
   while (true) {
+    if (m_state->reset_line == LineState::Pulse) {
+      DEVICE_INFO("Reset");
+      reset();
+      m_state->reset_line = LineState::Clear;
+      m_state->halt = false;
+    }
     byte_t iflags = bus_read(m_state, 0xFFFF);
-    for (unsigned i = 0; i < 5; i++) {
+    for (unsigned i = 0; m_state->iff1 && i < 5; i++) {
       if (bit_isset(m_state->IF, i)) {
         if (!bit_isset(iflags, i)) continue;
         interrupt(InterruptVector[i]);
@@ -736,6 +742,8 @@ std::string LR35902Cpu::Log(LR35902State *state) {
       op << "(" << Hex(state->d16) << ")";
     else if (it == "(d8)")
       op << "(" << Hex(state->d8) << ")";
+    else if (it == "(ff+d8)")
+      op << "(ff+" << Hex(state->d8) << ")";
     else if (it == "d8" || it == "r8")
       op << Hex(state->d8);
     else

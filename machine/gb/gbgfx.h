@@ -29,15 +29,15 @@
 namespace GBMachine {
 
 // 201 - 207
-#define H_BLANK_CYCLES 201
+#define H_BLANK_CYCLES Cycles(201)
 // 77 - 83
-#define OAM_CYCLES 77
+#define OAM_CYCLES Cycles(77)
 // 169 - 175
-#define ACTIVE_CYCLES 169
+#define ACTIVE_CYCLES Cycles(169)
 // 4560
-#define V_BLANK_CYCLES 4560
+#define V_BLANK_CYCLES Cycles(4560)
 
-#define SCANLINE_CYCLES 456
+#define SCANLINE_CYCLES Cycles(456)
 
 #define SCANLINES 156
 #define DISPLAY_LINES 144
@@ -149,7 +149,5 @@ class GBGraphics : public ClockedDevice {
 
   ColorPalette<4> m_global_pal, m_obj0_pal, m_obj1_pal, m_bg_pal;
   GfxObject<8, 8> m_objs[384];
-
-  unsigned m_fcycles;
 };
 };

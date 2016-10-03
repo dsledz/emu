@@ -118,7 +118,7 @@ struct LR35902State {
     DE.d = 0x00D8;
     HL.d = 0x014D;
     SP.d = 0xFFFE;
-    PC.d = 0x0100;
+    PC.d = 0x0000;
   }
 
   Cycles icycles;

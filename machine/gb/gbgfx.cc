@@ -34,10 +34,10 @@ GBGraphics::GBGraphics(Gameboy *gameboy, ClockDivider divider)
       m_lcdc(0) {
   m_bus = gameboy->bus();
 
-  m_global_pal[0] = RGBColor(0xff, 0xff, 0xff);
-  m_global_pal[1] = RGBColor(0xbb, 0xbb, 0xbb);
-  m_global_pal[2] = RGBColor(0x66, 0x66, 0x66);
-  m_global_pal[3] = RGBColor(0x00, 0x00, 0x00);
+  m_global_pal[3] = RGBColor(0xff, 0xff, 0xff);
+  m_global_pal[2] = RGBColor(0xbb, 0xbb, 0xbb);
+  m_global_pal[1] = RGBColor(0x66, 0x66, 0x66);
+  m_global_pal[0] = RGBColor(0x00, 0x00, 0x00);
 
   m_bus->add(0x8000, m_vram.direct(0), 0x2000,
              [&](offset_t offset, byte_t value) {
@@ -73,8 +73,8 @@ GBGraphics::GBGraphics(Gameboy *gameboy, ClockDivider divider)
   m_bus->add(VideoReg::WX, &m_wx);
 
   m_tilemap0 = [&](int idx) -> GfxObject<8, 8> * {
-    char c = m_vram.read8(VMem::TileMap0 + idx);
-    return get_obj(c + 256);
+    byte_t c = m_vram.read8(VMem::TileMap0 + idx);
+    return get_obj(c);
   };
   m_tilemap1 = [&](int idx) -> GfxObject<8, 8> * {
     char c = m_vram.read8(VMem::TileMap1 + idx);
@@ -188,17 +188,10 @@ void GBGraphics::draw_scanline(int y) {
 }
 
 void GBGraphics::execute(void) {
-  unsigned delta = 64;
-
   while (true) {
-  add_icycles(Cycles(delta));
-  m_fcycles += delta;
-
-  switch (m_stat & 0x03) {
-    case LCDMode::HBlankMode:
-      if (m_fcycles > H_BLANK_CYCLES) {
+    switch (m_stat & 0x03) {
+      case LCDMode::HBlankMode:
         // Transition to VBlank or OAM
-        m_fcycles -= H_BLANK_CYCLES;
 
         m_ly = (m_ly + 1) % SCANLINES;
         if (m_ly == DISPLAY_LINES) {
@@ -206,52 +199,59 @@ void GBGraphics::execute(void) {
           machine()->screen()->flip();
           machine()->set_line("cpu", make_irq_line(GBInterrupt::VBlank),
                               LineState::Pulse);
+          yield();
           m_stat = (m_stat & 0xfc) | LCDMode::VBlankMode;
-          if (bit_isset(m_stat, STATBits::Mode01Int))
+          if (bit_isset(m_stat, STATBits::Mode01Int)) {
             machine()->set_line("cpu", make_irq_line(GBInterrupt::LCDStat),
                                 LineState::Pulse);
+            yield();
+          }
         } else {
           if (m_ly == 0) machine()->screen()->clear();
           if (m_ly < DISPLAY_LINES) draw_scanline(m_ly);
           m_stat = (m_stat & 0xfc) | LCDMode::OAMMode;
-          if (bit_isset(m_stat, STATBits::Mode10Int))
+          if (bit_isset(m_stat, STATBits::Mode10Int)) {
             machine()->set_line("cpu", make_irq_line(GBInterrupt::LCDStat),
                                 LineState::Pulse);
+            yield();
+          }
         }
         // See if we need to trigger the lcd interrupt.
         if (bit_isset(m_stat, STATBits::LYCInterrupt) &&
-            !(bit_isset(m_stat, STATBits::Coincidence) ^ (m_lyc == m_ly)))
+            !(bit_isset(m_stat, STATBits::Coincidence) ^ (m_lyc == m_ly))) {
           machine()->set_line("cpu", make_irq_line(GBInterrupt::LCDStat),
                               LineState::Pulse);
-      }
-      break;
-    case LCDMode::OAMMode:
-      if (m_fcycles > OAM_CYCLES) {
+          yield();
+        }
+        add_icycles(H_BLANK_CYCLES);
+        break;
+      case LCDMode::OAMMode:
         // Transition to Active
-        m_fcycles -= OAM_CYCLES;
         m_stat = (m_stat & 0xfc) | LCDMode::ActiveMode;
-      }
-      break;
-    case LCDMode::ActiveMode:
-      if (m_fcycles > ACTIVE_CYCLES) {
+        add_icycles(OAM_CYCLES);
+        yield();
+        break;
+      case LCDMode::ActiveMode:
         // Transition to HBlank
-        m_fcycles -= ACTIVE_CYCLES;
         m_stat = (m_stat & 0xfc) | LCDMode::HBlankMode;
-        if (bit_isset(m_stat, STATBits::Mode00Int))
+        if (bit_isset(m_stat, STATBits::Mode00Int)) {
           machine()->set_line("cpu", make_irq_line(GBInterrupt::LCDStat),
                               LineState::Pulse);
-      }
-      break;
-    case LCDMode::VBlankMode:
-      if (m_fcycles > V_BLANK_CYCLES) {
+          yield();
+        }
+        add_icycles(ACTIVE_CYCLES);
+        break;
+      case LCDMode::VBlankMode:
         // Transition to OAM
-        m_fcycles -= V_BLANK_CYCLES;
+        for (int i = 0; i < 10; i++)
+          add_icycles(SCANLINE_CYCLES);
         m_stat = (m_stat & 0xfc) | LCDMode::OAMMode;
-        if (bit_isset(m_stat, STATBits::Mode10Int))
+        if (bit_isset(m_stat, STATBits::Mode10Int)) {
           machine()->set_line("cpu", make_irq_line(GBInterrupt::LCDStat),
                               LineState::Pulse);
-      }
-      break;
-  }
+          yield();
+        }
+        break;
+    }
   }
 }
