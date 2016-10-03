@@ -172,6 +172,14 @@ class IOBus {
     add(start, rom->direct(0), rom->size(), true);
   }
 
+  void remove(addr_type start, addr_type end) {
+    assert((start & (m_page_table.page_size - 1)) == 0);
+    for (page_type *p = m_page_table.page(start);
+         p != m_page_table.page(end) + 1; p++) {
+      p->set(nullptr);
+    }
+  }
+
  private:
   page_table_type m_page_table;
 };
