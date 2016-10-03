@@ -203,16 +203,19 @@ Gameboy::Gameboy(void) : Machine(Hertz(4194304)),
   m_bus->add(0xC000, m_ram.get());
   m_bus->add(0xE000, m_ram.get());
 
-#if 0
-    m_hiram = std::unique_ptr<RamDevice>(new RamDevice(this, "hiram", 0x80));
-    m_bus->add(0xFF80, 0xFFFF, m_hiram.get());
+  m_hiram = std::unique_ptr<RamDevice>(new RamDevice(this, "hiram", 0x80));
+  m_bus->add(
+      0xFF80, 0xFFFF,
+      [&](offset_t offset) -> byte_t { return m_hiram->read8(offset & 0x7f); },
+      [&](offset_t offset, byte_t value) {
+        m_hiram->write8(offset & 0x7f, value);
+      });
 
-    /* XXX: Some games need this. */
-    m_bus->add(0xFF7F, 0xFF7F);
+  /* XXX: Some games need this. */
+  m_bus->add(0xFF7F, 0xFF7F);
 
-    // XXX: Sound
-    m_bus->add(0xFF10, 0xFF3F);
-#endif
+  // XXX: Sound
+  m_bus->add(0xFF10, 0xFF3F);
 }
 
 Gameboy::~Gameboy(void) {}

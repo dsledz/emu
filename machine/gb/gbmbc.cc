@@ -52,7 +52,8 @@ GBMBC::~GBMBC(void) {}
 void GBMBC::rom_bank(offset_t offset, byte_t value) {
   if (offset < 0x2000) {
     if (value & 0x0A)
-      m_bus->add(0xA000, &m_ram[m_ram_bank * 0x2000], 0x2000, false);
+      m_bus->add(0xA000, &m_ram[m_ram_bank * 0x2000],
+                 m_ram_size > 0x2000 ? 0x2000 : m_ram_size, false);
     else
       m_bus->remove(0xA000, 0xBFFF);
     return;
