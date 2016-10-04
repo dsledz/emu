@@ -608,7 +608,6 @@ LR35902Cpu::LR35902Cpu(Machine *machine, const std::string &name,
                        ClockDivider divider, state_type *state)
     : Cpu(machine, name, divider, state) {
   state->bus->add(0xFF0F, &state->IF);
-  state->bus->add(0xFFFF, &state->IE);
 }
 
 LR35902Cpu::~LR35902Cpu(void) {}
@@ -664,8 +663,10 @@ void LR35902Cpu::execute(void) {
       m_state->reset_line = LineState::Clear;
       m_state->halt = false;
     }
+    byte_t iflags = bus_read(m_state, 0xFFFF);
     for (unsigned i = 0; m_state->iff1 && i < 5; i++) {
-      if (bit_isset(m_state->IF, i) && bit_isset(m_state->IE, i)) {
+      if (bit_isset(m_state->IF, i)) {
+        if (!bit_isset(iflags, i)) continue;
         interrupt(InterruptVector[i]);
         bit_set(m_state->IF, i, false);
         m_state->halt = false;
