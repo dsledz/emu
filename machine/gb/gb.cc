@@ -201,15 +201,22 @@ Gameboy::Gameboy(void) : Machine(Hertz(4194304)),
   m_ram = std::unique_ptr<RamDevice>(new RamDevice(this, "ram", 0x2000));
   /* XXX: Ram isn't mirrored */
   m_bus->add(0xC000, m_ram.get());
-  m_bus->add(0xE000, m_ram.get());
+  m_bus->add(
+      0xE000, 0xFDFF,
+      [&](offset_t offset) -> byte_t { return m_ram->read8(offset & 0x1DFF); },
+      [&](offset_t offset, byte_t val) {
+        m_ram->write8(offset & 0x1DFF, val);
+      });
 
   m_hiram = std::unique_ptr<RamDevice>(new RamDevice(this, "hiram", 0x80));
-  m_bus->add(
-      0xFF80, 0xFFFF,
-      [&](offset_t offset) -> byte_t { return m_hiram->read8(offset & 0x7f); },
-      [&](offset_t offset, byte_t value) {
-        m_hiram->write8(offset & 0x7f, value);
-      });
+
+  m_bus->add(0xFF80, 0xFFFE,
+             [&](offset_t offset) -> byte_t {
+               return m_hiram->read8(offset & 0x7f);
+             },
+             [&](offset_t offset, byte_t value) {
+               m_hiram->write8(offset & 0x7f, value);
+             });
 
   /* XXX: Some games need this. */
   m_bus->add(0xFF7F, 0xFF7F);

@@ -300,7 +300,7 @@ OPCODE(0xDF, 11, 1, "RST 18H", RST(state, 0x18));
 OPCODE(0xE0, 12, 2, "LD (ff+d8), A",
        LDMEM(state, D8(state) | 0xff00, state->AF.b.h));
 OPCODE(0xE1, 10, 1, "POP HL", POP(state, state->vHL->b.h, state->vHL->b.l));
-OPCODE(0xE2, 8, 2, "LD (ff+C), A", LDMEM(state, state->BC.b.l | 0xff, state->AF.b.h));
+OPCODE(0xE2, 8, 2, "LD (ff+C), A", LDMEM(state, state->BC.b.l | 0xff00, state->AF.b.h));
 OPCODE(0xE3, 4, 1, "INVALID", abort());
 OPCODE(0xE4, 4, 1, "INVALID", abort());
 OPCODE(0xE5, 16, 1, "PUSH HL", PUSH(state, state->vHL->b.h, state->vHL->b.l));
@@ -608,6 +608,7 @@ LR35902Cpu::LR35902Cpu(Machine *machine, const std::string &name,
                        ClockDivider divider, state_type *state)
     : Cpu(machine, name, divider, state) {
   state->bus->add(0xFF0F, &state->IF);
+  state->bus->add(0xFFFF, &state->IE);
 }
 
 LR35902Cpu::~LR35902Cpu(void) {}
@@ -744,6 +745,8 @@ std::string LR35902Cpu::Log(LR35902State *state) {
       op << "(" << Hex(state->d8) << ")";
     else if (it == "(ff+d8)")
       op << "(ff+" << Hex(state->d8) << ")";
+    else if (it == "(ff+C)")
+      op << "(ff+" << Hex(state->BC.b.l) << ")";
     else if (it == "d8" || it == "r8")
       op << Hex(state->d8);
     else

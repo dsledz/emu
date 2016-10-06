@@ -88,6 +88,7 @@ struct LR35902State {
   reg16_t WZ;
 
   reg8_t IF;
+  reg8_t IE;
   reg8_t I;
   reg8_t R;
 
@@ -107,7 +108,6 @@ struct LR35902State {
   bool iff1;
   bool iff2;
   bool iwait;
-  int imode;
   byte_t data;
 
   LineState reset_line;
@@ -119,6 +119,9 @@ struct LR35902State {
     HL.d = 0x014D;
     SP.d = 0xFFFE;
     PC.d = 0x0000;
+    IF = 0x00;
+    IE = 0x1f;
+    iff1 = iff2 = iwait = false;
   }
 
   Cycles icycles;
