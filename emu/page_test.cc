@@ -72,3 +72,15 @@ TEST(PageTest, add_entry) {
   bus.write(0x2000, 50);
   EXPECT_EQ(50, bus.read(0x2000));
 }
+
+TEST(PageTest, last_addr) {
+  byte_t val = 0;
+  AddressBus16x8 bus;
+
+  bus.add(0xFFFF, &val);
+
+  bus.write(0xFFFF, 5);
+
+  EXPECT_EQ(5, val);
+  EXPECT_EQ(5, bus.read(0xFFFF));
+}
