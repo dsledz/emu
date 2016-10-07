@@ -119,7 +119,7 @@ class GBGraphics : public ClockedDevice {
   byte_t vram_read(offset_t offset);
   void vram_write(offset_t offset, byte_t value);
   void dma_write(offset_t offset, byte_t value);
-  void palette_write(ColorPalette<4> *pal, byte_t *pal_data, offset_t offset,
+  void palette_write(ColorPalette<4> *pal, bool bg, byte_t *pal_data, offset_t offset,
                      byte_t value);
 
   GfxObject<8, 8> *get_obj(int idx);

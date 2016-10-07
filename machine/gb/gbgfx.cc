@@ -34,10 +34,10 @@ GBGraphics::GBGraphics(Gameboy *gameboy, ClockDivider divider)
       m_lcdc(0) {
   m_bus = gameboy->bus();
 
-  m_global_pal[3] = RGBColor(0xff, 0xff, 0xff);
-  m_global_pal[2] = RGBColor(0xbb, 0xbb, 0xbb);
-  m_global_pal[1] = RGBColor(0x66, 0x66, 0x66);
-  m_global_pal[0] = RGBColor(0x00, 0x00, 0x00);
+  m_global_pal[0] = RGBColor(0xff, 0xff, 0xff);
+  m_global_pal[1] = RGBColor(0xbb, 0xbb, 0xbb);
+  m_global_pal[2] = RGBColor(0x66, 0x66, 0x66);
+  m_global_pal[3] = RGBColor(0x00, 0x00, 0x00);
 
   m_bus->add(0x8000, m_vram.direct(0), 0x2000,
              [&](offset_t offset, byte_t value) {
@@ -48,8 +48,14 @@ GBGraphics::GBGraphics(Gameboy *gameboy, ClockDivider divider)
                }
                m_vram.write8(offset, value);
              });
-  m_bus->add(0xFE00, 0xFEFF, READ_CB(RamDevice::read8, &m_oam),
-             WRITE_CB(RamDevice::write8, &m_oam));
+
+  m_bus->add(0xFE00, 0xFEFF,
+             [&](offset_t offset) -> byte_t {
+               return m_oam.read8(offset & 0x7f);
+             },
+             [&](offset_t offset, byte_t value) {
+               m_oam.write8(offset & 0x7f, value);
+             });
 
   m_bus->add(VideoReg::LCDC, &m_lcdc);
   m_bus->add(VideoReg::STAT, &m_stat);
@@ -64,11 +70,11 @@ GBGraphics::GBGraphics(Gameboy *gameboy, ClockDivider divider)
              });
   m_bus->add(VideoReg::LYC, &m_lyc);
   m_bus->add(VideoReg::BGP, AddressBus16x8::DataRead(&m_bgp),
-             WRITE_CB(GBGraphics::palette_write, this, &m_bg_pal, &m_bgp));
+             WRITE_CB(GBGraphics::palette_write, this, &m_bg_pal, true, &m_bgp));
   m_bus->add(VideoReg::OBP0, AddressBus16x8::DataRead(&m_obp0),
-             WRITE_CB(GBGraphics::palette_write, this, &m_obj0_pal, &m_obp0));
+             WRITE_CB(GBGraphics::palette_write, this, &m_obj0_pal, false, &m_obp0));
   m_bus->add(VideoReg::OBP1, AddressBus16x8::DataRead(&m_obp1),
-             WRITE_CB(GBGraphics::palette_write, this, &m_obj1_pal, &m_obp1));
+             WRITE_CB(GBGraphics::palette_write, this, &m_obj1_pal, false, &m_obp1));
   m_bus->add(VideoReg::WY, &m_wy);
   m_bus->add(VideoReg::WX, &m_wx);
 
@@ -78,7 +84,7 @@ GBGraphics::GBGraphics(Gameboy *gameboy, ClockDivider divider)
   };
   m_tilemap1 = [&](int idx) -> GfxObject<8, 8> * {
     char c = m_vram.read8(VMem::TileMap1 + idx);
-    return get_obj(c + 256);
+    return get_obj(c + (int)256);
   };
 
   for (unsigned i = 0; i < 384; i++) m_objs[i].dirty = true;
@@ -86,9 +92,9 @@ GBGraphics::GBGraphics(Gameboy *gameboy, ClockDivider divider)
 
 GBGraphics::~GBGraphics(void) {}
 
-void GBGraphics::palette_write(ColorPalette<4> *pal, byte_t *pal_byte,
+void GBGraphics::palette_write(ColorPalette<4> *pal, bool bg, byte_t *pal_byte,
                                offset_t offset, byte_t value) {
-  (*pal)[0] = trans;
+  (*pal)[0] = bg ? m_global_pal[(value & 0x03)] : trans;
   (*pal)[1] = m_global_pal[(value & 0x0C) >> 2];
   (*pal)[2] = m_global_pal[(value & 0x30) >> 4];
   (*pal)[3] = m_global_pal[(value & 0xC0) >> 6];
@@ -96,20 +102,24 @@ void GBGraphics::palette_write(ColorPalette<4> *pal, byte_t *pal_byte,
 }
 
 GfxObject<8, 8> *GBGraphics::get_obj(int idx) {
+  assert(idx < 384);
   auto *o = &m_objs[idx];
   if (o->dirty) {
-    byte_t *b = m_vram.direct(VMem::ObjTiles + idx * 16);
+    offset_t off = VMem::ObjTiles + (idx * 16);
+    assert(off % 16 == 0);
+    byte_t *b = m_vram.direct(off);
     int p = 0;
     for (int y = 0; y < o->h; y++) {
-      o->data[p++] = (bit_isset(b[y * 2], 7) | bit_isset(b[y * 2 + 1], 7) << 1);
-      o->data[p++] = (bit_isset(b[y * 2], 6) | bit_isset(b[y * 2 + 1], 6) << 1);
-      o->data[p++] = (bit_isset(b[y * 2], 5) | bit_isset(b[y * 2 + 1], 5) << 1);
-      o->data[p++] = (bit_isset(b[y * 2], 4) | bit_isset(b[y * 2 + 1], 4) << 1);
-      o->data[p++] = (bit_isset(b[y * 2], 3) | bit_isset(b[y * 2 + 1], 3) << 1);
-      o->data[p++] = (bit_isset(b[y * 2], 2) | bit_isset(b[y * 2 + 1], 2) << 1);
-      o->data[p++] = (bit_isset(b[y * 2], 1) | bit_isset(b[y * 2 + 1], 1) << 1);
-      o->data[p++] = (bit_isset(b[y * 2], 0) | bit_isset(b[y * 2 + 1], 0) << 1);
+      o->data[p++] = (bit_isset(b[y * 2], 7) | (bit_isset(b[y * 2 + 1], 7) << 1));
+      o->data[p++] = (bit_isset(b[y * 2], 6) | (bit_isset(b[y * 2 + 1], 6) << 1));
+      o->data[p++] = (bit_isset(b[y * 2], 5) | (bit_isset(b[y * 2 + 1], 5) << 1));
+      o->data[p++] = (bit_isset(b[y * 2], 4) | (bit_isset(b[y * 2 + 1], 4) << 1));
+      o->data[p++] = (bit_isset(b[y * 2], 3) | (bit_isset(b[y * 2 + 1], 3) << 1));
+      o->data[p++] = (bit_isset(b[y * 2], 2) | (bit_isset(b[y * 2 + 1], 2) << 1));
+      o->data[p++] = (bit_isset(b[y * 2], 1) | (bit_isset(b[y * 2 + 1], 1) << 1));
+      o->data[p++] = (bit_isset(b[y * 2], 0) | (bit_isset(b[y * 2 + 1], 0) << 1));
     }
+    assert(p == o->w * o->h);
     o->dirty = false;
   }
   return o;
@@ -123,7 +133,7 @@ void GBGraphics::draw_scanline(int y) {
     for (int x = 0; x < 160; x++) {
       int ix = ((m_scx + x) % 256);
       int idx = (iy / 8) * 32 + ix / 8;
-      auto *obj = cb(idx);
+      auto *obj = cb(idx + 1);
       RGBColor pen = m_bg_pal[obj->at(ix % 8, iy % 8)];
       screen->set(x, y, pen);
     }
