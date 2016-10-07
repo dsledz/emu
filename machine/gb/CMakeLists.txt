@@ -1,7 +1,8 @@
 add_library(gb
     gb.cc
     gbgfx.cc
-    gbmbc.cc)
+    gbmbc.cc
+    lr35902.cc)
 
 target_link_libraries(gb
     emu

@@ -26,7 +26,7 @@
 
 #include "emu/emu.h"
 
-#include "cpu/z80/lr35902.h"
+#include "machine/gb/lr35902.h"
 
 using namespace EMU;
 using namespace LR35902;
