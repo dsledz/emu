@@ -51,10 +51,10 @@ GBGraphics::GBGraphics(Gameboy *gameboy, ClockDivider divider)
 
   m_bus->add(0xFE00, 0xFEFF,
              [&](offset_t offset) -> byte_t {
-               return m_oam.read8(offset & 0x7f);
+               return m_oam.read8(offset & 0xff);
              },
              [&](offset_t offset, byte_t value) {
-               m_oam.write8(offset & 0x7f, value);
+               m_oam.write8(offset & 0xff, value);
              });
 
   m_bus->add(VideoReg::LCDC, &m_lcdc);
@@ -106,7 +106,6 @@ GfxObject<8, 8> *GBGraphics::get_obj(int idx) {
   auto *o = &m_objs[idx];
   if (o->dirty) {
     offset_t off = VMem::ObjTiles + (idx * 16);
-    assert(off % 16 == 0);
     byte_t *b = m_vram.direct(off);
     int p = 0;
     for (int y = 0; y < o->h; y++) {

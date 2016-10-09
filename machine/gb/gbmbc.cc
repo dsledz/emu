@@ -75,12 +75,14 @@ void GBMBC::ram_bank(offset_t offset, byte_t value) {
 }
 
 void GBMBC::load_rom(const std::string &name) {
-  bvec boot_rom;
   read_rom(name, m_rom);
+#if HAVE_GB_BOOT_ROM
+  bvec boot_rom;
   read_rom("DMG_ROM.bin", boot_rom);
   m_dmg.resize(boot_rom.size());
   memcpy(m_dmg.data(), m_rom.data(), boot_rom.size());
   memcpy(m_rom.data(), boot_rom.data(), boot_rom.size());
+#endif
 
   if ((m_rom[0x0143] & 0xC0) == 0xC0) {
     std::cout << "Color Gameboy Only" << std::endl;
