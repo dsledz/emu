@@ -65,6 +65,7 @@ Clock::Clock(Machine *machine, Hertz hertz)
       m_devs(),
       m_task(machine->get_scheduler(), std::bind(&Clock::task_fn, this),
              "clock"),
+      m_promise_ptr(nullptr),
       m_now(),
       m_target(),
       m_current() {}
@@ -137,8 +138,11 @@ void Clock::execute(void) {
     current = run_loop(current, target);
     {
       lock_mtx lock(m_mtx);
+      if (m_promise_ptr != nullptr) {
+        m_promise_ptr->set_value();
+        m_promise_ptr.reset();
+      }
       m_current = current;
-      m_cv.notify_all();
     }
     wait_for_update();
   }
@@ -162,15 +166,15 @@ void Clock::stop(void) {
   m_task.force();
 }
 
-void Clock::wait_for_target(EmuTime t) {
-  {
-    lock_mtx lock(m_mtx);
-    m_channel.put(EmuClockUpdate(t));
-    Cycles target(t, m_hertz);
-    // XXX: We should be able to use m_target here
-    while (m_current < target)
-      lock.wait(m_cv);
-  }
+std::future<void> Clock::set_target(EmuTime t) {
+  EmuClockUpdate update(t);
+  lock_mtx lock(m_mtx);
+  assert(m_promise_ptr == nullptr);
+  m_promise_ptr =
+      std::unique_ptr<std::promise<void> >(new std::promise<void>());
+  std::future<void> future = m_promise_ptr->get_future();
+  m_channel.put(update);
+  return future;
 }
 
 Cycles Clock::run_loop(Cycles current, Cycles target) {

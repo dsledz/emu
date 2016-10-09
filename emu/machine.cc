@@ -69,9 +69,14 @@ void Machine::remove_device(Device *dev) {
 
 EmuTime Machine::now(void) { return m_clock->now(); }
 
-void Machine::run_until(EmuTime target) { m_clock->wait_for_target(target); }
+void Machine::run_forward(EmuTime delta) {
+  auto future = m_clock->set_delta(delta);
+  future.get();
+}
 
-void Machine::run_forward(EmuTime delta) { m_clock->wait_for_delta(delta); }
+std::future<void> Machine::advance(EmuTime delta) {
+  return m_clock->set_delta(delta);
+}
 
 Device *Machine::dev(const std::string &name) {
   for (auto it = m_devs.begin(); it != m_devs.end(); it++) {

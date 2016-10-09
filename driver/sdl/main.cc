@@ -104,16 +104,23 @@ class SDLEmulator : public Emulator {
     machine()->reset();
 
     set_state(EmuState::Running);
-    m_task = std::async(std::launch::async, &Emulator::do_execute, this);
+
+    machine()->poweron();
 
     while (get_state() == EmuState::Running) {
+      auto future = frame_start();
       glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
       m_fb->render();
       SDL_GL_SwapWindow(m_window);
-
-      SDL_Event event;
-      while (SDL_PollEvent(&event)) on_event(&event);
+      Time left;
+      while ((left = frame_left()) > time_zero) {
+        SDL_Event event;
+        if (SDL_WaitEventTimeout(&event, 1))
+          on_event(&event);
+      }
+      frame_end(future);
     }
+    machine()->poweroff();
   }
 
   virtual void stop(void) {

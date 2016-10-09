@@ -76,8 +76,8 @@ class Clock : public Device {
   void stop(void);
 
   const Hertz hertz(void) const { return m_hertz; }
-  void wait_for_target(EmuTime t);
-  void wait_for_delta(EmuTime t) { wait_for_target(m_now + t); }
+  std::future<void> set_target(EmuTime t);
+  std::future<void> set_delta(EmuTime t) { return set_target(m_now + t); }
 
   void device_yield(ClockedDevice *dev);
   void device_resume(ClockedDevice *dev);
@@ -99,6 +99,8 @@ class Clock : public Device {
   std::list<ClockedDevice *> m_devs;
   FiberTask m_task;
 
+
+  std::unique_ptr<std::promise<void> > m_promise_ptr;
   EmuTime m_now;     /**< Wall time */
   Cycles m_target;   /**< Target cycles */
   Cycles m_current;  /**< Current simulation cycles */

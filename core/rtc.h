@@ -71,6 +71,14 @@ struct Time {
   Time(usec us) : ns(us.v * NSEC_PER_USEC) {}
   Time(nsec ns) : ns(ns.v) {}
 
+  inline explicit operator double() const {
+    return double(ns) / NSEC_PER_SEC;
+  }
+
+  inline explicit operator msec() const {
+    return msec(ns / NSEC_PER_MSEC);
+  }
+
   inline bool operator==(const Time &rhs) const { return (ns == rhs.ns); }
 
   inline bool operator!=(const Time &rhs) const { return (ns != rhs.ns); }

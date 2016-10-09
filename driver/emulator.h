@@ -50,6 +50,25 @@ class Emulator {
   const Options *options(void);
   FrameBuffer *fb(void);
 
+  std::future<void> frame_start(void) {
+    m_frame_start = m_rtc.now();
+    return m_machine->advance(m_frame_period);
+  }
+
+  Time frame_left(void) {
+    const Time now = m_rtc.now();
+    Time spent = now - m_frame_start;
+    if (spent > m_frame_period)
+      return Time(sec(0));
+    else
+      return m_frame_period - spent;
+  }
+
+  void frame_end(std::future<void> &future) {
+    assert(future.valid());
+    future.get();
+  }
+
   void do_execute(void);
 
  protected:
@@ -61,7 +80,9 @@ class Emulator {
   std::condition_variable cv;
 
   TaskScheduler m_scheduler;
-  RealTimeClock m_clock;
+  RealTimeClock m_rtc;
+  Time m_frame_period;
+  Time m_frame_start;
   Emulator::EmuState m_state;
   Options m_options;
   machine_ptr m_machine;

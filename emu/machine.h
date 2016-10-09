@@ -77,7 +77,7 @@ class Machine {
   void reset(void);
   void run(void);
   void run_forward(EmuTime delta);
-  void run_until(EmuTime target);
+  std::future<void> advance(EmuTime delta);
 
   /* FrameBuffer */
   void set_frame_buffer(FrameBuffer *screen);

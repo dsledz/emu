@@ -31,7 +31,8 @@ Emulator::Emulator(const Options &options)
     : mtx(),
       cv(),
       m_scheduler(),
-      m_clock(),
+      m_rtc(),
+      m_frame_period(Time(sec(1))/60),
       m_options(options),
       m_machine() {
   Core::log.set_level(m_options.log_level);
@@ -43,18 +44,15 @@ Emulator::~Emulator(void) {}
 
 void Emulator::start(void) {
   set_state(EmuState::Running);
-  m_clock.resume();
 }
 
 void Emulator::stop(void) {
   set_state(EmuState::Stopped);
   /* XXX: task? */
-  m_clock.reset();
 }
 
 void Emulator::pause(void) {
   set_state(EmuState::Paused);
-  m_clock.pause();
 }
 
 void Emulator::reset(void) {
@@ -88,7 +86,6 @@ Emulator::EmuState Emulator::get_state(void) {
 void Emulator::set_state(EmuState state) {
   std::lock_guard<std::mutex> lock(mtx);
   m_state = state;
-  m_clock.reset();
   cv.notify_one();
 }
 

@@ -39,7 +39,13 @@ struct Hertz {
 };
 
 inline std::ostream &operator<<(std::ostream &os, const Hertz &h) {
-  os << h.v / 1000000 << "Mhz";
+  if (h.v > 1000000) {
+    os << h.v / 1000000 << "Mhz";
+  } else if (h.v > 1000) {
+    os << h.v / 1000 << "Khz";
+  } else {
+    os << h.v << "hz";
+  }
   return os;
 }
 
