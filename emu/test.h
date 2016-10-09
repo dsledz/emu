@@ -36,7 +36,8 @@ using namespace EMU;
 
 const unsigned TEST_CLOCK = 1000000;
 
-template <typename CpuType, unsigned initial_pc = 0x0000>
+template <typename CpuType, unsigned initial_pc = 0x0000,
+          Core::LogLevel level = LogLevel::Info>
 class TestMachine : public Machine {
  public:
   TestMachine(void)
@@ -47,11 +48,11 @@ class TestMachine : public Machine {
         pc(initial_pc) {
     bus.add(0x0000, &ram);
 
+    Core::log.set_level(level);
     set_line("maincpu", Line::RESET, LineState::Pulse);
 
     LOG_DEBUG("Starting CPU...");
     cpu.test_start();
-    cpu.test_step();
   }
   ~TestMachine(void) {}
 
@@ -92,7 +93,7 @@ static inline EMU::EmuTime get_runtime() {
   return runtime;
 }
 
-template<class machine_t>
+template<class machine_t, Core::LogLevel level=LogLevel::Info>
 void machine_test(const std::string &rom="") {
   machine_t machine;
 
@@ -100,7 +101,7 @@ void machine_test(const std::string &rom="") {
 
   EmuTime runtime = get_runtime();
 
-  Core::log.set_level(LogLevel::Info);
+  Core::log.set_level(level);
   machine.reset();
   machine.poweron();
   machine.run_forward(runtime/4);
