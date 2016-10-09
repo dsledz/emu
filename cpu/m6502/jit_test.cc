@@ -10,12 +10,11 @@ using namespace EMUTest;
 using namespace JITx64;
 using namespace M6502;
 
-typedef TestMachine<M6502Cpu, 0x0000> JITMachine;
+typedef TestMachine<M6502Cpu, 0x0000, LogLevel::Trace> JITMachine;
 
-TEST(JITTest, test) { JITMachine machine; }
+TEST(JITTest, DISABLED_test) { JITMachine machine; }
 
-TEST(JITTest, opcode_ea) {
-  Core::log.set_level(LogLevel::Trace);
+TEST(JITTest, DISABLED_opcode_ea) {
   JITMachine machine;
 
   LOAD1(0xEA);
@@ -23,7 +22,7 @@ TEST(JITTest, opcode_ea) {
   machine.cpu_step();
 }
 
-TEST(JITTest, opcode_a0) {
+TEST(JITTest, DISABLED_opcode_a0) {
   JITMachine machine;
 
   LOAD2(0xA0, 0x10); /* LDY #$10 */
@@ -35,7 +34,7 @@ TEST(JITTest, opcode_a0) {
   EXPECT_EQ(0x10, machine.cpu.get_state()->Y);
 }
 
-TEST(JITTest, opcode_a2) {
+TEST(JITTest, DISABLED_opcode_a2) {
   JITMachine machine;
 
   LOAD2(0xA2, 0x10);
@@ -47,7 +46,7 @@ TEST(JITTest, opcode_a2) {
   EXPECT_EQ(0x10, machine.cpu.get_state()->X);
 }
 
-TEST(JITTest, opcode_a8) {
+TEST(JITTest, DISABLED_opcode_a8) {
   JITMachine machine;
 
   LOAD2(0xA9, 0x10);
@@ -58,7 +57,7 @@ TEST(JITTest, opcode_a8) {
   EXPECT_EQ(0x10, machine.cpu.get_state()->Y);
 }
 
-TEST(JITTest, opcode_a9) {
+TEST(JITTest, DISABLED_opcode_a9) {
   JITMachine machine;
 
   LOAD2(0xA9, 0x10);
@@ -70,7 +69,7 @@ TEST(JITTest, opcode_a9) {
   EXPECT_EQ(0x10, machine.cpu.get_state()->A);
 }
 
-TEST(JITTest, opcode_a9b) {
+TEST(JITTest, DISABLED_opcode_a9b) {
   JITMachine machine;
 
   LOAD2(0xA9, 0x00); /* LDA #$00 */
@@ -90,7 +89,7 @@ TEST(JITTest, opcode_a9b) {
   EXPECT_EQ(0x00, machine.cpu.get_state()->F.Z);
 }
 
-TEST(JITTest, opcode_a5) {
+TEST(JITTest, DISABLED_opcode_a5) {
   JITMachine machine;
 
   LOAD2(0xA5, 0x00); /* LDA zpg */
@@ -100,7 +99,7 @@ TEST(JITTest, opcode_a5) {
   EXPECT_EQ(0xA5, machine.cpu.get_state()->A);
 }
 
-TEST(JITTest, opcode_8d) {
+TEST(JITTest, DISABLED_opcode_8d) {
   JITMachine machine;
 
   LOAD2(0xA5, 0x00);       /* LDA zpg */
@@ -111,7 +110,7 @@ TEST(JITTest, opcode_8d) {
   EXPECT_EQ(0xA5, machine.ram.read8(0x10));
 }
 
-TEST(JITTest, opcode_65) {
+TEST(JITTest, DISABLED_opcode_65) {
   JITMachine machine;
 
   LOAD2(0xA5, 0x00); /* LDA zpg */
@@ -123,7 +122,7 @@ TEST(JITTest, opcode_65) {
   EXPECT_EQ(0xA9, machine.cpu.get_state()->A);
 }
 
-TEST(JITTest, opcode_65b) {
+TEST(JITTest, DISABLED_opcode_65b) {
   JITMachine machine;
 
   LOAD2(0xA5, 0x00); /* LDA zpg */
@@ -137,7 +136,7 @@ TEST(JITTest, opcode_65b) {
   EXPECT_EQ(0x13, machine.cpu.get_state()->A);
 }
 
-TEST(JITTest, opcode_2a) {
+TEST(JITTest, DISABLED_opcode_2a) {
   JITMachine machine;
 
   LOAD2(0xA9, 0x80); /* LDA #$80 */
@@ -149,7 +148,7 @@ TEST(JITTest, opcode_2a) {
   EXPECT_EQ(0x00, machine.cpu.get_state()->F.V);
 }
 
-TEST(JITTest, opcode_2ab) {
+TEST(JITTest, DISABLED_opcode_2ab) {
   JITMachine machine;
 
   LOAD1(0x38);       /* SEC */
@@ -162,7 +161,7 @@ TEST(JITTest, opcode_2ab) {
   EXPECT_EQ(0x00, machine.cpu.get_state()->F.Z);
 }
 
-TEST(JITTest, opcode_e9) {
+TEST(JITTest, DISABLED_opcode_e9) {
   JITMachine machine;
 
   LOAD1(0x38);       /* SEC */
@@ -178,7 +177,7 @@ TEST(JITTest, opcode_e9) {
   EXPECT_EQ(0x01, machine.cpu.get_state()->F.V);
 }
 
-TEST(JITTest, opcode_e9b) {
+TEST(JITTest, DISABLED_opcode_e9b) {
   JITMachine machine;
 
   LOAD2(0xA9, 0x40); /* LDA #$40 */
@@ -190,7 +189,7 @@ TEST(JITTest, opcode_e9b) {
   EXPECT_EQ(0x00, machine.cpu.get_state()->F.N);
 }
 
-TEST(JITTest, opcode_2e) {
+TEST(JITTest, DISABLED_opcode_2e) {
   JITMachine machine;
 
   LOAD2(0xA5, 0x00);       /* LDA zpg */
@@ -203,7 +202,7 @@ TEST(JITTest, opcode_2e) {
   EXPECT_EQ(0x4A, machine.ram.read8(0x10));
 }
 
-TEST(JITTest, opcode_66) {
+TEST(JITTest, DISABLED_opcode_66) {
   JITMachine machine;
 
   LOAD2(0xA5, 0x00);       /* LDA zpg */
@@ -216,7 +215,7 @@ TEST(JITTest, opcode_66) {
   EXPECT_EQ(0x52, machine.ram.read8(0x10));
 }
 
-TEST(JITTest, opcode_95) {
+TEST(JITTest, DISABLED_opcode_95) {
   JITMachine machine;
   LOAD2(0xA5, 0x00); /* LDA zpg */
   LOAD2(0xA2, 0x10); /* LDX #$10 */
@@ -227,7 +226,7 @@ TEST(JITTest, opcode_95) {
   EXPECT_EQ(0xA5, machine.ram.read8(0x10));
 }
 
-TEST(JITTest, opcode_b5) {
+TEST(JITTest, DISABLED_opcode_b5) {
   JITMachine machine;
   LOAD2(0xA2, 0x2);  /* LDX #$2 */
   LOAD2(0xB5, 0x00); /* LDA [X + $0] */
@@ -238,7 +237,7 @@ TEST(JITTest, opcode_b5) {
   EXPECT_EQ(0xB5, machine.cpu.get_state()->A);
 }
 
-TEST(JITTest, opcode_bd) {
+TEST(JITTest, DISABLED_opcode_bd) {
   JITMachine machine;
   LOAD2(0xA2, 0x1);        /* LDX #$10 */
   LOAD3(0xBD, 0x01, 0x00); /* LDA [X + $1] (abs,X) */
@@ -248,7 +247,7 @@ TEST(JITTest, opcode_bd) {
   EXPECT_EQ(0xBD, machine.cpu.get_state()->A);
 }
 
-TEST(JITTest, opcode_f0) {
+TEST(JITTest, DISABLED_opcode_f0) {
   JITMachine machine;
   LOAD2(0xA9, 0x01);       /* LDA #$01 */
   LOAD3(0xCD, 0x01, 0x00); /* CMP $01 */
@@ -260,7 +259,7 @@ TEST(JITTest, opcode_f0) {
   EXPECT_EQ(0x00, machine.cpu.get_state()->PC.d);
 }
 
-TEST(JITTest, opcode_f0b) {
+TEST(JITTest, DISABLED_opcode_f0b) {
   JITMachine machine;
   LOAD2(0xA9, 0x01);       /* LDA #$01 */
   LOAD3(0xCD, 0x00, 0x00); /* CMP $01 */
@@ -272,7 +271,7 @@ TEST(JITTest, opcode_f0b) {
   EXPECT_EQ(0x07, machine.cpu.get_state()->PC.d);
 }
 
-TEST(JITTest, opcode_48) {
+TEST(JITTest, DISABLED_opcode_48) {
   JITMachine machine;
 
   LOAD2(0xA9, 0x88); /* LDA #$88 */
@@ -285,7 +284,7 @@ TEST(JITTest, opcode_48) {
   EXPECT_EQ(0x88, machine.cpu.get_state()->A);
 }
 
-TEST(JITTest, opcode_08) {
+TEST(JITTest, DISABLED_opcode_08) {
   JITMachine machine;
 
   LOAD2(0xA9, 0x88); /* LDA #$88 */
@@ -298,7 +297,7 @@ TEST(JITTest, opcode_08) {
   EXPECT_EQ(0x03, machine.cpu.get_state()->A);
 }
 
-TEST(JITTest, opcode_78) {
+TEST(JITTest, DISABLED_opcode_78) {
   JITMachine machine;
 
   LOAD1(0x78); /* SEI */
@@ -308,7 +307,7 @@ TEST(JITTest, opcode_78) {
   EXPECT_EQ(1, machine.cpu.get_state()->F.I);
 }
 
-TEST(JITTest, opcode_60) {
+TEST(JITTest, DISABLED_opcode_60) {
   JITMachine machine;
 
   LOAD2(0xA9, 0x88); /* LDA #$88 */
@@ -321,7 +320,7 @@ TEST(JITTest, opcode_60) {
   EXPECT_EQ(0x8889, machine.cpu.get_state()->PC.d);
 }
 
-TEST(JITTest, opcode_20) {
+TEST(JITTest, DISABLED_opcode_20) {
   JITMachine machine;
 
   LOAD2(0xA9, 0x88);       /* LDA #$88 */
@@ -349,7 +348,7 @@ TEST(JITTest, opcode_20) {
   EXPECT_EQ(0xBB, machine.cpu.get_state()->A);
 }
 
-TEST(JITTest, opcode_d0) {
+TEST(JITTest, DISABLED_opcode_d0) {
   JITMachine machine;
   LOAD2(0xA9, 0x00); /* LDA #$01 */
   LOAD2(0xD0, 0x20); /* BNE #-7 */
@@ -363,7 +362,7 @@ TEST(JITTest, opcode_d0) {
   EXPECT_EQ(0x46, machine.cpu.get_state()->PC.d);
 }
 
-TEST(JITTest, opcode_4a) {
+TEST(JITTest, DISABLED_opcode_4a) {
   JITMachine machine;
   LOAD2(0xA9, 0x03); /* LDA #$01 */
   LOAD1(0x4A);       /* LSR A */
@@ -374,7 +373,7 @@ TEST(JITTest, opcode_4a) {
   EXPECT_EQ(0x01, machine.cpu.get_state()->F.C);
 }
 
-TEST(JITTest, opcode_b1) {
+TEST(JITTest, DISABLED_opcode_b1) {
   JITMachine machine;
   LOAD2(0xA0, 0x02); /* LDY #$02 */
   LOAD2(0xB1, 0x05); /* LDA ind,Y */
