@@ -69,19 +69,10 @@ uint8_t vram_inc[] = {1, 32, 64, 128};
 
 byte_t VDC::data_read(offset_t offset) {
   const int b = offset & 0x01;
-  byte_t result = 0;
-  switch (m_reg_idx) {
-    case VxR: {
-      result = get_byte(m_vram[m_reg[MARR].d & 0x7FFF], b);
-      int inc = vram_inc[(m_reg[CR].d & 0x0C00) >> 11];
-      if (b == 1) m_reg[MARR].d += inc;
-      break;
-    }
-    default:
-      DEVICE_ERROR("Invalid reg read:", m_reg_idx);
-      throw DeviceFault(name(), stringfn("invalid register read: ", m_reg_idx));
-      break;
-  }
+  /* Always read from 0x02 */
+  byte_t result = get_byte(m_vram[m_reg[MARR].d & 0x7FFF], b);
+  int inc = vram_inc[(m_reg[CR].d & 0x0C00) >> 11];
+  if (b == 1) m_reg[MARR].d += inc;
   return result;
 }
 
