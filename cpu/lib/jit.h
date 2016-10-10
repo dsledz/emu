@@ -264,6 +264,7 @@ class JITEmitter {
 
   void xINC(RegIdx8 dst, RegIdx16 addr);
   void xINC(RegIdx8 dst);
+  void xINC16(RegIdx16 dst);
 
   void xDEC(RegIdx8 dst, RegIdx16 addr);
   void xDEC(RegIdx8 dst);

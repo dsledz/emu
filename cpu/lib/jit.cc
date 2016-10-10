@@ -109,6 +109,12 @@ void JITEmitter::xINC(RegIdx8 dst) {
   xPOPF();
 }
 
+void JITEmitter::xINC16(RegIdx16 dst) {
+  xPUSHF();
+  xADD(dst, 1);
+  xPOPF();
+}
+
 void JITEmitter::xDEC(RegIdx8 dst, RegIdx16 addr) {
   xLOAD(dst, addr);
   xDEC(dst);
