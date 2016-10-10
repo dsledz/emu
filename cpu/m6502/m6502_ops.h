@@ -426,11 +426,11 @@ OP(NMI, uint16_t addr) {
 }
 
 OP(IRQ, uint16_t addr) {
-  state->F.B = 0;
-  state->F.I = 1;
   push(state, state->PC.b.h);
   push(state, state->PC.b.l);
   push(state, state->SR);
+  state->F.B = 0;
+  state->F.I = 1;
   state->PC.b.l = state->bus_read(addr);
   state->PC.b.h = state->bus_read(++addr);
 }
