@@ -145,6 +145,7 @@ void Machine::reset(void) {
 }
 
 void Machine::set_line(const std::string &name, Line line, LineState state) {
+  LOG_TRACE("DEV(", name, "): ", line, " ", state);
   set_line(dev(name), line, state);
 }
 
