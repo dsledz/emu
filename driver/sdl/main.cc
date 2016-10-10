@@ -113,11 +113,16 @@ class SDLEmulator : public Emulator {
       m_fb->render();
       SDL_GL_SwapWindow(m_window);
       Time left;
+#if WAIT
       while ((left = frame_left()) > time_zero) {
         SDL_Event event;
         if (SDL_WaitEventTimeout(&event, 1))
           on_event(&event);
       }
+#else
+      SDL_Event event;
+      while (SDL_PollEvent(&event)) on_event(&event);
+#endif
       frame_end(future);
     }
     machine()->poweroff();
