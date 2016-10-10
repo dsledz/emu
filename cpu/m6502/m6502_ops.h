@@ -506,9 +506,9 @@ OP(RMB, uint8_t bit) {
 
 OP(BBR, uint8_t bit) {
   ZeroPage(state);
-  fetch(state);
+  byte_t arg = fetch(state);
   Relative(state);
-  if (!bit_isset(state->ARG, bit)) {
+  if (!bit_isset(arg, bit)) {
     state->PC = state->EA;
     state->icycles += 2;
   }
@@ -516,9 +516,9 @@ OP(BBR, uint8_t bit) {
 
 OP(BBS, uint8_t bit) {
   ZeroPage(state);
-  fetch(state);
+  byte_t arg = fetch(state);
   Relative(state);
-  if (bit_isset(state->ARG, bit)) {
+  if (bit_isset(arg, bit)) {
     state->PC = state->EA;
     state->icycles += 2;
   }
