@@ -130,8 +130,6 @@ class HuC6280Cpu
   void timer_write(offset_t offset, byte_t value);
 
  private:
-  void step(void);
-
   uint8_t m_irq_status;
   uint8_t m_irq_disable;
   bool m_timer_status;

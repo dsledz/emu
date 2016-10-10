@@ -163,6 +163,7 @@ HuC6280Cpu::HuC6280Cpu(Machine *machine, const std::string &name,
       OPCODE(0x78, 1, 2, "SEI", Inherent, SEI),
       OPCODE(0x79, 3, 4, "ADC absY", AbsoluteY, ADC),
       OPCODE(0x7A, 1, 4, "PLY", Inherent, PLY),
+      OPCODE(0x7C, 7, 3, "JMP absX", AbsoluteX, JMP),
       OPCODE(0x7D, 3, 4, "ADC absX", AbsoluteX, ADC),
       OPCODE(0x7E, 3, 7, "ROR absX", AbsoluteX, ROR),
       OPCODE(0x7F, 3, 5, "BBR 7", ZeroPage, BBR, 7),
@@ -352,17 +353,12 @@ bool HuC6280Cpu::Interrupt(void) {
   return false;
 }
 
-void HuC6280Cpu::step(void) {
-  if (Interrupt()) return;
-
-  uint16_t pc = m_state.PC.d;
-  unsigned cycles = dispatch(pc);
-  m_timer_value -= cycles;
-}
-
 void HuC6280Cpu::execute(void) {
   while (true) {
-    step();
+    if (Interrupt()) continue;
+    uint16_t pc = m_state.PC.d;
+    unsigned cycles = dispatch(pc);
+    m_timer_value -= cycles;
   }
 }
 
