@@ -69,6 +69,14 @@ ADDR(Indirect) {
   addr.b.l++;
   state->EA.b.h = state->bus_read(addr.d);
 }
+ADDR(Indirect_Fixed) {
+  reg16_t addr;
+  addr.b.l = pc_read(state);
+  addr.b.h = pc_read(state);
+  state->EA.b.l = state->bus_read(addr.d);
+  addr.d++;
+  state->EA.b.h = state->bus_read(addr.d);
+}
 ADDR(IndirectY) {
   reg16_t addr;
   addr.b.l = pc_read(state);

@@ -167,6 +167,17 @@ JIT_ADDR(Indirect) {
   _jit->xPOPF();
 }
 
+JIT_ADDR(Indirect_Fixed) {
+  uint16_t tmp = bus_read(pc + 1) | (bus_read(pc + 2) << 8);
+  _jit->xPUSHF();
+  _jit->xMOV16(RegEA, tmp);
+  _jit->xLOAD(RegTMPl, RegEA);
+  _jit->xINC16(RegEA);
+  _jit->xLOAD(RegTMPh, RegEA);
+  _jit->xMOV16(RegEA, RegTMP);
+  _jit->xPOPF();
+}
+
 JIT_ADDR(ZeroIndirect) {
   uint8_t ZPG = 0;
   uint16_t tmp = bus_read(pc + 1) | (ZPG << 8);
