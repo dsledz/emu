@@ -92,6 +92,17 @@ enum class Line {
   D15 = 215,
 };
 
+inline std::ostream &operator<<(std::ostream &os, Line line) {
+  switch (line) {
+    case Line::INT0: os << "INT0"; break;
+    case Line::INT1: os << "INT1"; break;
+    case Line::INT2: os << "INT2"; break;
+    case Line::INT3: os << "INT3"; break;
+    default: os << "??"; break;
+  }
+  return os;
+}
+
 static inline Line make_irq_line(unsigned i) { return Line(i); }
 
 static inline Line make_addr_line(unsigned i) { return Line(100 + i); }
@@ -109,6 +120,15 @@ enum class LineState {
   Assert = 1, /**< Line should be asserted. */
   Pulse = 2,  /**< Line should be pulsed. */
 };
+
+inline std::ostream &operator<<(std::ostream &os, LineState state) {
+  switch (state) {
+    case LineState::Clear: os << "Clear"; break;
+    case LineState::Assert: os << "Assert"; break;
+    case LineState::Pulse: os << "Pulse"; break;
+  }
+  return os;
+}
 
 /**
  * An external port, capable of holding data. Ports are used to communicate
