@@ -251,18 +251,16 @@ void M6502Cpu::reset(void) {
 
 void M6502Cpu::test_step(void) {
 #if JIT
-  step();
+  jit_dispatch(m_state.PC.d);
 #else
   uint8_t val = 0;
   do {
     val = bus_read(m_state.PC.d);
     if (val != 0x00)
-      step();
+      dispatch(m_state.PC.d);
     else
       m_state.PC.d++;
-  } while ((val & 0x0F) != 0 ||
-           ((val == 0xA0) || (val == 0xC0) || (val == 0xE0)));
-
+  } while (val == 0x0);
 #endif
 }
 
@@ -285,20 +283,16 @@ bool M6502Cpu::Interrupt(void) {
   return false;
 }
 
-void M6502Cpu::step(void) {
-  if (Interrupt()) return;
-
-  uint16_t pc = m_state.PC.d;
-#if JIT
-  jit_dispatch(pc);
-#else
-  dispatch(pc);
-#endif
-}
-
 void M6502Cpu::execute(void) {
   while (true) {
-    step();
+    if (Interrupt()) continue;
+
+    uint16_t pc = m_state.PC.d;
+#if JIT
+    jit_dispatch(pc);
+#else
+    dispatch(pc);
+#endif
   }
 }
 
