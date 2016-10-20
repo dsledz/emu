@@ -99,6 +99,9 @@ ScreenDevice::VState ScreenDevice::next_vstate(void) {
       m_vpos = 0;
       do_vstart();
       break;
+    default:
+      do_vnext();
+      break;
   }
 
   return m_vstate;

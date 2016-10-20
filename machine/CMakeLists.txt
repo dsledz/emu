@@ -1,3 +1,4 @@
+add_subdirectory(c64)
 add_subdirectory(gb)
 add_subdirectory(nes)
 add_subdirectory(tg16)
@@ -14,6 +15,7 @@ add_library(machine
     pacmangfx.cc
     i8257.cc)
 target_link_libraries(machine
+    c64
     gb
     nes
     tg16

@@ -47,6 +47,7 @@ class ColorMap {
   }
 
   const color_t &operator[](unsigned idx) const { return m_colors.at(idx); }
+  color_t &operator[](unsigned idx) { return m_colors.at(idx); }
 
  private:
   std::array<color_t, size> m_colors;

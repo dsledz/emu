@@ -67,17 +67,12 @@ class ScreenDevice : public ClockedDevice {
   virtual void do_vdraw(void) {}
   virtual void do_vblank(void) {}
   virtual void do_vend(void) {}
+  virtual void do_vnext(void) {}
 
   HState m_hstate;
   unsigned m_hpos;
   VState m_vstate;
   unsigned m_vpos;
-
- private:
-  HState next_hstate(Cycles *cycles_out);
-  VState next_vstate(void);
-  void set_hstate(HState state);
-  void set_vstate(VState state);
 
   unsigned m_width;
   unsigned m_height;
@@ -87,6 +82,12 @@ class ScreenDevice : public ClockedDevice {
   unsigned m_vbend;
   unsigned m_hvisible;
   unsigned m_vvisible;
+
+ private:
+  HState next_hstate(Cycles *cycles_out);
+  VState next_vstate(void);
+  void set_hstate(HState state);
+  void set_vstate(VState state);
 
   std::unordered_map<unsigned, scanline_fn> m_callbacks;
 };
