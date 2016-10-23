@@ -28,7 +28,7 @@
 using namespace EMU;
 
 RamDevice::RamDevice(Machine *machine, const std::string &name, size_t size)
-    : IODevice(machine, name, size), m_ram(size) {}
+    : Device(machine, name), m_ram(size) {}
 
 RamDevice::~RamDevice(void) {}
 

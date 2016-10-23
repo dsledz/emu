@@ -31,10 +31,12 @@
 
 namespace EMU {
 
-class RamDevice : public IODevice {
+class RamDevice : public Device {
  public:
   RamDevice(Machine *machine, const std::string &name, size_t size);
   virtual ~RamDevice(void);
+
+  virtual size_t size(void) { return m_ram.size(); }
 
   virtual void write8(offset_t offset, uint8_t value);
   virtual uint8_t read8(offset_t offset);
