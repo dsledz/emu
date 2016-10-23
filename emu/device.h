@@ -33,6 +33,7 @@
 #include "emu/io.h"
 #include "emu/state.h"
 #include "emu/timing.h"
+#include "emu/input.h"
 
 using namespace Core;
 
@@ -142,6 +143,19 @@ class IODevice : public Device {
 
  protected:
   size_t m_size;
+};
+
+/**
+ * Class to manage an external input device such as a
+ * joystick or keyboard
+ */
+class InputDevice : public Device {
+ public:
+  InputDevice(Machine *machine, const std::string &name);
+  virtual ~InputDevice(void);
+
+ protected:
+  InputMap m_map;
 };
 
 std::ostream &operator<<(std::ostream &os, const DeviceStatus status);

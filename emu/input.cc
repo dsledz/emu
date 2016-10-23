@@ -65,3 +65,4 @@ void InputMap::pulse(InputKey in) {
   auto it = _input_map.find(in);
   if (it != _input_map.end()) it->second(LineState::Pulse);
 }
+

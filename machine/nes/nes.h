@@ -63,6 +63,32 @@ enum NameTable {
 
 class NES;
 
+class NESJoypad1: public InputDevice {
+public:
+  NESJoypad1(NES *nes);
+  ~NESJoypad1(void);
+
+  byte_t latch_read(void);
+  void latch_reset(void) { m_shift = 0; }
+
+private:
+  NES *m_nes;
+  int m_shift;
+};
+
+class NESJoypad2: public InputDevice {
+public:
+  NESJoypad2(NES *nes);
+  ~NESJoypad2(void);
+
+  byte_t latch_read(void);
+  void latch_reset(void) { m_shift = 0; }
+
+private:
+  NES *m_nes;
+  int m_shift;
+};
+
 class NESMapper : public Device {
  public:
   NESMapper(NES *nes, const iNesHeader *header, bvec &rom);
@@ -227,6 +253,8 @@ class NES : public Machine {
 
   std::unique_ptr<N2a03Cpu> m_cpu;
   std::unique_ptr<NESPPU> m_ppu;
+  NESJoypad1 m_joypad1;
+  NESJoypad2 m_joypad2;
   mapper_ptr m_mapper;
   RamDevice m_ram;
 
@@ -234,7 +262,5 @@ class NES : public Machine {
   AddressBus16x8 m_ppu_bus;
   AddressBus8x8 m_sprite_bus;
 
-  int m_joy1_shift;
-  int m_joy2_shift;
 };
 };

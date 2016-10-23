@@ -134,4 +134,5 @@ class InputMap {
 
   std::unordered_map<InputKey, input_fn, InputKeyHash> _input_map;
 };
+
 };

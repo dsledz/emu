@@ -158,3 +158,7 @@ IODevice::~IODevice(void) {}
 
 size_t IODevice::size(void) { return m_size; }
 
+InputDevice::InputDevice(Machine *machine, const std::string &name)
+    : Device(machine, name), m_map() {}
+
+InputDevice::~InputDevice(void) {}

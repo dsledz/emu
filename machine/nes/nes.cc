@@ -30,27 +30,15 @@
 using namespace EMU;
 using namespace NESMachine;
 
-enum NESKey {
-  A = 0,
-  B = 1,
-  Select = 2,
-  Start = 3,
-  Up = 4,
-  Down = 5,
-  Left = 6,
-  Right = 7,
-  Size = 8,
-};
-
 const std::vector<std::string> NES::ports = {
-    "MIRRORING", "JOYPAD1", "JOYPAD2",
+    "MIRRORING"
 };
 
 NES::NES(void)
     : Machine(Hertz(MASTER_CLOCK)),
-      m_ram(this, "ram", 0x0800),
-      m_joy1_shift(0),
-      m_joy2_shift(0) {
+      m_joypad1(this),
+      m_joypad2(this),
+      m_ram(this, "ram", 0x0800) {
   add_screen(256, 240);
 
   for (auto it = ports.begin(); it != ports.end(); it++) add_ioport(*it);
@@ -60,34 +48,10 @@ NES::NES(void)
 
   m_ppu = std::unique_ptr<NESPPU>(new NESPPU(this, "ppu", ClockDivider(4)));
 
-  /* XXX: Mappers supply the majority of the IO mappings */
-
   /* XXX: APU registers 0x4000 - 0x4017 */
   m_cpu_bus.add(0x4000, 0x5FFF, READ_CB(NES::latch_read, this),
                 WRITE_CB(NES::latch_write, this));
 
-  /* Controllers */
-  IOPort *port = NULL;
-
-  port = ioport("JOYPAD1");
-  add_input(InputSignal(InputKey::Joy1Btn1, port, NESKey::A, true));
-  add_input(InputSignal(InputKey::Joy1Btn2, port, NESKey::B, true));
-  add_input(InputSignal(InputKey::Select1, port, NESKey::Select, true));
-  add_input(InputSignal(InputKey::Start1, port, NESKey::Start, true));
-  add_input(InputSignal(InputKey::Joy1Up, port, NESKey::Up, true));
-  add_input(InputSignal(InputKey::Joy1Down, port, NESKey::Down, true));
-  add_input(InputSignal(InputKey::Joy1Left, port, NESKey::Left, true));
-  add_input(InputSignal(InputKey::Joy1Right, port, NESKey::Right, true));
-
-  port = ioport("JOYPAD2");
-  add_input(InputSignal(InputKey::Joy2Btn1, port, NESKey::A, true));
-  add_input(InputSignal(InputKey::Joy2Btn2, port, NESKey::B, true));
-  add_input(InputSignal(InputKey::Select2, port, NESKey::Select, true));
-  add_input(InputSignal(InputKey::Start2, port, NESKey::Start, true));
-  add_input(InputSignal(InputKey::Joy2Up, port, NESKey::Up, true));
-  add_input(InputSignal(InputKey::Joy2Down, port, NESKey::Down, true));
-  add_input(InputSignal(InputKey::Joy2Left, port, NESKey::Left, true));
-  add_input(InputSignal(InputKey::Joy2Right, port, NESKey::Right, true));
 
   /* 2K ram mirrored 4x */
   m_cpu_bus.add(0x0000, &m_ram);
@@ -109,15 +73,11 @@ uint8_t NES::latch_read(offset_t offset) {
   byte_t result = 0;
   switch (offset) {
     case 0x0016: {
-      byte_t keys = read_ioport("JOYPAD1");
-      if (m_joy1_shift < 8) result = bit_isset(keys, m_joy1_shift);
-      m_joy1_shift++;
+      result = m_joypad1.latch_read();
       break;
     }
     case 0x0017: {
-      byte_t keys = read_ioport("JOYPAD2");
-      if (m_joy2_shift < 8) result = bit_isset(keys, m_joy2_shift);
-      m_joy2_shift++;
+      result = m_joypad2.latch_read();
       break;
     }
   }
@@ -135,8 +95,8 @@ void NES::latch_write(offset_t offset, uint8_t value) {
       break;
     }
     case 0x0016:
-      m_joy1_shift = 0;
-      m_joy2_shift = 0;
+      m_joypad1.latch_reset();
+      m_joypad2.latch_reset();
       break;
   }
 }
