@@ -57,6 +57,9 @@ C64::C64(void) : Machine(Hertz(8181800)),
   m_bus = C64Bus_ptr(new C64Bus());
   m_cpu = C64Cpu_ptr(new M6510Cpu(this, "cpu", ClockDivider(8), m_bus.get()));
   m_vic = VIC2_ptr(new VIC2(this));
+  m_keyboard = C64Keyboard_ptr(new C64Keyboard(this));
+  m_cia1 = C64CIA_ptr(new C64CIA(this, "cia1", Line::INT0));
+  //m_cia2 = C64CIA_ptr(new C64CIA(this, "cia2", Line::NMI));
 
   m_bus->add(0x0000, m_ram.direct(0), 0x10000, false);
   m_bus->add(0x0000, READ_CB(C64::direction_port_read, this),
@@ -89,13 +92,13 @@ void C64::direction_port_write(offset_t offset, uint8_t value)
 
 uint8_t C64::io_port_read(offset_t offset)
 {
-  LOG_DEBUG("IO PORT READ:", m_io_port);
+  LOG_DEBUG("IO PORT READ:", Hex(m_io_port));
   return m_io_port;
 }
 
 void C64::io_port_write(offset_t offset, uint8_t value)
 {
-  LOG_DEBUG("IO PORT WRITE:", value);
+  LOG_DEBUG("IO PORT WRITE:", Hex(value));
   uint8_t bits = value & m_direction_port;
   if (bits & 0x01) {
 

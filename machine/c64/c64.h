@@ -86,6 +86,46 @@ enum VICReg {
 
 class C64;
 
+class C64Keyboard : public InputDevice {
+ public:
+  C64Keyboard(C64 *c64);
+  ~C64Keyboard(void);
+
+  byte_t read_rows(void);
+  void write_rows(byte_t value);
+  byte_t read_columns(void);
+  void write_columns(byte_t value);
+
+ private:
+  C64 *m_c64;
+  byte_t m_mask_row;
+  byte_t m_mask_col;
+  byte_t m_matrix[64];
+};
+
+typedef std::unique_ptr<C64Keyboard> C64Keyboard_ptr;
+
+class C64CIA: public ClockedDevice {
+ public:
+  C64CIA(C64 *c64, const std::string &name, Line irq_line);
+  ~C64CIA(void);
+
+  virtual void execute(void);
+
+ private:
+
+  byte_t cia_read(offset_t offset);
+  void cia_write(offset_t offset, byte_t value);
+
+  C64 *m_c64;
+  Line m_irq_line;
+  // Real time clock
+  EmuTime m_clock;
+  byte_t m_regs[16];
+};
+
+typedef std::unique_ptr<C64CIA> C64CIA_ptr;
+
 class VIC2: public ScreenDevice {
  public:
   VIC2(C64 *c64);
@@ -129,6 +169,8 @@ class C64: public Machine {
 
   RomSet *romset(void) { return &m_romset; }
   RamDevice *ram(void) { return &m_ram; }
+  C64Bus *bus(void) { return m_bus.get(); }
+  C64Keyboard *keyboard(void) { return m_keyboard.get(); }
 
  private:
 
@@ -141,6 +183,9 @@ class C64: public Machine {
   VIC2_ptr m_vic;
   C64Cpu_ptr m_cpu;
   C64Bus_ptr m_bus;
+  C64CIA_ptr m_cia1;
+  C64CIA_ptr m_cia2;
+  C64Keyboard_ptr m_keyboard;
 };
 
 };
