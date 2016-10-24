@@ -65,6 +65,45 @@ std::unordered_map<SDL_Keycode, InputKey, SDL_KeycodeHash> key_map = {
     std::make_tuple(SDLK_s, InputKey::Select1),
 };
 
+std::unordered_map<SDL_Keycode, InputKey, SDL_KeycodeHash> keyboard_map = {
+    std::make_tuple(SDLK_0, InputKey::Keyboard0),
+    std::make_tuple(SDLK_1, InputKey::Keyboard1),
+    std::make_tuple(SDLK_2, InputKey::Keyboard2),
+    std::make_tuple(SDLK_3, InputKey::Keyboard3),
+    std::make_tuple(SDLK_4, InputKey::Keyboard4),
+    std::make_tuple(SDLK_5, InputKey::Keyboard5),
+    std::make_tuple(SDLK_6, InputKey::Keyboard6),
+    std::make_tuple(SDLK_7, InputKey::Keyboard7),
+    std::make_tuple(SDLK_8, InputKey::Keyboard8),
+    std::make_tuple(SDLK_9, InputKey::Keyboard9),
+    std::make_tuple(SDLK_a, InputKey::KeyboardA),
+    std::make_tuple(SDLK_b, InputKey::KeyboardB),
+    std::make_tuple(SDLK_c, InputKey::KeyboardC),
+    std::make_tuple(SDLK_d, InputKey::KeyboardD),
+    std::make_tuple(SDLK_e, InputKey::KeyboardE),
+    std::make_tuple(SDLK_f, InputKey::KeyboardF),
+    std::make_tuple(SDLK_g, InputKey::KeyboardG),
+    std::make_tuple(SDLK_h, InputKey::KeyboardH),
+    std::make_tuple(SDLK_i, InputKey::KeyboardI),
+    std::make_tuple(SDLK_j, InputKey::KeyboardJ),
+    std::make_tuple(SDLK_k, InputKey::KeyboardK),
+    std::make_tuple(SDLK_l, InputKey::KeyboardL),
+    std::make_tuple(SDLK_m, InputKey::KeyboardM),
+    std::make_tuple(SDLK_n, InputKey::KeyboardN),
+    std::make_tuple(SDLK_o, InputKey::KeyboardO),
+    std::make_tuple(SDLK_p, InputKey::KeyboardP),
+    std::make_tuple(SDLK_q, InputKey::KeyboardQ),
+    std::make_tuple(SDLK_r, InputKey::KeyboardR),
+    std::make_tuple(SDLK_s, InputKey::KeyboardS),
+    std::make_tuple(SDLK_t, InputKey::KeyboardT),
+    std::make_tuple(SDLK_u, InputKey::KeyboardU),
+    std::make_tuple(SDLK_v, InputKey::KeyboardV),
+    std::make_tuple(SDLK_w, InputKey::KeyboardW),
+    std::make_tuple(SDLK_x, InputKey::KeyboardX),
+    std::make_tuple(SDLK_y, InputKey::KeyboardY),
+    std::make_tuple(SDLK_z, InputKey::KeyboardZ),
+};
+
 class SDLEmulator : public Emulator {
  public:
   SDLEmulator(const Options &options) : Emulator(options) {
@@ -149,6 +188,8 @@ class SDLEmulator : public Emulator {
             break;
           default: {
             auto it = key_map.find(event->key.keysym.sym);
+            if (it == key_map.end())
+                it = keyboard_map.find(event->key.keysym.sym);
             if (it != key_map.end())
               machine()->send_input(it->second, event->type == SDL_KEYDOWN);
           }
