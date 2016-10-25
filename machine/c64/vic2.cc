@@ -30,6 +30,56 @@
 using namespace EMU;
 using namespace C64Machine;
 
+enum VICReg {
+  M0X = 0x00,
+  M0Y = 0x01,
+  M1X = 0x02,
+  M1Y = 0x03,
+  M2X = 0x04,
+  M2Y = 0x05,
+  M3X = 0x06,
+  M3Y = 0x07,
+  M4X = 0x08,
+  M4Y = 0x09,
+  M5X = 0x0A,
+  M5Y = 0x0B,
+  M6X = 0x0C,
+  M6Y = 0x0D,
+  M7X = 0x0E,
+  M7Y = 0x0F,
+  MSBX = 0x10,
+  CR1 = 0x11,  // RST8, ECM, BMM, DEN, RSEL, YSCROLL(3)
+  RASTER = 0x12,
+  LPX = 0x13, // Light pen X
+  LPY = 0x14, // Light pen Y
+  ME = 0x15, // Sprite enabled
+  CR2 = 0x16, // -, -, RES, MCM, CSEL, XSCROLL(3)
+  MYE = 0x17,
+  MP = 0x18, // VM13, VM12, VM11, VM10, CB13, CB12, CB11, -
+  IR = 0x19, // IRQ, -, -, -, ILP, IMMC, IMBC, IRST
+  IE = 0x1A, // IRQ, -, -, -, ELP, EMMC, EMBC, ERST
+  MDP = 0x1B, // Sprite data priority
+  MMC = 0x1C, // Sprite Multicolour
+  MXE = 0x1D, // Sprite X expansion
+  MM = 0x1E, // Sprite-sprite collision
+  MD = 0x1F, // Sprite date collision
+  BORDER = 0x20, // Border colour
+  B0C = 0x21, // Background colour
+  B1C = 0x22,
+  B2C = 0x23,
+  B3C = 0x24,
+  MM0 = 0x25, // Sprite multicolour
+  MM1 = 0x26,
+  M0C = 0x27, // Sprite colour
+  M1C = 0x28,
+  M2C = 0x29,
+  M3C = 0x2A,
+  M4C = 0x2B,
+  M5C = 0x2C,
+  M6C = 0x2D,
+  M7C = 0x2E
+};
+
 // Based on  6567R56A timings
 VIC2::VIC2(C64 *c64)
   : ScreenDevice(c64, "vic-ii", ClockDivider(1), 512, 262, 388, 488, 13, 40),
@@ -47,6 +97,20 @@ VIC2::~VIC2() {}
 void VIC2::load_rom(void) {
   Rom *rom = m_c64->romset()->rom("char");
   m_bus.add(0x1000, rom->direct(0), 0x1000, true);
+}
+
+byte_t VIC2::vic2_read(offset_t offset) {
+  offset &= 0x3f;
+  if (offset > 0x2f)
+    return 0xff;
+  else
+    return m_regs[offset];
+}
+
+void VIC2::vic2_write(offset_t offset, byte_t value) {
+  offset &= 0x3f;
+  if (offset < 0x2f)
+    m_regs[offset] = value;
 }
 
 void VIC2::init_palette(void) {
@@ -87,8 +151,8 @@ void VIC2::init_palette(void) {
 void VIC2::do_hend(void) {
   // XXX: Update the raster line
   DEVICE_TRACE("hend: ", m_vpos);
-  bit_set(*m_ram->direct(0xD011), 7, m_vpos & 0x100);
-  m_ram->write8(0xD012, m_vpos & 0xff);
+  bit_set(m_regs[VICReg::CR1], 7, m_vpos & 0x100);
+  m_regs[VICReg::RASTER] = m_vpos;
 }
 
 void VIC2::do_hdraw(void) { }

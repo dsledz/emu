@@ -98,23 +98,93 @@ enum C64Keys {
   STOP = 077,
 };
 
+std::vector<std::pair<enum C64Keys, enum InputKey> > keys = {
+std::make_pair(C64Keys::DELETE, InputKey::KeyboardDelete),
+std::make_pair(C64Keys::KEY_3, InputKey::Keyboard3),
+std::make_pair(C64Keys::KEY_5, InputKey::Keyboard5),
+std::make_pair(C64Keys::KEY_7, InputKey::Keyboard7),
+std::make_pair(C64Keys::KEY_9, InputKey::Keyboard9),
+std::make_pair(C64Keys::KEY_PLUS, InputKey::KeyboardPlus),
+std::make_pair(C64Keys::KEY_POUND, InputKey::KeyboardPound),
+std::make_pair(C64Keys::KEY_1, InputKey::Keyboard1),
+std::make_pair(C64Keys::RETURN, InputKey::KeyboardReturn),
+std::make_pair(C64Keys::KEY_W, InputKey::KeyboardW),
+std::make_pair(C64Keys::KEY_R, InputKey::KeyboardR),
+std::make_pair(C64Keys::KEY_Y, InputKey::KeyboardY),
+std::make_pair(C64Keys::KEY_I, InputKey::KeyboardI),
+std::make_pair(C64Keys::KEY_P, InputKey::KeyboardP),
+std::make_pair(C64Keys::KEY_STAR, InputKey::KeyboardStar),
+std::make_pair(C64Keys::KEY_BSPC, InputKey::KeyboardBspc),
+std::make_pair(C64Keys::CRSR_RT, InputKey::KeyboardRight),
+std::make_pair(C64Keys::KEY_A, InputKey::KeyboardA),
+std::make_pair(C64Keys::KEY_D, InputKey::KeyboardD),
+std::make_pair(C64Keys::KEY_G, InputKey::KeyboardG),
+std::make_pair(C64Keys::KEY_J, InputKey::KeyboardJ),
+std::make_pair(C64Keys::KEY_L, InputKey::KeyboardL),
+std::make_pair(C64Keys::SEMI, InputKey::KeyboardSemicolon),
+std::make_pair(C64Keys::CTRL, InputKey::KeyboardCtrl),
+std::make_pair(C64Keys::F7, InputKey::KeyboardF7),
+std::make_pair(C64Keys::KEY_4, InputKey::Keyboard4),
+std::make_pair(C64Keys::KEY_6, InputKey::Keyboard6),
+std::make_pair(C64Keys::KEY_8, InputKey::Keyboard8),
+std::make_pair(C64Keys::KEY_0, InputKey::Keyboard0),
+std::make_pair(C64Keys::DASH, InputKey::KeyboardDash),
+std::make_pair(C64Keys::HOME, InputKey::KeyboardHome),
+std::make_pair(C64Keys::KEY_2, InputKey::Keyboard2),
+std::make_pair(C64Keys::F1, InputKey::KeyboardF1),
+std::make_pair(C64Keys::KEY_Z, InputKey::KeyboardZ),
+std::make_pair(C64Keys::KEY_C, InputKey::KeyboardC),
+std::make_pair(C64Keys::KEY_B, InputKey::KeyboardB),
+std::make_pair(C64Keys::KEY_M, InputKey::KeyboardM),
+std::make_pair(C64Keys::DOT, InputKey::KeyboardPeriod),
+std::make_pair(C64Keys::RSHIFT, InputKey::KeyboardRShift),
+std::make_pair(C64Keys::SPACE, InputKey::KeyboardSpace),
+std::make_pair(C64Keys::F3, InputKey::KeyboardF3),
+std::make_pair(C64Keys::KEY_S, InputKey::KeyboardS),
+std::make_pair(C64Keys::KEY_F, InputKey::KeyboardF),
+std::make_pair(C64Keys::KEY_H, InputKey::KeyboardH),
+std::make_pair(C64Keys::KEY_K, InputKey::KeyboardK),
+std::make_pair(C64Keys::COLON, InputKey::KeyboardColon),
+std::make_pair(C64Keys::EQUALS, InputKey::KeyboardEquals),
+std::make_pair(C64Keys::CEQUALS, InputKey::KeyboardCEquals),
+std::make_pair(C64Keys::F5, InputKey::KeyboardF5),
+std::make_pair(C64Keys::KEY_E, InputKey::KeyboardE),
+std::make_pair(C64Keys::KEY_T, InputKey::KeyboardT),
+std::make_pair(C64Keys::KEY_U, InputKey::KeyboardU),
+std::make_pair(C64Keys::KEY_O, InputKey::KeyboardO),
+std::make_pair(C64Keys::AT, InputKey::KeyboardAt),
+std::make_pair(C64Keys::CARROT, InputKey::KeyboardCaret),
+std::make_pair(C64Keys::KEY_Q, InputKey::KeyboardQ),
+std::make_pair(C64Keys::CRSR_DN, InputKey::KeyboardDown),
+std::make_pair(C64Keys::LSHIFT, InputKey::KeyboardLShift),
+std::make_pair(C64Keys::KEY_X, InputKey::KeyboardX),
+std::make_pair(C64Keys::KEY_V, InputKey::KeyboardV),
+std::make_pair(C64Keys::KEY_N, InputKey::KeyboardN),
+std::make_pair(C64Keys::COMMA, InputKey::KeyboardComma),
+std::make_pair(C64Keys::SLASH, InputKey::KeyboardSlash),
+std::make_pair(C64Keys::STOP, InputKey::KeyboardStop)
+};
+
 C64Keyboard::C64Keyboard(C64 *c64)
     : InputDevice(c64, "keyboard"),
       m_c64(c64),
-      m_mask_row(0),
-      m_mask_col(0),
-      m_matrix{0} {
-  c64->add_ioport("ROW1");
-  IOPort *port = c64->ioport("ROW1");
-
-  c64->add_input(InputSignal(InputKey::Keyboard3, port, 1, true));
+      m_row_mask(0),
+      m_col_mask(0),
+      m_matrix{LineState::Clear} {
+  for (auto it = keys.begin(); it != keys.end(); it++) {
+    c64->add_input(it->second, [=](LineState s) { on_key(it->first, s); });
+  }
 }
 
 C64Keyboard::~C64Keyboard(void) { }
 
+void
+C64Keyboard::on_key(int key, LineState s) {
+  m_matrix[key] = s;
+}
+
 byte_t
 C64Keyboard::read_rows(void) {
-  DEVICE_DEBUG("read_rows");
   byte_t result = 0;
 
   return result;
@@ -122,18 +192,26 @@ C64Keyboard::read_rows(void) {
 
 void
 C64Keyboard::write_rows(byte_t value) {
-
+  m_row_mask = value;
 }
 
 byte_t
 C64Keyboard::read_columns(void) {
-  DEVICE_DEBUG("read_columns");
   byte_t result = 0;
+  for (int r = 7; r >= 0; r--) {
+    if (bit_isset(m_row_mask, r))
+      continue;
+    for (int c = 0; c < 8; c++) {
+      if (m_matrix[r << 3 | c] == LineState::Assert)
+        bit_set(result, c, true);
+    }
+  }
+  DEVICE_DEBUG("read_columns: ", Hex(result));
 
   return result;
 }
 
 void
 C64Keyboard::write_columns(byte_t value) {
-
+  m_col_mask = value;
 }

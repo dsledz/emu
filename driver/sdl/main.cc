@@ -102,6 +102,20 @@ std::unordered_map<SDL_Keycode, InputKey, SDL_KeycodeHash> keyboard_map = {
     std::make_tuple(SDLK_x, InputKey::KeyboardX),
     std::make_tuple(SDLK_y, InputKey::KeyboardY),
     std::make_tuple(SDLK_z, InputKey::KeyboardZ),
+    std::make_tuple(SDLK_RETURN, InputKey::KeyboardReturn),
+    std::make_tuple(SDLK_LSHIFT, InputKey::KeyboardLShift),
+    std::make_tuple(SDLK_RSHIFT, InputKey::KeyboardRShift),
+    std::make_tuple(SDLK_COMMA, InputKey::KeyboardComma),
+    std::make_tuple(SDLK_SLASH, InputKey::KeyboardSlash),
+    std::make_tuple(SDLK_STOP, InputKey::KeyboardStop),
+    std::make_tuple(SDLK_DOWN, InputKey::KeyboardDown),
+    std::make_tuple(SDLK_CARET, InputKey::KeyboardCaret),
+    std::make_tuple(SDLK_COLON, InputKey::KeyboardColon),
+    std::make_tuple(SDLK_SEMICOLON, InputKey::KeyboardSemicolon),
+    std::make_tuple(SDLK_AT, InputKey::KeyboardAt),
+    std::make_tuple(SDLK_PLUS, InputKey::KeyboardPlus),
+    std::make_tuple(SDLK_PERIOD, InputKey::KeyboardPeriod),
+    std::make_tuple(SDLK_DOLLAR, InputKey::KeyboardPound),
 };
 
 class SDLEmulator : public Emulator {

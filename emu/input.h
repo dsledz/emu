@@ -100,6 +100,38 @@ enum class InputKey {
   KeyboardX = 88,
   KeyboardY = 89,
   KeyboardZ = 90,
+  KeyboardF1 = 128,
+  KeyboardF2 = 129,
+  KeyboardF3 = 130,
+  KeyboardF4 = 131,
+  KeyboardF5 = 132,
+  KeyboardF6 = 133,
+  KeyboardF7 = 134,
+  KeyboardF8 = 135,
+  KeyboardLShift = 136,
+  KeyboardComma = 137,
+  KeyboardSlash = 138,
+  KeyboardStop = 139,
+  KeyboardDown = 140,
+  KeyboardCaret = 141,
+  KeyboardAt = 142,
+  KeyboardCEquals = 143,
+  KeyboardEquals = 144,
+  KeyboardColon = 145,
+  KeyboardSpace = 146,
+  KeyboardRShift = 147,
+  KeyboardPeriod = 148,
+  KeyboardDelete = 149,
+  KeyboardReturn = 150,
+  KeyboardBspc = 151,
+  KeyboardPlus = 152,
+  KeyboardPound = 153,
+  KeyboardStar = 154,
+  KeyboardRight = 155,
+  KeyboardSemicolon = 156,
+  KeyboardCtrl = 157,
+  KeyboardDash = 158,
+  KeyboardHome = 159,
 };
 
 struct InputError : public CoreException {
@@ -159,14 +191,17 @@ class InputMap {
    */
   void pulse(InputKey in);
 
+  /**
+   * Add a custom input handler
+   */
+  void add_input(InputKey key, input_fn fn);
+
  private:
-  input_fn _find(InputKey in) {
-    auto it = _input_map.find(in);
-    if (it == _input_map.end()) throw UnmappedInput(in);
+  input_fn _find(InputKey key) {
+    auto it = _input_map.find(key);
+    if (it == _input_map.end()) throw UnmappedInput(key);
     return it->second;
   }
-
-  void add_input(InputKey in, input_fn fn);
 
   std::unordered_map<InputKey, input_fn, InputKeyHash> _input_map;
 };

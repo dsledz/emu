@@ -54,8 +54,6 @@ C64CIA::C64CIA(C64 *c64, const std::string &name, Line irq_line)
     : ClockedDevice(c64, c64->clock(), name, ClockDivider(8)),
       m_c64(c64),
       m_irq_line(irq_line) {
-  m_c64->bus()->add(0xdc00, 0xdcff, READ_CB(C64CIA::cia_read, this),
-                    WRITE_CB(C64CIA::cia_write, this));
 }
 
 C64CIA::~C64CIA(void) {}
@@ -71,12 +69,10 @@ C64CIA::cia_read(offset_t offset) {
   offset &= 0x0f;
   switch (offset) {
     case CIARegisters::PRA:
-      result = m_c64->keyboard()->read_columns() & m_regs[CIARegisters::DDRA];
-      result |= 0 & ~m_regs[CIARegisters::DDRA];
+      result = m_c64->keyboard()->read_columns();
       break;
     case CIARegisters::PRB:
-      result = m_c64->keyboard()->read_rows() & m_regs[CIARegisters::DDRB];
-      result |= 0 & ~m_regs[CIARegisters::DDRB];
+      result = m_c64->keyboard()->read_rows();
       break;
     case CIARegisters::DDRA:
     case CIARegisters::DDRB:
@@ -99,10 +95,18 @@ C64CIA::cia_read(offset_t offset) {
   return result;
 }
 
-void
-C64CIA::cia_write(offset_t offset, byte_t value) {
+void C64CIA::cia_write(offset_t offset, byte_t value) {
   offset &= 0x0f;
   m_regs[offset] = value;
   DEVICE_INFO("cia_write(", Hex((byte_t)offset), ", ", Hex(value), ")");
+  switch (offset) {
+  case CIARegisters::DDRA:
+    m_c64->keyboard()->write_rows(value);
+    break;
+  case CIARegisters::DDRB:
+    m_c64->keyboard()->write_columns(value);
+    break;
+  default:
+    break;
+  }
 }
-

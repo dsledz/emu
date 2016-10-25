@@ -34,56 +34,6 @@ typedef std::unique_ptr<C64Bus> C64Bus_ptr;
 
 namespace C64Machine {
 
-enum VICReg {
-  M0X = 0x00,
-  M0Y = 0x01,
-  M1X = 0x02,
-  M1Y = 0x03,
-  M2X = 0x04,
-  M2Y = 0x05,
-  M3X = 0x06,
-  M3Y = 0x07,
-  M4X = 0x08,
-  M4Y = 0x09,
-  M5X = 0x0A,
-  M5Y = 0x0B,
-  M6X = 0x0C,
-  M6Y = 0x0D,
-  M7X = 0x0E,
-  M7Y = 0x0F,
-  MSBX = 0x10,
-  CR1 = 0x11,  // RST8, ECM, BMM, DEN, RSEL, YSCROLL(3)
-  RASTER = 0x12,
-  LPX = 0x13, // Light pen X
-  LPY = 0x14, // Light pen Y
-  ME = 0x15, // Sprite enabled
-  CR2 = 0x16, // -, -, RES, MCM, CSEL, XSCROLL(3)
-  MYE = 0x17,
-  MP = 0x18, // VM13, VM12, VM11, VM10, CB13, CB12, CB11, -
-  IR = 0x19, // IRQ, -, -, -, ILP, IMMC, IMBC, IRST
-  IE = 0x1A, // IRQ, -, -, -, ELP, EMMC, EMBC, ERST
-  MDP = 0x1B, // Sprite data priority
-  MMC = 0x1C, // Sprite Multicolour
-  MXE = 0x1D, // Sprite X expansion
-  MM = 0x1E, // Sprite-sprite collision
-  MD = 0x1F, // Sprite date collision
-  BORDER = 0x20, // Border colour
-  B0C = 0x21, // Background colour
-  B1C = 0x22,
-  B2C = 0x23,
-  B3C = 0x24,
-  MM0 = 0x25, // Sprite multicolour
-  MM1 = 0x26,
-  M0C = 0x27, // Sprite colour
-  M1C = 0x28,
-  M2C = 0x29,
-  M3C = 0x2A,
-  M4C = 0x2B,
-  M5C = 0x2C,
-  M6C = 0x2D,
-  M7C = 0x2E
-};
-
 class C64;
 
 class C64Keyboard : public InputDevice {
@@ -97,10 +47,13 @@ class C64Keyboard : public InputDevice {
   void write_columns(byte_t value);
 
  private:
+
+  void on_key(int key, LineState s);
+
   C64 *m_c64;
-  byte_t m_mask_row;
-  byte_t m_mask_col;
-  byte_t m_matrix[64];
+  byte_t m_row_mask;
+  byte_t m_col_mask;
+  LineState m_matrix[64];
 };
 
 typedef std::unique_ptr<C64Keyboard> C64Keyboard_ptr;
@@ -112,10 +65,10 @@ class C64CIA: public ClockedDevice {
 
   virtual void execute(void);
 
- private:
-
   byte_t cia_read(offset_t offset);
   void cia_write(offset_t offset, byte_t value);
+
+ private:
 
   C64 *m_c64;
   Line m_irq_line;
@@ -133,6 +86,9 @@ class VIC2: public ScreenDevice {
 
   void load_rom(void);
 
+  byte_t vic2_read(offset_t offset);
+  void vic2_write(offset_t offset, byte_t value);
+
  private:
   void init_palette(void);
 
@@ -145,6 +101,7 @@ class VIC2: public ScreenDevice {
   std::function<void(void)> m_vblank_cb;
 
   C64 *m_c64;
+  byte_t m_regs[0x40];
   RamDevice *m_ram;
   ColorMap<16, RGBColor> m_palette;
   C64Bus m_bus;

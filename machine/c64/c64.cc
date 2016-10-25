@@ -66,6 +66,11 @@ C64::C64(void) : Machine(Hertz(8181800)),
              WRITE_CB(C64::direction_port_write, this));
   m_bus->add(0x0001, READ_CB(C64::io_port_read, this),
              WRITE_CB(C64::io_port_write, this));
+
+  m_bus->add(0xdc00, 0xdcff, READ_CB(C64CIA::cia_read, m_cia1.get()),
+                    WRITE_CB(C64CIA::cia_write, m_cia1.get()));
+  m_bus->add(0xd000, 0xd3ff, READ_CB(VIC2::vic2_read, m_vic.get()),
+             WRITE_CB(VIC2::vic2_write, m_vic.get()));
 }
 
 C64::~C64() {}

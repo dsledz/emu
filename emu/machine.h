@@ -121,6 +121,7 @@ class Machine {
   void reset_switches(void);
 
   void add_input(const InputSignal &signal);
+  void add_input(InputKey key, input_fn fn);
 
   /**
    * Set an line on the device @a name.

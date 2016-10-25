@@ -113,6 +113,10 @@ void Machine::write_ioport(IOPort *port, byte_t value) { port->value = value; }
 
 void Machine::add_input(const InputSignal &signal) { m_input.add(signal); }
 
+void Machine::add_input(InputKey key, input_fn fn) {
+  m_input.add_input(key, fn);
+}
+
 void Machine::send_input(InputKey key, bool pressed) {
   if (pressed)
     m_input.depress(key);
