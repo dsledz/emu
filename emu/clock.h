@@ -97,7 +97,7 @@ class Clock : public Device {
   RealTimeClock m_rtc;
   Hertz m_hertz;
   std::list<ClockedDevice *> m_devs;
-  FiberTask m_task;
+  ThreadTask m_task;
 
 
   std::unique_ptr<std::promise<void> > m_promise_ptr;
