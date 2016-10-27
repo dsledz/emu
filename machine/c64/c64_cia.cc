@@ -60,6 +60,15 @@ C64CIA::~C64CIA(void) {}
 
 void
 C64CIA::execute(void) {
+  if (m_timerA.running) {
+    if (m_timerA.timer < 100) {
+      DEVICE_INFO("Triggering interrupt");
+      m_regs[CIARegisters::ICR] |= 0x01;
+      m_timerA.timer = m_timerA.latch.d;
+      machine()->set_line("cpu", Line::INT0, LineState::Assert);
+    } else
+      m_timerA.timer -= 100;
+  }
   add_icycles(Cycles(100));
 }
 
@@ -77,18 +86,28 @@ C64CIA::cia_read(offset_t offset) {
     case CIARegisters::DDRA:
     case CIARegisters::DDRB:
     case CIARegisters::TALO:
+      result = m_timerA.latch.b.l;
+      break;
     case CIARegisters::TAHI:
+      result = m_timerA.latch.b.h;
+      break;
     case CIARegisters::TBLO:
+      result = m_timerB.latch.b.l;
+      break;
     case CIARegisters::TBHI:
+      result = m_timerB.latch.b.h;
+      break;
     case CIARegisters::TOD_10THS:
     case CIARegisters::TOD_SEC:
     case CIARegisters::TOD_MIN:
     case CIARegisters::TOD_HR:
     case CIARegisters::SDR:
     case CIARegisters::ICR:
-    case CIARegisters::CRA:
     case CIARegisters::CRB:
       result = m_regs[offset];
+      break;
+    case CIARegisters::CRA:
+      break;
   }
 
   DEVICE_INFO("cia_read(", Hex((byte_t)offset), ") -> ", Hex(result));
@@ -97,16 +116,34 @@ C64CIA::cia_read(offset_t offset) {
 
 void C64CIA::cia_write(offset_t offset, byte_t value) {
   offset &= 0x0f;
-  m_regs[offset] = value;
-  DEVICE_INFO("cia_write(", Hex((byte_t)offset), ", ", Hex(value), ")");
   switch (offset) {
-  case CIARegisters::DDRA:
-    m_c64->keyboard()->write_rows(value);
-    break;
-  case CIARegisters::DDRB:
-    m_c64->keyboard()->write_columns(value);
+    case CIARegisters::DDRA:
+      m_c64->keyboard()->write_rows(value);
+      break;
+    case CIARegisters::DDRB:
+      m_c64->keyboard()->write_columns(value);
+      break;
+    case CIARegisters::TALO:
+      m_timerA.latch.b.l = value;
+      break;
+    case CIARegisters::TAHI:
+      m_timerA.latch.b.h = value;
+      break;
+    case CIARegisters::ICR:
+      if (bit_isset(value, 7)) {
+        m_regs[CIARegisters::ICR] &= ~(value & 0x1f);
+        machine()->set_line("cpu", Line::INT0, LineState::Clear);
+      } else
+        m_regs[CIARegisters::ICR] |= (value & 0x1f);
+      break;
+    case CIARegisters::CRA:
+      if (bit_isset(value, 4)) {
+        m_timerA.timer = m_timerA.latch.d;
+      }
+      m_timerA.running = !bit_isset(value, 0);
     break;
   default:
+      m_regs[offset] = value;
     break;
   }
 }

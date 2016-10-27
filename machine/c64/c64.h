@@ -70,10 +70,19 @@ class C64CIA: public ClockedDevice {
 
  private:
 
+  struct CIATimer {
+    uint16_t timer;
+    reg16_t  latch;
+    uint8_t  control;
+    bool     running;
+  };
+
   C64 *m_c64;
   Line m_irq_line;
   // Real time clock
   EmuTime m_clock;
+  CIATimer m_timerA;
+  CIATimer m_timerB;
   byte_t m_regs[16];
 };
 
