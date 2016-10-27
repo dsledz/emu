@@ -35,7 +35,7 @@
 
 namespace EMU {
 
-void read_rom(const std::string &name, bvec &rom);
+void read_rom(const std::string &dir, const std::string &name, bvec &rom);
 
 struct RomException : public CoreException {
   RomException(const std::string &path)
@@ -48,7 +48,7 @@ struct RomException : public CoreException {
 class Rom {
  public:
   Rom(void);
-  Rom(const std::string &path);
+  Rom(const std::string &dir, const std::string &path);
   ~Rom(void);
 
   uint8_t read8(offset_t offset) const;

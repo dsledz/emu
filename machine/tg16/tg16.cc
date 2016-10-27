@@ -77,7 +77,7 @@ TG16::load_rom(const std::string &rom) {
   LOG_INFO("Loading: ", rom);
   bvec rom_data;
 
-  EMU::read_rom(rom, rom_data);
+  EMU::read_rom("tg16", rom, rom_data);
   offset_t rom_offset = rom_data.size() % 8192;
 
   if (rom_data.at(rom_offset + 0x1FFF) < 0xe0)

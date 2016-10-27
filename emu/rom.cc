@@ -32,14 +32,15 @@
 
 using namespace EMU;
 
-void EMU::read_rom(const std::string &name, bvec &rom) {
+void EMU::read_rom(const std::string &dir, const std::string &name, bvec &rom) {
   struct stat sb;
   std::string path;
-  if (getenv("ROM_PATH") != NULL && name[0] != '/') {
+  if (getenv("ROM_PATH") != NULL && dir[0] != '/') {
     path = getenv("ROM_PATH");
-    path += "/";
+    path += "/" + dir + "/" + name;
+  } else {
+    path = dir + "/" + name;
   }
-  path += name;
   if (stat(path.c_str(), &sb) == -1) throw RomException(name);
   rom.resize(sb.st_size);
   try {
@@ -52,7 +53,7 @@ void EMU::read_rom(const std::string &name, bvec &rom) {
 
 Rom::Rom(void) {}
 
-Rom::Rom(const std::string &path) { read_rom(path, _rom); }
+Rom::Rom(const std::string &dir, const std::string &path) { read_rom(dir, path, _rom); }
 
 Rom::~Rom(void) {}
 
@@ -106,8 +107,7 @@ void RomSet::load(const std::string &path) {
   while ((ent = readdir(dir)) != NULL) {
     std::string name(ent->d_name);
     if (name == "." || name == "..") continue;
-    std::string full_path = path + "/" + name;
-    Rom rom(full_path);
+    Rom rom(path, name);
     _roms.insert(std::make_pair(name, rom));
   }
 }
@@ -117,10 +117,9 @@ void RomSet::load(const RomDefinition &def) {
   for (auto it = def.regions.begin(); it != def.regions.end(); it++) {
     Rom rom;
     for (auto it2 = it->roms.begin(); it2 != it->roms.end(); it2++) {
-      std::string path = def.name + "/" + (*it2);
       bvec data;
 
-      read_rom(path, data);
+      read_rom(def.name, *it2, data);
 
       rom.append(data);
     }

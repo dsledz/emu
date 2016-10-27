@@ -38,7 +38,7 @@ class Zexall : public Machine {
         io(new Z80IOBus()),
         state(bus.get(), io.get()),
         cpu(new Z80Cpu(this, "cpu", ClockDivider(2), &state)),
-        rom("zex.bin"),
+        rom("z80", "zex.bin"),
         ram(),
         m_data(0),
         m_req(0),

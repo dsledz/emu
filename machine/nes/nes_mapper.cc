@@ -408,7 +408,7 @@ mapper_ptr NESMachine::load_cartridge(NES *nes, const std::string &name) {
   iNesHeader header;
   mapper_ptr mapper;
 
-  read_rom(name, rom);
+  read_rom("nes", name, rom);
 
   memcpy(&header, rom.data(), sizeof(header));
 
