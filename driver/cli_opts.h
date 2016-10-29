@@ -23,11 +23,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <getopt.h>
 #include "emu/emu.h"
 
 using namespace Core;
 using namespace EMU;
+#ifdef WIN32
+
+namespace Driver {
+
+class CLIOptions : public Options {
+ public:
+  CLIOptions(int argc, char **argv) : Options() {
+    log_level = "info";
+    driver = "nes";
+    rom = "mario3.nes";
+  }
+};
+};
+#else
+#include <getopt.h>
 
 namespace Driver {
 
@@ -58,3 +72,4 @@ class CLIOptions : public Options {
   }
 };
 };
+#endif
