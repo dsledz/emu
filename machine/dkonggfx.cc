@@ -77,30 +77,6 @@ void DonkeyKongGfx::init_sprite(GfxObject<16, 16> *s, byte_t *b) {
   }
 }
 
-RGBColor rgb_palette[256] = {
-        [0x00] = RGBColor(0, 0, 0),   [0x01] = RGBColor(0, 0, 255),
-        [0x02] = RGBColor(0, 0, 255), [0x03] = RGBColor(0, 0, 255),
-        [0x20] = RGBColor(255, 0, 0), [0x40] = RGBColor(255, 0, 0),
-        [0x60] = RGBColor(255, 0, 0), [0x80] = RGBColor(255, 0, 0),
-        [0xA0] = RGBColor(255, 0, 0), [0xC0] = RGBColor(255, 0, 0),
-        [0xE0] = RGBColor(255, 0, 0), [0x04] = RGBColor(0, 255, 0),
-        [0x08] = RGBColor(0, 255, 0), [0x0C] = RGBColor(0, 255, 0),
-        [0x10] = RGBColor(0, 255, 0), [0x14] = RGBColor(0, 255, 0),
-        [0x18] = RGBColor(0, 255, 0), [0x1C] = RGBColor(0, 255, 0),
-};
-
-/**
- * Color Palette is defined as:
- * RRRGGGBB
- */
-static inline __attribute__((used)) RGBColor convert(uint8_t *b_ptr) {
-  uint8_t b = *b_ptr;
-  return RGBColor(
-      0x21 * bit_isset(b, 0) + 0x47 * bit_isset(b, 1) + 0x97 * bit_isset(b, 2),
-      0x21 * bit_isset(b, 3) + 0x47 * bit_isset(b, 4) + 0x97 * bit_isset(b, 5),
-      0x21 * 0 + 0x47 * bit_isset(b, 6) + 0x97 * bit_isset(b, 7));
-}
-
 void DonkeyKongGfx::init(RomSet *romset) {
   /**
    * Color Palette is defined as:
@@ -114,14 +90,10 @@ void DonkeyKongGfx::init(RomSet *romset) {
       uint8_t idx =
           (palette_rom->read8(i + 256) << 4) | (palette_rom->read8(i) & 0x0F);
       idx ^= 0xFF;
-#if 1
       m_palette[i / 4][i % 4] = RGBColor(
-          RGB_4B(bit_isset(idx, 5), 0, bit_isset(idx, 6), bit_isset(idx, 7)),
-          RGB_4B(bit_isset(idx, 2), 0, bit_isset(idx, 3), bit_isset(idx, 4)),
-          RGB_3B(bit_isset(idx, 0), bit_isset(idx, 1), 0));
-#else
-      m_palette[i / 4][i % 4] = convert(&idx);
-#endif
+          RGB_4B(bit_isset(idx, 7), 0, bit_isset(idx, 6), bit_isset(idx, 5)),
+          RGB_4B(bit_isset(idx, 4), 0, bit_isset(idx, 3), bit_isset(idx, 2)),
+          RGB_3B(bit_isset(idx, 1), bit_isset(idx, 0), 0));
     }
     m_palette_index[i] = palette_rom->read8(i + 512) & 0x0f;
   }

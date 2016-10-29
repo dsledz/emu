@@ -74,7 +74,7 @@ bool C64CIA::CIATimer::tick(Cycles cycles) {
     return false;
 
   assert(timer >= cycles.v);
-  timer -= cycles.v;
+  timer -= (uint16_t)cycles.v;
   if (timer == 0) {
     if (restart) {
       LOG_DEBUG("Restarting timer: ", Hex(latch.d))

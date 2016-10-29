@@ -98,7 +98,7 @@ enum C64Keys {
   STOP = 077,
 };
 
-std::vector<std::pair<enum C64Keys, enum InputKey> > keys = {
+std::vector<std::pair<C64Keys, InputKey> > keys = {
 std::make_pair(C64Keys::KEY_DEL, InputKey::KeyboardDelete),
 std::make_pair(C64Keys::KEY_3, InputKey::Keyboard3),
 std::make_pair(C64Keys::KEY_5, InputKey::Keyboard5),
