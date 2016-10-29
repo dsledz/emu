@@ -218,7 +218,7 @@ void Pacman::latch_write(offset_t offset, byte_t value) {
 }
 
 MachineInformation pacman_info{
-    .name = "Pac-man", .year = "1980",
+    "Pac-man", "1980",
 };
 
 static machine_ptr pacman_create(Options *opts) {

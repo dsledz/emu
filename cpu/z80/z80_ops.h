@@ -316,8 +316,7 @@ OP(DI) {
   state->iff1 = state->iff2 = false;
 }
 
-static inline byte_t a_used
-FETCH(Z80State *state, Z80Arg reg) {
+static inline byte_t a_used FETCH(Z80State *state, Z80Arg reg) {
   switch (reg) {
     case Z80Arg::ArgRegA:
       return state->AF.b.h;
@@ -481,7 +480,7 @@ OP(IM, byte_t arg) {
   state->imode = arg;
 }
 
-OP(IN, byte_t &orig, byte_t port) {
+OP(Z80_IN, byte_t &orig, byte_t port) {
   orig = io_read(state, port);
   state->yield = 1;
 }
@@ -611,7 +610,7 @@ OP(OR, reg8_t &dest, reg8_t arg) {
   dest = result;
 }
 
-OP(OUT, byte_t port, byte_t value) {
+OP(Z80_OUT, byte_t port, byte_t value) {
   io_write(state, port, value);
   state->yield = 1;
 }

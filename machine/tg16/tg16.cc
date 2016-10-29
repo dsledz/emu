@@ -162,10 +162,7 @@ byte_t PSG::read(offset_t offset) { return 0; }
 void PSG::write(offset_t offset, byte_t value) {}
 
 MachineInformation tg16_info{
-    .name = "TurboGrafx-16",
-    .year = "1989",
-    .cartridge = true,
-    .extension = "pce",
+    "TurboGrafx-16", "1989", "pce", true,
 };
 
 MachineDefinition tg16("tg16", tg16_info, [](Options *opts) -> machine_ptr {

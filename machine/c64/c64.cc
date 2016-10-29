@@ -120,10 +120,7 @@ void C64::io_port_write(offset_t offset, uint8_t value)
 
 }
 
-
-MachineInformation c64_info{
-    .name = "C64", .year = "1983",
-};
+MachineInformation c64_info{"C64", "1983"};
 
 MachineDefinition c64("c64", c64_info, [](Options *opts) -> machine_ptr {
   return machine_ptr(new C64Machine::C64());

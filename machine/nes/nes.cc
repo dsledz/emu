@@ -102,10 +102,7 @@ void NES::latch_write(offset_t offset, uint8_t value) {
 }
 
 MachineInformation nes_info{
-    .name = "Nintendo Entertainment System",
-    .year = "1985",
-    .extension = "nes",
-    .cartridge = true,
+    "Nintendo Entertainment System", "1985", "nes", true,
 };
 
 MachineDefinition nes("nes", nes_info, [](Options *opts) -> machine_ptr {

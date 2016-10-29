@@ -152,7 +152,7 @@ class WaitChannel {
     return obj;
   }
 
-  int available(void) { return m_objects.size(); }
+  size_t available(void) { return m_objects.size(); }
 
  private:
   std::mutex m_mtx;

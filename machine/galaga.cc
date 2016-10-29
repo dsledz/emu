@@ -292,9 +292,7 @@ void Galaga::init_controls(void) {
   add_input(InputSignal(InputKey::Joy2Left, port, 3, false));
 }
 
-MachineInformation galaga_info{
-    .name = "Galaga", .year = "1983",
-};
+MachineInformation galaga_info{"Galaga", "1983"};
 
 MachineDefinition galaga("galaga", galaga_info,
                          [](Options *opts) -> machine_ptr {

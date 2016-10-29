@@ -199,9 +199,7 @@ byte_t DonkeyKong::latch_read(offset_t offset) {
   return 0;
 }
 
-MachineInformation donkeykong_info{
-    .name = "Donkey Kong", .year = "1981",
-};
+MachineInformation donkeykong_info{"Donkey Kong", "1981"};
 
 MachineDefinition dkong("dkong", donkeykong_info,
                         [](Options *opts) -> machine_ptr {

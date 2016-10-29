@@ -266,7 +266,7 @@ OPCODE(0xD2, 10, 0, "JP NC", JP(state, !state->AF.b.f.C, D16(state)));
 OPCODE(0xD3, 11, 2, "OUT d8, A", {
   state->WZ.b.l = (D8(state) + 1) & 0xff;
   state->WZ.b.h = state->AF.b.h;
-  OUT(state, state->d8, state->AF.b.h);
+  Z80_OUT(state, state->d8, state->AF.b.h);
 });
 OPCODE(0xD4, 10, 3, "CALL NC, d16", CALL(state, !state->AF.b.f.C, D16(state)));
 OPCODE(0xD5, 11, 1, "PUSH DE", PUSH(state, state->DE.b.h, state->DE.b.l));
@@ -278,7 +278,7 @@ OPCODE(0xDA, 10, 3, "JP C, d16", JP(state, state->AF.b.f.C, D16(state)));
 OPCODE(0xDB, 11, 2, "IN A, d8", {
   state->WZ.b.h = state->AF.b.h;
   state->WZ.b.l = D8(state) + 1;
-  IN(state, state->AF.b.h, state->d8);
+  Z80_IN(state, state->AF.b.h, state->d8);
 });
 OPCODE(0xDC, 10, 3, "CALL C, d16", CALL(state, state->AF.b.f.C, D16(state)));
 OPCODE(0xDD, 0, 0, "EXTD", DISPATCH_ED(state));
@@ -576,9 +576,9 @@ OPCODE(0xCBFE, 15, 2, "SET 7, (HL)", BIT_SET_HL(state, 7));
 OPCODE(0xCBFF, 8, 2, "SET 7, A", BIT_SET(state, state->AF.b.h, 7));
 
 OPCODE(0xED00, 5, 2, "NOP", );
-OPCODE(0xED40, 12, 2, "IN B, (C)", IN(state, state->BC.b.h, state->BC.b.l));
+OPCODE(0xED40, 12, 2, "IN B, (C)", Z80_IN(state, state->BC.b.h, state->BC.b.l));
 OPCODE(0xED41, 12, 2, "OUT (C), B", {
-  OUT(state, state->BC.b.l, state->BC.b.h);
+  Z80_OUT(state, state->BC.b.l, state->BC.b.h);
   state->WZ.d = state->BC.d + 1;
 });
 OPCODE(0xED42, 15, 2, "SBC HL, BC", SBC16(state, state->HL.d, state->BC.d));
@@ -590,15 +590,15 @@ OPCODE(0xED43, 20, 4, "LD (d16), BC", {
 OPCODE(0xED44, 8, 2, "NEG", NEG(state, state->AF.b.h));
 OPCODE(0xED45, 14, 2, "RET N", RETN(state));
 OPCODE(0xED47, 9, 2, "LD I, A", LD(state, state->I, state->AF.b.h));
-OPCODE(0xED48, 12, 2, "IN C, (C)", IN(state, state->BC.b.l, state->BC.b.l));
-OPCODE(0xED49, 12, 2, "OUT (C), C", OUT(state, state->BC.b.l, state->BC.b.l));
+OPCODE(0xED48, 12, 2, "IN C, (C)", Z80_IN(state, state->BC.b.l, state->BC.b.l));
+OPCODE(0xED49, 12, 2, "OUT (C), C", Z80_OUT(state, state->BC.b.l, state->BC.b.l));
 OPCODE(0xED4A, 15, 2, "ADC HL, BC", ADC16(state, state->HL.d, state->BC.d));
 OPCODE(0xED4B, 20, 2, "LD BC, (d16)", LD16(state, state->BC, I16(state)));
 OPCODE(0xED4C, 8, 2, "NEG", NEG(state, state->AF.b.h));
 OPCODE(0xED4D, 14, 2, "RET I", RETI(state));
 OPCODE(0xED4F, 9, 2, "LD R, A", LD(state, state->R, state->AF.b.h));
-OPCODE(0xED50, 12, 2, "IN D, (C)", IN(state, state->DE.b.h, state->BC.b.l));
-OPCODE(0xED51, 12, 2, "OUT (C), D", OUT(state, state->BC.b.l, state->DE.b.h));
+OPCODE(0xED50, 12, 2, "IN D, (C)", Z80_IN(state, state->DE.b.h, state->BC.b.l));
+OPCODE(0xED51, 12, 2, "OUT (C), D", Z80_OUT(state, state->BC.b.l, state->DE.b.h));
 OPCODE(0xED52, 15, 2, "SBC HL, DE", SBC16(state, state->HL.d, state->DE.d));
 OPCODE(0xED53, 20, 4, "LD (d16), DE", {
   state->WZ.d = D16(state);
@@ -608,16 +608,16 @@ OPCODE(0xED53, 20, 4, "LD (d16), DE", {
 OPCODE(0xED54, 8, 2, "NEG", NEG(state, state->AF.b.h));
 OPCODE(0xED55, 14, 2, "RET N", RETN(state));
 OPCODE(0xED56, 8, 2, "IM 1", IM(state, 1));
-OPCODE(0xED58, 12, 2, "IN E, (C)", IN(state, state->DE.b.l, state->BC.b.l));
-OPCODE(0xED59, 12, 2, "OUT (C), E", OUT(state, state->BC.b.l, state->DE.b.l));
+OPCODE(0xED58, 12, 2, "IN E, (C)", Z80_IN(state, state->DE.b.l, state->BC.b.l));
+OPCODE(0xED59, 12, 2, "OUT (C), E", Z80_OUT(state, state->BC.b.l, state->DE.b.l));
 OPCODE(0xED5A, 15, 2, "ADC HL, DE", ADC16(state, state->HL.d, state->DE.d));
 OPCODE(0xED5B, 20, 2, "LD DE, (d16)", LD16(state, state->DE, I16(state)));
 OPCODE(0xED5C, 8, 2, "NEG", NEG(state, state->AF.b.h));
 OPCODE(0xED5D, 14, 2, "RET N", RETN(state));
 OPCODE(0xED5E, 8, 2, "IM 2", IM(state, 2));
 OPCODE(0xED5F, 9, 2, "LD A, R", LD(state, state->AF.b.h, state->R));
-OPCODE(0xED60, 12, 2, "IN H, (C)", IN(state, state->HL.b.h, state->BC.b.l));
-OPCODE(0xED61, 12, 2, "OUT (C), H", OUT(state, state->BC.b.l, state->HL.b.h));
+OPCODE(0xED60, 12, 2, "IN H, (C)", Z80_IN(state, state->HL.b.h, state->BC.b.l));
+OPCODE(0xED61, 12, 2, "OUT (C), H", Z80_OUT(state, state->BC.b.l, state->HL.b.h));
 OPCODE(0xED62, 15, 2, "SBC HL, HL", SBC16(state, state->HL.d, state->HL.d));
 OPCODE(0xED63, 20, 4, "LD (d16), HL", {
   state->WZ.d = D16(state);
@@ -627,15 +627,15 @@ OPCODE(0xED63, 20, 4, "LD (d16), HL", {
 OPCODE(0xED64, 8, 2, "NEG", NEG(state, state->AF.b.h));
 OPCODE(0xED65, 14, 2, "RET N", RETN(state));
 OPCODE(0xED67, 18, 2, "RRD", RRD(state));
-OPCODE(0xED68, 12, 2, "IN L, (C)", IN(state, state->HL.b.l, state->BC.b.l));
-OPCODE(0xED69, 12, 2, "OUT (C), L", OUT(state, state->BC.b.l, state->HL.b.l));
+OPCODE(0xED68, 12, 2, "IN L, (C)", Z80_IN(state, state->HL.b.l, state->BC.b.l));
+OPCODE(0xED69, 12, 2, "OUT (C), L", Z80_OUT(state, state->BC.b.l, state->HL.b.l));
 OPCODE(0xED6A, 15, 2, "ADC HL, HL", ADC16(state, state->HL.d, state->HL.d));
 OPCODE(0xED6B, 20, 2, "LD HL, (d16)", LD16(state, state->HL, I16(state)));
 OPCODE(0xED6C, 8, 2, "NEG", NEG(state, state->AF.b.h));
 OPCODE(0xED6D, 14, 2, "RET N", RETN(state));
 OPCODE(0xED6F, 18, 2, "RLD", RLD(state));
-OPCODE(0xED70, 12, 2, "IN (C)", IN(state, state->HL.b.h, state->BC.b.l));
-OPCODE(0xED71, 12, 2, "OUT (C), 0", OUT(state, state->BC.b.l, 0));
+OPCODE(0xED70, 12, 2, "IN (C)", Z80_IN(state, state->HL.b.h, state->BC.b.l));
+OPCODE(0xED71, 12, 2, "OUT (C), 0", Z80_OUT(state, state->BC.b.l, 0));
 OPCODE(0xED72, 15, 2, "SBC HL, SP", SBC16(state, state->HL.d, state->SP.d));
 OPCODE(0xED73, 20, 4, "LD (d16), SP", {
   state->WZ.d = D16(state);
@@ -645,10 +645,10 @@ OPCODE(0xED73, 20, 4, "LD (d16), SP", {
 OPCODE(0xED74, 8, 2, "NEG", NEG(state, state->AF.b.h));
 OPCODE(0xED75, 14, 2, "RET N", RETN(state));
 OPCODE(0xED78, 12, 2, "IN A, (C)", {
-  IN(state, state->AF.b.h, state->BC.b.l);
+  Z80_IN(state, state->AF.b.h, state->BC.b.l);
   state->WZ.d = state->BC.d + 1;
 });
-OPCODE(0xED79, 12, 2, "OUT (C), A", OUT(state, state->BC.b.l, state->AF.b.h));
+OPCODE(0xED79, 12, 2, "OUT (C), A", Z80_OUT(state, state->BC.b.l, state->AF.b.h));
 OPCODE(0xED7A, 15, 2, "ADC HL, SP", ADC16(state, state->HL.d, state->SP.d));
 OPCODE(0xED7B, 20, 2, "LD SP, (d16)", LD16(state, state->SP, I16(state)));
 OPCODE(0xED7C, 8, 2, "NEG", NEG(state, state->AF.b.h));
