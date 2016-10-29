@@ -34,9 +34,11 @@
     code;                                            \
   }
 
-#define OPCODE_DEF(prefix, num)                                       \
-  [0x##num] = {0x##num, name_0x##prefix##num, cycles_0x##prefix##num, \
-               bytes_0x##prefix##num, func_0x##prefix##num}
+#define OPCODE_DEF(prefix, num)                            \
+  {                                                        \
+    0x##num, name_0x##prefix##num, cycles_0x##prefix##num, \
+        bytes_0x##prefix##num, func_0x##prefix##num        \
+  }
 
 #define OPCODE16(prefix, num)                                 \
   OPCODE_DEF(prefix, num##0)                                  \

@@ -576,6 +576,69 @@ OPCODE(0xCBFE, 15, 2, "SET 7, (HL)", BIT_SET_HL(state, 7));
 OPCODE(0xCBFF, 8, 2, "SET 7, A", BIT_SET(state, state->AF.b.h, 7));
 
 OPCODE(0xED00, 5, 2, "NOP", );
+OPCODE(0xED01, 5, 2, "NOP", );
+OPCODE(0xED02, 5, 2, "NOP", );
+OPCODE(0xED03, 5, 2, "NOP", );
+OPCODE(0xED04, 5, 2, "NOP", );
+OPCODE(0xED05, 5, 2, "NOP", );
+OPCODE(0xED06, 5, 2, "NOP", );
+OPCODE(0xED07, 5, 2, "NOP", );
+OPCODE(0xED08, 5, 2, "NOP", );
+OPCODE(0xED09, 5, 2, "NOP", );
+OPCODE(0xED0A, 5, 2, "NOP", );
+OPCODE(0xED0B, 5, 2, "NOP", );
+OPCODE(0xED0C, 5, 2, "NOP", );
+OPCODE(0xED0D, 5, 2, "NOP", );
+OPCODE(0xED0E, 5, 2, "NOP", );
+OPCODE(0xED0F, 5, 2, "NOP", );
+OPCODE(0xED10, 5, 2, "NOP", );
+OPCODE(0xED11, 5, 2, "NOP", );
+OPCODE(0xED12, 5, 2, "NOP", );
+OPCODE(0xED13, 5, 2, "NOP", );
+OPCODE(0xED14, 5, 2, "NOP", );
+OPCODE(0xED15, 5, 2, "NOP", );
+OPCODE(0xED16, 5, 2, "NOP", );
+OPCODE(0xED17, 5, 2, "NOP", );
+OPCODE(0xED18, 5, 2, "NOP", );
+OPCODE(0xED19, 5, 2, "NOP", );
+OPCODE(0xED1A, 5, 2, "NOP", );
+OPCODE(0xED1B, 5, 2, "NOP", );
+OPCODE(0xED1C, 5, 2, "NOP", );
+OPCODE(0xED1D, 5, 2, "NOP", );
+OPCODE(0xED1E, 5, 2, "NOP", );
+OPCODE(0xED1F, 5, 2, "NOP", );
+OPCODE(0xED20, 5, 2, "NOP", );
+OPCODE(0xED21, 5, 2, "NOP", );
+OPCODE(0xED22, 5, 2, "NOP", );
+OPCODE(0xED23, 5, 2, "NOP", );
+OPCODE(0xED24, 5, 2, "NOP", );
+OPCODE(0xED25, 5, 2, "NOP", );
+OPCODE(0xED26, 5, 2, "NOP", );
+OPCODE(0xED27, 5, 2, "NOP", );
+OPCODE(0xED28, 5, 2, "NOP", );
+OPCODE(0xED29, 5, 2, "NOP", );
+OPCODE(0xED2A, 5, 2, "NOP", );
+OPCODE(0xED2B, 5, 2, "NOP", );
+OPCODE(0xED2C, 5, 2, "NOP", );
+OPCODE(0xED2D, 5, 2, "NOP", );
+OPCODE(0xED2E, 5, 2, "NOP", );
+OPCODE(0xED2F, 5, 2, "NOP", );
+OPCODE(0xED30, 5, 2, "NOP", );
+OPCODE(0xED31, 5, 2, "NOP", );
+OPCODE(0xED32, 5, 2, "NOP", );
+OPCODE(0xED33, 5, 2, "NOP", );
+OPCODE(0xED34, 5, 2, "NOP", );
+OPCODE(0xED35, 5, 2, "NOP", );
+OPCODE(0xED36, 5, 2, "NOP", );
+OPCODE(0xED37, 5, 2, "NOP", );
+OPCODE(0xED38, 5, 2, "NOP", );
+OPCODE(0xED39, 5, 2, "NOP", );
+OPCODE(0xED3A, 5, 2, "NOP", );
+OPCODE(0xED3B, 5, 2, "NOP", );
+OPCODE(0xED3C, 5, 2, "NOP", );
+OPCODE(0xED3D, 5, 2, "NOP", );
+OPCODE(0xED3E, 5, 2, "NOP", );
+OPCODE(0xED3F, 5, 2, "NOP", );
 OPCODE(0xED40, 12, 2, "IN B, (C)", Z80_IN(state, state->BC.b.h, state->BC.b.l));
 OPCODE(0xED41, 12, 2, "OUT (C), B", {
   Z80_OUT(state, state->BC.b.l, state->BC.b.h);
@@ -589,6 +652,7 @@ OPCODE(0xED43, 20, 4, "LD (d16), BC", {
 });
 OPCODE(0xED44, 8, 2, "NEG", NEG(state, state->AF.b.h));
 OPCODE(0xED45, 14, 2, "RET N", RETN(state));
+OPCODE(0xED46, 5, 2, "NOP", );
 OPCODE(0xED47, 9, 2, "LD I, A", LD(state, state->I, state->AF.b.h));
 OPCODE(0xED48, 12, 2, "IN C, (C)", Z80_IN(state, state->BC.b.l, state->BC.b.l));
 OPCODE(0xED49, 12, 2, "OUT (C), C", Z80_OUT(state, state->BC.b.l, state->BC.b.l));
@@ -596,6 +660,7 @@ OPCODE(0xED4A, 15, 2, "ADC HL, BC", ADC16(state, state->HL.d, state->BC.d));
 OPCODE(0xED4B, 20, 2, "LD BC, (d16)", LD16(state, state->BC, I16(state)));
 OPCODE(0xED4C, 8, 2, "NEG", NEG(state, state->AF.b.h));
 OPCODE(0xED4D, 14, 2, "RET I", RETI(state));
+OPCODE(0xED4E, 5, 2, "NOP", );
 OPCODE(0xED4F, 9, 2, "LD R, A", LD(state, state->R, state->AF.b.h));
 OPCODE(0xED50, 12, 2, "IN D, (C)", Z80_IN(state, state->DE.b.h, state->BC.b.l));
 OPCODE(0xED51, 12, 2, "OUT (C), D", Z80_OUT(state, state->BC.b.l, state->DE.b.h));
@@ -608,6 +673,7 @@ OPCODE(0xED53, 20, 4, "LD (d16), DE", {
 OPCODE(0xED54, 8, 2, "NEG", NEG(state, state->AF.b.h));
 OPCODE(0xED55, 14, 2, "RET N", RETN(state));
 OPCODE(0xED56, 8, 2, "IM 1", IM(state, 1));
+OPCODE(0xED57, 5, 2, "NOP", );
 OPCODE(0xED58, 12, 2, "IN E, (C)", Z80_IN(state, state->DE.b.l, state->BC.b.l));
 OPCODE(0xED59, 12, 2, "OUT (C), E", Z80_OUT(state, state->BC.b.l, state->DE.b.l));
 OPCODE(0xED5A, 15, 2, "ADC HL, DE", ADC16(state, state->HL.d, state->DE.d));
@@ -626,6 +692,7 @@ OPCODE(0xED63, 20, 4, "LD (d16), HL", {
 });
 OPCODE(0xED64, 8, 2, "NEG", NEG(state, state->AF.b.h));
 OPCODE(0xED65, 14, 2, "RET N", RETN(state));
+OPCODE(0xED66, 5, 2, "NOP", );
 OPCODE(0xED67, 18, 2, "RRD", RRD(state));
 OPCODE(0xED68, 12, 2, "IN L, (C)", Z80_IN(state, state->HL.b.l, state->BC.b.l));
 OPCODE(0xED69, 12, 2, "OUT (C), L", Z80_OUT(state, state->BC.b.l, state->HL.b.l));
@@ -633,6 +700,7 @@ OPCODE(0xED6A, 15, 2, "ADC HL, HL", ADC16(state, state->HL.d, state->HL.d));
 OPCODE(0xED6B, 20, 2, "LD HL, (d16)", LD16(state, state->HL, I16(state)));
 OPCODE(0xED6C, 8, 2, "NEG", NEG(state, state->AF.b.h));
 OPCODE(0xED6D, 14, 2, "RET N", RETN(state));
+OPCODE(0xED6E, 5, 2, "NOP", );
 OPCODE(0xED6F, 18, 2, "RLD", RLD(state));
 OPCODE(0xED70, 12, 2, "IN (C)", Z80_IN(state, state->HL.b.h, state->BC.b.l));
 OPCODE(0xED71, 12, 2, "OUT (C), 0", Z80_OUT(state, state->BC.b.l, 0));
@@ -644,6 +712,8 @@ OPCODE(0xED73, 20, 4, "LD (d16), SP", {
 });
 OPCODE(0xED74, 8, 2, "NEG", NEG(state, state->AF.b.h));
 OPCODE(0xED75, 14, 2, "RET N", RETN(state));
+OPCODE(0xED76, 5, 2, "NOP", );
+OPCODE(0xED77, 5, 2, "NOP", );
 OPCODE(0xED78, 12, 2, "IN A, (C)", {
   Z80_IN(state, state->AF.b.h, state->BC.b.l);
   state->WZ.d = state->BC.d + 1;
@@ -653,15 +723,136 @@ OPCODE(0xED7A, 15, 2, "ADC HL, SP", ADC16(state, state->HL.d, state->SP.d));
 OPCODE(0xED7B, 20, 2, "LD SP, (d16)", LD16(state, state->SP, I16(state)));
 OPCODE(0xED7C, 8, 2, "NEG", NEG(state, state->AF.b.h));
 OPCODE(0xED7D, 14, 2, "RET N", RETN(state));
+OPCODE(0xED7E, 5, 2, "NOP", );
+OPCODE(0xED7F, 5, 2, "NOP", );
+OPCODE(0xED80, 5, 2, "NOP", );
+OPCODE(0xED81, 5, 2, "NOP", );
+OPCODE(0xED82, 5, 2, "NOP", );
+OPCODE(0xED83, 5, 2, "NOP", );
+OPCODE(0xED84, 5, 2, "NOP", );
+OPCODE(0xED85, 5, 2, "NOP", );
+OPCODE(0xED86, 5, 2, "NOP", );
+OPCODE(0xED87, 5, 2, "NOP", );
+OPCODE(0xED88, 5, 2, "NOP", );
+OPCODE(0xED89, 5, 2, "NOP", );
+OPCODE(0xED8A, 5, 2, "NOP", );
+OPCODE(0xED8B, 5, 2, "NOP", );
+OPCODE(0xED8C, 5, 2, "NOP", );
+OPCODE(0xED8D, 5, 2, "NOP", );
+OPCODE(0xED8E, 5, 2, "NOP", );
+OPCODE(0xED8F, 5, 2, "NOP", );
+OPCODE(0xED90, 5, 2, "NOP", );
+OPCODE(0xED91, 5, 2, "NOP", );
+OPCODE(0xED92, 5, 2, "NOP", );
+OPCODE(0xED93, 5, 2, "NOP", );
+OPCODE(0xED94, 5, 2, "NOP", );
+OPCODE(0xED95, 5, 2, "NOP", );
+OPCODE(0xED96, 5, 2, "NOP", );
+OPCODE(0xED97, 5, 2, "NOP", );
+OPCODE(0xED98, 5, 2, "NOP", );
+OPCODE(0xED99, 5, 2, "NOP", );
+OPCODE(0xED9A, 5, 2, "NOP", );
+OPCODE(0xED9B, 5, 2, "NOP", );
+OPCODE(0xED9C, 5, 2, "NOP", );
+OPCODE(0xED9D, 5, 2, "NOP", );
+OPCODE(0xED9E, 5, 2, "NOP", );
+OPCODE(0xED9F, 5, 2, "NOP", );
 OPCODE(0xEDA0, 16, 2, "LDI (HL) (DE) BC", LDI(state));
 OPCODE(0xEDA1, 16, 2, "CPI", CPI(state));
+OPCODE(0xEDA2, 5, 2, "NOP", );
+OPCODE(0xEDA3, 5, 2, "NOP", );
+OPCODE(0xEDA4, 5, 2, "NOP", );
+OPCODE(0xEDA5, 5, 2, "NOP", );
+OPCODE(0xEDA6, 5, 2, "NOP", );
+OPCODE(0xEDA7, 5, 2, "NOP", );
 OPCODE(0xEDA8, 16, 2, "LDD (HL) (DE) BC", LDD(state));
 OPCODE(0xEDA9, 16, 2, "CPD", CPD(state));
+OPCODE(0xEDAA, 5, 2, "NOP", );
+OPCODE(0xEDAB, 5, 2, "NOP", );
+OPCODE(0xEDAC, 5, 2, "NOP", );
+OPCODE(0xEDAD, 5, 2, "NOP", );
+OPCODE(0xEDAE, 5, 2, "NOP", );
+OPCODE(0xEDAF, 5, 2, "NOP", );
 OPCODE(0xEDB0, 16, 2, "LDIR", LDIR(state));
 OPCODE(0xEDB1, 16, 2, "CPIR", CPIR(state));
+OPCODE(0xEDB2, 5, 2, "NOP", );
 OPCODE(0xEDB3, 16, 2, "OTIR", OTIR(state));
+OPCODE(0xEDB4, 5, 2, "NOP", );
+OPCODE(0xEDB5, 5, 2, "NOP", );
+OPCODE(0xEDB6, 5, 2, "NOP", );
+OPCODE(0xEDB7, 5, 2, "NOP", );
 OPCODE(0xEDB8, 16, 2, "LDDR", LDDR(state));
 OPCODE(0xEDB9, 16, 2, "CPDR", CPDR(state));
+OPCODE(0xEDBA, 5, 2, "NOP", );
+OPCODE(0xEDBB, 5, 2, "NOP", );
+OPCODE(0xEDBC, 5, 2, "NOP", );
+OPCODE(0xEDBD, 5, 2, "NOP", );
+OPCODE(0xEDBE, 5, 2, "NOP", );
+OPCODE(0xEDBF, 5, 2, "NOP", );
+OPCODE(0xEDC0, 5, 2, "NOP", );
+OPCODE(0xEDC1, 5, 2, "NOP", );
+OPCODE(0xEDC2, 5, 2, "NOP", );
+OPCODE(0xEDC3, 5, 2, "NOP", );
+OPCODE(0xEDC4, 5, 2, "NOP", );
+OPCODE(0xEDC5, 5, 2, "NOP", );
+OPCODE(0xEDC6, 5, 2, "NOP", );
+OPCODE(0xEDC7, 5, 2, "NOP", );
+OPCODE(0xEDC8, 5, 2, "NOP", );
+OPCODE(0xEDC9, 5, 2, "NOP", );
+OPCODE(0xEDCA, 5, 2, "NOP", );
+OPCODE(0xEDCB, 5, 2, "NOP", );
+OPCODE(0xEDCC, 5, 2, "NOP", );
+OPCODE(0xEDCD, 5, 2, "NOP", );
+OPCODE(0xEDCE, 5, 2, "NOP", );
+OPCODE(0xEDCF, 5, 2, "NOP", );
+OPCODE(0xEDD0, 5, 2, "NOP", );
+OPCODE(0xEDD1, 5, 2, "NOP", );
+OPCODE(0xEDD2, 5, 2, "NOP", );
+OPCODE(0xEDD3, 5, 2, "NOP", );
+OPCODE(0xEDD4, 5, 2, "NOP", );
+OPCODE(0xEDD5, 5, 2, "NOP", );
+OPCODE(0xEDD6, 5, 2, "NOP", );
+OPCODE(0xEDD7, 5, 2, "NOP", );
+OPCODE(0xEDD8, 5, 2, "NOP", );
+OPCODE(0xEDD9, 5, 2, "NOP", );
+OPCODE(0xEDDA, 5, 2, "NOP", );
+OPCODE(0xEDDB, 5, 2, "NOP", );
+OPCODE(0xEDDC, 5, 2, "NOP", );
+OPCODE(0xEDDD, 5, 2, "NOP", );
+OPCODE(0xEDDE, 5, 2, "NOP", );
+OPCODE(0xEDDF, 5, 2, "NOP", );
+OPCODE(0xEDE0, 5, 2, "NOP", );
+OPCODE(0xEDE1, 5, 2, "NOP", );
+OPCODE(0xEDE2, 5, 2, "NOP", );
+OPCODE(0xEDE3, 5, 2, "NOP", );
+OPCODE(0xEDE4, 5, 2, "NOP", );
+OPCODE(0xEDE5, 5, 2, "NOP", );
+OPCODE(0xEDE6, 5, 2, "NOP", );
+OPCODE(0xEDE7, 5, 2, "NOP", );
+OPCODE(0xEDE8, 5, 2, "NOP", );
+OPCODE(0xEDE9, 5, 2, "NOP", );
+OPCODE(0xEDEA, 5, 2, "NOP", );
+OPCODE(0xEDEB, 5, 2, "NOP", );
+OPCODE(0xEDEC, 5, 2, "NOP", );
+OPCODE(0xEDED, 5, 2, "NOP", );
+OPCODE(0xEDEE, 5, 2, "NOP", );
+OPCODE(0xEDEF, 5, 2, "NOP", );
+OPCODE(0xEDF0, 5, 2, "NOP", );
+OPCODE(0xEDF1, 5, 2, "NOP", );
+OPCODE(0xEDF2, 5, 2, "NOP", );
+OPCODE(0xEDF3, 5, 2, "NOP", );
+OPCODE(0xEDF4, 5, 2, "NOP", );
+OPCODE(0xEDF5, 5, 2, "NOP", );
+OPCODE(0xEDF6, 5, 2, "NOP", );
+OPCODE(0xEDF7, 5, 2, "NOP", );
+OPCODE(0xEDF8, 5, 2, "NOP", );
+OPCODE(0xEDF9, 5, 2, "NOP", );
+OPCODE(0xEDFA, 5, 2, "NOP", );
+OPCODE(0xEDFB, 5, 2, "NOP", );
+OPCODE(0xEDFC, 5, 2, "NOP", );
+OPCODE(0xEDFD, 5, 2, "NOP", );
+OPCODE(0xEDFE, 5, 2, "NOP", );
+OPCODE(0xEDFF, 5, 2, "NOP", );
 
 static Z80Opcode opcodes[256] = {
     OPCODE16(, 0), OPCODE16(, 1), OPCODE16(, 2), OPCODE16(, 3),
@@ -677,28 +868,10 @@ static Z80Opcode CBopcodes[256] = {
 };
 
 static Z80Opcode EDopcodes[256] = {
-    OPCODE_DEF(ED, 00), OPCODE_DEF(ED, 40), OPCODE_DEF(ED, 41),
-    OPCODE_DEF(ED, 42), OPCODE_DEF(ED, 43), OPCODE_DEF(ED, 44),
-    OPCODE_DEF(ED, 45), OPCODE_DEF(ED, 47), OPCODE_DEF(ED, 48),
-    OPCODE_DEF(ED, 49), OPCODE_DEF(ED, 4A), OPCODE_DEF(ED, 4B),
-    OPCODE_DEF(ED, 4C), OPCODE_DEF(ED, 4D), OPCODE_DEF(ED, 4F),
-    OPCODE_DEF(ED, 50), OPCODE_DEF(ED, 51), OPCODE_DEF(ED, 52),
-    OPCODE_DEF(ED, 53), OPCODE_DEF(ED, 54), OPCODE_DEF(ED, 55),
-    OPCODE_DEF(ED, 56), OPCODE_DEF(ED, 58), OPCODE_DEF(ED, 59),
-    OPCODE_DEF(ED, 5A), OPCODE_DEF(ED, 5B), OPCODE_DEF(ED, 5C),
-    OPCODE_DEF(ED, 5D), OPCODE_DEF(ED, 5E), OPCODE_DEF(ED, 5F),
-    OPCODE_DEF(ED, 60), OPCODE_DEF(ED, 61), OPCODE_DEF(ED, 62),
-    OPCODE_DEF(ED, 63), OPCODE_DEF(ED, 64), OPCODE_DEF(ED, 65),
-    OPCODE_DEF(ED, 67), OPCODE_DEF(ED, 68), OPCODE_DEF(ED, 69),
-    OPCODE_DEF(ED, 6A), OPCODE_DEF(ED, 6B), OPCODE_DEF(ED, 6C),
-    OPCODE_DEF(ED, 6D), OPCODE_DEF(ED, 6F), OPCODE_DEF(ED, 70),
-    OPCODE_DEF(ED, 71), OPCODE_DEF(ED, 72), OPCODE_DEF(ED, 73),
-    OPCODE_DEF(ED, 74), OPCODE_DEF(ED, 75), OPCODE_DEF(ED, 78),
-    OPCODE_DEF(ED, 79), OPCODE_DEF(ED, 7A), OPCODE_DEF(ED, 7B),
-    OPCODE_DEF(ED, 7C), OPCODE_DEF(ED, 7D), OPCODE_DEF(ED, A0),
-    OPCODE_DEF(ED, A1), OPCODE_DEF(ED, A8), OPCODE_DEF(ED, A9),
-    OPCODE_DEF(ED, B0), OPCODE_DEF(ED, B1), OPCODE_DEF(ED, B3),
-    OPCODE_DEF(ED, B8), OPCODE_DEF(ED, B9),
+    OPCODE16(ED, 0), OPCODE16(ED, 1), OPCODE16(ED, 2), OPCODE16(ED, 3),
+    OPCODE16(ED, 4), OPCODE16(ED, 5), OPCODE16(ED, 6), OPCODE16(ED, 7),
+    OPCODE16(ED, 8), OPCODE16(ED, 9), OPCODE16(ED, A), OPCODE16(ED, B),
+    OPCODE16(ED, C), OPCODE16(ED, D), OPCODE16(ED, E), OPCODE16(ED, F),
 };
 
 Z80Cpu::Z80Cpu(Machine *machine, const std::string &name, ClockDivider divider,
