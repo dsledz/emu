@@ -90,7 +90,7 @@ class Channel {
     return obj;
   }
 
-  int available(void) { return m_objects.size(); }
+  size_t available(void) { return m_objects.size(); }
 
  private:
   lock_t m_mtx;

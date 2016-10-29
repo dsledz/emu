@@ -32,14 +32,24 @@
 
 using namespace EMU;
 
+#ifdef WIN32
+std::string path_join(const std::string &s1, const std::string &s2) {
+  return s1 + '\\' + s2;
+}
+#else
+std::string path_join(const std::string &s1, const std::string &s2) {
+  return s1 + '/' + s2;
+}
+#endif
+
 void EMU::read_rom(const std::string &dir, const std::string &name, bvec &rom) {
   struct stat sb;
   std::string path;
   if (getenv("ROM_PATH") != NULL && dir[0] != '/') {
     path = getenv("ROM_PATH");
-    path += "/" + dir + "/" + name;
+    path = path_join(path, path_join(dir, name));
   } else {
-    path = dir + "/" + name;
+    path = path_join(dir, name);
   }
   if (stat(path.c_str(), &sb) == -1) throw RomException(name);
   rom.resize(sb.st_size);
@@ -92,8 +102,7 @@ void RomSet::load(const std::string &path) {
   do {
     std::string name(data.cFileName);
     if (name == "." || name == "..") continue;
-    std::string full_path = path + "\\" + name;
-    Rom rom(full_path);
+    Rom rom(path, name);
     _roms.insert(std::make_pair(name, rom));
   } while (FindNextFile(hFind, &data));
   FindClose(hFind);

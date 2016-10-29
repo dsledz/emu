@@ -2,15 +2,14 @@
 
 #include "cpu/z80/z80.h"
 
-#define OP(op, ...)                            \
-  template <typename state_type>               \
-  static inline void __attribute__((__used__)) \
-      op(state_type *state, ##__VA_ARGS__)
+#define OP(op, ...)              \
+  template <typename state_type> \
+  static inline void a_used op(state_type *state, ##__VA_ARGS__)
 
 namespace Z80 {
 
-static inline int __attribute__((__used__)) CALC_PARITY(reg8_t reg);
-static inline int __attribute__((__used__)) CALC_OVERFLOW(reg8_t arg1, reg8_t arg2, reg8_t result);
+static inline int a_used CALC_PARITY(reg8_t reg);
+static inline int a_used CALC_OVERFLOW(reg8_t arg1, reg8_t arg2, reg8_t result);
 
 OP(PUSH, byte_t high, byte_t low);
 OP(POP, byte_t &high, byte_t &low);
@@ -159,11 +158,11 @@ OP(BIT_SET_HL, const int bit) {
   bus_write(state, state->HL.d, value);
 }
 
-static inline int __attribute__((__used__)) CALC_PARITY(reg8_t reg) {
+static inline int a_used CALC_PARITY(reg8_t reg) {
   return ((0x6996 >> ((reg ^ (reg >> 4)) & 0xf)) & 1) == 0;
 }
 
-static inline int __attribute__((__used__))
+static inline int a_used
 CALC_OVERFLOW(reg8_t arg1, reg8_t arg2, reg8_t result) {
   return bit_isset((arg1 ^ arg2) & (arg1 ^ result), 7);
 }
@@ -317,7 +316,7 @@ OP(DI) {
   state->iff1 = state->iff2 = false;
 }
 
-static inline byte_t __attribute__((__used__))
+static inline byte_t a_used
 FETCH(Z80State *state, Z80Arg reg) {
   switch (reg) {
     case Z80Arg::ArgRegA:

@@ -54,11 +54,15 @@
 #include <vector>
 
 #ifdef WIN32
+#define a_used
 #define a_unused
+#define a_const
 #define likely(x) x
 #define unlikely(x) x
 #else
+#define a_used __attribute__((used))
 #define a_unused __attribute((unused))
+#define a_const __attribute__((const))
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 #endif
@@ -157,17 +161,10 @@ static inline bool bit_isset(uint16_t arg, int n)
 
 typedef std::function<void()> callback_t;
 
-#ifdef WIN32
 template <typename T>
-static inline uint8_t val(T t) {
+static inline uint8_t a_const val(T t) {
   return static_cast<typename std::underlying_type<T>::type>(t);
 }
-#else
-template <typename T>
-static inline uint8_t __attribute__((const)) val(T t) {
-  return static_cast<typename std::underlying_type<T>::type>(t);
-}
-#endif
 
 /* XXX: Find a better place for this */
 

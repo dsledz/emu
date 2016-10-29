@@ -77,7 +77,7 @@ class BitField {
 
   ~BitField() {}
 
-  bool is_set(T t) { return m_value & static_cast<field_type>(t); }
+  bool is_set(T t) { return (m_value & static_cast<field_type>(t)) != 0; }
 
   bool is_clear(T t) { return !is_set(t); }
 

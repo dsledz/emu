@@ -45,7 +45,7 @@ static inline int lua_specialized_call(lua_State *L,
     return 0;
   }
 
-  int arg1 = lua_tonumber(L, -1);
+  int arg1 = (int)lua_tonumber(L, -1);
   int result;
   result = closure(arg1);
   lua_pushnumber(L, result);
@@ -74,7 +74,7 @@ static inline int lua_specialized_call(lua_State *L,
     return 0;
   }
 
-  int arg1 = lua_tonumber(L, -1);
+  int arg1 = (int)lua_tonumber(L, -1);
   closure(arg1);
   return 1;
 }

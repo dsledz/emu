@@ -144,6 +144,7 @@ class IOBus {
 
   void add(addr_type start, data_type *ptr, size_t size,
            typename page_table_type::page_type::page_fault_fn handler) {
+    assert(size - 1 <= std::numeric_limits<addr_type>::max());
     addr_type end = start + size - 1;
     assert((start & (m_page_table.page_size - 1)) == 0);
     for (page_type *p = m_page_table.page(start);
