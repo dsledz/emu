@@ -36,14 +36,14 @@ ThreadContext::~ThreadContext(void) {
   /* XXX: Assert we're not on that stack */
 }
 
-void __attribute__((noinline))
+void
 ThreadContext::switch_context(ThreadContext *saved_ctx) {
   // Swap our registers On return, we'll be in the other context
   // and our return stack will change.
   SwitchContext(&saved_ctx->m_registers, &m_registers);
 }
 
-void __attribute__((noinline))
+void
 ThreadContext::initial_switch(ThreadContext *saved_ctx) {
   // Swap our registers On return, we'll be in the other context
   // and our return stack will change.

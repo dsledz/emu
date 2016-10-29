@@ -32,7 +32,7 @@ using namespace EMU;
 using namespace C64Machine;
 
 enum C64Keys {
-  DELETE = 000,
+  KEY_DEL = 000,
   KEY_3 = 001,
   KEY_5 = 002,
   KEY_7 = 003,
@@ -99,7 +99,7 @@ enum C64Keys {
 };
 
 std::vector<std::pair<enum C64Keys, enum InputKey> > keys = {
-std::make_pair(C64Keys::DELETE, InputKey::KeyboardDelete),
+std::make_pair(C64Keys::KEY_DEL, InputKey::KeyboardDelete),
 std::make_pair(C64Keys::KEY_3, InputKey::Keyboard3),
 std::make_pair(C64Keys::KEY_5, InputKey::Keyboard5),
 std::make_pair(C64Keys::KEY_7, InputKey::Keyboard7),

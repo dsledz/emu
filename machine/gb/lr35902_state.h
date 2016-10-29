@@ -53,6 +53,9 @@ typedef std::unique_ptr<LR35902Bus> LR35902Bus_ptr;
 
 typedef CPU2::CpuOpcode<LR35902State> LR35902Opcode;
 
+#ifdef WIN32
+#pragma pack(push, 1)
+#endif
 struct LR35902State {
   LR35902State(void) = default;
   LR35902State(LR35902Bus *bus) : bus(bus) {}
@@ -126,7 +129,13 @@ struct LR35902State {
 
   Cycles icycles;
   LR35902Bus *bus;
-} __attribute__((packed));
+}
+#ifdef WIN32
+;
+#pragma pack(pop)
+#else
+__attribute__((packed));
+#endif
 
 static inline reg8_t pc_read(LR35902State *state) {
   reg8_t result = CPU2::bus_read(state, state->PC.d);

@@ -62,6 +62,9 @@ struct Z80State;
 
 typedef CPU2::CpuOpcode<Z80State> Z80Opcode;
 
+#ifdef WIN32
+#pragma pack(push, 1)
+#endif
 struct Z80State {
   Z80State(void) = default;
   Z80State(Z80Bus *bus, Z80IOBus *io) : bus(bus), io(io) {}
@@ -136,7 +139,13 @@ struct Z80State {
   Cycles icycles;
   Z80Bus *bus;
   Z80IOBus *io;
-} __attribute__((packed));
+}
+#ifdef WIN32
+;
+#pragma pack(pop)
+#else
+__attribute__((packed));
+#endif
 
 static inline void io_write(Z80State *state, reg8_t port, reg8_t reg) {
   state->io->write(port, reg);

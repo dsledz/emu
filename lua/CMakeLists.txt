@@ -36,7 +36,7 @@ add_library(lua53
 add_library(lua_support
     lua_support.cc)
 
-include_directories(src)
+include_directories(lua53)
 
 target_link_libraries(lua_support
     lua53)

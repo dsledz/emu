@@ -25,4 +25,6 @@
 
 #include  "core/rtc.h"
 
+using namespace Core;
+
 const Core::Time Core::time_zero = Time(sec(0));

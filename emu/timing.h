@@ -84,8 +84,9 @@ struct Cycles {
   }
 
   inline Hertz to_hertz(Time t) const {
-    const Hertz hertz(v / (t.ns / NSEC_PER_SEC) +
-                      (v % (t.ns / NSEC_PER_SEC) * NSEC_PER_SEC) / t.ns);
+    const Hertz hertz(
+        (unsigned int)(v / (t.ns / NSEC_PER_SEC) +
+                       (v % (t.ns / NSEC_PER_SEC) * NSEC_PER_SEC) / t.ns));
     return hertz;
   }
 
