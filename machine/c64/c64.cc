@@ -58,8 +58,6 @@ C64::C64(void) : Machine(Hertz(8181800)),
   m_cpu = C64Cpu_ptr(new M6510Cpu(this, "cpu", ClockDivider(8), m_bus.get()));
   m_vic = VIC2_ptr(new VIC2(this));
   m_keyboard = C64Keyboard_ptr(new C64Keyboard(this));
-  m_cia1 = C64CIA_ptr(new C64CIA(this, "cia1", Line::INT0));
-  //m_cia2 = C64CIA_ptr(new C64CIA(this, "cia2", Line::NMI));
 
   m_bus->add(0x0000, m_ram.direct(0), 0x10000, false);
   m_bus->add(0x0000, READ_CB(C64::direction_port_read, this),
@@ -67,8 +65,12 @@ C64::C64(void) : Machine(Hertz(8181800)),
   m_bus->add(0x0001, READ_CB(C64::io_port_read, this),
              WRITE_CB(C64::io_port_write, this));
 
+  m_cia1 = C64CIA_ptr(new C64CIA(this, "cia1", 1));
   m_bus->add(0xdc00, 0xdcff, READ_CB(C64CIA::cia_read, m_cia1.get()),
                     WRITE_CB(C64CIA::cia_write, m_cia1.get()));
+  //m_cia2 = C64CIA_ptr(new C64CIA(this, "cia2", 2));
+  //m_bus->add(0xdd00, 0xddff, READ_CB(C64CIA::cia_read, m_cia2.get()),
+  //                  WRITE_CB(C64CIA::cia_write, m_cia2.get()));
   m_bus->add(0xd000, 0xd3ff, READ_CB(VIC2::vic2_read, m_vic.get()),
              WRITE_CB(VIC2::vic2_write, m_vic.get()));
 }

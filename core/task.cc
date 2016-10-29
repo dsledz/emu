@@ -84,7 +84,7 @@ void Thread::schedule(Task *task) { m_channel->put(task); }
 void Thread::wait_for_idle(void) {
   lock_mtx lock(m_mtx);
   for (;;) {
-    LOG_DEBUG("State: ", (int)m_state);
+    LOG_TRACE("State: ", (int)m_state);
     if (m_state == ThreadState::Idle && m_channel->available() == 0) break;
     if (m_state == ThreadState::Dead) break;
     lock.wait(m_cv);
@@ -115,7 +115,6 @@ void Thread::thread_task(void) {
       m_cv.notify_all();
       try {
         unlock_mtx unlock(m_mtx);
-        LOG_DEBUG("ThreadTask waiting");
         task = m_channel->get();
       } catch (CanceledException &e) {
         LOG_DEBUG("Loop canceled: ", e.message());
@@ -188,10 +187,10 @@ void ThreadTask::cancel(void) {
 
 void ThreadTask::suspend(void) {
   lock_mtx lock(m_mtx);
-  LOG_DEBUG("ThreadTask Suspend: ", *this);
+  LOG_TRACE("ThreadTask Suspend: ", *this);
   if (m_state == State::Running) m_state = State::Suspended;
   while (m_state != State::Queued && !finished(m_state)) lock.wait(m_cv);
-  LOG_DEBUG("ThreadTask Resumed: ", *this);
+  LOG_TRACE("ThreadTask Resumed: ", *this);
   if (m_state == State::Canceled) throw TaskCanceled("Canceled");
   m_state = State::Running;
 }
@@ -200,7 +199,7 @@ void ThreadTask::yield_internal(void) {}
 
 void ThreadTask::wake(void) {
   lock_mtx lock(m_mtx);
-  LOG_DEBUG("ThreadTask wake: ", *this);
+  LOG_TRACE("ThreadTask wake: ", *this);
   if (m_state == State::Suspended) {
     m_state = State::Queued;
     m_cv.notify_all();

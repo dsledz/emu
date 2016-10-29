@@ -60,7 +60,7 @@ typedef std::unique_ptr<C64Keyboard> C64Keyboard_ptr;
 
 class C64CIA: public ClockedDevice {
  public:
-  C64CIA(C64 *c64, const std::string &name, Line irq_line);
+  C64CIA(C64 *c64, const std::string &name, int cia_id);
   ~C64CIA(void);
 
   virtual void execute(void);
@@ -71,13 +71,22 @@ class C64CIA: public ClockedDevice {
  private:
 
   struct CIATimer {
+    CIATimer();
+    ~CIATimer();
+
+    Cycles adjust_cycles(Cycles cycles);
+    bool tick(Cycles cycles);
+    void write_control(uint8_t value);
+
     uint16_t timer;
     reg16_t  latch;
     uint8_t  control;
+    bool     restart;
     bool     running;
   };
 
   C64 *m_c64;
+  int m_cia_id;
   Line m_irq_line;
   // Real time clock
   EmuTime m_clock;
