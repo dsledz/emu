@@ -151,7 +151,7 @@ void VIC2::init_palette(void) {
 void VIC2::do_hend(void) {
   // XXX: Update the raster line
   DEVICE_TRACE("hend: ", m_vpos);
-  bit_set(m_regs[VICReg::CR1], 7, m_vpos & 0x100);
+  bit_set(m_regs[VICReg::CR1], 7, (m_vpos & 0x100) != 0);
   m_regs[VICReg::RASTER] = m_vpos;
 }
 

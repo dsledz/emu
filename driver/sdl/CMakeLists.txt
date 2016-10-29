@@ -5,6 +5,8 @@ find_package(OpenGL REQUIRED)
 find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIR})
 
+include_directories(${GLEW_INCLUDE_DIR})
+
 if (APPLE)
     add_framework(SDL2)
     add_framework(OpenGL)

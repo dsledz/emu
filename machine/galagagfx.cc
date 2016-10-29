@@ -160,8 +160,8 @@ void GalagaGfx::draw_sprites(FrameBuffer *screen) {
     int pen = b[1] & 0x3f;
     int sy = 256 - b[2] + 1;
     int sx = b[3] - 40 + 0x100 * (b[5] & 3);
-    bool flipx = bit_isset(b[4], 0);
-    bool flipy = bit_isset(b[4], 1);
+    int flipx = bit_isset(b[4], 0);
+    int flipy = bit_isset(b[4], 1);
     int sizex = bit_isset(b[4], 2);
     int sizey = bit_isset(b[4], 3);
 

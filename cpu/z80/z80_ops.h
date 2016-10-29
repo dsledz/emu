@@ -9,7 +9,9 @@
 namespace Z80 {
 
 static inline reg8_t a_used CALC_PARITY(reg8_t reg);
+static inline reg8_t a_used CALC_PARITY(reg16_t reg);
 static inline reg8_t a_used CALC_OVERFLOW(reg8_t arg1, reg8_t arg2, reg8_t result);
+static inline reg8_t a_used CALC_OVERFLOW(reg8_t arg1, reg8_t arg2, reg16_t result);
 
 OP(PUSH, byte_t high, byte_t low);
 OP(POP, byte_t &high, byte_t &low);
@@ -65,7 +67,7 @@ OP(ADD, byte_t &dest, byte_t arg) {
   state->AF.b.f.N = 0;
   state->AF.b.f.C = bit_isset(result, 8);
 
-  dest = result;
+  dest = (byte_t)result;
 }
 
 OP(ADD16rel, reg16_t &dest, uint8_t arg) {
@@ -162,9 +164,19 @@ static inline reg8_t a_used CALC_PARITY(reg8_t reg) {
   return ((0x6996 >> ((reg ^ (reg >> 4)) & 0xf)) & 1) == 0;
 }
 
+static inline reg8_t a_used CALC_PARITY(reg16_t arg) {
+  reg8_t reg = arg.b.l;
+  return ((0x6996 >> ((reg ^ (reg >> 4)) & 0xf)) & 1) == 0;
+}
+
 static inline reg8_t a_used CALC_OVERFLOW(reg8_t arg1, reg8_t arg2,
                                           reg8_t result) {
   return bit_isset((arg1 ^ arg2) & (arg1 ^ result), 7);
+}
+
+static inline reg8_t a_used CALC_OVERFLOW(reg8_t arg1, reg8_t arg2,
+                                          reg16_t result) {
+  return bit_isset((arg1 ^ arg2) & (arg1 ^ result.b.l), 7);
 }
 
 OP(CALL, bool jump, uint16_t addr) {
@@ -913,7 +925,7 @@ OP(SBC, byte_t &dest, byte_t arg) {
   state->AF.b.f.V = CALC_OVERFLOW(dest, arg, result);
   state->AF.b.f.C = bit_isset(dest ^ arg ^ result, 8);
 
-  dest = result;
+  dest = (byte_t)result;
 }
 
 OP(SBC16, uint16_t &wdest, uint16_t arg) {

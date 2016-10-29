@@ -142,7 +142,7 @@ void DonkeyKongGfx::draw_sprites(FrameBuffer *screen) {
     auto *palette = &m_palette[pen + (m_palette_select << 4)];
 
     draw_gfx(screen, palette, &m_sprites[idx], sx, sy, flipx, flipy,
-             (*palette)[0]);
+             (*palette)[0] != 0);
   }
 }
 
