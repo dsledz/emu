@@ -28,11 +28,11 @@
 using namespace EMU;
 
 Emulator::Emulator(const Options &options)
-    : mtx(),
+    : m_rtc(),
+      m_frame_period(Time(sec(1)) / 60),
+      mtx(),
       cv(),
       m_scheduler(),
-      m_rtc(),
-      m_frame_period(Time(sec(1))/60),
       m_options(options),
       m_machine() {
   Core::log.set_level(m_options.log_level);
@@ -48,11 +48,14 @@ void Emulator::start(void) {
 
 void Emulator::stop(void) {
   set_state(EmuState::Stopped);
-  /* XXX: task? */
 }
 
 void Emulator::pause(void) {
   set_state(EmuState::Paused);
+}
+
+void Emulator::resume(void) {
+  set_state(EmuState::Running);
 }
 
 void Emulator::reset(void) {

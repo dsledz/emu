@@ -43,6 +43,7 @@ class Emulator {
   virtual void stop(void);
   virtual void pause(void);
   virtual void reset(void);
+  virtual void resume(void);
   virtual void render(void);
   virtual void key_event(InputKey key, bool pressed);
 
@@ -75,14 +76,15 @@ class Emulator {
   EmuState get_state(void);
   void set_state(EmuState state);
 
+  RealTimeClock m_rtc;
+  Time m_frame_period;
+  Time m_frame_start;
+
  private:
   std::mutex mtx;
   std::condition_variable cv;
 
   TaskScheduler m_scheduler;
-  RealTimeClock m_rtc;
-  Time m_frame_period;
-  Time m_frame_start;
   Emulator::EmuState m_state;
   Options m_options;
   machine_ptr m_machine;

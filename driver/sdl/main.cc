@@ -160,22 +160,23 @@ class SDLEmulator : public Emulator {
 
     machine()->poweron();
 
-    while (get_state() == EmuState::Running) {
+    while (get_state() != EmuState::Stopped) {
+      while (get_state() == EmuState::Paused) {
+        SDL_Event event;
+        if (SDL_WaitEventTimeout(&event, 50))
+          on_event(&event);
+      }
       auto future = frame_start();
       glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
       m_fb->render();
       SDL_GL_SwapWindow(m_window);
-      Time left;
-#if WAIT
-      while ((left = frame_left()) > time_zero) {
-        SDL_Event event;
-        if (SDL_WaitEventTimeout(&event, 1))
+      SDL_Event event;
+      Time left = frame_left();
+      if (left > Time(msec(11))) {
+        if (SDL_WaitEventTimeout(&event, 10))
           on_event(&event);
       }
-#else
-      SDL_Event event;
       while (SDL_PollEvent(&event)) on_event(&event);
-#endif
       frame_end(future);
     }
     machine()->poweroff();
@@ -193,12 +194,25 @@ class SDLEmulator : public Emulator {
       case SDL_KEYUP:
       case SDL_KEYDOWN:
         switch (event->key.keysym.sym) {
-          case SDLK_q:
-            stop();
+          case SDLK_F12:
+            if (event->type == SDL_KEYDOWN) stop();
             break;
           case SDLK_F1:
-            if (event->type == SDL_KEYDOWN)
-              Core::log.set_level(Core::LogLevel::Trace);
+            if (event->type == SDL_KEYDOWN) Core::log.increase_level();
+            break;
+          case SDLK_F2:
+            if (event->type == SDL_KEYDOWN) Core::log.decrease_level();
+            break;
+          case SDLK_F5:
+            if (event->type == SDL_KEYDOWN) {
+              if (get_state() == EmuState::Paused)
+                resume();
+              else
+                pause();
+            }
+            break;
+          case SDLK_F3:
+            if (event->type == SDL_KEYDOWN) reset();
             break;
           default: {
             auto it = key_map.find(event->key.keysym.sym);

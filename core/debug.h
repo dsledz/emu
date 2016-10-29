@@ -56,6 +56,27 @@ class Debug {
   Debug(std::ostream &os) : m_os(os), m_level(LogLevel::Info) {}
   ~Debug(void) {}
 
+  void increase_level(void) {
+    switch (m_level) {
+      case LogLevel::Trace: break;
+      case LogLevel::Debug: m_level = LogLevel::Trace; break;
+      case LogLevel::Info: m_level = LogLevel::Debug; break;
+      case LogLevel::Critical: m_level = LogLevel::Info; break;
+      case LogLevel::Error: m_level = LogLevel::Critical; break;
+      case LogLevel::Fatal: m_level = LogLevel::Error; break;
+    }
+  }
+  void decrease_level(void) {
+    switch (m_level) {
+      case LogLevel::Trace: m_level = LogLevel::Debug; break;
+      case LogLevel::Debug: m_level = LogLevel::Info; break;
+      case LogLevel::Info: m_level = LogLevel::Critical; break;
+      case LogLevel::Critical: m_level = LogLevel::Error; break;
+      case LogLevel::Error: m_level = LogLevel::Fatal; break;
+      case LogLevel::Fatal: break;
+    }
+  }
+
   void set_level(LogLevel level) { m_level = level; }
   void set_level(const std::string &level) {
     if (level == "trace") {
