@@ -1,4 +1,5 @@
 add_library(nes
+    n2a03.cc
     nes.cc
     nes_joypad.cc
     nes_mapper.cc

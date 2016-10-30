@@ -23,7 +23,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "cpu/m6502/n2a03.h"
+#include "machine/nes/n2a03.h"
 #include "cpu/m6502/m6502_jit_ops.h"
 #include "cpu/m6502/m6502_ops.h"
 

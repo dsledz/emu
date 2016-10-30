@@ -24,7 +24,7 @@
  */
 
 #include "emu/emu.h"
-#include "cpu/m6502/n2a03.h"
+#include "machine/nes/n2a03.h"
 
 using namespace EMU;
 using namespace M6502;
