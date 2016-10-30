@@ -1,35 +1,55 @@
-add_subdirectory(c64)
-add_subdirectory(gb)
-add_subdirectory(nes)
-add_subdirectory(tg16)
-add_subdirectory(sbc)
+if (BUILD_C64)
+    add_subdirectory(c64)
+    set(ENABLED_C64 1)
+    set(MACHINE_LIBS ${MACHINE_LIBS} c64)
+else (BUILD_C64)
+    set(ENABLED_C64 0)
+endif (BUILD_C64)
+if (BUILD_GAMEBOY)
+    add_subdirectory(gb)
+    set(ENABLED_GAMEBOY 1)
+    set(MACHINE_LIBS ${MACHINE_LIBS} gb)
+else (BUILD_GAMEBOY)
+    set(ENABLED_GAMEBOY 0)
+endif (BUILD_GAMEBOY)
+if (BUILD_NES)
+    add_subdirectory(nes)
+    set(ENABLED_NES 1)
+    set(MACHINE_LIBS ${MACHINE_LIBS} nes)
+else (BUILD_NES)
+    set(ENABLED_NES 0)
+endif (BUILD_NES)
+if (BUILD_TG16)
+    add_subdirectory(tg16)
+    set(ENABLED_TG16 1)
+    set(MACHINE_LIBS ${MACHINE_LIBS} tg16)
+else (BUILD_TG16)
+    set(ENABLED_TG16 0)
+endif (BUILD_TG16)
+if (BUILD_SBC)
+    add_subdirectory(sbc)
+    set(ENABLED_SBC 1)
+    set(MACHINE_LIBS ${MACHINE_LIBS} sbc)
+else (BUILD_SBC)
+    set(ENABLED_SBC 0)
+endif (BUILD_SBC)
+if (BUILD_ARCADE)
+    add_subdirectory(arcade)
+    set(ENABLED_ARCADE 1)
+    set(MACHINE_LIBS ${MACHINE_LIBS} arcade)
+else (BUILD_ARCADE)
+    set(ENABLED_ARCADE 0)
+endif (BUILD_ARCADE)
 
 add_library(machine
-    dkong.cc
-    dkonggfx.cc
-    galaga.cc
-    galagagfx.cc
-    namco51.cc
-    namco06.cc
-    pacman.cc
-    pacmangfx.cc
-    i8257.cc)
+    placeholder.cc)
+
 target_link_libraries(machine
-    c64
-    gb
-    nes
-    tg16
-    sbc
+    ${MACHINE_LIBS}
     emu
     cpu)
 
-if (BUILD_TESTING)
-    add_executable(machine-check
-        dkong_test.cc
-        galaga_test.cc
-        pacman_test.cc)
-    target_link_libraries(machine-check
-        machine
-        gtest gtest_main)
-    add_test(machine-check machine-check)
-endif (BUILD_TESTING)
+configure_file(
+    "${PROJECT_SOURCE_DIR}/machine/machines.h.in"
+    "${PROJECT_BINARY_DIR}/machine/machines.h")
+

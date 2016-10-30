@@ -23,13 +23,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "cpu/lib/cpu.h"
 #include "emu/emu.h"
 
-#include "machine/namco51.h"
+#include "machine/arcade/namco51.h"
 
 using namespace EMU;
-using namespace CPU;
 using namespace Device;
 
 Namco51::Namco51(Machine *machine)
@@ -116,7 +114,7 @@ uint8_t Namco51::read8(offset_t offset) {
         return (m_credits % 10) | (m_credits / 10) << 4;
       }
       case 1: {
-        if (m_remap) throw CpuFeatureFault("namco51", "remap");
+        if (m_remap) throw DeviceFault("namco51", "remap");
 
         int joy = read_port("IN2") & 0x0f;
         int in = ~read_port("IN0") & 0x01;
@@ -130,7 +128,7 @@ uint8_t Namco51::read8(offset_t offset) {
         return joy;
       }
       case 2: {
-        if (m_remap) throw CpuFeatureFault("namco51", "remap");
+        if (m_remap) throw DeviceFault("namco51", "remap");
 
         int joy = read_port("IN3") & 0x0f;
         int in = ~read_port("IN0") & 0x02;

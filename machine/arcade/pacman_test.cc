@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Dan Sledz
+ * Copyright (c) 2016, Dan Sledz
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,11 +28,10 @@
 #include "emu/emu.h"
 #include "emu/test.h"
 
-#include "machine/galaga.h"
+#include "machine/arcade/pacman.h"
 
 using namespace EMU;
 
-
-TEST(GalagaTest, run100) {
-  EMUTest::machine_test<Arcade::Galaga>();
+TEST(PacmanTest, run100) {
+  EMUTest::machine_test<Arcade::Pacman>();
 }

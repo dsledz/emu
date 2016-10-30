@@ -38,6 +38,12 @@ option(BUILD_TESTING "Enable testing" ON)
 option(BUILD_CORE_ONLY "Enable core only" OFF)
 option(BUILD_JIT "Build JIT" OFF)
 option(BUILD_LUA "Build LUA" ON)
+option(BUILD_NES "Build NES" ON)
+option(BUILD_TG16 "Build TG-16" ON)
+option(BUILD_GAMEBOY "Build GameBoy" ON)
+option(BUILD_C64 "Build C64" ON)
+option(BUILD_ARCADE "Build Arcade" ON)
+option(BUILD_SBC "Build SBC" ON)
 
 set(TARGET_ARCH "x64" CACHE STRING "Target Architecture")
 

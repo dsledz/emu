@@ -25,7 +25,7 @@
 
 #include "emu/emu.h"
 
-#include "machine/pacman.h"
+#include "machine/arcade/pacman.h"
 
 using namespace EMU;
 using namespace Z80;

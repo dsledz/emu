@@ -27,8 +27,8 @@
 #include "emu/gfx.h"
 
 #include "cpu/z80/z80.h"
-#include "machine/namco06.h"
-#include "machine/namco51.h"
+#include "machine/arcade/namco06.h"
+#include "machine/arcade/namco51.h"
 
 using namespace EMU;
 using namespace Z80;

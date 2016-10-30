@@ -23,6 +23,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "opts.h"
+#include "machine/machines.h"
 #include "driver/emulator.h"
 
 using namespace EMU;
@@ -101,10 +103,20 @@ void Emulator::key_event(InputKey key, bool pressed) {
   machine()->send_input(key, pressed);
 }
 
+#if ENABLED_ARCADE
 FORCE_UNDEFINED_SYMBOL(galaga);
-FORCE_UNDEFINED_SYMBOL(gb);
-FORCE_UNDEFINED_SYMBOL(nes);
-FORCE_UNDEFINED_SYMBOL(tg16);
 FORCE_UNDEFINED_SYMBOL(pacman);
 FORCE_UNDEFINED_SYMBOL(dkong);
+#endif
+#if ENABLED_GAMEBOY
+FORCE_UNDEFINED_SYMBOL(gb);
+#endif
+#if ENABLED_NES
+FORCE_UNDEFINED_SYMBOL(nes);
+#endif
+#if ENABLED_TG16
+FORCE_UNDEFINED_SYMBOL(tg16);
+#endif
+#if ENABLED_C64
 FORCE_UNDEFINED_SYMBOL(c64);
+#endif

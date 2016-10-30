@@ -27,7 +27,7 @@
 #include "emu/screen.h"
 
 #include "cpu/z80/z80.h"
-#include "machine/i8257.h"
+#include "machine/arcade/i8257.h"
 
 using namespace EMU;
 using namespace Z80;

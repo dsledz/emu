@@ -25,7 +25,7 @@
 
 #include "emu/emu.h"
 
-#include "machine/i8257.h"
+#include "machine/arcade/i8257.h"
 
 using namespace EMU;
 

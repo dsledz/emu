@@ -25,7 +25,7 @@
 
 #include "emu/emu.h"
 
-#include "machine/galaga.h"
+#include "machine/arcade/galaga.h"
 
 using namespace EMU;
 using namespace Z80;

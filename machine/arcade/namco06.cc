@@ -23,8 +23,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "machine/namco06.h"
 #include "emu/emu.h"
+
+#include "machine/arcade/namco06.h"
 
 using namespace EMU;
 using namespace Device;

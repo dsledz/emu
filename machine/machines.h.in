@@ -1,0 +1,8 @@
+/* Configuration options */
+#pragma once
+
+#define ENABLED_NES @ENABLED_NES@
+#define ENABLED_GAMEBOY @ENABLED_GAMEBOY@
+#define ENABLED_C64 @ENABLED_C64@
+#define ENABLED_TG16 @ENABLED_TG16@
+#define ENABLED_ARCADE @ENABLED_ARCADE@

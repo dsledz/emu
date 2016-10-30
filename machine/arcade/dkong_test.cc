@@ -28,10 +28,9 @@
 #include "emu/emu.h"
 #include "emu/test.h"
 
-#include "machine/pacman.h"
+#include "machine/arcade/dkong.h"
 
 using namespace EMU;
 
-TEST(PacmanTest, run100) {
-  EMUTest::machine_test<Arcade::Pacman>();
-}
+TEST(DonkeyKongTest, run100) { EMUTest::machine_test<Arcade::DonkeyKong>(""); }
+

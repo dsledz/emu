@@ -25,7 +25,7 @@
 
 #include "emu/emu.h"
 
-#include "machine/dkong.h"
+#include "machine/arcade/dkong.h"
 
 using namespace EMU;
 using namespace Z80;
