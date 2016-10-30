@@ -90,19 +90,21 @@ class VDC : public ClockedDevice {
           pattern(data[2].d & 0x07FF),
           attrs(data[3].d) {
       y -= 64;
+      ysize = (cgy + 1) * 16;
       x -= 32;
+      xsize = (cgx + 1) * 16;
       pattern &= ~cgy;
       pattern &= ~cgx;
       pattern >>= 1;
     }
 
     bool matchy(int sy) {
-      int yend = y + (cgy + 1) * 16;
+      int yend = y + ysize;
       return (y <= sy && sy < yend);
     };
 
     bool matchx(int sx) {
-      int xend = x + (cgx + 1) * 16;
+      int xend = x + xsize;
       return (x <= sx && sx < xend);
     }
 
@@ -110,13 +112,13 @@ class VDC : public ClockedDevice {
       uint16_t p = pattern;
       sy -= y;
       sx -= x;
-      if (xflip) sx = ((cgx + 1) * 16) - 1 - sx;
+      if (xflip) sx = xsize - 1 - sx;
       while (sx >= 16) {
         sx -= 16;
         p++;
       }
       sx = 15 - sx;
-      if (yflip) sy = ((cgy + 1) * 16) - 1 - sy;
+      if (yflip) sy = ysize - 1 - sy;
       while (sy >= 16) {
         sy -= 16;
         p += (cgx + 1);
@@ -131,7 +133,9 @@ class VDC : public ClockedDevice {
     }
 
     uint16_t y;
-    uint16_t x;
+    int16_t x;
+    uint16_t xsize;
+    uint16_t ysize;
     uint16_t pattern;
     union {
       struct {
