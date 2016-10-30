@@ -64,14 +64,21 @@ class SFMLEmulator : public Emulator {
     machine()->reset();
 
     set_state(EmuState::Running);
-    m_task = std::async(std::launch::async, &Emulator::do_execute, this);
 
-    while (get_state() == EmuState::Running) {
+    machine()->poweron();
+
+    while (get_state() != EmuState::Stopped) {
+      while (get_state() == EmuState::Paused) {
+        poll_events();
+      }
+      auto future = frame_start();
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       m_fb->render();
       m_window->display();
       poll_events();
+      frame_end(future);
     }
+    machine()->poweroff();
   }
 
   virtual void stop(void) {
