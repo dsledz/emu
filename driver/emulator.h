@@ -28,6 +28,14 @@
 
 namespace EMU {
 
+class EmulatorException : public Core::CoreException {
+ public:
+  EmulatorException(const std::string &err)
+      : CoreException("Emulator Exception: ") {
+    msg += err;
+  }
+};
+
 class Emulator {
  public:
   enum class EmuState {

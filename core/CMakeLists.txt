@@ -1,7 +1,7 @@
 
 if (BUILD_ASM)
     if (WIN32)
-        ENABLE_LANGUAGE(ASM-MASM)
+        ENABLE_LANGUAGE(ASM_MASM)
         set(SUPPORT_ASM win64.asm)
     else (WIN32)
         ENABLE_LANGUAGE(ASM-ATT)

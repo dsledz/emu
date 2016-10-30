@@ -12,12 +12,17 @@ if (APPLE)
     add_framework(OpenGL)
 endif (APPLE)
 
+if (WIN32)
+ELSE(WIN32)
+    set(GLUT_LIBRARY glut)
+endif (WIN32)
+
 add_executable(sdlEmu
     main.cc)
 
 target_link_libraries(sdlEmu
     ${GLEW_LIBRARY}
-    glut
+    ${GLUT_LIBRARY}
     ${OPENGL_LIBRARY}
     ${SDL2_LIBRARY}
     Threads::Threads

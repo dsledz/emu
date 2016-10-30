@@ -195,9 +195,9 @@ void GLSLRender::render(void) {
                transform->height(), 0, GL_RGBA, GL_UNSIGNED_BYTE,
                transform->fb());
 
-  float modelviewprojection[] = {2.25642, 0.0, 0.0,    0.0, 0.0,    1.56969,
-                                 0.0,     0.0, 0.0,    0.0, -1.002, -1.0,
-                                 0.0,     0.0, 2.3048, 2.5};
+  float modelviewprojection[] = {2.25642f, 0.0f, 0.0f,    0.0f, 0.0f,    1.56969f,
+                                 0.0f,     0.0f, 0.0f,    0.0f, -1.002f, -1.0f,
+                                 0.0f,     0.0f, 2.3048f, 2.5f};
 
   float projection[] = {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
                         0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0};
@@ -267,11 +267,11 @@ void GLRender::render(void) {
   glTexCoord2f(0, 0);
   glVertex2f(0, 0);
   glTexCoord2f(1, 0);
-  glVertex2f(transform->width() - 1, 0);
+  glVertex2f(transform->width() - 1.0f, 0.0f);
   glTexCoord2f(1, 1);
-  glVertex2f(transform->width() - 1, transform->height() - 1);
+  glVertex2f(transform->width() - 1.0f, transform->height() - 1.0f);
   glTexCoord2f(0, 1);
-  glVertex2f(0, transform->height() - 1);
+  glVertex2f(0.0f, transform->height() - 1.0f);
   glEnd();
   glFlush();
 }

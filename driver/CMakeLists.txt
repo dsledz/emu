@@ -1,6 +1,10 @@
 find_package(GLEW REQUIRED)
 find_package(OpenGL REQUIRED)
 
+include_directories(${OPENGL_INCLUDE_DIR})
+include_directories(${GLEW_INCLUDE_DIR})
+include_directories(${GLUT_INCLUDE_DIR})
+
 add_library(driver
     wrapper.cc
     emulator.cc
@@ -19,10 +23,6 @@ if (BUILD_TESTING)
         gtest gtest_main)
     add_test(emulator-check emulator-check)
 endif (BUILD_TESTING)
-
-include_directories(${OPENGL_INCLUDE_DIR})
-include_directories(${GLUT_INCLUDE_DIR})
-include_directories(${GLEW_INCLUDE_DIR})
 
 if (BUILD_OSX)
     message("Building OSX support.")

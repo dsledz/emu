@@ -14,9 +14,8 @@ void InitialSwitchContext(ThreadRegisters *old_ctx, ThreadRegisters *new_ctx,
 
 ThreadContext::ThreadContext(uint64_t rip, uint64_t rdi)
     : m_stack(64 * 1024), m_rdi(rdi), m_registers() {
-  uint8_t *stack = &(*m_stack.end());
   // 128 byte red zone
-  stack -= 128;
+  uint8_t *stack = &(*(m_stack.end() - 128));
   // 8 bytes for our hazard ebp
   stack -= 8;
   *reinterpret_cast<uint64_t *>(stack) = 0xFFFFFFFFFFFFFFFFul;

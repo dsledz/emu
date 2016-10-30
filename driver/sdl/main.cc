@@ -50,77 +50,11 @@ struct SDL_KeycodeHash {
   }
 };
 
-std::unordered_map<SDL_Keycode, InputKey, SDL_KeycodeHash> key_map = {
-    std::make_tuple(SDLK_LEFT, InputKey::Joy1Left),
-    std::make_tuple(SDLK_RIGHT, InputKey::Joy1Right),
-    std::make_tuple(SDLK_UP, InputKey::Joy1Up),
-    std::make_tuple(SDLK_DOWN, InputKey::Joy1Down),
-    std::make_tuple(SDLK_SPACE, InputKey::Joy1Btn1),
-    std::make_tuple(SDLK_x, InputKey::Joy1Btn2),
-    std::make_tuple(SDLK_1, InputKey::Start1),
-    std::make_tuple(SDLK_2, InputKey::Start2),
-    std::make_tuple(SDLK_5, InputKey::Coin1),
-    std::make_tuple(SDLK_6, InputKey::Coin2),
-    std::make_tuple(SDLK_7, InputKey::Service),
-    std::make_tuple(SDLK_s, InputKey::Select1),
-};
-
-std::unordered_map<SDL_Keycode, InputKey, SDL_KeycodeHash> keyboard_map = {
-    std::make_tuple(SDLK_0, InputKey::Keyboard0),
-    std::make_tuple(SDLK_1, InputKey::Keyboard1),
-    std::make_tuple(SDLK_2, InputKey::Keyboard2),
-    std::make_tuple(SDLK_3, InputKey::Keyboard3),
-    std::make_tuple(SDLK_4, InputKey::Keyboard4),
-    std::make_tuple(SDLK_5, InputKey::Keyboard5),
-    std::make_tuple(SDLK_6, InputKey::Keyboard6),
-    std::make_tuple(SDLK_7, InputKey::Keyboard7),
-    std::make_tuple(SDLK_8, InputKey::Keyboard8),
-    std::make_tuple(SDLK_9, InputKey::Keyboard9),
-    std::make_tuple(SDLK_a, InputKey::KeyboardA),
-    std::make_tuple(SDLK_b, InputKey::KeyboardB),
-    std::make_tuple(SDLK_c, InputKey::KeyboardC),
-    std::make_tuple(SDLK_d, InputKey::KeyboardD),
-    std::make_tuple(SDLK_e, InputKey::KeyboardE),
-    std::make_tuple(SDLK_f, InputKey::KeyboardF),
-    std::make_tuple(SDLK_g, InputKey::KeyboardG),
-    std::make_tuple(SDLK_h, InputKey::KeyboardH),
-    std::make_tuple(SDLK_i, InputKey::KeyboardI),
-    std::make_tuple(SDLK_j, InputKey::KeyboardJ),
-    std::make_tuple(SDLK_k, InputKey::KeyboardK),
-    std::make_tuple(SDLK_l, InputKey::KeyboardL),
-    std::make_tuple(SDLK_m, InputKey::KeyboardM),
-    std::make_tuple(SDLK_n, InputKey::KeyboardN),
-    std::make_tuple(SDLK_o, InputKey::KeyboardO),
-    std::make_tuple(SDLK_p, InputKey::KeyboardP),
-    std::make_tuple(SDLK_q, InputKey::KeyboardQ),
-    std::make_tuple(SDLK_r, InputKey::KeyboardR),
-    std::make_tuple(SDLK_s, InputKey::KeyboardS),
-    std::make_tuple(SDLK_t, InputKey::KeyboardT),
-    std::make_tuple(SDLK_u, InputKey::KeyboardU),
-    std::make_tuple(SDLK_v, InputKey::KeyboardV),
-    std::make_tuple(SDLK_w, InputKey::KeyboardW),
-    std::make_tuple(SDLK_x, InputKey::KeyboardX),
-    std::make_tuple(SDLK_y, InputKey::KeyboardY),
-    std::make_tuple(SDLK_z, InputKey::KeyboardZ),
-    std::make_tuple(SDLK_RETURN, InputKey::KeyboardReturn),
-    std::make_tuple(SDLK_LSHIFT, InputKey::KeyboardLShift),
-    std::make_tuple(SDLK_RSHIFT, InputKey::KeyboardRShift),
-    std::make_tuple(SDLK_COMMA, InputKey::KeyboardComma),
-    std::make_tuple(SDLK_SLASH, InputKey::KeyboardSlash),
-    std::make_tuple(SDLK_STOP, InputKey::KeyboardStop),
-    std::make_tuple(SDLK_DOWN, InputKey::KeyboardDown),
-    std::make_tuple(SDLK_CARET, InputKey::KeyboardCaret),
-    std::make_tuple(SDLK_COLON, InputKey::KeyboardColon),
-    std::make_tuple(SDLK_SEMICOLON, InputKey::KeyboardSemicolon),
-    std::make_tuple(SDLK_AT, InputKey::KeyboardAt),
-    std::make_tuple(SDLK_PLUS, InputKey::KeyboardPlus),
-    std::make_tuple(SDLK_PERIOD, InputKey::KeyboardPeriod),
-    std::make_tuple(SDLK_DOLLAR, InputKey::KeyboardPound),
-};
-
 class SDLEmulator : public Emulator {
  public:
   SDLEmulator(const Options &options) : Emulator(options) {
+	  key_map_init();
+
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 
@@ -137,6 +71,10 @@ class SDLEmulator : public Emulator {
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &m_fbo);
     SDL_GL_MakeCurrent(m_window, m_glcontext);
 
+    glewExperimental=GL_TRUE;
+    GLenum err = glewInit();
+    if (GLEW_OK != err) throw EmulatorException("glewInit failure");
+
     SDL_GL_SetSwapInterval(1);
 
     SDL_Event event;
@@ -146,6 +84,77 @@ class SDLEmulator : public Emulator {
   virtual ~SDLEmulator() {
     if (m_task.valid())
       m_task.get();
+  }
+
+  void key_map_init(void) {
+    m_key_map.insert(std::make_pair(SDLK_LEFT, InputKey::Joy1Left));
+    m_key_map.insert(std::make_pair(SDLK_RIGHT, InputKey::Joy1Right));
+    m_key_map.insert(std::make_pair(SDLK_UP, InputKey::Joy1Up));
+    m_key_map.insert(std::make_pair(SDLK_DOWN, InputKey::Joy1Down));
+    m_key_map.insert(std::make_pair(SDLK_SPACE, InputKey::Joy1Btn1));
+    m_key_map.insert(std::make_pair(SDLK_x, InputKey::Joy1Btn2));
+    m_key_map.insert(std::make_pair(SDLK_1, InputKey::Start1));
+    m_key_map.insert(std::make_pair(SDLK_2, InputKey::Start2));
+    m_key_map.insert(std::make_pair(SDLK_5, InputKey::Coin1));
+    m_key_map.insert(std::make_pair(SDLK_6, InputKey::Coin2));
+    m_key_map.insert(std::make_pair(SDLK_7, InputKey::Service));
+    m_key_map.insert(std::make_pair(SDLK_s, InputKey::Select1));
+
+    m_keyboard_map.insert(std::make_pair(SDLK_0, InputKey::Keyboard0));
+    m_keyboard_map.insert(std::make_pair(SDLK_1, InputKey::Keyboard1));
+    m_keyboard_map.insert(std::make_pair(SDLK_2, InputKey::Keyboard2));
+    m_keyboard_map.insert(std::make_pair(SDLK_3, InputKey::Keyboard3));
+    m_keyboard_map.insert(std::make_pair(SDLK_4, InputKey::Keyboard4));
+    m_keyboard_map.insert(std::make_pair(SDLK_5, InputKey::Keyboard5));
+    m_keyboard_map.insert(std::make_pair(SDLK_6, InputKey::Keyboard6));
+    m_keyboard_map.insert(std::make_pair(SDLK_7, InputKey::Keyboard7));
+    m_keyboard_map.insert(std::make_pair(SDLK_8, InputKey::Keyboard8));
+    m_keyboard_map.insert(std::make_pair(SDLK_9, InputKey::Keyboard9));
+    m_keyboard_map.insert(std::make_pair(SDLK_a, InputKey::KeyboardA));
+    m_keyboard_map.insert(std::make_pair(SDLK_b, InputKey::KeyboardB));
+    m_keyboard_map.insert(std::make_pair(SDLK_c, InputKey::KeyboardC));
+    m_keyboard_map.insert(std::make_pair(SDLK_d, InputKey::KeyboardD));
+    m_keyboard_map.insert(std::make_pair(SDLK_e, InputKey::KeyboardE));
+    m_keyboard_map.insert(std::make_pair(SDLK_f, InputKey::KeyboardF));
+    m_keyboard_map.insert(std::make_pair(SDLK_g, InputKey::KeyboardG));
+    m_keyboard_map.insert(std::make_pair(SDLK_h, InputKey::KeyboardH));
+    m_keyboard_map.insert(std::make_pair(SDLK_i, InputKey::KeyboardI));
+    m_keyboard_map.insert(std::make_pair(SDLK_j, InputKey::KeyboardJ));
+    m_keyboard_map.insert(std::make_pair(SDLK_k, InputKey::KeyboardK));
+    m_keyboard_map.insert(std::make_pair(SDLK_l, InputKey::KeyboardL));
+    m_keyboard_map.insert(std::make_pair(SDLK_m, InputKey::KeyboardM));
+    m_keyboard_map.insert(std::make_pair(SDLK_n, InputKey::KeyboardN));
+    m_keyboard_map.insert(std::make_pair(SDLK_o, InputKey::KeyboardO));
+    m_keyboard_map.insert(std::make_pair(SDLK_p, InputKey::KeyboardP));
+    m_keyboard_map.insert(std::make_pair(SDLK_q, InputKey::KeyboardQ));
+    m_keyboard_map.insert(std::make_pair(SDLK_r, InputKey::KeyboardR));
+    m_keyboard_map.insert(std::make_pair(SDLK_s, InputKey::KeyboardS));
+    m_keyboard_map.insert(std::make_pair(SDLK_t, InputKey::KeyboardT));
+    m_keyboard_map.insert(std::make_pair(SDLK_u, InputKey::KeyboardU));
+    m_keyboard_map.insert(std::make_pair(SDLK_v, InputKey::KeyboardV));
+    m_keyboard_map.insert(std::make_pair(SDLK_w, InputKey::KeyboardW));
+    m_keyboard_map.insert(std::make_pair(SDLK_x, InputKey::KeyboardX));
+    m_keyboard_map.insert(std::make_pair(SDLK_y, InputKey::KeyboardY));
+    m_keyboard_map.insert(std::make_pair(SDLK_z, InputKey::KeyboardZ));
+    m_keyboard_map.insert(
+        std::make_pair(SDLK_RETURN, InputKey::KeyboardReturn));
+    m_keyboard_map.insert(
+        std::make_pair(SDLK_LSHIFT, InputKey::KeyboardLShift));
+    m_keyboard_map.insert(
+        std::make_pair(SDLK_RSHIFT, InputKey::KeyboardRShift));
+    m_keyboard_map.insert(std::make_pair(SDLK_COMMA, InputKey::KeyboardComma));
+    m_keyboard_map.insert(std::make_pair(SDLK_SLASH, InputKey::KeyboardSlash));
+    m_keyboard_map.insert(std::make_pair(SDLK_STOP, InputKey::KeyboardStop));
+    m_keyboard_map.insert(std::make_pair(SDLK_DOWN, InputKey::KeyboardDown));
+    m_keyboard_map.insert(std::make_pair(SDLK_CARET, InputKey::KeyboardCaret));
+    m_keyboard_map.insert(std::make_pair(SDLK_COLON, InputKey::KeyboardColon));
+    m_keyboard_map.insert(
+        std::make_pair(SDLK_SEMICOLON, InputKey::KeyboardSemicolon));
+    m_keyboard_map.insert(std::make_pair(SDLK_AT, InputKey::KeyboardAt));
+    m_keyboard_map.insert(std::make_pair(SDLK_PLUS, InputKey::KeyboardPlus));
+    m_keyboard_map.insert(
+        std::make_pair(SDLK_PERIOD, InputKey::KeyboardPeriod));
+    m_keyboard_map.insert(std::make_pair(SDLK_DOLLAR, InputKey::KeyboardPound));
   }
 
   virtual void start(void) {
@@ -215,10 +224,10 @@ class SDLEmulator : public Emulator {
             if (event->type == SDL_KEYDOWN) reset();
             break;
           default: {
-            auto it = key_map.find(event->key.keysym.sym);
-            if (it == key_map.end())
-                it = keyboard_map.find(event->key.keysym.sym);
-            if (it != key_map.end())
+            auto it = m_key_map.find(event->key.keysym.sym);
+            if (it == m_key_map.end())
+                it = m_keyboard_map.find(event->key.keysym.sym);
+            if (it != m_key_map.end())
               machine()->send_input(it->second, event->type == SDL_KEYDOWN);
           }
         }
@@ -235,14 +244,13 @@ class SDLEmulator : public Emulator {
   std::unique_ptr<GLRender> m_fb;
 
   std::future<void> m_task;
+  std::unordered_map<SDL_Keycode, InputKey, SDL_KeycodeHash> m_key_map;
+  std::unordered_map<SDL_Keycode, InputKey, SDL_KeycodeHash> m_keyboard_map;
 };
 
-extern "C" int main(int argc, char **argv) {
+int main(int argc, char *argv[]) {
   try {
     glutInit(&argc, argv);
-    glutCreateWindow("GLEW Test");
-    GLenum err = glewInit();
-    if (GLEW_OK != err) abort();
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0) throw SDLException();
 
     Driver::CLIOptions opts(argc, argv);
@@ -257,3 +265,14 @@ extern "C" int main(int argc, char **argv) {
   SDL_Quit();
   return 0;
 }
+
+#ifdef WIN32
+#include <SDKDDKVer.h>
+#include <tchar.h>
+int wmain(int wargc, wchar_t *wargv[]) {
+  int argc = 1;
+  const char *argv0 = "sdlEmu";
+  char *argv[] = { argv0 };
+  return main(argc, argv);
+}
+#endif
