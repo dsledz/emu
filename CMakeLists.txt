@@ -46,6 +46,10 @@ if (BUILD_IOS)
     set(BUILD_TESTING 0)
 endif (BUILD_IOS)
 
+if (BUILD_JIT)
+    set(M6502_JIT 1)
+endif (BUILD_JIT)
+
 # Gtest
 if (BUILD_TESTING)
     message("Building Testing")

@@ -2,3 +2,4 @@
 #pragma once
 
 #define OPENGL_LEGACY @OPENGL_LEGACY@
+#define M6502_JIT @M6502_JIT@

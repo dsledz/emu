@@ -23,6 +23,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "opts.h"
 #include "cpu/m6502/m6502.h"
 #include "cpu/m6502/m6502_jit_ops.h"
 #include "cpu/m6502/m6502_ops.h"
@@ -30,8 +31,6 @@
 using namespace EMU;
 using namespace M6502;
 using namespace std::placeholders;
-
-#define JIT 0
 
 #define OPCODE(code, bytes, cycles, name, addr, op)                         \
   {                                                                         \
@@ -250,7 +249,7 @@ void M6502Cpu::reset(void) {
 }
 
 void M6502Cpu::test_step(void) {
-#if JIT
+#if M6502_JIT
   jit_dispatch(m_state.PC.d);
 #else
   uint8_t val = 0;
@@ -288,7 +287,7 @@ void M6502Cpu::execute(void) {
     if (Interrupt()) continue;
 
     uint16_t pc = m_state.PC.d;
-#if JIT
+#if M6502_JIT
     jit_dispatch(pc);
 #else
     dispatch(pc);
