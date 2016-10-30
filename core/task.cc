@@ -52,8 +52,7 @@ void Task::yield(void) {
 }
 
 Thread::Thread(TaskChannel_ptr channel)
-    : thread(std::bind(&Thread::thread_main, this)),
-      m_task(NULL),
+    : m_task(NULL),
       m_mtx(),
       m_cv(),
       m_state(ThreadState::Dead),
@@ -217,10 +216,13 @@ Task::State ThreadTask::force(void) {
  */
 TaskScheduler::TaskScheduler(void)
     : m_event_channel(new TaskChannel()),
-      m_event_thread(new Thread(m_event_channel)),
       m_work_channel(new TaskChannel()),
-      m_work_threads(),
-      m_tasks() {}
+      m_event_worker(new Thread(m_event_channel)),
+      m_threads(),
+      m_tasks() {
+  m_threads.push_back(
+      std::thread(std::bind(&Thread::thread_main, m_event_worker.get())));
+}
 
 TaskScheduler::~TaskScheduler(void) {
   /* Cancel all outstanding tasks. */
@@ -230,15 +232,14 @@ TaskScheduler::~TaskScheduler(void) {
 
   /* Now cancel the work threads */
   m_work_channel->close();
-  for (auto it = m_work_threads.begin(); it != m_work_threads.end(); it++) {
-    (*it)->join();
+  for (auto it = m_threads.begin(); it != m_threads.end(); it++) {
+    it->join();
   }
-  m_event_thread->join();
 }
 
 void TaskScheduler::add_task(Task *task) { m_tasks.push_back(task); }
 
-void TaskScheduler::wait_for_idle(void) { m_event_thread->wait_for_idle(); }
+void TaskScheduler::wait_for_idle(void) { m_event_worker->wait_for_idle(); }
 
 void TaskScheduler::run_task(Task *task) {
   if (task->nonblocking()) {
@@ -246,7 +247,10 @@ void TaskScheduler::run_task(Task *task) {
     m_event_channel->put(task);
   } else {
     LOG_DEBUG("RunTask blocking: ", *task);
-    m_work_threads.push_back(Thread_ptr(new Thread(m_work_channel)));
+    Thread_ptr worker = Thread_ptr(new Thread(m_work_channel));
+    m_threads.push_back(
+        std::thread(std::bind(&Thread::thread_main, worker.get())));
+    m_workers.push_back(std::move(worker));
     m_work_channel->put(task);
   }
 }

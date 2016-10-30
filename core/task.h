@@ -164,7 +164,7 @@ class ThreadTask : public Task {
   virtual void yield_internal(void);
 };
 
-class Thread : public std::thread {
+class Thread {
  public:
   enum class ThreadState { Dead, Init, Idle, Running, Exiting };
 
@@ -178,8 +178,9 @@ class Thread : public std::thread {
   static Task *cur_task(void);
   static Thread *cur_thread(void);
 
- private:
   void thread_main(void);
+
+ private:
   void thread_task(void);
 
   Task *m_task;
@@ -191,6 +192,7 @@ class Thread : public std::thread {
 };
 
 typedef std::unique_ptr<Thread> Thread_ptr;
+typedef std::unique_ptr<std::thread> StdThread_ptr;
 
 class TaskScheduler {
  public:
@@ -222,9 +224,10 @@ class TaskScheduler {
 
   std::mutex m_mtx;
   TaskChannel_ptr m_event_channel;
-  Thread_ptr m_event_thread;
   TaskChannel_ptr m_work_channel;
-  std::list<Thread_ptr> m_work_threads;
+  Thread_ptr m_event_worker;
+  std::list<Thread_ptr> m_workers;
+  std::list<std::thread> m_threads;
   std::list<Task *> m_tasks;
 };
 };
