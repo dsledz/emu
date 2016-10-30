@@ -21,9 +21,11 @@ if (BUILD_TESTING)
 endif (BUILD_TESTING)
 
 include_directories(${OPENGL_INCLUDE_DIR})
+include_directories(${GLUT_INCLUDE_DIR})
+include_directories(${GLEW_INCLUDE_DIR})
 
-    message("Building OSX support.")
 if (BUILD_OSX)
+    message("Building OSX support.")
     add_subdirectory(osx)
 endif (BUILD_OSX)
 

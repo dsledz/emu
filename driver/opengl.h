@@ -79,7 +79,7 @@ struct ScopedObject {
     if (value != 0) destructor()(value);
   }
 
-  const operator GLuint() const { return value; }
+  operator GLuint() const { return value; }
 
   GLuint release() {
     GLuint tmp = value;
@@ -124,7 +124,7 @@ class Shader {
 
   void attach(GLuint program);
 
-  const operator GLuint() const { return _shader; }
+  operator GLuint() const { return _shader; }
 
  private:
   scoped_shader _shader;
@@ -139,7 +139,7 @@ class ShaderProgram {
   void build(const std::string &frag_source, const std::string &vert_source,
              const std::vector<std::pair<std::string, GLuint> > &attribs);
 
-  const operator GLuint() const { return _program; }
+  operator GLuint() const { return _program; }
 
  private:
   scoped_program _program;
