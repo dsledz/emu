@@ -23,9 +23,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "cpu/m6502/HuC6280.h"
-#include "cpu/m6502/HuC6280_jit_ops.h"
-#include "cpu/m6502/HuC6280_ops.h"
+#include "machine/tg16/HuC6280.h"
+#include "machine/tg16/HuC6280_jit_ops.h"
+#include "machine/tg16/HuC6280_ops.h"
 
 using namespace EMU;
 using namespace M6502;

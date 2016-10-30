@@ -25,7 +25,7 @@
 
 #include "emu/emu.h"
 
-#include "cpu/m6502/HuC6280.h"
+#include "machine/tg16/HuC6280.h"
 
 namespace TG16Machine {
 

@@ -1,4 +1,5 @@
 add_library(tg16
+    HuC6280.cc
     tg16.cc
     tg16_vdc.cc)
 target_link_libraries(tg16
