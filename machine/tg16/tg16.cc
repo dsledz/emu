@@ -49,11 +49,11 @@ TG16::TG16(void)
 
   m_cpu_bus.add(0x1F0000, &m_ram);
 
-  m_cpu_bus.add(0x1FE000, 0x1FE3FF, READ_CB(VDC::read, &m_vdc),
-                WRITE_CB(VDC::write, &m_vdc));
+  m_cpu_bus.add(0x1FE000, 0x1FE3FF, READ_CB(HuC6270A::read, &m_vdc),
+                WRITE_CB(HuC6270A::write, &m_vdc));
 
-  m_cpu_bus.add(0x1FE400, 0x1FE7FF, READ_CB(VDC::vce_read, &m_vdc),
-                WRITE_CB(VDC::vce_write, &m_vdc));
+  m_cpu_bus.add(0x1FE400, 0x1FE7FF, READ_CB(HuC6270A::vce_read, &m_vdc),
+                WRITE_CB(HuC6270A::vce_write, &m_vdc));
 
   m_cpu_bus.add(0x1FE800, 0x1FEBFF, READ_CB(PSG::read, &m_psg),
                 WRITE_CB(PSG::write, &m_psg));

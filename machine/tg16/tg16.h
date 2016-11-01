@@ -52,6 +52,153 @@ enum VDCReg {
 
 class TG16;
 
+struct Sprite {
+  Sprite(void) = default;
+  Sprite(reg16_t *data)
+      : y(data[0].d & 0x03FF),
+      x(data[1].d & 0x03FF),
+      pattern(data[2].d & 0x07FF),
+      attrs(data[3].d) {
+        y -= 64;
+        ysize = (cgy + 1) * 16;
+        x -= 32;
+        xsize = (cgx + 1) * 16;
+        pattern &= ~cgy;
+        pattern &= ~cgx;
+        pattern >>= 1;
+      }
+
+  bool matchy(int sy) {
+    int yend = y + ysize;
+    return (y <= sy && sy < yend);
+  };
+
+  bool matchx(int sx) {
+    int xend = x + xsize;
+    return (x <= sx && sx < xend);
+  }
+
+  uint8_t pixel(const std::vector<reg16_t> &vram, int sx, int sy) {
+    uint16_t p = pattern;
+    sy -= y;
+    sx -= x;
+    if (xflip) sx = xsize - 1 - sx;
+    while (sx >= 16) {
+      sx -= 16;
+      p++;
+    }
+    sx = 15 - sx;
+    if (yflip) sy = ysize - 1 - sy;
+    while (sy >= 16) {
+      sy -= 16;
+      p += (cgx + 1);
+    }
+    p <<= 6;
+    p += sy;
+    uint8_t color = (bit_isset(vram[p].d, sx) << 0) |
+        (bit_isset(vram[p + 16].d, sx) << 1) |
+        (bit_isset(vram[p + 32].d, sx) << 2) |
+        (bit_isset(vram[p + 48].d, sx) << 3);
+    return (color != 0) ? color | (pal << 4) : 0;
+  }
+
+  uint16_t y;
+  int16_t x;
+  uint16_t xsize;
+  uint16_t ysize;
+  uint16_t pattern;
+  union {
+    struct {
+      uint16_t pal : 4;
+      uint16_t m_u0 : 3;
+      uint16_t spbg : 1;
+      uint16_t cgx : 1;
+      uint16_t m_u1 : 2;
+      uint16_t xflip : 1;
+      uint16_t cgy : 2;
+      uint16_t m_u2 : 1;
+      uint16_t yflip : 1;
+    };
+    uint16_t attrs;
+  };
+};
+
+class HuC6270A : public ScreenDevice {
+ public:
+  HuC6270A(TG16 *tg16, ClockDivider divider);
+  virtual ~HuC6270A(void);
+
+  byte_t read(offset_t offset);
+  void write(offset_t offset, byte_t value);
+
+  byte_t vce_read(offset_t offset);
+  void vce_write(offset_t offset, byte_t value);
+
+ protected:
+  virtual void do_hstart(void);
+  virtual void do_hdraw(void);
+  virtual void do_hblank(void);
+  virtual void do_hend(void);
+  virtual void do_vstart(void);
+  virtual void do_vdraw(void);
+  virtual void do_vblank(void);
+  virtual void do_vend(void);
+  virtual void do_vnext(void);
+
+ private:
+  byte_t status_read(offset_t offset);
+  void status_write(offset_t offset, byte_t value);
+
+  byte_t data_read(offset_t offset);
+  void data_write(offset_t offset, byte_t value);
+
+  void bg_cache(void);
+  uint8_t bg_pixel(void);
+
+  void sprite_cache(void);
+  uint8_t sprite_pixel(int sx, int sy, uint8_t bg);
+
+  RGBColor vce(uint8_t bg, uint8_t spr);
+
+  std::vector<Sprite> m_sprites;
+
+  /* Background Tiles */
+  uint16_t m_bgaddr;
+  uint8_t m_bgpal;
+  reg16_t m_bgp0;
+  reg16_t m_bgp1;
+  uint16_t m_bgy;
+  uint8_t m_bghtile;
+  uint8_t m_bghidx;
+  uint8_t m_bgvtile;
+  uint8_t m_bgvidx;
+
+  /* External registers */
+  union {
+    struct {
+      byte_t sprite_hit : 1;
+      byte_t sprite_overflow : 1;
+      byte_t scanline_irq : 1;
+      byte_t vram_satb_end : 1;
+      byte_t vram_dma_end : 1;
+      byte_t vblank : 1;
+      byte_t m_unused : 2;
+    } m_flags;
+    byte_t m_status;
+  };
+  int m_reg_idx;
+  reg16_t m_reg[20];
+
+  bool m_satb_write;
+  std::vector<reg16_t> m_vram;
+  std::vector<reg16_t> m_sat;
+
+  /* XXX: Move to VCE */
+  std::vector<RGBColor> m_palette;
+  std::vector<reg16_t> m_pal_bytes;
+  reg16_t m_pal_idx;
+};
+
 class VDC : public ClockedDevice {
  public:
   VDC(TG16 *tg16, ClockDivider divider);
@@ -81,77 +228,6 @@ class VDC : public ClockedDevice {
   RGBColor vce(uint8_t color, bool sprite);
 
   void step(void);
-
-  struct Sprite {
-    Sprite(void) = default;
-    Sprite(reg16_t *data)
-        : y(data[0].d & 0x03FF),
-          x(data[1].d & 0x03FF),
-          pattern(data[2].d & 0x07FF),
-          attrs(data[3].d) {
-      y -= 64;
-      ysize = (cgy + 1) * 16;
-      x -= 32;
-      xsize = (cgx + 1) * 16;
-      pattern &= ~cgy;
-      pattern &= ~cgx;
-      pattern >>= 1;
-    }
-
-    bool matchy(int sy) {
-      int yend = y + ysize;
-      return (y <= sy && sy < yend);
-    };
-
-    bool matchx(int sx) {
-      int xend = x + xsize;
-      return (x <= sx && sx < xend);
-    }
-
-    uint8_t pixel(const std::vector<reg16_t> &vram, int sx, int sy) {
-      uint16_t p = pattern;
-      sy -= y;
-      sx -= x;
-      if (xflip) sx = xsize - 1 - sx;
-      while (sx >= 16) {
-        sx -= 16;
-        p++;
-      }
-      sx = 15 - sx;
-      if (yflip) sy = ysize - 1 - sy;
-      while (sy >= 16) {
-        sy -= 16;
-        p += (cgx + 1);
-      }
-      p <<= 6;
-      p += sy;
-      uint8_t color = (bit_isset(vram[p].d, sx) << 0) |
-                      (bit_isset(vram[p + 16].d, sx) << 1) |
-                      (bit_isset(vram[p + 32].d, sx) << 2) |
-                      (bit_isset(vram[p + 48].d, sx) << 3);
-      return (color != 0) ? color | (pal << 4) : 0;
-    }
-
-    uint16_t y;
-    int16_t x;
-    uint16_t xsize;
-    uint16_t ysize;
-    uint16_t pattern;
-    union {
-      struct {
-        uint16_t pal : 4;
-        uint16_t m_u0 : 3;
-        uint16_t spbg : 1;
-        uint16_t cgx : 1;
-        uint16_t m_u1 : 2;
-        uint16_t xflip : 1;
-        uint16_t cgy : 2;
-        uint16_t m_u2 : 1;
-        uint16_t yflip : 1;
-      };
-      uint16_t attrs;
-    };
-  };
   std::vector<Sprite> m_sprites;
 
   /* Internal State */
@@ -223,7 +299,7 @@ class TG16 : public Machine {
   std::unique_ptr<cpu_type> m_cpu;
   AddressBus21x8 m_cpu_bus;
   RamDevice m_ram;
-  VDC m_vdc;
+  HuC6270A m_vdc;
   PSG m_psg;
   bvec m_rom;
 

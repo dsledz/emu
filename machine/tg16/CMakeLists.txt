@@ -1,4 +1,5 @@
 add_library(tg16
+    HuC6270A.cc
     HuC6280.cc
     tg16.cc
     tg16_vdc.cc)
